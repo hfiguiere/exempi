@@ -1,0 +1,176 @@
+<!--
+// =================================================================================================
+// ADOBE SYSTEMS INCORPORATED
+// Copyright 2006-2007 Adobe Systems Incorporated
+// All Rights Reserved
+//
+// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+// of the Adobe license agreement accompanying it.
+// =================================================================================================
+-->
+
+<project name="XMPCore Build File" default="build">
+	
+	<!-- Project Properties -->
+	<property name='implementation.title' value='Adobe XMP Core'/>
+	<property name='implementation.copyright' value='Copyright 2006-2007 Adobe Systems Incorporated. All rights reserved'/>
+	<property name='implementation.version.major' value='4'/>
+	<property name='implementation.version.minor' value='1'/>
+	<property name='implementation.version.micro' value='1'/>
+	<property name='implementation.version.tag' value='RC'/>
+	<property name='app.name' value='xmpcore'/>
+	<property name='src.dir' value='${basedir}/src'/>
+	<property name='intermediate.dir' value='${basedir}/intermediate'/>
+	<property name='target.dir' value='${basedir}/target'/>
+	<property file='${src.dir}/com/adobe/xmp/version.properties'/>
+
+	<!-- Sets the build timestamp -->
+	<tstamp>
+		<format property="BuildDate" pattern="yyyy MMM dd HH:mm:ss-z" locale="en" />
+	</tstamp>
+
+
+	<!--  =================================================================== -->
+	<!--  Build                                                               -->
+	<!--  =================================================================== -->
+
+	<target name="build" depends="clean, compile, createjars" />
+
+	
+	<!-- =================================================================== -->
+	<!-- Compile                                                             -->
+	<!-- =================================================================== -->
+
+	<target name="compile">
+		<echo message="Compiling ..." level="info" />
+
+		<!-- debug -->
+		<antcall target="prepareVersionInfo">
+			<param name="debug" value="true" />
+			<param name="path" value="debug" />
+		</antcall>
+		<antcall target="javac">
+			<param name="debug" value="true" />
+			<param name="path" value="debug" />
+		</antcall>
+
+		<!-- release -->		
+		<antcall target="prepareVersionInfo">
+			<param name="debug" value="false" />
+			<param name="path" value="release" />
+		</antcall>
+
+		<antcall target="javac">
+			<param name="debug" value="false" />
+			<param name="path" value="release" />
+		</antcall>
+	</target>
+	
+	
+	<target name="prepareVersionInfo">
+		<condition property="debugStr" value=" (debug)">
+			<equals arg1="${debug}" arg2="true"/>
+		</condition>
+		<condition property="debugStr" value="">
+			<isfalse value="${isDebug}" />
+		</condition>
+
+		<property name='implementation.version' value='${implementation.title} ${implementation.version.major}.${implementation.version.minor}-${implementation.version.product}${implementation.version.engbuild} ${rel_version}, ${BuildDate}${debugStr}' />
+
+		<!-- copies build information into Java readable property file -->
+		<copy todir="${intermediate.dir}/${path}" overwrite="true">
+			<fileset dir="src">
+				<include name="**/version.properties" />
+			</fileset>
+		</copy>
+		<replaceregexp 
+			byline="true"
+			match="^(implementation\.version\s+.+)$"
+		    replace="\1${debugStr}"
+			encoding="UTF-8">
+			<fileset dir="${intermediate.dir}/${path}">
+				<include name="**/version.properties" />
+			</fileset>			
+		</replaceregexp>
+		<replaceregexp 
+			byline="true"
+			match="^(implementation\.version\.debug\s+).+$"
+		    replace="\1${debug}"
+			encoding="UTF-8">
+			<fileset dir="${intermediate.dir}/${path}">
+				<include name="**/version.properties" />
+			</fileset>			
+		</replaceregexp>
+	</target>
+
+	<target name="javac">
+		<mkdir dir="${intermediate.dir}/${path}" />
+		<javac debug="${debug}" destdir="${intermediate.dir}/${path}" source="1.4">
+			<src path="${src.dir}" />
+		</javac>
+	</target>
+	
+
+	<!-- =================================================================== -->
+	<!-- Crate Jar Libraries                                                 -->
+	<!-- =================================================================== -->
+
+	<target name="createjars" depends="compile">
+		<echo message="Create Libs ..." level="info" />
+		<antcall target="createjar">
+			<param name="path" value="debug" />
+		</antcall>
+		<antcall target="createjar">
+			<param name="path" value="release" />
+		</antcall>
+		<zip destfile="${target.dir}/debug/${app.name}-src.zip">
+			<fileset dir="${src.dir}" excludes="**/package.html"/>
+		</zip>
+	</target>
+
+	<target name="createjar">
+		<mkdir dir="${target.dir}/${path}" />
+		<condition property="debugStr" value=" (debug)">
+			<equals arg1="${path}" arg2="debug" />
+		</condition>
+		<condition property="debugStr" value="">
+			<equals arg1="${path}" arg2="release" />
+		</condition>
+
+		<property name='implementation.version' value='${implementation.title} ${implementation.version.major}.${implementation.version.minor} ${implementation.version.tag}${debugStr}' />
+
+		<jar destfile="${target.dir}/${path}/${app.name}.jar" update="false">
+			<fileset dir="${intermediate.dir}/${path}">
+				<patternset refid="jar.classes" />
+			</fileset>
+			<manifest>
+				<attribute name="Implementation-Title" value="${implementation.title}" />
+				<attribute name="Implementation-Version" value="${implementation.version}" />
+				<attribute name="Implementation-Vendor" value="${implementation.copyright}" />
+				<attribute name="BuildDate" value="${BuildDate}" />
+			</manifest>
+		</jar>
+	</target>
+	
+	
+	<!-- =================================================================== -->
+	<!-- Clean                                                               -->
+	<!-- =================================================================== -->
+
+	<target name="clean">
+		<echo message="Clean..." level="info" />
+		<delete dir="${intermediate.dir}" />
+		<delete dir="${target.dir}" />
+	</target>
+
+
+	<!-- =================================================================== -->
+	<!-- Filesets                                                            -->
+	<!-- =================================================================== -->
+
+	<!-- contents of the library jar -->
+	<patternset id="jar.classes">
+		<include name="**/*.class" />
+		<include name="**/version.properties" />
+	</patternset>
+</project>
