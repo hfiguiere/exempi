@@ -1,0 +1,7 @@
+Makefile
+Makefile.in
+*~
+config.guess
+config.sub
+aclocal.m4
+configure

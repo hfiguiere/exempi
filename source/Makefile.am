@@ -1,0 +1,3 @@
+
+
+SUBDIRS = common XMPCore XMPFiles

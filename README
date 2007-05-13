@@ -1,0 +1,5 @@
+openxmp is a port of Adobe XMP SDK to work on UNIX
+and to be build with GNU automake.
+
+
+It maintained by Hubert Figuiere <hub@figuiere.net>
