@@ -38,7 +38,14 @@
 		#endif
 	#endif
 #elif XMP_UNIXBuild
-	#error "Endian macros not set up for generic UNIX yet"
+#include <endian.h>
+	#if BYTE_ORDER == BIG_ENDIAN
+		#define kBigEndianHost 1
+	#elif BYTE_ORDER == LITTLE_ENDIAN
+		#define kBigEndianHost 0
+	#else
+		#error "Neither __BIG_ENDIAN__ nor __LITTLE_ENDIAN__ is set"
+	#endif
 #else
 	#error "Unknown build environment"
 #endif

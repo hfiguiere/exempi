@@ -16,6 +16,9 @@
 #if XMP_WinBuild
 #elif XMP_MacBuild
 	#include "UnicodeConverter.h"
+#elif XMP_UnixBuild
+  #include <stdlib.h>
+  #include <iconv.h>
 #endif
 
 // =================================================================================================
@@ -167,7 +170,8 @@ bool ReconcileUtils::IsUTF8 ( const void * utf8Ptr, size_t utf8Len )
 
 #elif XMP_UNIXBuild
 
-	#error "UTF8ToHostEncoding is not implemented for UNIX"
+// use UTF-8 instead
+//#error "UTF8ToHostEncoding is not implemented for UNIX"
 	// *** A nice definition of Windows 1252 is at http://www.microsoft.com/globaldev/reference/sbcs/1252.mspx
 	// *** We should code our own conversions for this, and use it for UNIX - unless better POSIX routines exist.
 
@@ -204,8 +208,9 @@ void ReconcileUtils::UTF8ToLocal ( const void * _utf8Ptr, size_t utf8Len, std::s
 		UTF8ToMacEncoding ( localEncoding, utf8Ptr, utf8Len, local );
 	
 	#elif XMP_UNIXBuild
-	
-		#error "UTF8ToLocal is not implemented for UNIX"
+
+		// we assume UTF-8 on UNIX.
+		local->assign ( (const char *)utf8Ptr, utf8Len );
 	
 	#endif
 
@@ -242,7 +247,18 @@ void ReconcileUtils::UTF8ToLatin1 ( const void * _utf8Ptr, size_t utf8Len, std::
 	
 	#elif XMP_UNIXBuild
 	
-		#error "UTF8ToLatin1 is not implemented for UNIX"
+		iconv_t cd = iconv_open( "ISO8859-1", "UTF-8" );
+
+		char * in = (char *)utf8Ptr;
+		size_t inLen = utf8Len;
+		size_t outLen = utf8Len * 4;
+		char * buf = (char *)calloc( outLen, 1 );
+		char * out = buf;
+		size_t converted = iconv( cd, &in, &inLen, &out, &outLen );
+		iconv_close( cd );
+
+		latin1->assign ( (const char *)buf, outLen );
+		free( buf );
 	
 	#endif
 
@@ -316,7 +332,6 @@ void ReconcileUtils::UTF8ToLatin1 ( const void * _utf8Ptr, size_t utf8Len, std::
 
 #elif XMP_UNIXBuild
 
-	#error "HostEncodingToUTF8 is not implemented for UNIX"
 
 #endif
 
@@ -350,8 +365,9 @@ void ReconcileUtils::LocalToUTF8 ( const void * _localPtr, size_t localLen, std:
 		MacEncodingToUTF8 ( localEncoding, localPtr, localLen, utf8 );
 
 	#elif XMP_UNIXBuild
-	
-		#error "LocalToUTF8 is not implemented for UNIX"
+
+		// assume local is UTF8
+		utf8->assign ( (const char *)_localPtr, localLen );
 	
 	#endif
 
@@ -388,8 +404,18 @@ void ReconcileUtils::Latin1ToUTF8 ( const void * _latin1Ptr, size_t latin1Len, s
 
 	#elif XMP_UNIXBuild
 	
-		#error "Latin1ToUTF8 is not implemented for UNIX"
-	
+		iconv_t cd = iconv_open( "UTF-8", "ISO8859-1" );
+
+		char * in = (char *)_latin1Ptr;
+		size_t inLen = latin1Len;
+		size_t outLen = latin1Len * 4;
+		char * buf = (char *)calloc( outLen, 1 );
+		char * out = buf;
+		size_t converted = iconv( cd, &in, &inLen, &out, &outLen );
+		iconv_close( cd );
+
+		utf8->assign ( (const char *)buf, outLen );
+		free( buf );
 	#endif
 
 }	// ReconcileUtils::Latin1ToUTF8

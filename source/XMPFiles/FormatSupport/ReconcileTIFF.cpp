@@ -1408,6 +1408,11 @@ ImportTIFF_Flash ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
 // Although the XMP for the OECF and SFR tables is the same, the Exif is not. The OECF table has
 // signed rational values and the SFR table has unsigned.
 
+
+class BadExif
+{
+};
+
 static void
 ImportTIFF_OECFTable ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
 					   SXMPMeta * xmp, const char * xmpNS, const char * xmpProp )
@@ -1438,12 +1443,12 @@ ImportTIFF_OECFTable ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
 		bytePtr += 4;	// Move to the list of names.
 		for ( size_t i = columns; i > 0; --i ) {
 			size_t nameLen = strlen((XMP_StringPtr)bytePtr) + 1;	// ! Include the terminating nul.
-			if ( (bytePtr + nameLen) > byteEnd ) goto BadExif;
+			if ( (bytePtr + nameLen) > byteEnd ) throw BadExif();
 			xmp->AppendArrayItem ( xmpNS, arrayPath.c_str(), kXMP_PropArrayIsOrdered, (XMP_StringPtr)bytePtr );
 			bytePtr += nameLen;
 		}
 		
-		if ( (byteEnd - bytePtr) != (8 * columns * rows) ) goto BadExif;	// Make sure the values are present.
+		if ( (byteEnd - bytePtr) != (8 * columns * rows) ) throw BadExif();	// Make sure the values are present.
 		SXMPUtils::ComposeStructFieldPath ( xmpNS, xmpProp, kXMP_NS_EXIF, "Values", &arrayPath );
 	
 		XMP_Int32 * binPtr = (XMP_Int32*)bytePtr;
@@ -1463,11 +1468,11 @@ ImportTIFF_OECFTable ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
 		}
 		
 		return;
-		
-	BadExif:	// Ignore the tag if the table is ill-formed.
+	}
+	catch ( const BadExif & ) {
+		// Ignore the tag if the table is ill-formed.
 		xmp->DeleteProperty ( xmpNS, xmpProp );
 		return;
-
 	} catch ( ... ) {
 		// Do nothing, let other imports proceed.
 		// ? Notify client?
@@ -1512,12 +1517,12 @@ ImportTIFF_SFRTable ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
 		bytePtr += 4;	// Move to the list of names.
 		for ( size_t i = columns; i > 0; --i ) {
 			size_t nameLen = strlen((XMP_StringPtr)bytePtr) + 1;	// ! Include the terminating nul.
-			if ( (bytePtr + nameLen) > byteEnd ) goto BadExif;
+			if ( (bytePtr + nameLen) > byteEnd ) throw BadExif();
 			xmp->AppendArrayItem ( xmpNS, arrayPath.c_str(), kXMP_PropArrayIsOrdered, (XMP_StringPtr)bytePtr );
 			bytePtr += nameLen;
 		}
 		
-		if ( (byteEnd - bytePtr) != (8 * columns * rows) ) goto BadExif;	// Make sure the values are present.
+		if ( (byteEnd - bytePtr) != (8 * columns * rows) ) throw BadExif();	// Make sure the values are present.
 		SXMPUtils::ComposeStructFieldPath ( xmpNS, xmpProp, kXMP_NS_EXIF, "Values", &arrayPath );
 	
 		XMP_Uns32 * binPtr = (XMP_Uns32*)bytePtr;
@@ -1537,8 +1542,9 @@ ImportTIFF_SFRTable ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
 		}
 		
 		return;
-		
-	BadExif:	// Ignore the tag if the table is ill-formed.
+	}
+	catch ( const BadExif & ) {
+		// Ignore the tag if the table is ill-formed.
 		xmp->DeleteProperty ( xmpNS, xmpProp );
 		return;
 
@@ -1578,7 +1584,7 @@ ImportTIFF_CFATable ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
 		xmp->SetStructField ( xmpNS, xmpProp, kXMP_NS_EXIF, "Rows", buffer );
 		
 		bytePtr += 4;	// Move to the matrix of values.
-		if ( (byteEnd - bytePtr) != (columns * rows) ) goto BadExif;	// Make sure the values are present.
+		if ( (byteEnd - bytePtr) != (columns * rows) ) throw BadExif();	// Make sure the values are present.
 		
 		SXMPUtils::ComposeStructFieldPath ( xmpNS, xmpProp, kXMP_NS_EXIF, "Values", &arrayPath );
 	
@@ -1588,8 +1594,9 @@ ImportTIFF_CFATable ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
 		}
 		
 		return;
-		
-	BadExif:	// Ignore the tag if the table is ill-formed.
+	}
+	catch ( const BadExif & ) {
+		// Ignore the tag if the table is ill-formed.
 		xmp->DeleteProperty ( xmpNS, xmpProp );
 		return;
 
@@ -1645,12 +1652,12 @@ ImportTIFF_DSDTable ( const TIFF_Manager & tiff, const TIFF_Manager::TagInfo & t
 			size_t nameLen = 0;
 			while ( utf16Ptr[nameLen] != 0 ) ++nameLen;
 			++nameLen;	// ! Include the terminating nul.
-			if ( (utf16Ptr + nameLen) > utf16End ) goto BadExif;
+			if ( (utf16Ptr + nameLen) > utf16End ) throw BadExif();
 	
 			try {
 				FromUTF16 ( utf16Ptr, nameLen, &utf8, tiff.IsBigEndian() );
 			} catch ( ... ) {
-				goto BadExif; // Ignore the tag if there are conversion errors.
+				throw BadExif(); // Ignore the tag if there are conversion errors.
 			}
 	
 			xmp->AppendArrayItem ( xmpNS, arrayPath.c_str(), kXMP_PropArrayIsOrdered, utf8.c_str() );
@@ -1660,8 +1667,9 @@ ImportTIFF_DSDTable ( const TIFF_Manager & tiff, const TIFF_Manager::TagInfo & t
 		}
 		
 		return;
-		
-	BadExif:	// Ignore the tag if the table is ill-formed.
+	}
+	catch ( const BadExif & ) {
+		// Ignore the tag if the table is ill-formed.
 		xmp->DeleteProperty ( xmpNS, xmpProp );
 		return;
 
