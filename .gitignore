@@ -5,3 +5,8 @@ config.guess
 config.sub
 aclocal.m4
 configure
+depcomp
+install-sh
+ltmain.sh
+missing
+autom4te.cache
