@@ -6,7 +6,7 @@
 
 if [ -z $srcdir ] ; then
     echo "$srcdir srcdir not defined."
-    return 255
+    exit 255
 fi
 
 SAMPLES="BlueSquare.ai   BlueSquare.eps   BlueSquare.jpg  BlueSquare.mp3  BlueSquare.png  BlueSquare.tif BlueSquare.avi  BlueSquare.indd BlueSquare.pdf  BlueSquare.psd  BlueSquare.wav"
@@ -15,7 +15,7 @@ DUMPMAINXMP_PROG=../../samples/source/dumpmainxmp
 
 if [ ! -x $DUMPMAINXMP_PROG ] ; then
     echo "$DUMPMAINXMP_PROG not executable."
-    return 255
+    exit 255
 fi
 
 for i in $SAMPLES
@@ -24,6 +24,6 @@ do
   $DUMPMAINXMP_PROG $SAMPLES_DIR/$i > /dev/null
   if [ $? -ne 0 ] ; then
       echo "Failed"
-      return 255
+      exit 255
   fi
 done
