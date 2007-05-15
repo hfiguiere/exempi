@@ -15,7 +15,12 @@
 #define TXMP_STRING_TYPE std::string
 #include "XMP.hpp"
 
+#if XMP_UNIXBuild
+typedef int LFA_FileRef;
+#else
 typedef void * LFA_FileRef;
+#endif
+
 class XMPFileHandler;
 
 // =================================================================================================
