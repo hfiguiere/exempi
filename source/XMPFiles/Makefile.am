@@ -1,7 +1,7 @@
 
 SUBDIRS = FileHandlers FormatSupport
 
-lib_LTLIBRARIES = libXMPFiles.la
+noinst_LTLIBRARIES = libXMPFiles.la
 
 INCLUDES = -I$(top_srcdir)/public/include \
 	-I$(top_srcdir)/public/include/client-glue \
@@ -13,7 +13,7 @@ INCLUDES = -I$(top_srcdir)/public/include \
 
 AM_CXXFLAGS = -Wno-multichar -Wno-implicit -Wno-ctor-dtor-privacy \
 	-funsigned-char -fexceptions
-AM_CPPFLAGS = \
+AM_CPPFLAGS = -Wall\
 	-DUNIX_ENV=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
 	-D_FILE_OFFSET_BITS=64 -DHAVE_EXPAT_CONFIG_H=1 -DXML_STATIC=1 \
 	-DDISABLE_QUICKTIME
@@ -26,6 +26,6 @@ libXMPFiles_la_SOURCES = WXMPFiles.cpp XMPFiles.cpp \
 	XMPFiles_Impl.cpp
 
 
-libXMPFiles_la_LIBADD = -lexpat ./FileHandlers/libxmpfilehandlers.la \
+libXMPFiles_la_LIBADD = ./FileHandlers/libxmpfilehandlers.la \
 	./FormatSupport/libformatsupport.la
-libXMPFiles_la_LDFLAGS = -version-info @LIBXMPCORE_VERSION_INFO@
+#libXMPFiles_la_LDFLAGS = -version-info @LIBXMPCORE_VERSION_INFO@

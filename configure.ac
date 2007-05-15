@@ -57,4 +57,6 @@ source/XMPFiles/FileHandlers/Makefile
 source/XMPFiles/FormatSupport/Makefile
 samples/Makefile
 samples/source/Makefile
+openxmp/Makefile
+openxmp/tests/Makefile
 ])

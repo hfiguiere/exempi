@@ -1,7 +1,7 @@
 
 
 
-lib_LTLIBRARIES = libXMPCore.la
+noinst_LTLIBRARIES = libXMPCore.la
 
 INCLUDES = -I$(top_srcdir)/public/include \
 	-I$(top_srcdir)/public/include/client-glue \
@@ -11,7 +11,7 @@ INCLUDES = -I$(top_srcdir)/public/include \
 
 AM_CXXFLAGS = -Wno-multichar -Wno-implicit -Wno-ctor-dtor-privacy \
 	-funsigned-char -fexceptions
-AM_CPPFLAGS = \
+AM_CPPFLAGS = -Wall \
 	-DUNIX_ENV=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
 	-D_FILE_OFFSET_BITS=64 -DHAVE_EXPAT_CONFIG_H=1 -DXML_STATIC=1
 
@@ -36,6 +36,6 @@ libXMPCore_la_SOURCES = ExpatAdapter.cpp  \
 	XMPMeta-Parse.cpp   \
 	XMPUtils.cpp
 
-libXMPCore_la_LIBADD = -lexpat $(top_builddir)/third-party/MD5/libmd5.la \
+#libXMPCore_la_LIBADD = -lexpat $(top_builddir)/third-party/MD5/libmd5.la \
 	../common/libxmpcommon.la
-libXMPCore_la_LDFLAGS = -version-info @LIBXMPCORE_VERSION_INFO@
+#libXMPCore_la_LDFLAGS = -version-info @LIBXMPCORE_VERSION_INFO@
