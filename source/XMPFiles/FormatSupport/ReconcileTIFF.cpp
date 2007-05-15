@@ -2313,7 +2313,7 @@ ExportTIFF_EncodedString ( const SXMPMeta & xmp, const char * xmpNS, const char 
 		
 		XMP_Uns8 encoding = kTIFF_EncodeASCII;
 		for ( size_t i = 0; i < xmpValue.size(); ++i ) {
-			if ( xmpValue[i] >= 0x80 ) {
+			if ( xmpValue[i] & 0x80 ) { // just check bit 7 as it is likely to be signed char
 				encoding = kTIFF_EncodeUnicode;
 				break;
 			}
