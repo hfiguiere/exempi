@@ -1095,7 +1095,7 @@ static bool GetFrameInfo ( LFA_FileRef inFileRef, XMP_Uns8 bVersion, char * strF
 
 static bool ReadSize ( LFA_FileRef inFileRef, XMP_Uns8 bVersion, unsigned long & dwSize )
 {
-	char s4 = 0, s3 = 0, s2 = 0, s1 = 0;
+	unsigned char s4 = 0, s3 = 0, s2 = 0, s1 = 0;
 
 	if ( LFA_Read ( inFileRef, &s4, 1 ) == 0 ) return false;
 	if ( LFA_Read ( inFileRef, &s3, 1 ) == 0 ) return false;
