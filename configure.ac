@@ -1,6 +1,6 @@
 AC_PREREQ(2.50)
 AC_INIT(source/XMPCore/WXMPMeta.cpp)
-AM_INIT_AUTOMAKE(openxmp, 4.1.1)
+AM_INIT_AUTOMAKE(exempi, 1.99.0)
 AM_MAINTAINER_MODE
 
 
@@ -26,7 +26,7 @@ dnl  change does not break upward compatibility (ie it is an addition),
 dnl  increment AGE, Otherwise AGE is reset to 0. If CURRENT has changed,
 dnl  REVISION is set to 0, otherwise REVISION is incremented.
 dnl ---------------------------------------------------------------------------
-dnl 4.1.1 is the first revision 0 0 0
+dnl 1.99.0 is the first revision 0 0 0
 AC_SUBST([LIBXMPCORE_REVISION], [0])
 AC_SUBST([LIBXMPCORE_AGE],      [0])
 AC_SUBST([LIBXMPCORE_CURRENT],  [0])
@@ -57,6 +57,6 @@ source/XMPFiles/FileHandlers/Makefile
 source/XMPFiles/FormatSupport/Makefile
 samples/Makefile
 samples/source/Makefile
-openxmp/Makefile
-openxmp/tests/Makefile
+exempi/Makefile
+exempi/tests/Makefile
 ])
