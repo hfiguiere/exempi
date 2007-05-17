@@ -26,14 +26,29 @@ dnl  change does not break upward compatibility (ie it is an addition),
 dnl  increment AGE, Otherwise AGE is reset to 0. If CURRENT has changed,
 dnl  REVISION is set to 0, otherwise REVISION is incremented.
 dnl ---------------------------------------------------------------------------
-dnl 1.99.0 is the first revision 0 0 0
-AC_SUBST([LIBXMPCORE_REVISION], [0])
-AC_SUBST([LIBXMPCORE_AGE],      [0])
-AC_SUBST([LIBXMPCORE_CURRENT],  [0])
-AC_SUBST([LIBXMPCORE_CURRENT_MIN],
-         [`expr $LIBXMPCORE_CURRENT - $LIBXMPCORE_AGE`])
-AC_SUBST([LIBXMPCORE_VERSION_INFO],
-         [$LIBXMPCORE_CURRENT:$LIBXMPCORE_REVISION:$LIBXMPCORE_AGE])
+dnl 1.99.0 is the revision 3 0 0
+AC_SUBST([EXEMPI_REVISION], [0])
+AC_SUBST([EXEMPI_AGE],      [0])
+AC_SUBST([EXEMPI_CURRENT],  [3])
+AC_SUBST([EXEMPI_CURRENT_MIN],
+         [`expr $EXEMPI_CURRENT - $EXEMPI_AGE`])
+AC_SUBST([EXEMPI_VERSION_INFO],
+         [$EXEMPI_CURRENT:$EXEMPI_REVISION:$EXEMPI_AGE])
+
+dnl the major version. used for package names, etc
+EXEMPI_MAJOR_VERSION=$EXEMPI_CURRENT_MIN.0
+AC_SUBST(EXEMPI_MAJOR_VERSION)
+
+dnl the path where includes are installed
+EXEMPI_INCLUDE_BASE=exempi-$EXEMPI_MAJOR_VERSION
+AC_SUBST(EXEMPI_INCLUDE_BASE)
+
+dnl --------------------------------------------------------------------
+dnl guess directory to install *.pc into
+dnl --------------------------------------------------------------------
+pkgconfigdir='${libdir}/pkgconfig'
+AC_SUBST(pkgconfigdir)
+
 
 AC_PROG_CC
 AC_PROG_CXX
@@ -59,4 +74,5 @@ samples/Makefile
 samples/source/Makefile
 exempi/Makefile
 exempi/tests/Makefile
+exempi/exempi-2.0.pc
 ])
