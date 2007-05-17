@@ -16,7 +16,7 @@
 #if XMP_WinBuild
 #elif XMP_MacBuild
 	#include "UnicodeConverter.h"
-#elif XMP_UnixBuild
+#elif XMP_UNIXBuild
   #include <stdlib.h>
   #include <iconv.h>
 #endif
