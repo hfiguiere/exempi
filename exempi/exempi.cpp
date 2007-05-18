@@ -1,5 +1,5 @@
 /*
- * openxmp - openxmp.cpp
+ * exempi - exempi.cpp
  *
  * Copyright (C) 2007 Hubert Figuiere
  * All rights reserved.
@@ -50,6 +50,21 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+const char NS_XMP_META[] = "adobe:ns:meta/";
+const char NS_RDF[] = kXMP_NS_RDF;
+const char NS_EXIF[] = kXMP_NS_EXIF;
+const char NS_TIFF[] = kXMP_NS_TIFF;
+const char NS_XAP[] = kXMP_NS_XMP;
+const char NS_DC[] = kXMP_NS_DC;
+const char NS_EXIF_AUX[] = kXMP_NS_EXIF_Aux;
+const char NS_CRS[] = kXMP_NS_CameraRaw;
+const char NS_LIGHTROOM[] = "http://ns.adobe.com/lightroom/1.0/";
+const char NS_IPTC4XMP[] = kXMP_NS_IPTCCore;
+const char NS_TPG[] = kXMP_NS_XMP_PagedFile;
+const char NS_DIMENSIONS_TYPE[] = kXMP_NS_XMP_Dimensions;
+
 
 
 XmpFilePtr xmp_files_new()
