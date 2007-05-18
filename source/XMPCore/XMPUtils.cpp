@@ -388,20 +388,20 @@ static void FormatFullDateTime ( XMP_DateTime & tempDate, char * buffer, size_t 
 	if ( (tempDate.second == 0) && (tempDate.nanoSecond == 0) ) {
 
 		// Output YYYY-MM-DDThh:mmTZD.
-		snprintf ( buffer, bufferLen, "%.4ld-%02ld-%02ldT%02ld:%02ld",	// AUDIT: Callers pass sizeof(buffer).
+		snprintf ( buffer, bufferLen, "%.4d-%02d-%02dT%02d:%02d",	// AUDIT: Callers pass sizeof(buffer).
 				   tempDate.year, tempDate.month, tempDate.day, tempDate.hour, tempDate.minute );
 
 	} else if ( tempDate.nanoSecond == 0  ) {
 
 		// Output YYYY-MM-DDThh:mm:ssTZD.
-		snprintf ( buffer, bufferLen, "%.4ld-%02ld-%02ldT%02ld:%02ld:%02ld",	// AUDIT: Callers pass sizeof(buffer).
+		snprintf ( buffer, bufferLen, "%.4d-%02d-%02dT%02d:%02d:%02d",	// AUDIT: Callers pass sizeof(buffer).
 				   tempDate.year, tempDate.month, tempDate.day,
 				   tempDate.hour, tempDate.minute, tempDate.second );
 
 	} else {
 
 		// Output YYYY-MM-DDThh:mm:ss.sTZD.
-		snprintf ( buffer, bufferLen, "%.4ld-%02ld-%02ldT%02ld:%02ld:%02ld.%09ld", // AUDIT: Callers pass sizeof(buffer).
+		snprintf ( buffer, bufferLen, "%.4d-%02d-%02dT%02d:%02d:%02d.%09d", // AUDIT: Callers pass sizeof(buffer).
 				   tempDate.year, tempDate.month, tempDate.day,
 				   tempDate.hour, tempDate.minute, tempDate.second, tempDate.nanoSecond );
 		for ( size_t i = strlen(buffer)-1; buffer[i] == '0'; --i ) buffer[i] = 0;	// Trim excess digits.
@@ -703,7 +703,7 @@ XMPUtils::ComposeArrayItemPath ( XMP_StringPtr	 schemaNS,
 	
 	if ( itemIndex != kXMP_ArrayLastItem ) {
 		// AUDIT: Using string->capacity() for the snprintf length is safe.
-		snprintf ( const_cast<char*>(sComposedPath->c_str()), sComposedPath->capacity(), "%s[%ld]", arrayName, itemIndex );
+		snprintf ( const_cast<char*>(sComposedPath->c_str()), sComposedPath->capacity(), "%s[%d]", arrayName, itemIndex );
 	} else {
 		*sComposedPath = arrayName;
 		*sComposedPath += "[last()] ";
@@ -1063,7 +1063,7 @@ XMPUtils::ConvertFromDate ( const XMP_DateTime & binValue,
 		if ( (tempDate.day == 0) && (tempDate.hour == 0) && (tempDate.minute == 0) &&
 			 (tempDate.second == 0) && (tempDate.nanoSecond == 0) &&
 			 (tempDate.tzSign == 0) && (tempDate.tzHour == 0) && (tempDate.tzMinute == 0) ) {
-			snprintf ( buffer, sizeof(buffer), "%.4ld", tempDate.year ); // AUDIT: Using sizeof for snprintf length is safe.
+			snprintf ( buffer, sizeof(buffer), "%.4d", tempDate.year ); // AUDIT: Using sizeof for snprintf length is safe.
 		} else if ( (tempDate.year == 0) && (tempDate.day == 0) ) {
 			FormatFullDateTime ( tempDate, buffer, sizeof(buffer) );
 			addTimeZone = true;
@@ -1080,7 +1080,7 @@ XMPUtils::ConvertFromDate ( const XMP_DateTime & binValue,
 			 (tempDate.tzSign != 0) || (tempDate.tzHour != 0) || (tempDate.tzMinute != 0) ) {
 			XMP_Throw ( "Invalid partial date, non-zeros after zero month and day", kXMPErr_BadParam);
 		}
-		snprintf ( buffer, sizeof(buffer), "%.4ld-%02ld", tempDate.year, tempDate.month );	// AUDIT: Using sizeof for snprintf length is safe.
+		snprintf ( buffer, sizeof(buffer), "%.4d-%02d", tempDate.year, tempDate.month );	// AUDIT: Using sizeof for snprintf length is safe.
 		
 	} else if ( (tempDate.hour == 0) && (tempDate.minute == 0) &&
 				(tempDate.second == 0) && (tempDate.nanoSecond == 0) &&
@@ -1089,7 +1089,7 @@ XMPUtils::ConvertFromDate ( const XMP_DateTime & binValue,
 		// Output YYYY-MM-DD.
 		if ( (tempDate.month < 1) || (tempDate.month > 12) ) XMP_Throw ( "Month is out of range", kXMPErr_BadParam);
 		if ( (tempDate.day < 1) || (tempDate.day > 31) ) XMP_Throw ( "Day is out of range", kXMPErr_BadParam);
-		snprintf ( buffer, sizeof(buffer), "%.4ld-%02ld-%02ld", tempDate.year, tempDate.month, tempDate.day ); // AUDIT: Using sizeof for snprintf length is safe.
+		snprintf ( buffer, sizeof(buffer), "%.4d-%02d-%02d", tempDate.year, tempDate.month, tempDate.day ); // AUDIT: Using sizeof for snprintf length is safe.
 
 	} else {
 	
@@ -1113,7 +1113,7 @@ XMPUtils::ConvertFromDate ( const XMP_DateTime & binValue,
 		if ( tempDate.tzSign == 0 ) {
 			*sConvertedValue += 'Z';
 		} else {
-			snprintf ( buffer, sizeof(buffer), "+%02ld:%02ld", tempDate.tzHour, tempDate.tzMinute );	// AUDIT: Using sizeof for snprintf length is safe.
+			snprintf ( buffer, sizeof(buffer), "+%02d:%02d", tempDate.tzHour, tempDate.tzMinute );	// AUDIT: Using sizeof for snprintf length is safe.
 			if ( tempDate.tzSign < 0 ) buffer[0] = '-';
 			*sConvertedValue += buffer;
 		}
