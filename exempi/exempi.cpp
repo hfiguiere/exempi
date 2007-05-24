@@ -38,13 +38,16 @@
  */
 
 #include "xmp.h"
+#include "xmpconsts.h"
 
 #include <string>
+#include <iostream>
 
 #define XMP_INCLUDE_XMPFILES 1
 #define UNIX_ENV 1
 #define TXMP_STRING_TYPE std::string
 #include "XMP.hpp"
+#include "XMP.incl_cpp"
 
 
 #ifdef __cplusplus
@@ -65,6 +68,17 @@ const char NS_IPTC4XMP[] = kXMP_NS_IPTCCore;
 const char NS_TPG[] = kXMP_NS_XMP_PagedFile;
 const char NS_DIMENSIONS_TYPE[] = kXMP_NS_XMP_Dimensions;
 
+
+#define STRING(x) reinterpret_cast<std::string*>(x)
+
+
+bool xmp_init()
+{
+	bool ret = SXMPMeta::Initialize();
+	if (ret)
+		ret = SXMPFiles::Initialize();
+	return ret;
+}
 
 
 XmpFilePtr xmp_files_new()
@@ -128,12 +142,31 @@ void xmp_files_free(XmpFilePtr xf)
 }
 
 
+XmpPtr xmp_new_empty()
+{
+	SXMPMeta *txmp = new SXMPMeta;
+	return (XmpPtr)txmp;
+}
+
+
 XmpPtr xmp_new(const char *buffer, size_t len)
 {
 	SXMPMeta *txmp = new SXMPMeta(buffer, len);
 	return (XmpPtr)txmp;
 }
 
+bool xmp_parse(XmpPtr xmp, const char *buffer, size_t len)
+{
+	SXMPMeta *txmp = (SXMPMeta *)xmp;
+	try {
+		txmp->ParseFromBuffer(buffer, len, kXMP_RequireXMPMeta );
+	}
+	catch(...)
+	{
+		return false;
+	}
+	return true;
+}
 
 void xmp_free(XmpPtr xmp)
 {
@@ -141,6 +174,49 @@ void xmp_free(XmpPtr xmp)
 	delete txmp;
 }
 
+
+
+bool xmp_get_property(XmpPtr xmp, const char *schema, 
+															const char *name, XmpStringPtr property)
+{
+	try {
+		SXMPMeta *txmp = (SXMPMeta *)xmp;
+		XMP_OptionBits options = 0;
+		std::string pref;
+		return txmp->GetProperty(schema, name, STRING(property), &options);
+	}
+	catch(const XMP_Error & e)
+	{
+		std::cerr << e.GetErrMsg() << std::endl;
+	}
+	return false;
+}
+
+
+void xmp_set_property(XmpPtr xmp, const char *schema, 
+											const char *name, const char *value)
+{
+	SXMPMeta *txmp = (SXMPMeta *)xmp;
+	XMP_OptionBits options = 0;
+	txmp->SetProperty(schema, name, value, options);
+}
+
+
+XmpStringPtr xmp_string_new()
+{
+	return (XmpStringPtr)new std::string;
+}
+
+void xmp_string_free(XmpStringPtr s)
+{
+	std::string *str = reinterpret_cast<std::string*>(s);
+	delete str;
+}
+
+const char * xmp_string_cstr(XmpStringPtr s)
+{
+	return reinterpret_cast<std::string*>(s)->c_str();
+}
 
 #ifdef __cplusplus
 }

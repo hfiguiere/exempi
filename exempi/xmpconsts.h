@@ -39,6 +39,10 @@
 #ifndef _EXEMPI_XMP_CONSTS_H_
 #define _EXEMPI_XMP_CONSTS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern const char NS_XMP_META[];
 extern const char NS_RDF[];
 extern const char NS_EXIF[];
@@ -51,5 +55,9 @@ extern const char NS_LIGHTROOM[];
 extern const char NS_IPTC4XMP[];
 extern const char NS_TPG[];
 extern const char NS_DIMENSIONS_TYPE[];
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

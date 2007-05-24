@@ -1,8 +1,8 @@
 
 
-INCLUDES = -I$(top_srcdir)/include
+INCLUDES = -I$(srcdir)/.. 
 
-check_PROGRAMS = 
+check_PROGRAMS = test1
 
 check_SCRIPTS = testcore.sh
 
@@ -10,7 +10,8 @@ check_DATA = test1.xmp
 
 EXTRA_DIST = $(check_DATA)
 
-TESTS = testcore.sh
+TESTS = testcore.sh test1
 
-#test1_SOURCES = test1.cpp
-#test1_LDADD = -L../lib -lexempi @LIBXML2_LIBS@ @BOOST_UNIT_TEST_FRAMEWORK_LIB@
+test1_SOURCES = test1.cpp
+test1_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIB@
+test1_LDFLAGS = -static

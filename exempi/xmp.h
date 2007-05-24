@@ -35,8 +35,8 @@
  */
 
 
-#ifndef __OPENXMP_XMP_H_
-#define __OPENXMP_XMP_H_
+#ifndef __EXEMPI_XMP_H_
+#define __EXEMPI_XMP_H_
 
 #include <stdlib.h>
 
@@ -47,6 +47,10 @@ extern "C" {
 /** pointer to XMP packet. Opaque. */
 typedef struct _Xmp *XmpPtr;
 typedef struct _XmpFile *XmpFilePtr;
+typedef struct _XmpString *XmpStringPtr;
+
+
+bool xmp_init();
 
 XmpFilePtr xmp_files_new();
 XmpFilePtr xmp_files_open_new(const char *);
@@ -58,6 +62,8 @@ XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf);
 bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp);
 void xmp_files_free(XmpFilePtr xf);
 
+
+XmpPtr xmp_new_empty();
 
 /** Create a new XMP packet
  * @param buffer the buffer to load data from. UTF-8 encoded.
@@ -71,7 +77,50 @@ XmpPtr xmp_new(const char *buffer, size_t len);
  */
 void xmp_free(XmpPtr xmp);
 
+bool xmp_parse(XmpPtr xmp, const char *buffer, size_t len);
 
+
+/** Get an XMP property from the XMP packet
+ * @param xmp the XMP packet
+ * @param schema
+ * @param name
+ * @param property the allocated XmpStrinPtr
+ * @return true if found
+ */
+bool xmp_get_property(XmpPtr xmp, const char *schema, 
+															const char *name, XmpStringPtr property);
+
+
+/** Set an XMP property from the XMP packet
+ * @param xmp the XMP packet
+ * @param schema
+ * @param name
+ * @param value 0 terminated string
+ */
+void xmp_set_property(XmpPtr xmp, const char *schema, 
+											const char *name, const char *value);
+
+
+/** Instanciate a new string 
+ * @return the new instance. Must be freed with 
+ * xmp_string_free()
+ */
+XmpStringPtr xmp_string_new();
+
+/** Free a XmpStringPtr
+ * @param s the string to free
+ */
+void xmp_string_free(XmpStringPtr s);
+
+/** Get the C string from the XmpStringPtr
+ * @param s the string object
+ * @return the const char * for the XmpStringPtr. It 
+ * belong to the object.
+ */
+const char * xmp_string_cstr(XmpStringPtr s);
+
+
+#if 0
 //////////////////////////////////////////////////////
 
 typedef struct _XmpTree *XmpTreePtr;
@@ -81,24 +130,7 @@ typedef struct _XmpSchemaIterator *XmpSchemaIterator;
 typedef struct _XmpPropertyIterator *XmpPropertyIterator;
 
 
-/** Get an XMP property from the XMP packet
- * @param xmp the XMP packet
- * @param schema
- * @param name
- * @return a constant pointer on the property string.
- */
-const char * xmp_get_property(XmpPtr xmp, const char *schema, 
-															const char *name);
 
-/** Set an XMP property from the XMP packet
- * @param xmp the XMP packet
- * @param schema
- * @param name
- * @param value 0 terminated string
- * @return -1 in case of failure, 0 otherwise
- */
-int xmp_set_property(XmpPtr xmp, const char *schema, 
-										 const char *name, const char *value);
 
 
 
@@ -181,6 +213,7 @@ const char* xmp_value_get_string(XmpValuePtr value);
  * the field does not exist
  */
 const char* xmp_value_get_field(XmpValuePtr value, const char *field);
+#endif
 
 #ifdef __cplusplus
 }
