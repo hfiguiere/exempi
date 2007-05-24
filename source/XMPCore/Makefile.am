@@ -36,6 +36,3 @@ libXMPCore_la_SOURCES = ExpatAdapter.cpp  \
 	XMPMeta-Parse.cpp   \
 	XMPUtils.cpp
 
-#libXMPCore_la_LIBADD = -lexpat $(top_builddir)/third-party/MD5/libmd5.la \
-	../common/libxmpcommon.la
-#libXMPCore_la_LDFLAGS = -version-info @LIBXMPCORE_VERSION_INFO@
