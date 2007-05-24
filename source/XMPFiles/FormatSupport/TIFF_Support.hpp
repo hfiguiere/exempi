@@ -690,18 +690,21 @@ public:
 	
 	void IntegrateFromPShop6 ( const void * buriedPtr, size_t buriedLen ) { NotAppropriate(); };
 	
-	XMP_Uns32 UpdateMemoryStream ( void** dataPtr, bool condenseStream = false ) { if ( dataPtr != 0 ) *dataPtr = tiffStream; return tiffLength; };
+	XMP_Uns32 UpdateMemoryStream ( void** dataPtr, bool condenseStream = false ) { if ( dataPtr != 0 ) *dataPtr = tiffStream.ptr; return tiffLength; };
 	void      UpdateFileStream   ( LFA_FileRef fileRef ) { NotAppropriate(); };
 	
-	TIFF_MemoryReader() : ownedStream(false), tiffStream(0), tiffLength(0) {};
+	TIFF_MemoryReader() : ownedStream(false), tiffLength(0) { tiffStream.ptr = 0; };
 
-	virtual ~TIFF_MemoryReader() { if ( this->ownedStream ) free ( this->tiffStream ); };
+	virtual ~TIFF_MemoryReader() { if ( this->ownedStream ) free ( this->tiffStream.ptr ); };
 
 private:
 
 	bool ownedStream;
 
-	XMP_Uns8* tiffStream;
+	union {
+		XMP_Uns8* ptr;
+		XMP_Uns32 off;
+	} tiffStream;
 	XMP_Uns32 tiffLength;
 
 	struct TweakedIFDEntry {
