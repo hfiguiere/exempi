@@ -1,0 +1,32 @@
+Source: exempi
+Section: libs
+Priority: extra
+Maintainer: Hubert Figuiere <hub@figuiere.net>
+Build-Depends: debhelper (>> 5.0.0), cdbs (>= 0.4.30), libboost-dev (>= 1.33), libexpat1-dev
+Standards-Version: 3.7.2
+
+
+Package: libexempi-dev
+Section: libdevel
+Depends: libexempi3 (= ${Source-Version})
+Architecture: any
+Description: A library to parse XMP metadata (Development files)
+ Exempi is a library to parse XMP metadata as defined by the 
+ specification.
+
+
+Package: libexempi3-dbg
+Architecture: any
+Depends: libexempi3 (= ${Source-Version})
+Description: A library to parse XMP metadata (Debug files)
+ Exempi is a library to parse XMP metadata as defined by the 
+ specification.
+
+
+Package: libexempi3
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: A library to parse XMP metadata (Library)
+ Exempi is a library to parse XMP metadata as defined by the 
+ specification.

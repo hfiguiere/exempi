@@ -44,6 +44,8 @@ INCLUDES = -I$(top_srcdir)/public/include
 AM_CPPFLAGS = -Wall
 lib_LTLIBRARIES = libexempi.la
 
+pkgconfig_DATA = exempi-@EXEMPI_MAJOR_VERSION@.pc
+
 libexempi_la_SOURCES = exempi.cpp
 
 libexempi_la_LIBADD = $(top_builddir)/source/common/libxmpcommon.la \

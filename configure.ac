@@ -36,7 +36,7 @@ AC_SUBST([EXEMPI_VERSION_INFO],
          [$EXEMPI_CURRENT:$EXEMPI_REVISION:$EXEMPI_AGE])
 
 dnl the major version. used for package names, etc
-EXEMPI_MAJOR_VERSION=$EXEMPI_CURRENT_MIN.0
+EXEMPI_MAJOR_VERSION=2.0
 AC_SUBST(EXEMPI_MAJOR_VERSION)
 
 dnl the path where includes are installed
