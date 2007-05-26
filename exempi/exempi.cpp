@@ -82,6 +82,12 @@ bool xmp_init()
 	return ret;
 }
 
+void xmp_terminate()
+{
+	SXMPFiles::Terminate();
+	SXMPMeta::Terminate();
+}
+
 
 XmpFilePtr xmp_files_new()
 {

@@ -70,6 +70,7 @@ void test_exempi()
 
 	BOOST_CHECK(rlen == len);
 	BOOST_CHECK(len != 0);
+
 	BOOST_CHECK(xmp_init());
 
 	XmpPtr xmp = xmp_new_empty();
@@ -92,6 +93,8 @@ void test_exempi()
 
 	free(buffer);
 	fclose(f);
+
+	xmp_terminate();
 }
 
 

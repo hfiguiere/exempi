@@ -51,7 +51,7 @@ using boost::unit_test::test_suite;
 std::string g_testfile;
 
 
-void test_exempi()
+void test_exempi_iterate()
 {
 	size_t len;
 	char * buffer;
@@ -104,6 +104,7 @@ void test_exempi()
 
 	free(buffer);
 	fclose(f);
+	xmp_terminate();
 }
 
 
@@ -125,7 +126,7 @@ init_unit_test_suite( int argc, char * argv[] )
 			g_testfile = argv[1];
 		}
 		
-		test->add(BOOST_TEST_CASE(&test_exempi));
+		test->add(BOOST_TEST_CASE(&test_exempi_iterate));
 
     return test;
 }

@@ -53,6 +53,7 @@ typedef struct _XmpIterator *XmpIteratorPtr;
 
 /** Init the library. Must be called before anything else */
 bool xmp_init();
+void xmp_terminate();
 
 XmpFilePtr xmp_files_new();
 XmpFilePtr xmp_files_open_new(const char *, uint32_t options);
