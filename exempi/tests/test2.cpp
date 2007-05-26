@@ -67,7 +67,7 @@ void test_xmpfiles_write()
 	xmp_files_free(f);
 
 	char buf[1024];
-	snprintf(buf, 1024, "cp %s test.jpg", g_testfile.c_str());
+	snprintf(buf, 1024, "cp %s test.jpg ; chmod u+w test.jpg", g_testfile.c_str());
 	BOOST_CHECK(system(buf) != -1);
 	
 	f = xmp_files_open_new("test.jpg", kXMPFiles_OpenForUpdate);

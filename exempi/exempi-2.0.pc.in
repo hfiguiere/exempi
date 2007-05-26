@@ -8,5 +8,5 @@ Name: exempi
 Description: Library for easy parsing of XMP metadata.
 Requires:
 Version: @VERSION@
-Libs: -L${libdir} -lexempi
+Libs: -L${libdir} -lexempi -lexpat
 Cflags: -I${includedir}/@EXEMPI_INCLUDE_BASE@ -I${includedir}
