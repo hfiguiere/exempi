@@ -64,6 +64,7 @@ const char NS_DC[] = kXMP_NS_DC;
 const char NS_EXIF_AUX[] = kXMP_NS_EXIF_Aux;
 const char NS_CRS[] = kXMP_NS_CameraRaw;
 const char NS_LIGHTROOM[] = "http://ns.adobe.com/lightroom/1.0/";
+const char NS_PHOTOSHOP[] = kXMP_NS_Photoshop;
 const char NS_IPTC4XMP[] = kXMP_NS_IPTCCore;
 const char NS_TPG[] = kXMP_NS_XMP_PagedFile;
 const char NS_DIMENSIONS_TYPE[] = kXMP_NS_XMP_Dimensions;
