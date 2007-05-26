@@ -1,5 +1,5 @@
 AC_PREREQ(2.50)
-AC_INIT(source/XMPCore/WXMPMeta.cpp)
+AC_INIT(exempi/xmp.h)
 AM_INIT_AUTOMAKE(exempi, 1.99.0)
 AM_MAINTAINER_MODE
 
@@ -75,6 +75,11 @@ source/XMPFiles/FileHandlers/Makefile
 source/XMPFiles/FormatSupport/Makefile
 samples/Makefile
 samples/source/Makefile
+samples/BlueSquares/Makefile
+build/Makefile
+public/Makefile
+public/include/Makefile
+public/include/client-glue/Makefile
 exempi/Makefile
 exempi/tests/Makefile
 exempi/exempi-2.0.pc

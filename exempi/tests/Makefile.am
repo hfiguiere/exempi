@@ -8,7 +8,7 @@ check_SCRIPTS = testcore.sh
 
 check_DATA = test1.xmp
 
-EXTRA_DIST = $(check_DATA)
+EXTRA_DIST = $(check_DATA) $(check_SCRIPTS)
 
 TESTS = testcore.sh test1 test2 test3
 

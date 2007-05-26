@@ -1,5 +1,10 @@
 
 noinst_LTLIBRARIES = libformatsupport.la
+noinst_HEADERS = EndianUtils.hpp  IPTC_Support.hpp  PSIR_Support.hpp\
+	Reconcile_Impl.hpp   RIFF_Support.hpp  XMPScanner.hpp\
+	ID3_Support.hpp  PNG_Support.hpp   QuickTime_Support.hpp\
+	ReconcileLegacy.hpp  TIFF_Support.hpp
+
 
 INCLUDES = -I$(srcdir)/.. -I$(srcdir)/../../common \
 	-I$(top_srcdir)/public/include/ -I$(top_srcdir)/build/ \
