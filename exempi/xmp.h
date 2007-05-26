@@ -58,7 +58,11 @@ XmpFilePtr xmp_files_new();
 XmpFilePtr xmp_files_open_new(const char *, uint32_t options);
 
 bool xmp_files_open(XmpFilePtr xf, const char *, uint32_t options);
-void xmp_files_close(XmpFilePtr xf);
+/** Close an XMP file. Will flush the changes
+ * @param xf the file object
+ * @param optiosn the options to close.
+ */
+void xmp_files_close(XmpFilePtr xf, uint32_t options);
 
 XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf);
 bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp);

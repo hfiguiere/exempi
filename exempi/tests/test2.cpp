@@ -83,7 +83,7 @@ void test_xmpfiles_write()
 	xmp_files_put_xmp(f, xmp);
 
 	xmp_free(xmp);
-	xmp_files_close(f);
+	xmp_files_close(f, kXMPFiles_UpdateSafely);
 
 	f = xmp_files_open_new("test.jpg", kXMPFiles_OpenForRead);
 
@@ -101,7 +101,7 @@ void test_xmpfiles_write()
 	xmp_string_free(the_prop);
 
 	xmp_free(xmp);
-	xmp_files_close(f);
+	xmp_files_close(f, 0);
 
 //	unlink("test.jpg");
 }

@@ -100,14 +100,20 @@ XmpFilePtr xmp_files_open_new(const char *path, uint32_t options)
 bool xmp_files_open(XmpFilePtr xf, const char *path, uint32_t options)
 {
 	SXMPFiles *txf = (SXMPFiles*)xf;
-	return txf->OpenFile(path, kXMP_UnknownFile, options);
+	try {
+		return txf->OpenFile(path, kXMP_UnknownFile, options);
+	}
+	catch(...)
+	{
+	}
+	return false;
 }
 
 
-void xmp_files_close(XmpFilePtr xf)
+void xmp_files_close(XmpFilePtr xf, uint32_t options)
 {
 	SXMPFiles *txf = (SXMPFiles*)xf;
-	txf->CloseFile();
+	txf->CloseFile(options);
 }
 
 
