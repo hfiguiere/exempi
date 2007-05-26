@@ -1,5 +1,5 @@
-openxmp is a port of Adobe XMP SDK to work on UNIX
+exempi is a port of Adobe XMP SDK to work on UNIX
 and to be build with GNU automake.
+It includes XMPCore and XMPFiles.
 
-
-It maintained by Hubert Figuiere <hub@figuiere.net>
+It is maintained by Hubert Figuiere <hub@figuiere.net>
