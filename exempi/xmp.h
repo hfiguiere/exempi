@@ -39,6 +39,7 @@
 #define __EXEMPI_XMP_H_
 
 #include <stdlib.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,18 +49,23 @@ extern "C" {
 typedef struct _Xmp *XmpPtr;
 typedef struct _XmpFile *XmpFilePtr;
 typedef struct _XmpString *XmpStringPtr;
+typedef struct _XmpIterator *XmpIteratorPtr;
 
 /** Init the library. Must be called before anything else */
 bool xmp_init();
 
 XmpFilePtr xmp_files_new();
-XmpFilePtr xmp_files_open_new(const char *);
+XmpFilePtr xmp_files_open_new(const char *, uint32_t options);
 
-bool xmp_files_open(XmpFilePtr xf, const char *);
+bool xmp_files_open(XmpFilePtr xf, const char *, uint32_t options);
 void xmp_files_close(XmpFilePtr xf);
 
 XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf);
 bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp);
+
+bool xmp_files_can_put_xmp(XmpFilePtr xf, XmpPtr xmp);
+void xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp);
+
 void xmp_files_free(XmpFilePtr xf);
 
 
@@ -125,6 +131,32 @@ void xmp_string_free(XmpStringPtr s);
  */
 const char * xmp_string_cstr(XmpStringPtr s);
 
+
+/**
+ */
+XmpIteratorPtr xmp_iterator_new(XmpPtr xmp, const char * schema,
+																const char * propName, uint32_t options);
+
+/**
+ */
+void xmp_iterator_free(XmpIteratorPtr iter);
+
+/** Iterate to the next value
+ * @param iter the iterator
+ * @param schema the schema name. Pass NULL if not wanted
+ * @param propName the property path. Pass NULL if not wanted
+ * @param propValue the value of the property. Pass NULL if not wanted.
+ * @param options the options for the property. Pass NULL if not wanted.
+ * @return true if still something, false if none
+ */
+bool xmp_iterator_next(XmpIteratorPtr iter, XmpStringPtr schema,
+											 XmpStringPtr propName, XmpStringPtr propValue,
+											 uint32_t *options);
+
+
+/**
+ */
+void xmp_iterator_skip(XmpIteratorPtr iter, uint32_t options);
 
 #if 0
 //////////////////////////////////////////////////////

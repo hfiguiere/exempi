@@ -43,6 +43,18 @@
 extern "C" {
 #endif
 
+/* this is a hackish way to include the XMP defines */
+#if defined(UNIX_ENV)
+#define _UNIX_ENV_DEFINED
+#else
+#define UNIX_ENV 1
+#endif
+#include "XMP_Const.h"
+#if !defined(_UNIX_ENV_DEFINED)
+#undef UNIX_ENV
+#endif
+
+
 extern const char NS_XMP_META[];
 extern const char NS_RDF[];
 extern const char NS_EXIF[];

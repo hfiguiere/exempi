@@ -88,18 +88,18 @@ XmpFilePtr xmp_files_new()
 	return (XmpFilePtr)txf;
 }
 
-XmpFilePtr xmp_files_open_new(const char *path)
+XmpFilePtr xmp_files_open_new(const char *path, uint32_t options)
 {
-	SXMPFiles *txf = new SXMPFiles(path);
+	SXMPFiles *txf = new SXMPFiles(path, kXMP_UnknownFile, options);
 
 	return (XmpFilePtr)txf;
 }
 
 
-bool xmp_files_open(XmpFilePtr xf, const char *path)
+bool xmp_files_open(XmpFilePtr xf, const char *path, uint32_t options)
 {
 	SXMPFiles *txf = (SXMPFiles*)xf;
-	return txf->OpenFile(path);
+	return txf->OpenFile(path, kXMP_UnknownFile, options);
 }
 
 
@@ -129,6 +129,22 @@ bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp)
 	SXMPFiles *txf = (SXMPFiles*)xf;
 
 	return txf->GetXMP((SXMPMeta*)xmp);
+}
+
+
+bool xmp_files_can_put_xmp(XmpFilePtr xf, XmpPtr xmp)
+{
+	SXMPFiles *txf = (SXMPFiles*)xf;
+
+	return txf->CanPutXMP(*(SXMPMeta*)xmp);
+}
+
+
+void xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp)
+{
+	SXMPFiles *txf = (SXMPFiles*)xf;
+	
+	txf->PutXMP(*(SXMPMeta*)xmp);
 }
 
 
@@ -218,6 +234,39 @@ const char * xmp_string_cstr(XmpStringPtr s)
 {
 	return reinterpret_cast<std::string*>(s)->c_str();
 }
+
+
+
+XmpIteratorPtr xmp_iterator_new(XmpPtr xmp, const char * schema,
+																const char * propName, uint32_t options)
+{
+	return (XmpIteratorPtr)new SXMPIterator(*(SXMPMeta*)xmp, schema, propName, options);
+}
+
+
+void xmp_iterator_free(XmpIteratorPtr iter)
+{
+	SXMPIterator *titer = (SXMPIterator*)iter;
+	delete titer;
+}
+
+bool xmp_iterator_next(XmpIteratorPtr iter, XmpStringPtr schema,
+											 XmpStringPtr propName, XmpStringPtr propValue,
+											 uint32_t *options)
+{
+	SXMPIterator *titer = (SXMPIterator*)iter;
+	return titer->Next(reinterpret_cast<std::string*>(schema),
+										 reinterpret_cast<std::string*>(propName),
+										 reinterpret_cast<std::string*>(propValue),
+										 options);
+}
+
+void xmp_iterator_skip(XmpIteratorPtr iter, uint32_t options)
+{
+	SXMPIterator *titer = (SXMPIterator*)iter;
+	titer->Skip(options);
+}
+
 
 #ifdef __cplusplus
 }
