@@ -1,5 +1,5 @@
 /*
- * openxmp - xmp.h
+ * exempi - xmp.h
  *
  * Copyright (C) 2007 Hubert Figuiere
  * All rights reserved.
@@ -49,7 +49,7 @@ typedef struct _Xmp *XmpPtr;
 typedef struct _XmpFile *XmpFilePtr;
 typedef struct _XmpString *XmpStringPtr;
 
-
+/** Init the library. Must be called before anything else */
 bool xmp_init();
 
 XmpFilePtr xmp_files_new();
@@ -77,6 +77,12 @@ XmpPtr xmp_new(const char *buffer, size_t len);
  */
 void xmp_free(XmpPtr xmp);
 
+/** Parse the XML passed through the buffer and load
+ * it.
+ * @param xmp the XMP packet.
+ * @param buffer the buffer.
+ * @param len the length of the buffer.
+ */
 bool xmp_parse(XmpPtr xmp, const char *buffer, size_t len);
 
 

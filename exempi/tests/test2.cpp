@@ -1,5 +1,5 @@
 /*
- * exempi - test1.cpp
+ * exempi - test2.cpp
  *
  * Copyright (C) 2007 Hubert Figuiere
  * All rights reserved.
@@ -50,48 +50,57 @@ using boost::unit_test::test_suite;
 std::string g_testfile;
 
 
-void test_exempi()
+void test_xmpfiles_write()
 {
-	size_t len;
-	char * buffer;
-	
-	FILE * f = fopen(g_testfile.c_str(), "rb");
+	BOOST_CHECK(xmp_init());
+
+	XmpFilePtr f = xmp_files_open_new(g_testfile.c_str());
 
 	BOOST_CHECK(f != NULL);
 	if (f == NULL) {
 		exit(128);
 	}
- 	fseek(f, 0, SEEK_END);
-	len = ftell(f);
- 	fseek(f, 0, SEEK_SET);
-
-	buffer = (char*)malloc(len + 1);
-	size_t rlen = fread(buffer, 1, len, f);
-
-	BOOST_CHECK(rlen == len);
-	BOOST_CHECK(len != 0);
-	BOOST_CHECK(xmp_init());
 
 	XmpPtr xmp = xmp_new_empty();
 
-	BOOST_CHECK(xmp_parse(xmp, buffer, len));
+	
+	BOOST_CHECK(xmp_files_get_xmp(f, xmp));
+
+	BOOST_CHECK(xmp != NULL);
+
+	xmp_files_free(f);
+
+
+}
+
+
+void test_xmpfiles()
+{
+	BOOST_CHECK(xmp_init());
+
+	XmpFilePtr f = xmp_files_open_new(g_testfile.c_str());
+
+	BOOST_CHECK(f != NULL);
+	if (f == NULL) {
+		exit(128);
+	}
+
+	XmpPtr xmp = xmp_new_empty();
+
+	
+	BOOST_CHECK(xmp_files_get_xmp(f, xmp));
 
 	BOOST_CHECK(xmp != NULL);
 
 	XmpStringPtr the_prop = xmp_string_new();
 
-	BOOST_CHECK(xmp_get_property(xmp, NS_TIFF, "Make", the_prop));
-	BOOST_CHECK_EQUAL(strcmp("Canon", xmp_string_cstr(the_prop)),	0); 
-
-	xmp_set_property(xmp, NS_TIFF, "Make", "Nikon");
-	BOOST_CHECK(xmp_get_property(xmp, NS_TIFF, "Make", the_prop));
-	BOOST_CHECK_EQUAL(strcmp("Nikon", xmp_string_cstr(the_prop)),	0); 
+	BOOST_CHECK(xmp_get_property(xmp, NS_PHOTOSHOP, "ICCProfile", the_prop));
+	BOOST_CHECK_EQUAL(strcmp("sRGB IEC61966-2.1", xmp_string_cstr(the_prop)),	0); 
 
 	xmp_string_free(the_prop);
 	xmp_free(xmp);
 
-	free(buffer);
-	fclose(f);
+	xmp_files_free(f);
 }
 
 
@@ -99,7 +108,7 @@ void test_exempi()
 test_suite*
 init_unit_test_suite( int argc, char * argv[] ) 
 {
-    test_suite* test = BOOST_TEST_SUITE("test exempi");
+    test_suite* test = BOOST_TEST_SUITE("test xmpfiles");
 
 		if (argc == 1) {
 			// no argument, lets run like we are in "check"
@@ -107,13 +116,14 @@ init_unit_test_suite( int argc, char * argv[] )
 			
 			BOOST_ASSERT(srcdir != NULL);
 			g_testfile = std::string(srcdir);
-			g_testfile += "/test1.xmp";
+			g_testfile += "/../../samples/BlueSquares/BlueSquare.jpg";
 		}
 		else {
 			g_testfile = argv[1];
 		}
 		
-		test->add(BOOST_TEST_CASE(&test_exempi));
+		test->add(BOOST_TEST_CASE(&test_xmpfiles));
+		test->add(BOOST_TEST_CASE(&test_xmpfiles_write));
 
     return test;
 }
