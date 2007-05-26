@@ -60,6 +60,7 @@ extern const char NS_RDF[];
 extern const char NS_EXIF[];
 extern const char NS_TIFF[];
 extern const char NS_XAP[];
+extern const char NS_XAP_RIGHTS[];
 extern const char NS_DC[];
 extern const char NS_EXIF_AUX[];
 extern const char NS_CRS[];

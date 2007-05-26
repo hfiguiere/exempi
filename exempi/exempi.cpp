@@ -60,6 +60,7 @@ const char NS_RDF[] = kXMP_NS_RDF;
 const char NS_EXIF[] = kXMP_NS_EXIF;
 const char NS_TIFF[] = kXMP_NS_TIFF;
 const char NS_XAP[] = kXMP_NS_XMP;
+const char NS_XAP_RIGHTS[] = kXMP_NS_XMP_Rights;
 const char NS_DC[] = kXMP_NS_DC;
 const char NS_EXIF_AUX[] = kXMP_NS_EXIF_Aux;
 const char NS_CRS[] = kXMP_NS_CameraRaw;
