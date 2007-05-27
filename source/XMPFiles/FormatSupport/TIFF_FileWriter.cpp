@@ -555,6 +555,7 @@ void TIFF_FileWriter::ParseMemoryStream ( const void* data, XMP_Uns32 length, bo
 	} else {
 		if ( length > 100*1024*1024 ) XMP_Throw ( "Outrageous length for memory-based TIFF", kXMPErr_BadTIFF );
 		this->memStream = (XMP_Uns8*) malloc(length);
+		this->ownedStream = true;
 		if ( this->memStream == 0 ) XMP_Throw ( "Out of memory", kXMPErr_NoMemory );
 		memcpy ( this->memStream, data, length );	// AUDIT: Safe, malloc'ed length bytes above.
 	}
