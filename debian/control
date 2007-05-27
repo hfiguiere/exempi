@@ -8,22 +8,22 @@ Standards-Version: 3.7.2
 
 Package: libexempi-dev
 Section: libdevel
-Depends: libexempi3 (= ${Source-Version})
+Depends: libexempi2 (= ${Source-Version})
 Architecture: any
 Description: A library to parse XMP metadata (Development files)
  Exempi is a library to parse XMP metadata as defined by the 
  specification.
 
 
-Package: libexempi3-dbg
+Package: libexempi2-dbg
 Architecture: any
-Depends: libexempi3 (= ${Source-Version})
+Depends: libexempi2 (= ${Source-Version})
 Description: A library to parse XMP metadata (Debug files)
  Exempi is a library to parse XMP metadata as defined by the 
  specification.
 
 
-Package: libexempi3
+Package: libexempi2
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}

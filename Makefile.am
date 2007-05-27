@@ -36,5 +36,5 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = third-party source samples exempi
-DIST_SUBDIRS = public build third-party source samples exempi
+SUBDIRS = third-party source samples exempi public
+DIST_SUBDIRS = build third-party source samples exempi public

@@ -39,6 +39,7 @@
 #define __EXEMPI_XMP_H_
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
