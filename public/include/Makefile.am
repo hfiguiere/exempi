@@ -38,9 +38,10 @@
 DIST_SUBDIRS = client-glue
 
 xmpdir = $(includedir)/@EXEMPI_INCLUDE_BASE@
-xmp_HEADERS = XMP_Const.h XMP_Environment.h
+xmp_HEADERS = 
 
 noinst_HEADERS = TXMPFiles.hpp  TXMPIterator.hpp \
 	TXMPMeta.hpp  TXMPUtils.hpp \
 	XMP.hpp  XMP_Version.h\
-	XMP.incl_cpp
+	XMP.incl_cpp\
+	XMP_Const.h XMP_Environment.h

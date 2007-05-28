@@ -43,6 +43,7 @@
 extern "C" {
 #endif
 
+#if 0
 /* this is a hackish way to include the XMP defines */
 #if defined(UNIX_ENV)
 #define _UNIX_ENV_DEFINED
@@ -52,6 +53,7 @@ extern "C" {
 #include "XMP_Const.h"
 #if !defined(_UNIX_ENV_DEFINED)
 #undef UNIX_ENV
+#endif
 #endif
 
 
@@ -69,6 +71,9 @@ extern const char NS_PHOTOSHOP[];
 extern const char NS_IPTC4XMP[];
 extern const char NS_TPG[];
 extern const char NS_DIMENSIONS_TYPE[];
+
+
+
 
 #ifdef __cplusplus
 }

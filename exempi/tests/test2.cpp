@@ -54,7 +54,7 @@ void test_xmpfiles_write()
 {
 	BOOST_CHECK(xmp_init());
 
-	XmpFilePtr f = xmp_files_open_new(g_testfile.c_str(), kXMPFiles_OpenForRead);
+	XmpFilePtr f = xmp_files_open_new(g_testfile.c_str(), XMP_OPEN_READ);
 
 	BOOST_CHECK(f != NULL);
 	if (f == NULL) {
@@ -70,7 +70,7 @@ void test_xmpfiles_write()
 	snprintf(buf, 1024, "cp %s test.jpg ; chmod u+w test.jpg", g_testfile.c_str());
 	BOOST_CHECK(system(buf) != -1);
 	
-	f = xmp_files_open_new("test.jpg", kXMPFiles_OpenForUpdate);
+	f = xmp_files_open_new("test.jpg", XMP_OPEN_FORUPDATE);
 
 	BOOST_CHECK(f != NULL);
 	if (f == NULL) {
@@ -83,10 +83,10 @@ void test_xmpfiles_write()
 	xmp_files_put_xmp(f, xmp);
 
 	xmp_free(xmp);
-	xmp_files_close(f, kXMPFiles_UpdateSafely);
+	xmp_files_close(f, XMP_CLOSE_SAFEUPDATE);
 	xmp_files_free(f);
 
-	f = xmp_files_open_new("test.jpg", kXMPFiles_OpenForRead);
+	f = xmp_files_open_new("test.jpg", XMP_OPEN_READ);
 
 	BOOST_CHECK(f != NULL);
 	if (f == NULL) {
@@ -102,7 +102,7 @@ void test_xmpfiles_write()
 	xmp_string_free(the_prop);
 
 	xmp_free(xmp);
-	xmp_files_close(f, 0);
+	xmp_files_close(f, XMP_CLOSE_NOOPTION);
 	xmp_files_free(f);
 
 //	unlink("test.jpg");
@@ -114,7 +114,7 @@ void test_xmpfiles()
 {
 	BOOST_CHECK(xmp_init());
 
-	XmpFilePtr f = xmp_files_open_new(g_testfile.c_str(), kXMPFiles_OpenForRead);
+	XmpFilePtr f = xmp_files_open_new(g_testfile.c_str(), XMP_OPEN_READ);
 
 	BOOST_CHECK(f != NULL);
 	if (f == NULL) {

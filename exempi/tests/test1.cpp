@@ -42,8 +42,8 @@
 #include <boost/static_assert.hpp>
 #include <boost/test/auto_unit_test.hpp>
 
-#include "xmp.h"
 #include "xmpconsts.h"
+#include "xmp.h"
 
 using boost::unit_test::test_suite;
 

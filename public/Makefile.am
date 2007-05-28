@@ -35,4 +35,4 @@
 #
 
 
-SUBDIRS = include
+DIST_SUBDIRS = include

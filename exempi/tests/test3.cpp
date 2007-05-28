@@ -80,7 +80,7 @@ void test_exempi_iterate()
 	BOOST_CHECK(xmp != NULL);
 
 
-	XmpIteratorPtr iter = xmp_iterator_new(xmp, NULL, NULL, kXMP_IterOmitQualifiers);
+	XmpIteratorPtr iter = xmp_iterator_new(xmp, NULL, NULL, XMP_ITER_JUSTLEAFNODES);
 
 	XmpStringPtr the_schema = xmp_string_new();
 	XmpStringPtr the_path = xmp_string_new();

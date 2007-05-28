@@ -37,8 +37,8 @@
 /** @brief this file implement the glue for XMP API 
  */
 
-#include "xmp.h"
 #include "xmpconsts.h"
+#include "xmp.h"
 
 #include <string>
 #include <iostream>
@@ -95,19 +95,19 @@ XmpFilePtr xmp_files_new()
 	return (XmpFilePtr)txf;
 }
 
-XmpFilePtr xmp_files_open_new(const char *path, uint32_t options)
+XmpFilePtr xmp_files_open_new(const char *path, XmpOpenFileOptions options)
 {
-	SXMPFiles *txf = new SXMPFiles(path, kXMP_UnknownFile, options);
+	SXMPFiles *txf = new SXMPFiles(path, XMP_FT_UNKNOWN, options);
 
 	return (XmpFilePtr)txf;
 }
 
 
-bool xmp_files_open(XmpFilePtr xf, const char *path, uint32_t options)
+bool xmp_files_open(XmpFilePtr xf, const char *path, XmpOpenFileOptions options)
 {
 	SXMPFiles *txf = (SXMPFiles*)xf;
 	try {
-		return txf->OpenFile(path, kXMP_UnknownFile, options);
+		return txf->OpenFile(path, XMP_FT_UNKNOWN, options);
 	}
 	catch(...)
 	{
@@ -116,7 +116,7 @@ bool xmp_files_open(XmpFilePtr xf, const char *path, uint32_t options)
 }
 
 
-void xmp_files_close(XmpFilePtr xf, uint32_t options)
+void xmp_files_close(XmpFilePtr xf, XmpCloseFileOptions options)
 {
 	SXMPFiles *txf = (SXMPFiles*)xf;
 	txf->CloseFile(options);
@@ -251,7 +251,7 @@ const char * xmp_string_cstr(XmpStringPtr s)
 
 
 XmpIteratorPtr xmp_iterator_new(XmpPtr xmp, const char * schema,
-																const char * propName, uint32_t options)
+																const char * propName, XmpIterOptions options)
 {
 	return (XmpIteratorPtr)new SXMPIterator(*(SXMPMeta*)xmp, schema, propName, options);
 }
@@ -274,7 +274,7 @@ bool xmp_iterator_next(XmpIteratorPtr iter, XmpStringPtr schema,
 										 options);
 }
 
-void xmp_iterator_skip(XmpIteratorPtr iter, uint32_t options)
+void xmp_iterator_skip(XmpIteratorPtr iter, XmpIterSkipOptions options)
 {
 	SXMPIterator *titer = (SXMPIterator*)iter;
 	titer->Skip(options);
