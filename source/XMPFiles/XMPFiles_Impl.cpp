@@ -663,7 +663,7 @@ const char * kKnownScannedFiles[] =	// Files known to contain XMP but have no sm
 			XMP_Throw ( "LFA_Create: file already exists", kXMPErr_ExternalFailure );
 		}
 
-		descr = open ( fileName, (O_CREAT | O_RDWR), (S_IRUSR | S_IWUSR) );	// *** Include O_EXCL? O_EXLOCK?
+		descr = open ( fileName, (O_CREAT | O_RDWR), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) );	// *** Include O_EXCL? O_EXLOCK?
 		if ( descr == -1 ) XMP_Throw ( "LFA_Create: open failure", kXMPErr_ExternalFailure );
 		
 		return (LFA_FileRef)descr;
