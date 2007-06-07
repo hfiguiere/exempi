@@ -1,5 +1,7 @@
 2007-06-06  Hubert Figuiere  <hub@figuiere.net>
 
+	* exempi/exempi.cpp: Added more exception catching.
+
 	* exempi/xmpconsts.h: Added NS_CC namespace
 
 	* exempi/exempi.cpp (xmp_register_namespace): wrapped

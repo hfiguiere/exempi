@@ -166,7 +166,13 @@ void xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp)
 {
 	SXMPFiles *txf = (SXMPFiles*)xf;
 	
-	txf->PutXMP(*(SXMPMeta*)xmp);
+	try {
+		txf->PutXMP(*(SXMPMeta*)xmp);
+	}
+	catch(const XMP_Error & e)
+	{
+		std::cerr << e.GetErrMsg() << std::endl;
+	}
 }
 
 
@@ -176,7 +182,9 @@ void xmp_files_free(XmpFilePtr xf)
 	try {
 		delete txf;
 	}
-	catch(...) {
+	catch(const XMP_Error & e)
+	{
+		std::cerr << e.GetErrMsg() << std::endl;
 	}
 }
 
@@ -190,7 +198,15 @@ XmpPtr xmp_new_empty()
 
 XmpPtr xmp_new(const char *buffer, size_t len)
 {
-	SXMPMeta *txmp = new SXMPMeta(buffer, len);
+	SXMPMeta *txmp;
+	try {
+		txmp = new SXMPMeta(buffer, len);
+	}
+	catch(const XMP_Error & e)
+	{
+		std::cerr << e.GetErrMsg() << std::endl;
+		return NULL;
+	}
 	return (XmpPtr)txmp;
 }
 
@@ -200,8 +216,9 @@ bool xmp_parse(XmpPtr xmp, const char *buffer, size_t len)
 	try {
 		txmp->ParseFromBuffer(buffer, len, kXMP_RequireXMPMeta );
 	}
-	catch(...)
+	catch(const XMP_Error & e)
 	{
+		std::cerr << e.GetErrMsg() << std::endl;
 		return false;
 	}
 	return true;
@@ -237,7 +254,13 @@ void xmp_set_property(XmpPtr xmp, const char *schema,
 {
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
 	XMP_OptionBits options = 0;
-	txmp->SetProperty(schema, name, value, options);
+	try {
+		txmp->SetProperty(schema, name, value, options);
+	}
+	catch(const XMP_Error & e)
+	{
+		std::cerr << e.GetErrMsg() << std::endl;
+	}
 }
 
 
