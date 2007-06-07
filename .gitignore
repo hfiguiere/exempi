@@ -3,6 +3,8 @@ Makefile.in
 *~
 config.guess
 config.sub
+config.log
+config.status
 aclocal.m4
 configure
 depcomp
@@ -15,3 +17,5 @@ autom4te.cache
 *.la
 .libs
 .deps
+exempi/exempi-2.0.pc
+libtool
