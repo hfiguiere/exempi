@@ -1,3 +1,9 @@
+exempi (1.99.1+git20070606) unstable; urgency=low
+
+  * New upstream version
+
+ -- Hubert Figuiere <hub@figuiere.net>  Wed,  6 Jun 2007 22:15:52 -0400
+
 exempi (1.99.0+git20070526) unstable; urgency=low
 
   * Initial release
