@@ -176,6 +176,19 @@ void xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp);
 void xmp_files_free(XmpFilePtr xf);
 
 
+/** Register a new namespace to add properties to
+ *  This is done automatically when reading the metadata block
+ *  @param namespaceURI the namespace URI to register
+ *  @param suggestedPrefix the suggested prefix
+ *  @param registeredPrefix the really registered prefix. Not necessarily
+ *  %suggestedPrefix. 
+ *  @return true if success, false otherwise.
+ */
+bool xmp_register_namespace(const char *namespaceURI, 
+														const char *suggestedPrefix,
+														XmpStringPtr registeredPrefix);
+
+
 XmpPtr xmp_new_empty();
 
 /** Create a new XMP packet

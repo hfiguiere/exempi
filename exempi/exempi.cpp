@@ -69,7 +69,7 @@ const char NS_PHOTOSHOP[] = kXMP_NS_Photoshop;
 const char NS_IPTC4XMP[] = kXMP_NS_IPTCCore;
 const char NS_TPG[] = kXMP_NS_XMP_PagedFile;
 const char NS_DIMENSIONS_TYPE[] = kXMP_NS_XMP_Dimensions;
-
+const char NS_CC[] = "http://creativecommons.org/ns#";
 
 #define STRING(x) reinterpret_cast<std::string*>(x)
 
@@ -86,6 +86,15 @@ void xmp_terminate()
 {
 	SXMPFiles::Terminate();
 	SXMPMeta::Terminate();
+}
+
+bool xmp_register_namespace(const char *namespaceURI, 
+														const char *suggestedPrefix,
+														XmpStringPtr registeredPrefix)
+{
+    return SXMPMeta::RegisterNamespace(namespaceURI, 
+																			 suggestedPrefix,
+																			 STRING(registeredPrefix));
 }
 
 

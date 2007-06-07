@@ -49,6 +49,56 @@ using boost::unit_test::test_suite;
 
 std::string g_testfile;
 
+void test_write_new_property()
+{
+	size_t len;
+	char * buffer;
+	
+	FILE * f = fopen(g_testfile.c_str(), "rb");
+
+	BOOST_CHECK(f != NULL);
+	if (f == NULL) {
+		exit(128);
+	}
+ 	fseek(f, 0, SEEK_END);
+	len = ftell(f);
+ 	fseek(f, 0, SEEK_SET);
+
+	buffer = (char*)malloc(len + 1);
+	size_t rlen = fread(buffer, 1, len, f);
+
+	BOOST_CHECK(rlen == len);
+	BOOST_CHECK(len != 0);
+
+	BOOST_CHECK(xmp_init());
+
+	XmpPtr xmp = xmp_new_empty();
+
+	BOOST_CHECK(xmp_parse(xmp, buffer, len));
+
+	BOOST_CHECK(xmp != NULL);
+
+	XmpStringPtr reg_prefix = xmp_string_new();
+	BOOST_CHECK(xmp_register_namespace(NS_CC, "cc", reg_prefix));
+	BOOST_CHECK_EQUAL(strcmp("cc:", xmp_string_cstr(reg_prefix)),	0); 
+
+	xmp_string_free(reg_prefix);
+
+	xmp_set_property(xmp, NS_CC, "License", "Foo");
+
+	XmpStringPtr the_prop = xmp_string_new();
+	BOOST_CHECK(xmp_get_property(xmp, NS_CC, "License", the_prop));
+	BOOST_CHECK_EQUAL(strcmp("Foo", xmp_string_cstr(the_prop)),	0); 
+	xmp_string_free(the_prop);
+
+	xmp_free(xmp);
+
+	free(buffer);
+	fclose(f);
+
+	xmp_terminate();
+}
+
 
 void test_exempi()
 {
@@ -117,6 +167,7 @@ init_unit_test_suite( int argc, char * argv[] )
 		}
 		
 		test->add(BOOST_TEST_CASE(&test_exempi));
+		test->add(BOOST_TEST_CASE(&test_write_new_property));
 
     return test;
 }

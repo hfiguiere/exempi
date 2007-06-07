@@ -1,4 +1,12 @@
+2007-06-06  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/xmpconsts.h: Added NS_CC namespace
+
+	* exempi/exempi.cpp (xmp_register_namespace): wrapped
+	the namespace registration. Actually needed to 
+	set new API.
+
 2007-05-11  Hubert Figuiere  <hub@figuiere.net>
 
-	* Initial version of exempi 2.0
+	* Initial version of exempi 1.99.0
 
