@@ -340,7 +340,7 @@ void TIFF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		this->packetInfo.length = this->xmpPacket.size();
 		this->packetInfo.padSize = GetPacketPadSize ( this->xmpPacket.c_str(), this->xmpPacket.size() );
 	
-		this->tiffMgr.SetTag ( kTIFF_PrimaryIFD, kTIFF_XMP, kTIFF_UndefinedType, this->xmpPacket.size(), this->xmpPacket.c_str() );
+		this->tiffMgr.SetTag ( kTIFF_PrimaryIFD, kTIFF_XMP, kTIFF_ByteType, this->xmpPacket.size(), this->xmpPacket.c_str() );
 		
 		this->tiffMgr.UpdateFileStream ( destRef );
 	

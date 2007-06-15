@@ -1,5 +1,13 @@
+2007-06-14  Jason Kivlighn <jkivlighn@gmail.com>
+
+	* source/XMPFiles/FileHandlers/TIFF_Handler.cpp (UpdateFile): 
+	Fix a bug: store the tag as BYTE and not UNDEFINED
+	to comply with the spec.
+
 2007-06-06  Hubert Figuiere  <hub@figuiere.net>
 
+	* Release 1.99.1
+	
 	* exempi/exempi.cpp: Added more exception catching.
 
 	* exempi/xmpconsts.h: Added NS_CC namespace
