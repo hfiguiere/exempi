@@ -118,8 +118,8 @@ bool xmp_files_open(XmpFilePtr xf, const char *path, XmpOpenFileOptions options)
 	try {
 		return txf->OpenFile(path, XMP_FT_UNKNOWN, options);
 	}
-	catch(...)
-	{
+	catch(const XMP_Error & e) {
+		std::cerr << e.GetErrMsg() << std::endl;
 	}
 	return false;
 }
@@ -137,10 +137,16 @@ XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf)
 	SXMPMeta *xmp = new SXMPMeta();
 	SXMPFiles *txf = (SXMPFiles*)xf;
 
-	bool result = txf->GetXMP(xmp);
-	if(!result) {
-		delete xmp;
-		return NULL;
+	bool result = false;
+	try {
+		result = txf->GetXMP(xmp);
+		if(!result) {
+			delete xmp;
+			return NULL;
+		}
+	}
+	catch(const XMP_Error & e) {
+		std::cerr << e.GetErrMsg() << std::endl;
 	}
 	return (XmpPtr)xmp;
 }
@@ -148,9 +154,16 @@ XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf)
 
 bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp)
 {
-	SXMPFiles *txf = (SXMPFiles*)xf;
-
-	return txf->GetXMP((SXMPMeta*)xmp);
+	bool result = false;
+	try {
+		SXMPFiles *txf = (SXMPFiles*)xf;
+		
+		result = txf->GetXMP((SXMPMeta*)xmp);
+	} 
+	catch(const XMP_Error & e) {
+		std::cerr << e.GetErrMsg() << std::endl;
+	}
+	return result;
 }
 
 
@@ -169,8 +182,7 @@ void xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp)
 	try {
 		txf->PutXMP(*(SXMPMeta*)xmp);
 	}
-	catch(const XMP_Error & e)
-	{
+	catch(const XMP_Error & e) {
 		std::cerr << e.GetErrMsg() << std::endl;
 	}
 }

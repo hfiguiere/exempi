@@ -1,22 +1,7 @@
-2007-06-14  Jason Kivlighn <jkivlighn@gmail.com>
+2007-06-21  Hubert Figuiere  <hub@figuiere.net>
 
-	* source/XMPFiles/FileHandlers/TIFF_Handler.cpp (UpdateFile): 
-	Fix a bug: store the tag as BYTE and not UNDEFINED
-	to comply with the spec.
-
-2007-06-06  Hubert Figuiere  <hub@figuiere.net>
-
-	* Release 1.99.1
-	
-	* exempi/exempi.cpp: Added more exception catching.
-
-	* exempi/xmpconsts.h: Added NS_CC namespace
-
-	* exempi/exempi.cpp (xmp_register_namespace): wrapped
-	the namespace registration. Actually needed to 
-	set new API.
-
-2007-05-11  Hubert Figuiere  <hub@figuiere.net>
-
-	* Initial version of exempi 1.99.0
+	* exempi/exempi.cpp (xmp_files_get_xmp): More 
+	exception handling. Should be better for error
+	management and resource tracking: was causing XMP to 
+	leak because the exception was not caught.
 
