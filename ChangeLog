@@ -1,3 +1,8 @@
+2007-06-24  Hubert Figuiere  <hub@figuiere.net>
+
+	* Added xmp_set_property2(), xmp_set_array_item()
+	and xmp_get_error() to the public API.
+
 2007-06-23  Hubert Figuiere  <hub@figuiere.net>
 
 	* Added xmp_get_property_and_bits() and all the

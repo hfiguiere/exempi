@@ -254,6 +254,14 @@ typedef struct _XmpIterator *XmpIteratorPtr;
 bool xmp_init();
 void xmp_terminate();
 
+
+/** get the error code that last occurred.
+ * @todo make this thread-safe. Getting the error code
+ * from another thread than the on it occurred in is undefined.
+ */
+int xmp_get_error();
+
+
 XmpFilePtr xmp_files_new();
 XmpFilePtr xmp_files_open_new(const char *, XmpOpenFileOptions options);
 
@@ -342,6 +350,14 @@ bool xmp_get_property_and_bits(XmpPtr xmp, const char *schema,
 void xmp_set_property(XmpPtr xmp, const char *schema, 
 											const char *name, const char *value);
 
+bool xmp_set_property2(XmpPtr xmp, const char *schema, 
+											const char *name, const char *value,
+											uint32_t optionBits);
+
+
+bool xmp_set_array_item(XmpPtr xmp, const char *schema, 
+											 const char *name, int32_t index, const char *value,
+											 uint32_t optionBits);
 
 /** Instanciate a new string 
  * @return the new instance. Must be freed with 
