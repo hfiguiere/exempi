@@ -42,6 +42,7 @@
 
 #include <boost/static_assert.hpp>
 #include <boost/test/auto_unit_test.hpp>
+#include <boost/format.hpp>
 
 #include "xmp.h"
 #include "xmpconsts.h"
@@ -91,7 +92,11 @@ void test_exempi_iterate()
 	{
 		std::cout << xmp_string_cstr(the_schema) << " / "
 							<< xmp_string_cstr(the_path) << " = "
-							<< xmp_string_cstr(the_prop) << std::endl;
+							<< xmp_string_cstr(the_prop) ;
+		if(options) {
+			std::cout << boost::format(" options = 0x%1$x") % options;
+		}
+		std::cout << std::endl;
 	}
 
 

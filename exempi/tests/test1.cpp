@@ -138,6 +138,17 @@ void test_exempi()
 	BOOST_CHECK(xmp_get_property(xmp, NS_TIFF, "Make", the_prop));
 	BOOST_CHECK_EQUAL(strcmp("Nikon", xmp_string_cstr(the_prop)),	0); 
 
+	uint32_t bits;
+	BOOST_CHECK(xmp_get_property_and_bits(xmp, NS_DC, "rights[1]/?xml:lang",
+																				the_prop, &bits));
+	BOOST_CHECK_EQUAL(bits, 0x20);
+	BOOST_CHECK(XMP_IS_PROP_QUALIFIER(bits));
+
+	BOOST_CHECK(xmp_get_property_and_bits(xmp, NS_DC, "rights[1]",
+																				the_prop, &bits));
+	BOOST_CHECK_EQUAL(bits, 0x50);
+	BOOST_CHECK(XMP_HAS_PROP_QUALIFIERS(bits));
+
 	xmp_string_free(the_prop);
 	xmp_free(xmp);
 

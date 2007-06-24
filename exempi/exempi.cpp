@@ -247,17 +247,30 @@ void xmp_free(XmpPtr xmp)
 bool xmp_get_property(XmpPtr xmp, const char *schema, 
 															const char *name, XmpStringPtr property)
 {
+	return xmp_get_property_and_bits(xmp, schema, name, property, NULL);
+}
+
+
+bool xmp_get_property_and_bits(XmpPtr xmp, const char *schema, 
+															 const char *name, XmpStringPtr property,
+															 uint32_t *propsBits)
+{
+	bool ret = false;
 	try {
 		SXMPMeta *txmp = (SXMPMeta *)xmp;
-		XMP_OptionBits options = 0;
 		std::string pref;
-		return txmp->GetProperty(schema, name, STRING(property), &options);
+		XMP_OptionBits optionBits;
+		ret = txmp->GetProperty(schema, name, STRING(property), 
+																 &optionBits);
+		if(propsBits) {
+			*propsBits = optionBits;
+		}
 	}
 	catch(const XMP_Error & e)
 	{
 		std::cerr << e.GetErrMsg() << std::endl;
 	}
-	return false;
+	return ret;
 }
 
 

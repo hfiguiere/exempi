@@ -55,20 +55,28 @@ typedef enum {
 	XMP_OPEN_NOOPTION       = 0x00000000, /**< No open option */
 	XMP_OPEN_READ           = 0x00000001, /**< Open for read-only access. */
 	XMP_OPEN_FORUPDATE      = 0x00000002, /**< Open for reading and writing. */
-	XMP_OPEN_OPNLYXMP       = 0x00000004, /**< Only the XMP is wanted, allows space/time optimizations. */
-	XMP_OPEN_CACHETNAIL     = 0x00000008, /**< Cache thumbnail if possible, GetThumbnail will be called. */
-	XMP_OPEN_STRICTLY       = 0x00000010, /**< Be strict about locating XMP and reconciling with other forms. */
-	XMP_OPEN_USESMARTHANDLER= 0x00000020, /**< Require the use of a smart handler. */
-	XMP_OPEN_USEPACKETSCANNING = 0x00000040, /**< Force packet scanning, don't use a smart handler. */
-	XMP_OPEN_LIMITSCANNING  = 0x00000080, /**< Only packet scan files "known" to need scanning. */
-	XMP_OPEN_INBACKGROUND   = 0x10000000  /**< Set if calling from background thread. */
+	XMP_OPEN_OPNLYXMP       = 0x00000004, /**< Only the XMP is wanted, 
+																				 * allows space/time optimizations. */
+	XMP_OPEN_CACHETNAIL     = 0x00000008, /**< Cache thumbnail if possible, 
+																				 * GetThumbnail will be called. */
+	XMP_OPEN_STRICTLY       = 0x00000010, /**< Be strict about locating XMP 
+																				 * and reconciling with other forms. */
+	XMP_OPEN_USESMARTHANDLER= 0x00000020, /**< Require the use of a smart 
+																				 * handler. */
+	XMP_OPEN_USEPACKETSCANNING = 0x00000040, /**< Force packet scanning, 
+																						* don't use a smart handler. */
+	XMP_OPEN_LIMITSCANNING  = 0x00000080, /**< Only packet scan files "known" 
+																				 * to need scanning. */
+	XMP_OPEN_INBACKGROUND   = 0x10000000  /**< Set if calling from background 
+																				 * thread. */
 } XmpOpenFileOptions;
 
 
 /** Option bits for xmp_files_close() */
 typedef enum {
 	XMP_CLOSE_NOOPTION      = 0x0000, /**< No close option */
-	XMP_CLOSE_SAFEUPDATE    = 0x0001  /**< Write into a temporary file and swap for crash safety. */
+	XMP_CLOSE_SAFEUPDATE    = 0x0001  /**< Write into a temporary file and 
+																		 * swap for crash safety. */
 } XmpCloseFileOptions;
 
 
@@ -129,22 +137,111 @@ typedef enum {
 
 
 typedef enum {
-	XMP_ITER_CLASSMASK      = 0x00FFUL,  /* The low 8 bits are an enum of what data structure to iterate. */
-	XMP_ITER_PROPERTIES     = 0x0000UL,  /* Iterate the property tree of a TXMPMeta object. */
-	XMP_ITER_ALIASES        = 0x0001UL,  /* Iterate the global alias table. */
-	XMP_ITER_NAMESPACES     = 0x0002UL,  /* Iterate the global namespace table. */
-	XMP_ITER_JUSTCHILDREN   = 0x0100UL,  /* Just do the immediate children of the root, default is subtree. */
-	XMP_ITER_JUSTLEAFNODES  = 0x0200UL,  /* Just do the leaf nodes, default is all nodes in the subtree. */
-	XMP_ITER_JUSTLEAFNAME   = 0x0400UL,  /* Return just the leaf part of the path, default is the full path. */
-	XMP_ITER_INCLUDEALIASES = 0x0800UL,  /* Include aliases, default is just actual properties. */
-	
+	XMP_ITER_CLASSMASK      = 0x00FFUL,  /**< The low 8 bits are an enum of 
+																				* what data structure to iterate. */
+	XMP_ITER_PROPERTIES     = 0x0000UL,  /**< Iterate the property tree of 
+																				* a TXMPMeta object. */
+	XMP_ITER_ALIASES        = 0x0001UL,  /**< Iterate the global alias table. */
+	XMP_ITER_NAMESPACES     = 0x0002UL,  /**< Iterate the global namespace table. */
+	XMP_ITER_JUSTCHILDREN   = 0x0100UL,  /**< Just do the immediate children 
+																				* of the root, default is subtree. */
+	XMP_ITER_JUSTLEAFNODES  = 0x0200UL,  /**< Just do the leaf nodes, default 
+																				* is all nodes in the subtree. */
+	XMP_ITER_JUSTLEAFNAME   = 0x0400UL,  /**< Return just the leaf part of the 
+																				* path, default is the full path. */
+	XMP_ITER_INCLUDEALIASES = 0x0800UL,  /**< Include aliases, default is just 
+																				* actual properties. */
 	XMP_ITER_OMITQUALIFIERS = 0x1000UL   /* Omit all qualifiers. */
 } XmpIterOptions;
 
 typedef enum {
-	XMP_ITER_SKIPSUBTREE   = 0x0001UL,  /* Skip the subtree below the current node. */
-	XMP_ITER_SKIPSIBLINGS  = 0x0002UL   /* Skip the subtree below and remaining siblings of the current node. */
+	XMP_ITER_SKIPSUBTREE   = 0x0001UL,  /**< Skip the subtree below the 
+																			 * current node. */
+	XMP_ITER_SKIPSIBLINGS  = 0x0002UL   /**< Skip the subtree below and remaining
+																			 * siblings of the current node. */
 } XmpIterSkipOptions;
+
+
+
+typedef enum {
+  /** Options relating to the XML string form of the property value. */
+	XMP_PROP_VALUE_IS_URI     = 0x00000002UL, /**< The value is a URI, use 
+																						 * rdf:resource attribute. 
+																						 * DISCOURAGED */
+	/** Options relating to qualifiers attached to a property. */
+	XMP_PROP_HAS_QUALIFIERS   = 0x00000010UL, /**< The property has qualifiers,
+																						 * includes rdf:type and 
+																						 * xml:lang. */
+	XMP_PROP_IS_QUALIFIER     = 0x00000020UL, /**< This is a qualifier, 
+																						 * includes rdf:type and 
+																						 * xml:lang. */
+	XMP_PROP_HAS_LANG         = 0x00000040UL, /**< Implies XMP_PropHasQualifiers, 
+																						 * property has xml:lang. */
+	XMP_PROP_HAS_TYPE         = 0x00000080UL, /**< Implies XMP_PropHasQualifiers, 
+																						 * property has rdf:type. */
+	
+	/* Options relating to the data structure form. */
+	XMP_PROP_VALUE_IS_STRUCT = 0x00000100UL,  /**< The value is a structure 
+																						 * with nested fields. */
+	XMP_PROP_VALUE_IS_ARRAY  = 0x00000200UL,  /**< The value is an array 
+																						 * (RDF alt/bag/seq). */
+	XMP_PROP_ARRAY_IS_UNORDERED = XMP_PROP_VALUE_IS_ARRAY,  /**< The item order 
+																													 * does not matter.*/
+	XMP_PROP_ARRAY_IS_ORDERED = 0x00000400UL, /**< Implies XMP_PropValueIsArray,
+																						 * item order matters. */
+	XMP_PROP_ARRAY_IS_ALT    = 0x00000800UL,  /**< Implies XMP_PropArrayIsOrdered,
+																						 * items are alternates. */
+	
+	/** Additional struct and array options. */
+	XMP_PROP_ARRAY_IS_ALTTEXT = 0x00001000UL,  /**< Implies kXMP_PropArrayIsAlternate,
+																							* items are localized text. */
+	/* kXMP_InsertBeforeItem  = 0x00004000UL,  ! Used by SetXyz functions. */
+	/* kXMP_InsertAfterItem   = 0x00008000UL,  ! Used by SetXyz functions. */
+	
+	/* Other miscellaneous options. */
+	XMP_PROP_IS_ALIAS         = 0x00010000UL,  /**< This property is an alias name for another property. */
+	XMP_PROP_HAS_ALIASES      = 0x00020000UL,  /**< This property is the base value for a set of aliases. */
+	XMP_PROP_IS_INTERNAL      = 0x00040000UL,  /**< This property is an "internal" property, owned by applications. */
+	XMP_PROP_IS_STABLE        = 0x00100000UL,  /**< This property is not derived from the document content. */
+	XMP_PROP_IS_DERIVED       = 0x00200000UL,  /**< This property is derived from the document content. */
+	/* kXMPUtil_AllowCommas   = 0x10000000UL,  ! Used by TXMPUtils::CatenateArrayItems and ::SeparateArrayItems. */
+	/* kXMP_DeleteExisting    = 0x20000000UL,  ! Used by TXMPMeta::SetXyz functions to delete any pre-existing property. */
+	/* kXMP_SchemaNode        = 0x80000000UL,  ! Returned by iterators - #define to avoid warnings */
+	
+	/* Masks that are multiple flags. */
+	XMP_PROP_ARRAY_FORM_MASK  = XMP_PROP_VALUE_IS_ARRAY	| XMP_PROP_ARRAY_IS_ORDERED | XMP_PROP_ARRAY_IS_ALT | XMP_PROP_ARRAY_IS_ALTTEXT,
+	XMP_PROP_COMPOSITE_MASK   = XMP_PROP_VALUE_IS_STRUCT | XMP_PROP_ARRAY_FORM_MASK,  /* Is it simple or composite (array or struct)? */
+	XMP_IMPL_RESERVED_MASK    = 0x70000000L   /**< Reserved for transient use by the implementation. */
+} XmpPropsBits;
+
+
+/* convenience macros */
+
+/** set option bits */
+#define XMP_SET_OPTION(var,opt)         var |= (opt)
+/** clear option bits */
+#define XMP_CLEAR_OPTION(var,opt)       var &= ~(opt)
+/** test if option is set */
+#define XMP_TEST_OPTION_SET(var,opt)    (((var) & (opt)) != 0)
+/** test if option is clear */
+#define XMP_TEST_OPTION_CLEAR(var,opt)  (((var) & (opt)) == 0)
+
+
+#define XMP_IS_PROP_SIMPLE(opt)       (((opt) & XMP_PROP_COMPOSITE_MASK) == 0)
+#define XMP_IS_PROP_STRUCT(opt)       (((opt) & XMP_PROP_VALUE_IS_STRUCT) != 0)
+#define XMP_IS_PROP_ARRAY(opt)        (((opt) & XMP_PROP_VALUE_IS_ARRAY) != 0)
+#define XMP_IS_ARRAY_UNORDERED(opt)   (((opt) & XMP_PROP_ARRAY_IS_ORDERED) == 0)
+#define XMP_IS_ARRAY_ORDERED(opt)     (((opt) & XMP_PROP_ARRAY_IS_ORDERED) != 0)
+#define XMP_IS_ARRAY_ALT(opt)         (((opt) & XMP_PROP_ARRAY_IS_ALT) != 0)
+#define XMP_IS_ARRAY_ALTTEXT(opt)     (((opt) & XMP_PROP_ARRAY_IS_ALTTEXT) != 0)
+
+#define XMP_HAS_PROP_QUALIFIERS(opt)  (((opt) & XMP_PROP_HAS_QUALIFIERS) != 0)
+#define XMP_IS_PROP_QUALIFIER(opt)    (((opt) & XMP_PROP_IS_QUALIFIER) != 0)
+#define XMP_HAS_PROP_LANG(opt)        (((opt) & XMP_PROP_HAS_LANG) != 0)
+
+#define XMP_IS_NODE_SCHEMA(opt)       (((opt) & XMP_SCHEMA_NODE) != 0)
+#define XMP_IS_PROP_ALIAS(opt)        (((opt) & XMP_PROP_IS_ALIAS) != 0)
+
 
 
 /** pointer to XMP packet. Opaque. */
@@ -161,6 +258,7 @@ XmpFilePtr xmp_files_new();
 XmpFilePtr xmp_files_open_new(const char *, XmpOpenFileOptions options);
 
 bool xmp_files_open(XmpFilePtr xf, const char *, XmpOpenFileOptions options);
+
 /** Close an XMP file. Will flush the changes
  * @param xf the file object
  * @param optiosn the options to close.
@@ -218,10 +316,22 @@ bool xmp_parse(XmpPtr xmp, const char *buffer, size_t len);
  * @param name
  * @param property the allocated XmpStrinPtr
  * @return true if found
+ * @todo deprecate in favor of %xmp_get_property_and_bits()
  */
 bool xmp_get_property(XmpPtr xmp, const char *schema, 
 															const char *name, XmpStringPtr property);
 
+/** Get an XMP property and it option bits from the XMP packet
+ * @param xmp the XMP packet
+ * @param schema
+ * @param name
+ * @param property the allocated XmpStringPtr
+ * @param propsBits pointer to the option bits. Pass NULL if not needed
+ * @return true if found
+ */
+bool xmp_get_property_and_bits(XmpPtr xmp, const char *schema, 
+															 const char *name, XmpStringPtr property,
+															 uint32_t *propsBits);
 
 /** Set an XMP property from the XMP packet
  * @param xmp the XMP packet
