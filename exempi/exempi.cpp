@@ -242,6 +242,16 @@ XmpPtr xmp_new(const char *buffer, size_t len)
 	return (XmpPtr)txmp;
 }
 
+
+XmpPtr xmp_copy(XmpPtr xmp)
+{
+	if(xmp == 0) {
+		return 0;
+	}
+	SXMPMeta *txmp = new SXMPMeta(*(SXMPMeta*)xmp);
+	return (XmpPtr)txmp;
+}
+
 bool xmp_parse(XmpPtr xmp, const char *buffer, size_t len)
 {
 	SXMPMeta *txmp = (SXMPMeta *)xmp;

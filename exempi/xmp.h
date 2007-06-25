@@ -300,9 +300,15 @@ XmpPtr xmp_new_empty();
 /** Create a new XMP packet
  * @param buffer the buffer to load data from. UTF-8 encoded.
  * @param len the buffer length in byte
- * @return the packet point. Must be free with xmp_free()
+ * @return the packet pointer. Must be free with xmp_free()
  */
 XmpPtr xmp_new(const char *buffer, size_t len);
+
+/** Create a new XMP packet from the one passed.
+ * @param xmp the instance to copy. Can be NULL.
+ * @return the packet pointer. NULL is failer (or NULL is passed).
+ */
+XmpPtr xmp_copy(XmpPtr xmp);
 
 /** Free the xmp packet
  * @param xmp the xmp packet to free

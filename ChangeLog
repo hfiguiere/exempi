@@ -1,3 +1,7 @@
+2007-06-25  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/exempi.cpp (xmp_copy): Added API.
+
 2007-06-24  Hubert Figuiere  <hub@figuiere.net>
 
 	* Added xmp_set_property2(), xmp_set_array_item()
