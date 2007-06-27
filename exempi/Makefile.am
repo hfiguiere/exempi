@@ -37,7 +37,7 @@
 SUBDIRS = tests
 
 exempidir = $(includedir)/@EXEMPI_INCLUDE_BASE@/exempi
-exempi_HEADERS = xmp.h xmpconsts.h
+exempi_HEADERS = xmp.h xmpconsts.h xmperrors.h
 
 INCLUDES = -I$(top_srcdir)/public/include
 
