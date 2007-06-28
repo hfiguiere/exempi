@@ -1,0 +1,4 @@
+2007-06-28  Hubert Figuiere  <hub@figuiere.net>
+
+	* New API wrapped: xmp_get_array_item()
+

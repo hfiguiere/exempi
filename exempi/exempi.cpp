@@ -50,6 +50,18 @@
 #include "XMP.hpp"
 #include "XMP.incl_cpp"
 
+int static g_error = 0;
+
+static void set_error(int err)
+{
+	g_error = err;
+}
+
+static void set_error(const XMP_Error & e)
+{
+	set_error(-e.GetID());
+	std::cerr << e.GetErrMsg() << std::endl;
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,12 +86,7 @@ const char NS_CC[] = "http://creativecommons.org/ns#";
 
 #define STRING(x) reinterpret_cast<std::string*>(x)
 
-int static g_error = 0;
 
-static void set_error(int err)
-{
-	g_error = err;
-}
 
 int xmp_get_error()
 {
@@ -133,8 +140,7 @@ bool xmp_files_open(XmpFilePtr xf, const char *path, XmpOpenFileOptions options)
 		return txf->OpenFile(path, XMP_FT_UNKNOWN, options);
 	}
 	catch(const XMP_Error & e) {
-		set_error(-e.GetID());
-		std::cerr << e.GetErrMsg() << std::endl;
+		set_error(e);
 	}
 	return false;
 }
@@ -161,8 +167,7 @@ XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf)
 		}
 	}
 	catch(const XMP_Error & e) {
-		set_error(-e.GetID());
-		std::cerr << e.GetErrMsg() << std::endl;
+		set_error(e);
 	}
 	return (XmpPtr)xmp;
 }
@@ -177,8 +182,7 @@ bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp)
 		result = txf->GetXMP((SXMPMeta*)xmp);
 	} 
 	catch(const XMP_Error & e) {
-		set_error(-e.GetID());
-		std::cerr << e.GetErrMsg() << std::endl;
+		set_error(e);
 	}
 	return result;
 }
@@ -200,8 +204,7 @@ void xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp)
 		txf->PutXMP(*(SXMPMeta*)xmp);
 	}
 	catch(const XMP_Error & e) {
-		set_error(-e.GetID());
-		std::cerr << e.GetErrMsg() << std::endl;
+		set_error(e);
 	}
 }
 
@@ -212,10 +215,8 @@ void xmp_files_free(XmpFilePtr xf)
 	try {
 		delete txf;
 	}
-	catch(const XMP_Error & e)
-	{
-		set_error(-e.GetID());
-		std::cerr << e.GetErrMsg() << std::endl;
+	catch(const XMP_Error & e) {
+		set_error(e);
 	}
 }
 
@@ -233,11 +234,9 @@ XmpPtr xmp_new(const char *buffer, size_t len)
 	try {
 		txmp = new SXMPMeta(buffer, len);
 	}
-	catch(const XMP_Error & e)
-	{
-		set_error(-e.GetID());
-		std::cerr << e.GetErrMsg() << std::endl;
-		return NULL;
+	catch(const XMP_Error & e) {
+		set_error(e);
+		txmp = 0;
 	}
 	return (XmpPtr)txmp;
 }
@@ -260,8 +259,7 @@ bool xmp_parse(XmpPtr xmp, const char *buffer, size_t len)
 	}
 	catch(const XMP_Error & e)
 	{
-		set_error(-e.GetID());
-		std::cerr << e.GetErrMsg() << std::endl;
+		set_error(e);
 		return false;
 	}
 	return true;
@@ -289,7 +287,6 @@ bool xmp_get_property_and_bits(XmpPtr xmp, const char *schema,
 	bool ret = false;
 	try {
 		SXMPMeta *txmp = (SXMPMeta *)xmp;
-		std::string pref;
 		XMP_OptionBits optionBits;
 		ret = txmp->GetProperty(schema, name, STRING(property), 
 																 &optionBits);
@@ -297,14 +294,34 @@ bool xmp_get_property_and_bits(XmpPtr xmp, const char *schema,
 			*propsBits = optionBits;
 		}
 	}
-	catch(const XMP_Error & e)
-	{
-		set_error(-e.GetID());
-		std::cerr << e.GetErrMsg() << std::endl;
+	catch(const XMP_Error & e) {
+		set_error(e);
+		ret = false;
 	}
 	return ret;
 }
 
+
+bool xmp_get_array_item(XmpPtr xmp, const char *schema, 
+												const char *name, int32_t index, XmpStringPtr property,
+												uint32_t *propsBits)
+{
+	bool ret = false;
+	try {
+		SXMPMeta *txmp = (SXMPMeta *)xmp;
+		XMP_OptionBits optionBits;
+		ret = txmp->GetArrayItem(schema, name, index, STRING(property), 
+														 &optionBits);
+		if(propsBits) {
+			*propsBits = optionBits;
+		}
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+		ret = false;
+	}
+	return ret;
+}
 
 void xmp_set_property(XmpPtr xmp, const char *schema, 
 											const char *name, const char *value)

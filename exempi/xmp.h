@@ -347,6 +347,19 @@ bool xmp_get_property_and_bits(XmpPtr xmp, const char *schema,
 															 const char *name, XmpStringPtr property,
 															 uint32_t *propsBits);
 
+/** Get an item frpm an array property
+ * @param xmp the xmp meta
+ * @param schema the schema
+ * @param name the property name
+ * @param index the index in the array
+ * @param property the property value
+ * @param propsBits the property bits. Pass NULL is unwanted.
+ * @return TRUE if success.
+ */
+bool xmp_get_array_item(XmpPtr xmp, const char *schema, 
+												const char *name, int32_t index, XmpStringPtr property,
+												uint32_t *propsBits);
+
 /** Set an XMP property from the XMP packet
  * @param xmp the XMP packet
  * @param schema

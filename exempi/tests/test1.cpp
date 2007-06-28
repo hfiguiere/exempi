@@ -155,8 +155,8 @@ void test_exempi()
 
 	BOOST_CHECK(xmp_set_array_item(xmp, NS_DC, "rights", 2,
 																 "foo", 0));
-	BOOST_CHECK(xmp_get_property_and_bits(xmp, NS_DC, "rights[2]",
-																				the_prop, &bits));
+	BOOST_CHECK(xmp_get_array_item(xmp, NS_DC, "rights", 2,
+																 the_prop, &bits));
 	BOOST_CHECK(XMP_IS_PROP_SIMPLE(bits));
 	BOOST_CHECK_EQUAL(strcmp("foo", xmp_string_cstr(the_prop)),	0); 
 
