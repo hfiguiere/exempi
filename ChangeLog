@@ -1,3 +1,8 @@
+2007-06-29  Hubert Figuiere  <hub@figuiere.net>
+
+	* rpm/SLED10.spec: Added .spec for SLED10 packaging
+	(only in git)
+
 2007-06-28  Hubert Figuiere  <hub@figuiere.net>
 
 	* New API wrapped: xmp_serialize{,_and_format}() and the
