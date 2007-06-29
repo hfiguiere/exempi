@@ -265,6 +265,35 @@ bool xmp_parse(XmpPtr xmp, const char *buffer, size_t len)
 	return true;
 }
 
+
+
+bool xmp_serialize(XmpPtr xmp, XmpStringPtr buffer, uint32_t options, 
+									 uint32_t padding)
+{
+	return xmp_serialize_and_format(xmp, buffer, options, padding, 
+																	"\n", " ", 0);
+}
+
+
+bool xmp_serialize_and_format(XmpPtr xmp, XmpStringPtr buffer, 
+															uint32_t options, 
+															uint32_t padding, const char *newline, 
+															const char *tab, int32_t indent)
+{
+	SXMPMeta *txmp = (SXMPMeta *)xmp;
+	try {
+		txmp->SerializeToBuffer(STRING(buffer), options, padding,
+														newline, tab, indent);
+	}
+	catch(const XMP_Error & e)
+	{
+		set_error(e);
+		return false;
+	}
+	return true;
+}
+
+
 void xmp_free(XmpPtr xmp)
 {
 	SXMPMeta *txmp = (SXMPMeta *)xmp;

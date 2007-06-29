@@ -100,6 +100,49 @@ void test_write_new_property()
 }
 
 
+void test_serialize()
+{
+	size_t len;
+	char * buffer;
+	FILE * f = fopen(g_testfile.c_str(), "rb");
+	
+ 	fseek(f, 0, SEEK_END);
+	len = ftell(f);
+ 	fseek(f, 0, SEEK_SET);
+
+	buffer = (char*)malloc(len + 1);
+	size_t rlen = fread(buffer, 1, len, f);
+
+	BOOST_CHECK(rlen == len);
+	BOOST_CHECK(len != 0);
+
+	BOOST_CHECK(xmp_init());
+
+	XmpPtr xmp = xmp_new_empty();
+
+	BOOST_CHECK(xmp_parse(xmp, buffer, len));
+
+	std::string b1(buffer);
+	std::string b2;
+	XmpStringPtr output = xmp_string_new();
+
+	BOOST_CHECK(xmp_serialize_and_format(xmp, output, 
+																			 XMP_SERIAL_OMITPACKETWRAPPER, 
+																			 0, "\n", " ", 0));
+	b2 = xmp_string_cstr(output);
+	// find a way to compare that.
+//	BOOST_CHECK_EQUAL(b1, b2);
+	
+	xmp_string_free(output);
+	xmp_free(xmp);
+
+	free(buffer);
+	fclose(f);
+
+	xmp_terminate();
+}
+
+
 void test_exempi()
 {
 	size_t len;
@@ -189,6 +232,7 @@ init_unit_test_suite( int argc, char * argv[] )
 		}
 		
 		test->add(BOOST_TEST_CASE(&test_exempi));
+		test->add(BOOST_TEST_CASE(&test_serialize));
 		test->add(BOOST_TEST_CASE(&test_write_new_property));
 
     return test;

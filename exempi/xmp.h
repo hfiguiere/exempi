@@ -238,11 +238,39 @@ typedef enum {
 #define XMP_HAS_PROP_QUALIFIERS(opt)  (((opt) & XMP_PROP_HAS_QUALIFIERS) != 0)
 #define XMP_IS_PROP_QUALIFIER(opt)    (((opt) & XMP_PROP_IS_QUALIFIER) != 0)
 #define XMP_HAS_PROP_LANG(opt)        (((opt) & XMP_PROP_HAS_LANG) != 0)
-
+	
 #define XMP_IS_NODE_SCHEMA(opt)       (((opt) & XMP_SCHEMA_NODE) != 0)
 #define XMP_IS_PROP_ALIAS(opt)        (((opt) & XMP_PROP_IS_ALIAS) != 0)
 
 
+enum {  /* Options for xmp_serialize */
+	XMP_SERIAL_OMITPACKETWRAPPER   = 0x0010UL,  /**< Omit the XML packet 
+																							 * wrapper. */
+	XMP_SERIAL_READONLYPACKET      = 0x0020UL,  /**< Default is a writeable 
+																							 * packet. */
+	XMP_SERIAL_USECOMPACTFORMAT    = 0x0040UL,  /**< Use a compact form of 
+																								 RDF. */
+
+	XMP_SERIAL_INCLUDETHUMBNAILPAD = 0x0100UL,  /**< Include a padding allowance 
+																							 * for a thumbnail image. */
+	XMP_SERIAL_EXACTPACKETLENGTH   = 0x0200UL,  /**< The padding parameter is 
+																							 * the overall packet length. */
+	XMP_SERIAL_WRITEALIASCOMMENTS  = 0x0400UL,  /**< Show aliases as XML 
+																							 * comments. */
+	XMP_SERIAL_OMITALLFORMATTING   = 0x0800UL,  /**< Omit all formatting 
+																							 * whitespace. */
+	
+	_XMP_LITTLEENDIAN_BIT    = 0x0001UL,  /* ! Don't use directly, see the combined values below! */
+	_XMP_UTF16_BIT           = 0x0002UL,
+	_XMP_UTF32_BIT           = 0x0004UL,
+
+	XMP_SERIAL_ENCODINGMASK        = 0x0007UL,
+	XMP_SERIAL_ENCODEUTF8          = 0UL,
+	XMP_SERIAL_ENCODEUTF16BIG      = _XMP_UTF16_BIT,
+	XMP_SERIAL_ENCODEUTF16LITTLE   = _XMP_UTF16_BIT | _XMP_LITTLEENDIAN_BIT,
+	XMP_SERIAL_ENCODEUTF32BIG      = _XMP_UTF32_BIT,
+	XMP_SERIAL_ENCODEUTF32LITTLE   = _XMP_UTF32_BIT | _XMP_LITTLEENDIAN_BIT
+};
 
 /** pointer to XMP packet. Opaque. */
 typedef struct _Xmp *XmpPtr;
@@ -323,6 +351,32 @@ void xmp_free(XmpPtr xmp);
  */
 bool xmp_parse(XmpPtr xmp, const char *buffer, size_t len);
 
+/** Serialize the XMP Packet to the given buffer
+ * @param xmp the XMP Packet
+ * @param buffer the buffer to write the XMP to
+ * @param options options on how to write the XMP.  See XMP_SERIAL_*
+ * @param padding number of bytes of padding, useful for modifying
+ *                embedded XMP in place.
+ * @return TRUE if success.
+ */
+bool xmp_serialize(XmpPtr xmp, XmpStringPtr buffer, uint32_t options, 
+									 uint32_t padding);
+
+/** Serialize the XMP Packet to the given buffer with formatting
+ * @param xmp the XMP Packet
+ * @param buffer the buffer to write the XMP to
+ * @param options options on how to write the XMP.  See XMP_SERIAL_*
+ * @param padding number of bytes of padding, useful for modifying
+ *                embedded XMP in place.
+ * @param newline the new line character to use
+ * @param tab the indentation character to use
+ * @param indent the initial indentation level
+ * @return TRUE if success.
+ */
+	bool xmp_serialize_and_format(XmpPtr xmp, XmpStringPtr buffer, 
+																uint32_t options, 
+																uint32_t padding, const char *newline, 
+																const char *tab, int32_t indent);
 
 /** Get an XMP property from the XMP packet
  * @param xmp the XMP packet
