@@ -1,6 +1,6 @@
 AC_PREREQ(2.50)
 AC_INIT(exempi/xmp.h)
-AM_INIT_AUTOMAKE(exempi, 1.99.2)
+AM_INIT_AUTOMAKE(exempi, 1.99.3)
 AM_MAINTAINER_MODE
 
 
