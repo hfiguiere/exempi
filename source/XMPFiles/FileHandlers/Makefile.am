@@ -42,7 +42,7 @@ noinst_HEADERS = AVI_Handler.hpp    InDesign_Handler.hpp  MOV_Handler.hpp  \
 	Scanner_Handler.hpp  Trivial_Handler.hpp\
 	Basic_Handler.hpp  JPEG_Handler.hpp      \
 	MP3_Handler.hpp  PNG_Handler.hpp   PSD_Handler.hpp \
-	TIFF_Handler.hpp     WAV_Handler.hpp
+	TIFF_Handler.hpp     WAV_Handler.hpp  GIF_Handler.hpp
 
 
 INCLUDES = -I$(srcdir)/.. -I$(srcdir)/../FormatSupport \
@@ -59,4 +59,4 @@ libxmpfilehandlers_la_SOURCES = AVI_Handler.cpp    InDesign_Handler.cpp \
 	Trivial_Handler.cpp \
 	Basic_Handler.cpp  JPEG_Handler.cpp      MP3_Handler.cpp  \
 	PNG_Handler.cpp   PSD_Handler.cpp         TIFF_Handler.cpp     \
-	WAV_Handler.cpp
+	WAV_Handler.cpp  GIF_Handler.cpp
