@@ -31,6 +31,7 @@
 #include "FileHandlers/PNG_Handler.hpp"
 #include "FileHandlers/AVI_Handler.hpp"
 #include "FileHandlers/WAV_Handler.hpp"
+#include "FileHandlers/GIF_Handler.hpp"
 
 // =================================================================================================
 /// \file XMPFiles.cpp
@@ -224,6 +225,9 @@ XMPFiles::Initialize ( XMP_OptionBits options /* = 0 */ )
 
 	XMP_Assert ( ! (kMP3_HandlerFlags & kXMPFiles_HandlerOwnsFile) );
 	RegisterXMPFileHandler ( kXMP_MP3File, kMP3_HandlerFlags, MP3_CheckFormat, MP3_MetaHandlerCTor );
+
+	XMP_Assert ( ! (kGIF_HandlerFlags & kXMPFiles_HandlerOwnsFile) );
+	RegisterXMPFileHandler ( kXMP_GIFFile, kGIF_HandlerFlags, GIF_CheckFormat, GIF_MetaHandlerCTor );
 
 	#if XMP_WinBuild
 	

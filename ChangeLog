@@ -1,5 +1,7 @@
 2007-08-12  Hubert Figuiere  <hub@figuiere.net>
 
+	* Added GIF smart handler support by Ian Jacobi.
+
 	* source/XMPCore/XMPCore_Impl.hpp (kXMPCoreName): Add Exempi
 	name to clearly identify when Exempi is generating.
 

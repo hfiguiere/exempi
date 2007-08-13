@@ -127,8 +127,7 @@ const FileExtMapping kFileExtMap[] =	// Add all known mappings, multiple mapping
 	  { "", 0 } };	// ! Must be last as a sentinel.
 
 const char * kKnownScannedFiles[] =	// Files known to contain XMP but have no smart handling, here or elsewhere.
-	{ "gif",	// GIF, public format but no smart handler.
-	  "ai",		// Illustrator, actually a PDF file.
+	{ "ai",		// Illustrator, actually a PDF file.
 	  "ait",	// Illustrator template, actually a PDF file.
 	  "svg",	// SVG, an XML file.
 	  "aet",	// After Effects template project file.
