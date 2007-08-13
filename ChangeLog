@@ -1,0 +1,5 @@
+2007-08-12  Hubert Figuiere  <hub@figuiere.net>
+
+	* source/XMPCore/XMPCore_Impl.hpp (kXMPCoreName): Add Exempi
+	name to clearly identify when Exempi is generating.
+
