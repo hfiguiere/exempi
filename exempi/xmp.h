@@ -373,7 +373,7 @@ bool xmp_serialize(XmpPtr xmp, XmpStringPtr buffer, uint32_t options,
  * @param indent the initial indentation level
  * @return TRUE if success.
  */
-	bool xmp_serialize_and_format(XmpPtr xmp, XmpStringPtr buffer, 
+bool xmp_serialize_and_format(XmpPtr xmp, XmpStringPtr buffer, 
 																uint32_t options, 
 																uint32_t padding, const char *newline, 
 																const char *tab, int32_t indent);
@@ -431,6 +431,67 @@ bool xmp_set_property2(XmpPtr xmp, const char *schema,
 bool xmp_set_array_item(XmpPtr xmp, const char *schema, 
 											 const char *name, int32_t index, const char *value,
 											 uint32_t optionBits);
+
+/** Append a value to the XMP Property array in the XMP Packet provided
+ * @param xmp the XMP packet
+ * @param schema the schema of the property
+ * @param name the name of the property
+ * @param arrayOptions option bits of the parent array
+ * @param value null-terminated string
+ * @param optionBits option bits of the value itself.
+ */
+bool xmp_append_array_item(XmpPtr xmp, const char *schema, const char *name,
+			   uint32_t arrayOptions, const char *value,
+			   uint32_t optionBits);
+
+/** Delete a property from the XMP Packet provided
+ * @param xmp the XMP packet
+ * @param schema the schema of the property
+ * @param name the name of the property
+ */
+bool xmp_delete_property(XmpPtr xmp, const char *schema, const char *name);
+
+/** Determines if a property exists in the XMP Packet provided
+ * @param xmp the XMP packet
+ * @param schema the schema of the property. Can't be NULL or empty.
+ * @param name the name of the property. Can't be NULL or empty.
+ * @return true is the property exists
+ */
+bool xmp_has_property(XmpPtr xmp, const char *schema, const char *name);
+
+/** Get a localised text from a localisable property.
+ * @param xmp the XMP packet
+ * @param schema the schema
+ * @param name the property name.
+ * @param genericLang the generic language you may want as a fall back. 
+ * Can be NULL or empty.
+ * @param specificLang the specific language you want. Can't be NULL or empty.
+ * @param actualLang the actual language of the value. Can be NULL if 
+ * not wanted.
+ * @param itemValue the localized value. Can be NULL if not wanted.
+ * @param propBits the options flags describing the property. Can be NULL.
+ * @return true if found, false otherwise.
+ */
+bool xmp_get_localized_text(XmpPtr xmp, const char *schema, const char *name,
+			    const char *genericLang, const char *specificLang,
+			    XmpStringPtr actualLang, XmpStringPtr itemValue,
+			    uint32_t *propBits);
+
+
+/** Set a localised text in a localisable property.
+ * @param xmp the XMP packet
+ * @param schema the schema
+ * @param name the property name.
+ * @param genericLang the generic language you may want to set too. 
+ * Can be NULL or empty.
+ * @param specificLang the specific language you want. Can't be NULL or empty.
+ * @param itemValue the localized value. Cannot be NULL.
+ * @param propBits the options flags describing the property.
+ * @return true if set, false otherwise.
+ */
+bool xmp_set_localized_text(XmpPtr xmp, const char *schema, const char *name,
+			    const char *genericLang, const char *specificLang,
+			    const char *value, uint32_t optionBits);
 
 /** Instanciate a new string 
  * @return the new instance. Must be freed with 

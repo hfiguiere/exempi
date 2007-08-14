@@ -1,3 +1,11 @@
+2007-08-13  Hubert Figuiere  <hub@figuiere.net>
+
+	* New API xmp_append_array_item(), xmp_delete_property(),
+	xmp_has_property(), xmp_get_localized_text(), 
+	xmp_set_localized_text() by Ian Jacobi.
+	* exempi.cpp (xmp_files_open_new): Handle exception properly
+	by Ian Jacobi.
+
 2007-08-12  Hubert Figuiere  <hub@figuiere.net>
 
 	* Added GIF smart handler support by Ian Jacobi.

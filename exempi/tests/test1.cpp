@@ -174,6 +174,9 @@ void test_exempi()
 
 	XmpStringPtr the_prop = xmp_string_new();
 
+	BOOST_CHECK(xmp_has_property(xmp, NS_TIFF, "Make"));
+	BOOST_CHECK_EQUAL(xmp_has_property(xmp, NS_TIFF, "Foo"), false);
+
 	BOOST_CHECK(xmp_get_property(xmp, NS_TIFF, "Make", the_prop));
 	BOOST_CHECK_EQUAL(strcmp("Canon", xmp_string_cstr(the_prop)),	0); 
 
@@ -196,12 +199,36 @@ void test_exempi()
 	BOOST_CHECK_EQUAL(bits, 0x50);
 	BOOST_CHECK(XMP_HAS_PROP_QUALIFIERS(bits));
 
-	BOOST_CHECK(xmp_set_array_item(xmp, NS_DC, "rights", 2,
+	XmpStringPtr the_lang = xmp_string_new();
+	BOOST_CHECK(xmp_get_localized_text(xmp, NS_DC, "rights",
+																		 NULL, "x-default", 
+																		 the_lang, the_prop, &bits));
+	BOOST_CHECK_EQUAL(strcmp("x-default", xmp_string_cstr(the_lang)),	0); 
+	BOOST_CHECK(xmp_set_localized_text(xmp, NS_DC, "rights",
+																		 "en", "en-CA", 
+																		 xmp_string_cstr(the_prop), 0));	
+	BOOST_CHECK(xmp_get_localized_text(xmp, NS_DC, "rights",
+																		 "en", "en-US", 
+																		 the_lang, the_prop, &bits));
+	BOOST_CHECK(strcmp("en-US", xmp_string_cstr(the_lang)) != 0); 
+	BOOST_CHECK_EQUAL(strcmp("en-CA", xmp_string_cstr(the_lang)),	0); 
+	xmp_string_free(the_lang);
+
+	BOOST_CHECK(xmp_set_array_item(xmp, NS_DC, "creator", 2,
 																 "foo", 0));
-	BOOST_CHECK(xmp_get_array_item(xmp, NS_DC, "rights", 2,
+	BOOST_CHECK(xmp_get_array_item(xmp, NS_DC, "creator", 2,
 																 the_prop, &bits));
 	BOOST_CHECK(XMP_IS_PROP_SIMPLE(bits));
 	BOOST_CHECK_EQUAL(strcmp("foo", xmp_string_cstr(the_prop)),	0); 
+	BOOST_CHECK(xmp_append_array_item(xmp, NS_DC, "creator", 0, "bar", 0));
+
+	BOOST_CHECK(xmp_get_array_item(xmp, NS_DC, "creator", 3,
+																 the_prop, &bits));
+	BOOST_CHECK(XMP_IS_PROP_SIMPLE(bits));
+	BOOST_CHECK_EQUAL(strcmp("bar", xmp_string_cstr(the_prop)),	0); 
+
+	BOOST_CHECK(xmp_delete_property(xmp, NS_DC, "creator[3]"));
+	BOOST_CHECK_EQUAL(xmp_has_property(xmp, NS_DC, "creator[3]"), false);
 
 	xmp_string_free(the_prop);
 	xmp_free(xmp);

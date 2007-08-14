@@ -127,7 +127,13 @@ XmpFilePtr xmp_files_new()
 
 XmpFilePtr xmp_files_open_new(const char *path, XmpOpenFileOptions options)
 {
-	SXMPFiles *txf = new SXMPFiles(path, XMP_FT_UNKNOWN, options);
+	SXMPFiles *txf = NULL;
+	try {
+		txf = new SXMPFiles(path, XMP_FT_UNKNOWN, options);
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
 
 	return (XmpFilePtr)txf;
 }
@@ -301,7 +307,6 @@ void xmp_free(XmpPtr xmp)
 }
 
 
-
 bool xmp_get_property(XmpPtr xmp, const char *schema, 
 															const char *name, XmpStringPtr property)
 {
@@ -400,6 +405,108 @@ bool xmp_set_array_item(XmpPtr xmp, const char *schema,
 	}
 	return ret;
 }
+
+bool xmp_append_array_item(XmpPtr xmp, const char *schema, const char *name,
+			   uint32_t arrayOptions, const char *value,
+			   uint32_t optionBits)
+{
+	bool ret = true;
+	SXMPMeta *txmp = (SXMPMeta *)xmp;
+	try {
+		txmp->AppendArrayItem(schema, name, arrayOptions, value,
+				      optionBits);
+	}
+	catch(const XMP_Error & e) {
+		set_error(-e.GetID());
+		ret = false;
+		std::cerr << e.GetErrMsg() << std::endl;
+	}
+	catch(...) {
+		ret = false;
+	}
+	return ret;
+}
+
+bool xmp_delete_property(XmpPtr xmp, const char *schema, const char *name)
+{
+	bool ret = true;
+	SXMPMeta *txmp = (SXMPMeta *)xmp;
+	try {
+		txmp->DeleteProperty(schema, name);
+	}
+	catch(const XMP_Error & e) {
+		set_error(-e.GetID());
+		ret = false;
+		std::cerr << e.GetErrMsg() << std::endl;
+	}
+	catch(...) {
+		ret = false;
+	}
+	return ret;
+}
+
+bool xmp_has_property(XmpPtr xmp, const char *schema, const char *name)
+{
+	bool ret = true;
+	SXMPMeta *txmp = (SXMPMeta *)xmp;
+	try {
+		ret = txmp->DoesPropertyExist(schema, name);
+	}
+	catch(const XMP_Error & e) {
+		set_error(-e.GetID());
+		ret = false;
+		std::cerr << e.GetErrMsg() << std::endl;
+	}
+	catch(...) {
+		ret = false;
+	}
+	return ret;
+}
+
+bool xmp_get_localized_text(XmpPtr xmp, const char *schema, const char *name,
+			    const char *genericLang, const char *specificLang,
+			    XmpStringPtr actualLang, XmpStringPtr itemValue,
+			    uint32_t *propsBits)
+{
+	bool ret = false;
+	try {
+		SXMPMeta *txmp = (SXMPMeta *)xmp;
+		XMP_OptionBits optionBits;
+		ret = txmp->GetLocalizedText(schema, name, genericLang,
+					     specificLang, STRING(actualLang), 
+					     STRING(itemValue), &optionBits);
+		if(propsBits) {
+			*propsBits = optionBits;
+		}
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+		ret = false;
+	}
+	return ret;
+}
+
+bool xmp_set_localized_text(XmpPtr xmp, const char *schema, const char *name,
+			    const char *genericLang, const char *specificLang,
+			    const char *value, uint32_t optionBits)
+{
+	bool ret = true;
+	SXMPMeta *txmp = (SXMPMeta *)xmp;
+	try {
+		txmp->SetLocalizedText(schema, name, genericLang, specificLang,
+				       value, optionBits);
+	}
+	catch(const XMP_Error & e) {
+		set_error(-e.GetID());
+		ret = false;
+		std::cerr << e.GetErrMsg() << std::endl;
+	}
+	catch(...) {
+		ret = false;		
+	}
+	return ret;
+}
+
 
 XmpStringPtr xmp_string_new()
 {
