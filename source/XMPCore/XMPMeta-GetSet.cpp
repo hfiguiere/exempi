@@ -973,6 +973,48 @@ XMPMeta::SetLocalizedText ( XMP_StringPtr  schemaNS,
 
 
 // -------------------------------------------------------------------------------------------------
+// DeleteLocalizedText
+// ----------------
+
+void
+XMPMeta::DeleteLocalizedText ( XMP_StringPtr	 schemaNS,
+							XMP_StringPtr	 arrayName,
+							XMP_StringPtr	 _genericLang,
+			       XMP_StringPtr	 _specificLang )
+{
+	XMP_Assert ( (schemaNS != 0) && (arrayName != 0) && (_genericLang != 0) && (_specificLang != 0) );	// Enforced by wrapper.
+
+	XMP_StringPtr	itemPath;
+	XMP_StringLen	pathLen;
+
+	XMP_VarString zGenericLang  ( _genericLang );
+	XMP_VarString zSpecificLang ( _specificLang );
+	NormalizeLangValue ( &zGenericLang );
+	NormalizeLangValue ( &zSpecificLang );
+	
+	XMP_StringPtr genericLang  = zGenericLang.c_str();
+	XMP_StringPtr specificLang = zSpecificLang.c_str();
+	
+	XMP_ExpandedXPath arrayPath;
+	ExpandXPath ( schemaNS, arrayName, &arrayPath );
+	
+	const XMP_Node * arrayNode = FindConstNode ( &tree, arrayPath );	// *** This expand/find idiom is used in 3 Getters.
+	if ( arrayNode == 0 ) return;			// *** Should extract it into a local utility.
+	
+	XMP_CLTMatch match;
+	const XMP_Node * itemNode;
+	
+	match = ChooseLocalizedText ( arrayNode, genericLang, specificLang, &itemNode );
+	// FIXED: Only remove SpecificMatch
+	if ( match != kXMP_CLT_SpecificMatch ) return;
+	
+	XMPUtils::ComposeLangSelector ( schemaNS, arrayName, itemNode->qualifiers[0]->value.c_str(), &itemPath, &pathLen );
+	DeleteProperty ( schemaNS, itemPath );
+	
+}	// DeleteLocalizedText
+
+
+// -------------------------------------------------------------------------------------------------
 // GetProperty_Bool
 // ----------------
 

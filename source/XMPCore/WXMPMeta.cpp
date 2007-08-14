@@ -868,6 +868,29 @@ WXMPMeta_SetLocalizedText_1 ( XMPMetaRef	 xmpRef,
 // -------------------------------------------------------------------------------------------------
 
 void
+WXMPMeta_DeleteLocalizedText_1 ( XMPMetaRef	   xmpRef,
+							  XMP_StringPtr	   schemaNS,
+							  XMP_StringPtr	   arrayName,
+							  XMP_StringPtr	   genericLang,
+							  XMP_StringPtr	   specificLang,
+							  WXMP_Result *	   wResult )
+{
+	XMP_ENTER_WRAPPER ( "WXMPMeta_DeleteLocalizedText_1" )
+		
+		if ( (schemaNS == 0) || (*schemaNS == 0) ) XMP_Throw ( "Empty schema namespace URI", kXMPErr_BadSchema );
+		if ( (arrayName == 0) || (*arrayName == 0) ) XMP_Throw ( "Empty array name", kXMPErr_BadXPath );
+		if ( genericLang == 0 ) genericLang = "";
+		if ( (specificLang == 0) ||(*specificLang == 0) ) XMP_Throw ( "Empty specific language", kXMPErr_BadParam );
+		
+		XMPMeta * meta = WtoXMPMeta_Ptr ( xmpRef );
+		meta->DeleteLocalizedText ( schemaNS, arrayName, genericLang, specificLang );
+
+	XMP_EXIT_WRAPPER
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void
 WXMPMeta_GetProperty_Bool_1 ( XMPMetaRef	   xmpRef,
 							  XMP_StringPtr	   schemaNS,
 							  XMP_StringPtr	   propName,

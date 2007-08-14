@@ -679,6 +679,15 @@ SetLocalizedText ( XMP_StringPtr      schemaNS,
 	this->SetLocalizedText ( schemaNS, altTextName, genericLang, specificLang, itemValue.c_str(), options );
 }
 
+XMP_MethodIntro(TXMPMeta,void)::
+DeleteLocalizedText ( XMP_StringPtr    schemaNS,
+                   XMP_StringPtr    altTextName,
+				   XMP_StringPtr    genericLang,
+				   XMP_StringPtr    specificLang )
+{
+	WrapCheckVoid ( zXMPMeta_DeleteLocalizedText_1 ( schemaNS, altTextName, genericLang, specificLang ) );
+}
+
 // -------------------------------------------------------------------------------------------------
 
 XMP_MethodIntro(TXMPMeta,bool)::

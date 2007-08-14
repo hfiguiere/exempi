@@ -1192,6 +1192,12 @@ public:
                        const tStringObj & itemValue,
                        XMP_OptionBits     options = 0 );
 
+    void
+    DeleteLocalizedText ( XMP_StringPtr    schemaNS,
+			  XMP_StringPtr    altTextName,
+			  XMP_StringPtr    genericLang,
+			  XMP_StringPtr    specificLang );
+
     /// @}
 
     // =============================================================================================

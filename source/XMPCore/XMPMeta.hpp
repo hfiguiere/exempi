@@ -256,6 +256,12 @@ public:
 					   XMP_StringPtr  itemValue,
 					   XMP_OptionBits options );
 	
+	void
+	DeleteLocalizedText ( XMP_StringPtr	schemaNS,
+					   XMP_StringPtr	altTextName,
+					   XMP_StringPtr	genericLang,
+			   XMP_StringPtr	specificLang);
+
 	// ---------------------------------------------------------------------------------------------
 	
 	bool

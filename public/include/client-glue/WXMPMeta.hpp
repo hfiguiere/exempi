@@ -120,6 +120,9 @@ extern "C" {
 #define zXMPMeta_SetLocalizedText_1(schemaNS,altTextName,genericLang,specificLang,itemValue,options) \
     WXMPMeta_SetLocalizedText_1 ( this->xmpRef, schemaNS, altTextName, genericLang, specificLang, itemValue, options, &wResult )
 
+#define zXMPMeta_DeleteLocalizedText_1(schemaNS,altTextName,genericLang,specificLang) \
+    WXMPMeta_DeleteLocalizedText_1 ( this->xmpRef, schemaNS, altTextName, genericLang, specificLang, &wResult )
+
 #define zXMPMeta_GetProperty_Bool_1(schemaNS,propName,propValue,options) \
     WXMPMeta_GetProperty_Bool_1 ( this->xmpRef, schemaNS, propName, propValue, options, &wResult )
 
@@ -459,6 +462,14 @@ WXMPMeta_SetLocalizedText_1 ( XMPMetaRef     xmpRef,
                               XMP_StringPtr  itemValue,
                               XMP_OptionBits options,
                               WXMP_Result *  wResult );
+
+extern void
+WXMPMeta_DeleteLocalizedText_1 ( XMPMetaRef       xmpRef,
+				 XMP_StringPtr    schemaNS,
+				 XMP_StringPtr    altTextName,
+				 XMP_StringPtr    genericLang,
+				 XMP_StringPtr    specificLang,
+				 WXMP_Result *    wResult );
 
 // -------------------------------------------------------------------------------------------------
 
