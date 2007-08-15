@@ -1,0 +1,36 @@
+1.99.4
+
+- New: GIF Files smart handlers
+- New: API xmp_append_array_item(), xmp_delete_property(),
+  xmp_has_property(), xmp_get_localized_text(), 
+  xmp_set_localized_text()
+- New: API xmp_delete_localized_text()
+- New: Exempi will be visible in the "generator" string of the XMP packet.
+- Bug: xmp_files_open_new() will handle exceptions properly
+
+1.99.3
+
+- New: API xmp_serialize{,_and_format}() and the
+  corresponding option bits
+- New API xmp_get_array_item()
+
+1.99.2
+
+- New: API xmp_copy()
+- New: API xmp_set_property2(), xmp_set_array_item()
+  and xmp_get_error()
+- New: API xmp_get_property_and_bits() 
+- Bug: xmp_files_get_xmp() handle exceptions properly.
+
+1.99.1
+
+- Bug: store the TIFF tag as BYTE and not UNDEFINED
+  to comply with the spec.
+- Bug: more exception catched.
+- New: added NS_CC namespace
+- New: API xmp_register_namespace()
+
+1.99.0
+
+Initial release of the 2.0 series. Based on Adobe XMP SDK 4.1.1
+
