@@ -493,6 +493,12 @@ bool xmp_set_localized_text(XmpPtr xmp, const char *schema, const char *name,
 			    const char *genericLang, const char *specificLang,
 			    const char *value, uint32_t optionBits);
 
+
+
+bool xmp_delete_localized_text(XmpPtr xmp, const char *schema,
+															 const char *name, const char *genericLang,
+															 const char *specificLang);
+
 /** Instanciate a new string 
  * @return the new instance. Must be freed with 
  * xmp_string_free()

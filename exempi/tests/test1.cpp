@@ -212,6 +212,13 @@ void test_exempi()
 																		 the_lang, the_prop, &bits));
 	BOOST_CHECK(strcmp("en-US", xmp_string_cstr(the_lang)) != 0); 
 	BOOST_CHECK_EQUAL(strcmp("en-CA", xmp_string_cstr(the_lang)),	0); 
+
+	BOOST_CHECK(xmp_delete_localized_text(xmp, NS_DC, "rights",
+								"en", "en-CA"));
+	BOOST_CHECK(xmp_has_property(xmp, NS_DC, "rights[1]"));
+	BOOST_CHECK_EQUAL(xmp_has_property(xmp, NS_DC, "rights[2]"), false);
+	
+
 	xmp_string_free(the_lang);
 
 	BOOST_CHECK(xmp_set_array_item(xmp, NS_DC, "creator", 2,

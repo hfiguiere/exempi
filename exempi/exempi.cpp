@@ -508,6 +508,29 @@ bool xmp_set_localized_text(XmpPtr xmp, const char *schema, const char *name,
 }
 
 
+bool xmp_delete_localized_text(XmpPtr xmp, const char *schema,
+															 const char *name, const char *genericLang,
+															 const char *specificLang)
+{
+	bool ret = true;
+	SXMPMeta *txmp = (SXMPMeta *)xmp;
+	try {
+		txmp->DeleteLocalizedText(schema, name, genericLang,
+															specificLang);
+	}
+	catch(const XMP_Error & e) {
+		set_error(-e.GetID());
+		ret = false;
+		std::cerr << e.GetErrMsg() << std::endl;
+	}
+	catch(...) {
+		ret = false;
+	}
+	return ret;
+}
+
+
+
 XmpStringPtr xmp_string_new()
 {
 	return (XmpStringPtr)new std::string;
