@@ -1,22 +1,4 @@
-2007-08-14  Hubert Figuiere  <hub@figuiere.net>
+2007-08-17  Hubert Figuiere  <hub@figuiere.net>
 
-	* New API xmp_delete_localized_text(), by Ian Jacobi.
-
-2007-08-13  Hubert Figuiere  <hub@figuiere.net>
-
-	* source/XMPCore/, public/include/: new call DeleteLocalizedText()
-	by Ian Jacobi.
-	
-	* New API xmp_append_array_item(), xmp_delete_property(),
-	xmp_has_property(), xmp_get_localized_text(), 
-	xmp_set_localized_text() by Ian Jacobi.
-	* exempi.cpp (xmp_files_open_new): Handle exception properly
-	by Ian Jacobi.
-
-2007-08-12  Hubert Figuiere  <hub@figuiere.net>
-
-	* Added GIF smart handler support by Ian Jacobi.
-
-	* source/XMPCore/XMPCore_Impl.hpp (kXMPCoreName): Add Exempi
-	name to clearly identify when Exempi is generating.
+	* configure.ac: add AC_CONFIG_MACRO_DIR to configure.
 

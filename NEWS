@@ -1,3 +1,7 @@
+1.99.5
+
+- Bug: add AC_CONFIG_MACRO_DIR to configure.
+
 1.99.4
 
 - New: GIF Files smart handlers
