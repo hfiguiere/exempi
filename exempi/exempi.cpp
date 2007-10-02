@@ -121,7 +121,13 @@ bool xmp_register_namespace(const char *namespaceURI,
 
 XmpFilePtr xmp_files_new()
 {
-	SXMPFiles *txf = new SXMPFiles();
+	SXMPFiles *txf = NULL;
+	try {
+		txf = new SXMPFiles();
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
 	return (XmpFilePtr)txf;
 }
 

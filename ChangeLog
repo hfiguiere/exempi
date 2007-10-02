@@ -1,3 +1,8 @@
+2007-10-02  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/exempi.cpp (xmp_files_new): Catch
+	exceptions.
+
 2007-08-17  Hubert Figuiere  <hub@figuiere.net>
 
 	* configure.ac: add AC_CONFIG_MACRO_DIR to configure.
