@@ -19,3 +19,11 @@ autom4te.cache
 .deps
 exempi/exempi-2.0.pc
 libtool
+exempi/tests/test.jpg
+exempi/tests/test1
+exempi/tests/test2
+exempi/tests/test3
+samples/source/dumpmainxmp
+samples/source/dumpxmp
+samples/source/xmpcoverage
+samples/source/xmpfilescoverage
