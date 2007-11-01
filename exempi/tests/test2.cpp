@@ -77,7 +77,7 @@ void test_xmpfiles_write()
 		return;
 	}
 
-	xmp_set_property(xmp, NS_PHOTOSHOP, "ICCProfile", "foo");
+	xmp_set_property(xmp, NS_PHOTOSHOP, "ICCProfile", "foo", 0);
 
 	BOOST_CHECK(xmp_files_can_put_xmp(f, xmp));
 	xmp_files_put_xmp(f, xmp);
@@ -96,7 +96,7 @@ void test_xmpfiles_write()
 	BOOST_CHECK(xmp != NULL);
 
 	XmpStringPtr the_prop = xmp_string_new();
-	BOOST_CHECK(xmp_get_property(xmp, NS_PHOTOSHOP, "ICCProfile", the_prop));
+	BOOST_CHECK(xmp_get_property(xmp, NS_PHOTOSHOP, "ICCProfile", the_prop, NULL));
 	BOOST_CHECK_EQUAL(strcmp("foo", xmp_string_cstr(the_prop)),	0); 
 
 	xmp_string_free(the_prop);
@@ -130,7 +130,7 @@ void test_xmpfiles()
 
 	XmpStringPtr the_prop = xmp_string_new();
 
-	BOOST_CHECK(xmp_get_property(xmp, NS_PHOTOSHOP, "ICCProfile", the_prop));
+	BOOST_CHECK(xmp_get_property(xmp, NS_PHOTOSHOP, "ICCProfile", the_prop, NULL));
 	BOOST_CHECK_EQUAL(strcmp("sRGB IEC61966-2.1", xmp_string_cstr(the_prop)),	0); 
 
 	xmp_string_free(the_prop);

@@ -84,10 +84,10 @@ void test_write_new_property()
 
 	xmp_string_free(reg_prefix);
 
-	xmp_set_property(xmp, NS_CC, "License", "Foo");
+	xmp_set_property(xmp, NS_CC, "License", "Foo", 0);
 
 	XmpStringPtr the_prop = xmp_string_new();
-	BOOST_CHECK(xmp_get_property(xmp, NS_CC, "License", the_prop));
+	BOOST_CHECK(xmp_get_property(xmp, NS_CC, "License", the_prop, NULL));
 	BOOST_CHECK_EQUAL(strcmp("Foo", xmp_string_cstr(the_prop)),	0); 
 	xmp_string_free(the_prop);
 
@@ -177,25 +177,21 @@ void test_exempi()
 	BOOST_CHECK(xmp_has_property(xmp, NS_TIFF, "Make"));
 	BOOST_CHECK_EQUAL(xmp_has_property(xmp, NS_TIFF, "Foo"), false);
 
-	BOOST_CHECK(xmp_get_property(xmp, NS_TIFF, "Make", the_prop));
+	BOOST_CHECK(xmp_get_property(xmp, NS_TIFF, "Make", the_prop, NULL));
 	BOOST_CHECK_EQUAL(strcmp("Canon", xmp_string_cstr(the_prop)),	0); 
 
-	xmp_set_property(xmp, NS_TIFF, "Make", "Nikon");
-	BOOST_CHECK(xmp_get_property(xmp, NS_TIFF, "Make", the_prop));
-	BOOST_CHECK_EQUAL(strcmp("Nikon", xmp_string_cstr(the_prop)),	0); 
-
-	BOOST_CHECK(xmp_set_property2(xmp, NS_TIFF, "Make", "Leica", 0));
-	BOOST_CHECK(xmp_get_property(xmp, NS_TIFF, "Make", the_prop));
+	BOOST_CHECK(xmp_set_property(xmp, NS_TIFF, "Make", "Leica", 0));
+	BOOST_CHECK(xmp_get_property(xmp, NS_TIFF, "Make", the_prop, NULL));
 	BOOST_CHECK_EQUAL(strcmp("Leica", xmp_string_cstr(the_prop)),	0); 
 
 	uint32_t bits;
-	BOOST_CHECK(xmp_get_property_and_bits(xmp, NS_DC, "rights[1]/?xml:lang",
-																				the_prop, &bits));
+	BOOST_CHECK(xmp_get_property(xmp, NS_DC, "rights[1]/?xml:lang",
+								 the_prop, &bits));
 	BOOST_CHECK_EQUAL(bits, 0x20);
 	BOOST_CHECK(XMP_IS_PROP_QUALIFIER(bits));
 
-	BOOST_CHECK(xmp_get_property_and_bits(xmp, NS_DC, "rights[1]",
-																				the_prop, &bits));
+	BOOST_CHECK(xmp_get_property(xmp, NS_DC, "rights[1]",
+								 the_prop, &bits));
 	BOOST_CHECK_EQUAL(bits, 0x50);
 	BOOST_CHECK(XMP_HAS_PROP_QUALIFIERS(bits));
 

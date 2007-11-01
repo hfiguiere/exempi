@@ -378,16 +378,6 @@ bool xmp_serialize_and_format(XmpPtr xmp, XmpStringPtr buffer,
 																uint32_t padding, const char *newline, 
 																const char *tab, int32_t indent);
 
-/** Get an XMP property from the XMP packet
- * @param xmp the XMP packet
- * @param schema
- * @param name
- * @param property the allocated XmpStrinPtr
- * @return true if found
- * @todo deprecate in favor of %xmp_get_property_and_bits()
- */
-bool xmp_get_property(XmpPtr xmp, const char *schema, 
-															const char *name, XmpStringPtr property);
 
 /** Get an XMP property and it option bits from the XMP packet
  * @param xmp the XMP packet
@@ -397,9 +387,9 @@ bool xmp_get_property(XmpPtr xmp, const char *schema,
  * @param propsBits pointer to the option bits. Pass NULL if not needed
  * @return true if found
  */
-bool xmp_get_property_and_bits(XmpPtr xmp, const char *schema, 
-															 const char *name, XmpStringPtr property,
-															 uint32_t *propsBits);
+bool xmp_get_property(XmpPtr xmp, const char *schema, 
+					  const char *name, XmpStringPtr property,
+					  uint32_t *propsBits);
 
 /** Get an item frpm an array property
  * @param xmp the xmp meta
@@ -419,13 +409,12 @@ bool xmp_get_array_item(XmpPtr xmp, const char *schema,
  * @param schema
  * @param name
  * @param value 0 terminated string
+ * @param optionBits
+ * @return false if failure
  */
-void xmp_set_property(XmpPtr xmp, const char *schema, 
-											const char *name, const char *value);
-
-bool xmp_set_property2(XmpPtr xmp, const char *schema, 
-											const char *name, const char *value,
-											uint32_t optionBits);
+bool xmp_set_property(XmpPtr xmp, const char *schema, 
+					  const char *name, const char *value,
+					  uint32_t optionBits);
 
 
 bool xmp_set_array_item(XmpPtr xmp, const char *schema, 

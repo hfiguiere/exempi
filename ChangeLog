@@ -1,3 +1,14 @@
+2007-10-30  Hubert Figuiere  <hub@figuiere.net>
+
+	* ABI breakage: soversion is now 3
+	
+	* exempi/{exempi.cpp,xmp.h}: xmp_get_property_and_bits() renamed
+	xmp_get_property(). xmp_set_property2() renamed
+	xmp_set_property(). More exception handling and refactor
+	set_error() use.
+
+	* exempi/tests/*: update for new API.
+
 2007-10-02  Hubert Figuiere  <hub@figuiere.net>
 
 	* exempi/exempi.cpp (xmp_files_new): Catch

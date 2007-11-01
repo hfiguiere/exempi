@@ -11,7 +11,7 @@
 
 Summary: XMP support library
 Name: exempi
-Version: 1.99.2
+Version: 1.99.5
 Release: 1
 License: BSD
 Group: System/Libraries

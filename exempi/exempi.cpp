@@ -113,9 +113,15 @@ bool xmp_register_namespace(const char *namespaceURI,
 														const char *suggestedPrefix,
 														XmpStringPtr registeredPrefix)
 {
-    return SXMPMeta::RegisterNamespace(namespaceURI, 
-																			 suggestedPrefix,
-																			 STRING(registeredPrefix));
+	try {
+		return SXMPMeta::RegisterNamespace(namespaceURI, 
+										   suggestedPrefix,
+										   STRING(registeredPrefix));
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	return false;
 }
 
 
@@ -160,8 +166,13 @@ bool xmp_files_open(XmpFilePtr xf, const char *path, XmpOpenFileOptions options)
 
 void xmp_files_close(XmpFilePtr xf, XmpCloseFileOptions options)
 {
-	SXMPFiles *txf = (SXMPFiles*)xf;
-	txf->CloseFile(options);
+	try {
+		SXMPFiles *txf = (SXMPFiles*)xf;
+		txf->CloseFile(options);
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
 }
 
 
@@ -314,15 +325,8 @@ void xmp_free(XmpPtr xmp)
 
 
 bool xmp_get_property(XmpPtr xmp, const char *schema, 
-															const char *name, XmpStringPtr property)
-{
-	return xmp_get_property_and_bits(xmp, schema, name, property, NULL);
-}
-
-
-bool xmp_get_property_and_bits(XmpPtr xmp, const char *schema, 
-															 const char *name, XmpStringPtr property,
-															 uint32_t *propsBits)
+					  const char *name, XmpStringPtr property,
+					  uint32_t *propsBits)
 {
 	bool ret = false;
 	try {
@@ -363,15 +367,7 @@ bool xmp_get_array_item(XmpPtr xmp, const char *schema,
 	return ret;
 }
 
-void xmp_set_property(XmpPtr xmp, const char *schema, 
-											const char *name, const char *value)
-{
-	xmp_set_property2(xmp, schema, name, value, 0);
-}
-
-
-
-bool xmp_set_property2(XmpPtr xmp, const char *schema, 
+bool xmp_set_property(XmpPtr xmp, const char *schema, 
 											const char *name, const char *value,
 											uint32_t optionBits)
 {
@@ -381,9 +377,8 @@ bool xmp_set_property2(XmpPtr xmp, const char *schema,
 		txmp->SetProperty(schema, name, value, optionBits);
 	}
 	catch(const XMP_Error & e) {
-		set_error(-e.GetID());
+		set_error(e);
 		ret = false;
-		std::cerr << e.GetErrMsg() << std::endl;
 	}
 	catch(...) {
 		ret = false;		
@@ -402,9 +397,8 @@ bool xmp_set_array_item(XmpPtr xmp, const char *schema,
 		txmp->SetArrayItem(schema, name, index, value, optionBits);
 	}
 	catch(const XMP_Error & e) {
-		set_error(-e.GetID());
+		set_error(e);
 		ret = false;
-		std::cerr << e.GetErrMsg() << std::endl;
 	}
 	catch(...) {
 		ret = false;		
@@ -423,9 +417,8 @@ bool xmp_append_array_item(XmpPtr xmp, const char *schema, const char *name,
 				      optionBits);
 	}
 	catch(const XMP_Error & e) {
-		set_error(-e.GetID());
+		set_error(e);
 		ret = false;
-		std::cerr << e.GetErrMsg() << std::endl;
 	}
 	catch(...) {
 		ret = false;
@@ -441,9 +434,8 @@ bool xmp_delete_property(XmpPtr xmp, const char *schema, const char *name)
 		txmp->DeleteProperty(schema, name);
 	}
 	catch(const XMP_Error & e) {
-		set_error(-e.GetID());
+		set_error(e);
 		ret = false;
-		std::cerr << e.GetErrMsg() << std::endl;
 	}
 	catch(...) {
 		ret = false;
@@ -459,9 +451,8 @@ bool xmp_has_property(XmpPtr xmp, const char *schema, const char *name)
 		ret = txmp->DoesPropertyExist(schema, name);
 	}
 	catch(const XMP_Error & e) {
-		set_error(-e.GetID());
+		set_error(e);
 		ret = false;
-		std::cerr << e.GetErrMsg() << std::endl;
 	}
 	catch(...) {
 		ret = false;
@@ -503,9 +494,8 @@ bool xmp_set_localized_text(XmpPtr xmp, const char *schema, const char *name,
 				       value, optionBits);
 	}
 	catch(const XMP_Error & e) {
-		set_error(-e.GetID());
+		set_error(e);
 		ret = false;
-		std::cerr << e.GetErrMsg() << std::endl;
 	}
 	catch(...) {
 		ret = false;		
@@ -525,9 +515,8 @@ bool xmp_delete_localized_text(XmpPtr xmp, const char *schema,
 															specificLang);
 	}
 	catch(const XMP_Error & e) {
-		set_error(-e.GetID());
+		set_error(e);
 		ret = false;
-		std::cerr << e.GetErrMsg() << std::endl;
 	}
 	catch(...) {
 		ret = false;
