@@ -104,8 +104,8 @@ void test_exempi_iterate()
 	xmp_string_free(the_prop);
 	xmp_string_free(the_path);
 	xmp_string_free(the_schema);
-	xmp_iterator_free(iter);
-	xmp_free(xmp);
+	BOOST_CHECK(xmp_iterator_free(iter));
+	BOOST_CHECK(xmp_free(xmp));
 
 	free(buffer);
 	fclose(f);
@@ -118,20 +118,20 @@ test_suite*
 init_unit_test_suite( int argc, char * argv[] ) 
 {
     test_suite* test = BOOST_TEST_SUITE("test exempi");
-
-		if (argc == 1) {
-			// no argument, lets run like we are in "check"
-			const char * srcdir = getenv("srcdir");
-			
-			BOOST_ASSERT(srcdir != NULL);
-			g_testfile = std::string(srcdir);
-			g_testfile += "/test1.xmp";
-		}
-		else {
-			g_testfile = argv[1];
-		}
+	
+	if (argc == 1) {
+		// no argument, lets run like we are in "check"
+		const char * srcdir = getenv("srcdir");
 		
-		test->add(BOOST_TEST_CASE(&test_exempi_iterate));
+		BOOST_ASSERT(srcdir != NULL);
+		g_testfile = std::string(srcdir);
+		g_testfile += "/test1.xmp";
+	}
+	else {
+		g_testfile = argv[1];
+	}
+	
+	test->add(BOOST_TEST_CASE(&test_exempi_iterate));
 
     return test;
 }

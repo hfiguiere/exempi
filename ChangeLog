@@ -1,3 +1,11 @@
+2007-10-31  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/exempi.cpp: CHECK_PTR macro to check the input pointers
+	in all the API functions.
+	More functions return true or false (instead of void).
+
+	* exempi/tests/*: update for new API.
+
 2007-10-30  Hubert Figuiere  <hub@figuiere.net>
 
 	* ABI breakage: soversion is now 3

@@ -297,17 +297,24 @@ bool xmp_files_open(XmpFilePtr xf, const char *, XmpOpenFileOptions options);
 
 /** Close an XMP file. Will flush the changes
  * @param xf the file object
- * @param optiosn the options to close.
+ * @param options the options to close.
+ * @return true on succes, false on error
+ * xmp_get_error() will give the error code.
  */
-void xmp_files_close(XmpFilePtr xf, XmpCloseFileOptions options);
+bool xmp_files_close(XmpFilePtr xf, XmpCloseFileOptions options);
 
 XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf);
 bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp);
 
 bool xmp_files_can_put_xmp(XmpFilePtr xf, XmpPtr xmp);
-void xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp);
+bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp);
 
-void xmp_files_free(XmpFilePtr xf);
+/** Free a XmpFilePtr
+ * @param xf the file ptr. Cannot be NULL
+ * @return false on error.
+ * xmp_get_error() will give the error code.
+ */
+bool xmp_files_free(XmpFilePtr xf);
 
 
 /** Register a new namespace to add properties to
@@ -341,7 +348,7 @@ XmpPtr xmp_copy(XmpPtr xmp);
 /** Free the xmp packet
  * @param xmp the xmp packet to free
  */
-void xmp_free(XmpPtr xmp);
+bool xmp_free(XmpPtr xmp);
 
 /** Parse the XML passed through the buffer and load
  * it.
@@ -401,8 +408,8 @@ bool xmp_get_property(XmpPtr xmp, const char *schema,
  * @return TRUE if success.
  */
 bool xmp_get_array_item(XmpPtr xmp, const char *schema, 
-												const char *name, int32_t index, XmpStringPtr property,
-												uint32_t *propsBits);
+						const char *name, int32_t index, XmpStringPtr property,
+						uint32_t *propsBits);
 
 /** Set an XMP property from the XMP packet
  * @param xmp the XMP packet
@@ -418,8 +425,8 @@ bool xmp_set_property(XmpPtr xmp, const char *schema,
 
 
 bool xmp_set_array_item(XmpPtr xmp, const char *schema, 
-											 const char *name, int32_t index, const char *value,
-											 uint32_t optionBits);
+						const char *name, int32_t index, const char *value,
+						uint32_t optionBits);
 
 /** Append a value to the XMP Property array in the XMP Packet provided
  * @param xmp the XMP packet
@@ -430,8 +437,8 @@ bool xmp_set_array_item(XmpPtr xmp, const char *schema,
  * @param optionBits option bits of the value itself.
  */
 bool xmp_append_array_item(XmpPtr xmp, const char *schema, const char *name,
-			   uint32_t arrayOptions, const char *value,
-			   uint32_t optionBits);
+						   uint32_t arrayOptions, const char *value,
+						   uint32_t optionBits);
 
 /** Delete a property from the XMP Packet provided
  * @param xmp the XMP packet
@@ -474,19 +481,19 @@ bool xmp_get_localized_text(XmpPtr xmp, const char *schema, const char *name,
  * @param genericLang the generic language you may want to set too. 
  * Can be NULL or empty.
  * @param specificLang the specific language you want. Can't be NULL or empty.
- * @param itemValue the localized value. Cannot be NULL.
- * @param propBits the options flags describing the property.
+ * @param value the localized value. Cannot be NULL.
+ * @param optionBits the options flags describing the property.
  * @return true if set, false otherwise.
  */
 bool xmp_set_localized_text(XmpPtr xmp, const char *schema, const char *name,
-			    const char *genericLang, const char *specificLang,
-			    const char *value, uint32_t optionBits);
+							const char *genericLang, const char *specificLang,
+							const char *value, uint32_t optionBits);
 
 
 
 bool xmp_delete_localized_text(XmpPtr xmp, const char *schema,
-															 const char *name, const char *genericLang,
-															 const char *specificLang);
+							   const char *name, const char *genericLang,
+							   const char *specificLang);
 
 /** Instanciate a new string 
  * @return the new instance. Must be freed with 
@@ -510,11 +517,11 @@ const char * xmp_string_cstr(XmpStringPtr s);
 /**
  */
 XmpIteratorPtr xmp_iterator_new(XmpPtr xmp, const char * schema,
-																const char * propName, XmpIterOptions options);
+								const char * propName, XmpIterOptions options);
 
 /**
  */
-void xmp_iterator_free(XmpIteratorPtr iter);
+bool xmp_iterator_free(XmpIteratorPtr iter);
 
 /** Iterate to the next value
  * @param iter the iterator
@@ -525,13 +532,13 @@ void xmp_iterator_free(XmpIteratorPtr iter);
  * @return true if still something, false if none
  */
 bool xmp_iterator_next(XmpIteratorPtr iter, XmpStringPtr schema,
-											 XmpStringPtr propName, XmpStringPtr propValue,
-											 uint32_t *options);
+					   XmpStringPtr propName, XmpStringPtr propValue,
+					   uint32_t *options);
 
 
 /**
  */
-void xmp_iterator_skip(XmpIteratorPtr iter, XmpIterSkipOptions options);
+bool xmp_iterator_skip(XmpIteratorPtr iter, XmpIterSkipOptions options);
 
 
 #ifdef __cplusplus

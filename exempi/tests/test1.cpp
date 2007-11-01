@@ -84,14 +84,14 @@ void test_write_new_property()
 
 	xmp_string_free(reg_prefix);
 
-	xmp_set_property(xmp, NS_CC, "License", "Foo", 0);
+	BOOST_CHECK(xmp_set_property(xmp, NS_CC, "License", "Foo", 0));
 
 	XmpStringPtr the_prop = xmp_string_new();
 	BOOST_CHECK(xmp_get_property(xmp, NS_CC, "License", the_prop, NULL));
 	BOOST_CHECK_EQUAL(strcmp("Foo", xmp_string_cstr(the_prop)),	0); 
 	xmp_string_free(the_prop);
 
-	xmp_free(xmp);
+	BOOST_CHECK(xmp_free(xmp));
 
 	free(buffer);
 	fclose(f);
@@ -127,14 +127,14 @@ void test_serialize()
 	XmpStringPtr output = xmp_string_new();
 
 	BOOST_CHECK(xmp_serialize_and_format(xmp, output, 
-																			 XMP_SERIAL_OMITPACKETWRAPPER, 
-																			 0, "\n", " ", 0));
+										 XMP_SERIAL_OMITPACKETWRAPPER, 
+										 0, "\n", " ", 0));
 	b2 = xmp_string_cstr(output);
 	// find a way to compare that.
 //	BOOST_CHECK_EQUAL(b1, b2);
 	
 	xmp_string_free(output);
-	xmp_free(xmp);
+	BOOST_CHECK(xmp_free(xmp));
 
 	free(buffer);
 	fclose(f);
@@ -197,20 +197,20 @@ void test_exempi()
 
 	XmpStringPtr the_lang = xmp_string_new();
 	BOOST_CHECK(xmp_get_localized_text(xmp, NS_DC, "rights",
-																		 NULL, "x-default", 
-																		 the_lang, the_prop, &bits));
+									   NULL, "x-default", 
+									   the_lang, the_prop, &bits));
 	BOOST_CHECK_EQUAL(strcmp("x-default", xmp_string_cstr(the_lang)),	0); 
 	BOOST_CHECK(xmp_set_localized_text(xmp, NS_DC, "rights",
-																		 "en", "en-CA", 
-																		 xmp_string_cstr(the_prop), 0));	
+									   "en", "en-CA", 
+									   xmp_string_cstr(the_prop), 0));	
 	BOOST_CHECK(xmp_get_localized_text(xmp, NS_DC, "rights",
-																		 "en", "en-US", 
-																		 the_lang, the_prop, &bits));
+									   "en", "en-US", 
+									   the_lang, the_prop, &bits));
 	BOOST_CHECK(strcmp("en-US", xmp_string_cstr(the_lang)) != 0); 
 	BOOST_CHECK_EQUAL(strcmp("en-CA", xmp_string_cstr(the_lang)),	0); 
 
 	BOOST_CHECK(xmp_delete_localized_text(xmp, NS_DC, "rights",
-								"en", "en-CA"));
+										  "en", "en-CA"));
 	BOOST_CHECK(xmp_has_property(xmp, NS_DC, "rights[1]"));
 	BOOST_CHECK_EQUAL(xmp_has_property(xmp, NS_DC, "rights[2]"), false);
 	
@@ -218,23 +218,23 @@ void test_exempi()
 	xmp_string_free(the_lang);
 
 	BOOST_CHECK(xmp_set_array_item(xmp, NS_DC, "creator", 2,
-																 "foo", 0));
+								   "foo", 0));
 	BOOST_CHECK(xmp_get_array_item(xmp, NS_DC, "creator", 2,
-																 the_prop, &bits));
+								   the_prop, &bits));
 	BOOST_CHECK(XMP_IS_PROP_SIMPLE(bits));
 	BOOST_CHECK_EQUAL(strcmp("foo", xmp_string_cstr(the_prop)),	0); 
 	BOOST_CHECK(xmp_append_array_item(xmp, NS_DC, "creator", 0, "bar", 0));
-
+	
 	BOOST_CHECK(xmp_get_array_item(xmp, NS_DC, "creator", 3,
-																 the_prop, &bits));
+								   the_prop, &bits));
 	BOOST_CHECK(XMP_IS_PROP_SIMPLE(bits));
 	BOOST_CHECK_EQUAL(strcmp("bar", xmp_string_cstr(the_prop)),	0); 
-
+	
 	BOOST_CHECK(xmp_delete_property(xmp, NS_DC, "creator[3]"));
 	BOOST_CHECK_EQUAL(xmp_has_property(xmp, NS_DC, "creator[3]"), false);
-
+	
 	xmp_string_free(the_prop);
-	xmp_free(xmp);
+	BOOST_CHECK(xmp_free(xmp));
 
 	free(buffer);
 	fclose(f);

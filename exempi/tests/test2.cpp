@@ -64,7 +64,7 @@ void test_xmpfiles_write()
 	XmpPtr xmp = xmp_files_get_new_xmp(f);
 	BOOST_CHECK(xmp != NULL);
 
-	xmp_files_free(f);
+	BOOST_CHECK(xmp_files_free(f));
 
 	char buf[1024];
 	snprintf(buf, 1024, "cp %s test.jpg ; chmod u+w test.jpg", g_testfile.c_str());
@@ -77,14 +77,14 @@ void test_xmpfiles_write()
 		return;
 	}
 
-	xmp_set_property(xmp, NS_PHOTOSHOP, "ICCProfile", "foo", 0);
+	BOOST_CHECK(xmp_set_property(xmp, NS_PHOTOSHOP, "ICCProfile", "foo", 0));
 
 	BOOST_CHECK(xmp_files_can_put_xmp(f, xmp));
-	xmp_files_put_xmp(f, xmp);
+	BOOST_CHECK(xmp_files_put_xmp(f, xmp));
 
-	xmp_free(xmp);
-	xmp_files_close(f, XMP_CLOSE_SAFEUPDATE);
-	xmp_files_free(f);
+	BOOST_CHECK(xmp_free(xmp));
+	BOOST_CHECK(xmp_files_close(f, XMP_CLOSE_SAFEUPDATE));
+	BOOST_CHECK(xmp_files_free(f));
 
 	f = xmp_files_open_new("test.jpg", XMP_OPEN_READ);
 
@@ -101,9 +101,9 @@ void test_xmpfiles_write()
 
 	xmp_string_free(the_prop);
 
-	xmp_free(xmp);
-	xmp_files_close(f, XMP_CLOSE_NOOPTION);
-	xmp_files_free(f);
+	BOOST_CHECK(xmp_free(xmp));
+	BOOST_CHECK(xmp_files_close(f, XMP_CLOSE_NOOPTION));
+	BOOST_CHECK(xmp_files_free(f));
 
 //	unlink("test.jpg");
 	xmp_terminate();
@@ -134,9 +134,9 @@ void test_xmpfiles()
 	BOOST_CHECK_EQUAL(strcmp("sRGB IEC61966-2.1", xmp_string_cstr(the_prop)),	0); 
 
 	xmp_string_free(the_prop);
-	xmp_free(xmp);
+	BOOST_CHECK(xmp_free(xmp));
 
-	xmp_files_free(f);
+	BOOST_CHECK(xmp_files_free(f));
 	xmp_terminate();
 }
 
@@ -146,22 +146,22 @@ test_suite*
 init_unit_test_suite( int argc, char * argv[] ) 
 {
     test_suite* test = BOOST_TEST_SUITE("test xmpfiles");
-
-		if (argc == 1) {
-			// no argument, lets run like we are in "check"
-			const char * srcdir = getenv("srcdir");
-			
-			BOOST_ASSERT(srcdir != NULL);
-			g_testfile = std::string(srcdir);
-			g_testfile += "/../../samples/BlueSquares/BlueSquare.jpg";
-		}
-		else {
-			g_testfile = argv[1];
-		}
+	
+	if (argc == 1) {
+		// no argument, lets run like we are in "check"
+		const char * srcdir = getenv("srcdir");
 		
-		test->add(BOOST_TEST_CASE(&test_xmpfiles));
-		test->add(BOOST_TEST_CASE(&test_xmpfiles_write));
-
+		BOOST_ASSERT(srcdir != NULL);
+		g_testfile = std::string(srcdir);
+		g_testfile += "/../../samples/BlueSquares/BlueSquare.jpg";
+	}
+	else {
+		g_testfile = argv[1];
+	}
+	
+	test->add(BOOST_TEST_CASE(&test_xmpfiles));
+	test->add(BOOST_TEST_CASE(&test_xmpfiles_write));
+	
     return test;
 }
 

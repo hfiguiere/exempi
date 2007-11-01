@@ -1,8 +1,12 @@
 1.99.5
 
 - ABI breakage: soversion is now 3
+- Change: API xmp_files_close(), xmp_files_put_xmp(), xmp_files_free(),
+  xmp_free(), xmp_iterator_free(), xmp_iterator_skip() now return bool.
 - Change: API xmp_get_property_and_bits() renamed xmp_get_property().
 - Change: API xmp_set_property2() renamed xmp_set_property().
+- Bug: all API should check about input and return an error if
+  passed NULL.
 - Bug: more exception handling and refactor set_error() use.
 - Bug: add AC_CONFIG_MACRO_DIR to configure.
 
