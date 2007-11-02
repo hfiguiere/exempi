@@ -17,12 +17,13 @@ autom4te.cache
 *.la
 .libs
 .deps
-exempi/exempi-2.0.pc
 libtool
+exempi/exempi-2.0.pc
 exempi/tests/test.jpg
 exempi/tests/test1
 exempi/tests/test2
 exempi/tests/test3
+exempi/doc/Doxyfile
 samples/source/dumpmainxmp
 samples/source/dumpxmp
 samples/source/xmpcoverage
