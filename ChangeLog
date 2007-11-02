@@ -1,3 +1,8 @@
+2007-11-01  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/doc/*, exempi/Makefile.am, configure.ac: Documentation 
+	generation with Doxygen (manual). 
+
 2007-10-31  Hubert Figuiere  <hub@figuiere.net>
 
 	* exempi/exempi.cpp: CHECK_PTR macro to check the input pointers

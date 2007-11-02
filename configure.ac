@@ -88,6 +88,8 @@ public/Makefile
 public/include/Makefile
 public/include/client-glue/Makefile
 exempi/Makefile
+exempi/doc/Makefile
+exempi/doc/Doxyfile
 exempi/tests/Makefile
 exempi/exempi-2.0.pc
 ])
