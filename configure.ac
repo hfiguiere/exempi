@@ -66,7 +66,7 @@ AC_CHECK_HEADER(expat.h, ,
 AC_CHECK_HEADER(iconv.h, ,
 	 AC_MSG_ERROR([iconv headers missing]))
 
-AX_BOOST_BASE([1.33.1])
+AX_BOOST_BASE([1.33.0])
 AX_BOOST_UNIT_TEST_FRAMEWORK
 
 

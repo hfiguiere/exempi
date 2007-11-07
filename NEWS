@@ -9,6 +9,7 @@
   passed NULL.
 - Bug: more exception handling and refactor set_error() use.
 - Bug: add AC_CONFIG_MACRO_DIR to configure.
+- Bug: Lower requirement for libboost to 1.33.0.
 - New: Doxygen API doc generation.
 
 1.99.4

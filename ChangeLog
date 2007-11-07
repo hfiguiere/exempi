@@ -1,3 +1,7 @@
+2007-11-06  Hubert Figuiere  <hub@figuiere.net>
+
+	* configure.ac: Lower requirement for libboost.
+
 2007-11-01  Hubert Figuiere  <hub@figuiere.net>
 
 	* exempi/doc/*, exempi/Makefile.am, configure.ac: Documentation 
