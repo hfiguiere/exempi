@@ -1,0 +1,37 @@
+2007-11-06  Hubert Figuiere  <hub@figuiere.net>
+
+	* configure.ac: Lower requirement for libboost.
+
+2007-11-01  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/doc/*, exempi/Makefile.am, configure.ac: Documentation 
+	generation with Doxygen (manual). 
+
+2007-10-31  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/exempi.cpp: CHECK_PTR macro to check the input pointers
+	in all the API functions.
+	More functions return true or false (instead of void).
+
+	* exempi/tests/*: update for new API.
+
+2007-10-30  Hubert Figuiere  <hub@figuiere.net>
+
+	* ABI breakage: soversion is now 3
+	
+	* exempi/{exempi.cpp,xmp.h}: xmp_get_property_and_bits() renamed
+	xmp_get_property(). xmp_set_property2() renamed
+	xmp_set_property(). More exception handling and refactor
+	set_error() use.
+
+	* exempi/tests/*: update for new API.
+
+2007-10-02  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/exempi.cpp (xmp_files_new): Catch
+	exceptions.
+
+2007-08-17  Hubert Figuiere  <hub@figuiere.net>
+
+	* configure.ac: add AC_CONFIG_MACRO_DIR to configure.
+

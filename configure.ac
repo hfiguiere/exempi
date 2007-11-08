@@ -1,6 +1,6 @@
 AC_PREREQ(2.50)
 AC_INIT(exempi/xmp.h)
-AM_INIT_AUTOMAKE(exempi, 1.99.5)
+AM_INIT_AUTOMAKE(exempi, 1.99.6)
 AM_MAINTAINER_MODE
 
 
@@ -33,7 +33,8 @@ dnl 1.99.3 is the revision 5 3 0
 dnl 1.99.4 is the revision 6 4 0
 dnl ABI breakage reset major to 3
 dnl 1.99.5 is the revision 3.0.0
-AC_SUBST([EXEMPI_REVISION], [0])
+dnl 1.99.6 is the revision 3.0.1
+AC_SUBST([EXEMPI_REVISION], [1])
 AC_SUBST([EXEMPI_AGE],      [0])
 AC_SUBST([EXEMPI_CURRENT],  [3])
 AC_SUBST([EXEMPI_CURRENT_MIN],
