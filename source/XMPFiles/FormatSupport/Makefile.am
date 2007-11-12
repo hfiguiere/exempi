@@ -38,6 +38,7 @@ noinst_LTLIBRARIES = libformatsupport.la
 noinst_HEADERS = EndianUtils.hpp  IPTC_Support.hpp  PSIR_Support.hpp\
 	Reconcile_Impl.hpp   RIFF_Support.hpp  XMPScanner.hpp\
 	ID3_Support.hpp  PNG_Support.hpp   QuickTime_Support.hpp\
+	QuickTime_Support.cpp\
 	ReconcileLegacy.hpp  TIFF_Support.hpp  GIF_Support.hpp
 
 
@@ -46,11 +47,9 @@ INCLUDES = -I$(srcdir)/.. -I$(srcdir)/../../common \
 	-I$(top_srcdir)/third-party/MD5
 
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS = -Wno-multichar\
 	-DUNIX_ENV=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
 	-D_FILE_OFFSET_BITS=64 -DHAVE_EXPAT_CONFIG_H=1 -DXML_STATIC=1
-
-
 
 libformatsupport_la_SOURCES = ID3_Support.cpp   PSIR_FileWriter.cpp    Reconcile_Impl.cpp \
 	ReconcileTIFF.cpp    TIFF_MemoryReader.cpp \
