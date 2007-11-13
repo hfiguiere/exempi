@@ -13,6 +13,7 @@
 #include "XMP_Environment.h"	// ! This must be the first include.
 
 #include <map>
+#include <stdlib.h>
 
 #include "XMP_Const.h"
 #include "XMPFiles_Impl.hpp"

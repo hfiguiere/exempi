@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <stdexcept>
 #include <errno.h>
+#include <cstring>
 
 #if WIN_ENV
 	#pragma warning ( disable : 4127 )	// conditional expression is constant

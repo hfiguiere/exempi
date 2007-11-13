@@ -1,0 +1,10 @@
+2007-11-13  Hubert Figuiere  <hub@figuiere.net>
+
+	* Add a bunch of include deemed necessary by suse factory.
+
+2007-11-08  Hubert Figuiere  <hub@figuiere.net>
+
+	* source/XMPFiles/FormatSupport/Makefile.am: add
+	-Wno-multichar to remove warnings.
+	QuickTime_Support.cpp is in the dist as a noinst_HEADER
+

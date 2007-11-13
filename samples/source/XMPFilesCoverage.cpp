@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <errno.h>
 #include <time.h>
+#include <cstring>
 
 #define TXMP_STRING_TYPE std::string
 #define XMP_INCLUDE_XMPFILES 1

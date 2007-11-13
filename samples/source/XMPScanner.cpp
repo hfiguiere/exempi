@@ -24,7 +24,7 @@
 #include <iomanip>
 #include <fstream>
 #include <cstdlib>
-
+#include <cstring>
 
 #ifndef UseStringPushBack	// VC++ 6.x does not provide push_back for strings!
 	#define UseStringPushBack	0

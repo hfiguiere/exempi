@@ -7,6 +7,8 @@
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
 
+#include <limits.h>
+
 #include "XMPScanner.hpp"
 
 #include "Scanner_Handler.hpp"
