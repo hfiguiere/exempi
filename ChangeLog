@@ -1,5 +1,7 @@
 2007-11-13  Hubert Figuiere  <hub@figuiere.net>
 
+	* exempi/tests/*.c: Add a bunch of include deemed necessary 
+	by suse factory.
 	* Add a bunch of include deemed necessary by suse factory.
 
 2007-11-08  Hubert Figuiere  <hub@figuiere.net>
