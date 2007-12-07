@@ -2,7 +2,7 @@
 #
 # Test script.
 # Currently only make sure dumpmainxmp does not crash
-# Write by Hubert Figuiere <hub@figuiere.net>
+# Written by Hubert Figuiere <hub@figuiere.net>
 
 if [ -z $srcdir ] ; then
     echo "$srcdir srcdir not defined."
