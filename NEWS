@@ -1,5 +1,6 @@
 1.99.6
 
+- Test: add a test for multiple initializations.
 - New: fix configure to allow building on platforms with poor package
        management like MacOS X.
 

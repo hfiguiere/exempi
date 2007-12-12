@@ -97,17 +97,14 @@ int xmp_get_error()
 
 bool xmp_init()
 {
-	bool ret = SXMPMeta::Initialize();
-	if (ret)
-		ret = SXMPFiles::Initialize();
-	return ret;
+	// no need to initialize anything else.
+	return SXMPFiles::Initialize();
 }
 
 
 void xmp_terminate()
 {
 	SXMPFiles::Terminate();
-	SXMPMeta::Terminate();
 }
 
 

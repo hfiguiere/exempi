@@ -37,7 +37,7 @@
 
 INCLUDES = -I$(srcdir)/.. -I$(top_srcdir)/public/include
 
-check_PROGRAMS = test1 test2 test3
+check_PROGRAMS = test1 test2 test3 testinit
 
 check_SCRIPTS = testcore.sh
 
@@ -46,7 +46,11 @@ check_DATA = test1.xmp
 EXTRA_DIST = $(check_DATA) $(check_SCRIPTS)
 CLEANFILES = test.jpg
 
-TESTS = testcore.sh test1 test2 test3
+TESTS = testcore.sh testinit test1 test2 test3
+
+testinit_SOURCES = testinit.cpp
+testinit_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIB@
+testinit_LDFLAGS = -static
 
 test1_SOURCES = test1.cpp
 test1_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIB@
