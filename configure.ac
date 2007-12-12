@@ -62,6 +62,22 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_LIBTOOL
 
+AC_ARG_WITH(darwinports,[  --with-darwinports     add /opt/local/... to CPP/LDFLAGS (Mac OSX)],[
+        if test "x$withval" != "xno"; then
+                CPPFLAGS="$CPPFLAGS -I/opt/local/include"
+                LDFLAGS="$LDFLAGS -L/opt/local/lib"
+		CC=g++
+        fi
+])
+AC_ARG_WITH(fink,[  --with-fink          add /sw/... to CPP/LDFLAGS (Mac OSX)],[
+        if test "x$withval" != "xno"; then
+                CPPFLAGS="$CPPFLAGS -I/sw/include"
+                LDFLAGS="$LDFLAGS -L/sw/lib"
+		CC=g++
+        fi
+])
+
+
 AC_CHECK_HEADER(expat.h, ,
 	 AC_MSG_ERROR([expat headers missing]))
 AC_CHECK_HEADER(iconv.h, ,
