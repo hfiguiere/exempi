@@ -48,7 +48,7 @@ INCLUDES = -I$(srcdir)/.. -I$(srcdir)/../../common \
 
 
 AM_CPPFLAGS = -Wno-multichar\
-	-DUNIX_ENV=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
+	-D@EXEMPI_PLATFORM_DEF@=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
 	-D_FILE_OFFSET_BITS=64 -DHAVE_EXPAT_CONFIG_H=1 -DXML_STATIC=1
 
 libformatsupport_la_SOURCES = ID3_Support.cpp   PSIR_FileWriter.cpp    Reconcile_Impl.cpp \

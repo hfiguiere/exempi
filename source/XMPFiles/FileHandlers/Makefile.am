@@ -51,7 +51,7 @@ INCLUDES = -I$(srcdir)/.. -I$(srcdir)/../FormatSupport \
 
 
 AM_CPPFLAGS = \
-	-DUNIX_ENV=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
+	-D@EXEMPI_PLATFORM_DEF@=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
 	-D_FILE_OFFSET_BITS=64 -DHAVE_EXPAT_CONFIG_H=1 -DXML_STATIC=1
 
 libxmpfilehandlers_la_SOURCES = AVI_Handler.cpp    InDesign_Handler.cpp \

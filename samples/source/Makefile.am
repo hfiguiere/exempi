@@ -40,7 +40,7 @@ noinst_PROGRAMS = xmpcoverage xmpfilescoverage dumpxmp dumpmainxmp
 AM_CXXFLAGS = -fexceptions -funsigned-char -fPIC \
 	-Wno-multichar -Wno-implicit -Wno-ctor-dtor-privacy
 
-AM_CPPFLAGS = -DUNIX_ENV=1 -D_FILE_OFFSET_BITS=64
+AM_CPPFLAGS = -D@EXEMPI_PLATFORM_DEF@=1 -D_FILE_OFFSET_BITS=64
 XMPLIBS = $(top_builddir)/source/XMPCore/libXMPCore.la \
 	$(top_builddir)/source/XMPFiles/libXMPFiles.la \
 	$(top_builddir)/source/common/libxmpcommon.la -lexpat \

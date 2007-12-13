@@ -87,6 +87,20 @@ AX_BOOST_BASE([1.33.0])
 AX_BOOST_UNIT_TEST_FRAMEWORK
 
 
+case $build_vendor in
+	apple)
+		EXEMPI_PLATFORM_DEF=MAC_ENV
+		CPPFLAGS="$CPPFLAGS -I/Developer/Headers/FlatCarbon"
+		LDFLAGS="$LDFLAGS -framework CoreServices"
+		;;
+	*)
+		EXEMPI_PLATFORM_DEF=UNIX_ENV
+		;;
+esac
+
+AC_SUBST(EXEMPI_PLATFORM_DEF)
+
+
 AC_OUTPUT([
 Makefile
 third-party/Makefile
@@ -110,3 +124,12 @@ exempi/doc/Doxyfile
 exempi/tests/Makefile
 exempi/exempi-2.0.pc
 ])
+
+
+echo "
+Defines:
+
+   EXEMPI_PLATFORM_DEF = $EXEMPI_PLATFORM_DEF
+   CPPFLAGS            = $CPPFLAGS
+   LDFLAGS             = $LDFLAGS
+"
