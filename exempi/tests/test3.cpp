@@ -45,13 +45,11 @@
 #include <boost/test/auto_unit_test.hpp>
 #include <boost/format.hpp>
 
+#include "utils.h"
 #include "xmp.h"
 #include "xmpconsts.h"
 
 using boost::unit_test::test_suite;
-
-std::string g_testfile;
-
 
 void test_exempi_iterate()
 {
@@ -120,17 +118,7 @@ init_unit_test_suite( int argc, char * argv[] )
 {
     test_suite* test = BOOST_TEST_SUITE("test exempi");
 	
-	if (argc == 1) {
-		// no argument, lets run like we are in "check"
-		const char * srcdir = getenv("srcdir");
-		
-		BOOST_ASSERT(srcdir != NULL);
-		g_testfile = std::string(srcdir);
-		g_testfile += "/test1.xmp";
-	}
-	else {
-		g_testfile = argv[1];
-	}
+	prepare_test(argc, argv, "test1.xmp"); 
 	
 	test->add(BOOST_TEST_CASE(&test_exempi_iterate));
 

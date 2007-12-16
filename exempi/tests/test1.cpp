@@ -43,12 +43,12 @@
 #include <boost/static_assert.hpp>
 #include <boost/test/auto_unit_test.hpp>
 
+#include "utils.h"
 #include "xmpconsts.h"
 #include "xmp.h"
 
 using boost::unit_test::test_suite;
 
-std::string g_testfile;
 
 void test_write_new_property()
 {
@@ -250,22 +250,12 @@ init_unit_test_suite( int argc, char * argv[] )
 {
     test_suite* test = BOOST_TEST_SUITE("test exempi");
 
-		if (argc == 1) {
-			// no argument, lets run like we are in "check"
-			const char * srcdir = getenv("srcdir");
-			
-			BOOST_ASSERT(srcdir != NULL);
-			g_testfile = std::string(srcdir);
-			g_testfile += "/test1.xmp";
-		}
-		else {
-			g_testfile = argv[1];
-		}
-		
-		test->add(BOOST_TEST_CASE(&test_exempi));
-		test->add(BOOST_TEST_CASE(&test_serialize));
-		test->add(BOOST_TEST_CASE(&test_write_new_property));
+	prepare_test(argc, argv, "test1.xmp");
 
+	test->add(BOOST_TEST_CASE(&test_exempi));
+	test->add(BOOST_TEST_CASE(&test_serialize));
+	test->add(BOOST_TEST_CASE(&test_write_new_property));
+	
     return test;
 }
 

@@ -1,5 +1,5 @@
 /*
- * exempi - testinit.cpp
+ * exempi - utils.cpp
  *
  * Copyright (C) 2007 Hubert Figuiere
  * All rights reserved.
@@ -34,73 +34,25 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
-#include <string>
-
-#include <boost/static_assert.hpp>
-#include <boost/test/auto_unit_test.hpp>
+#include <boost/test/unit_test.hpp>
 
 #include "utils.h"
-#include "xmpconsts.h"
-#include "xmp.h"
 
-using boost::unit_test::test_suite;
+std::string g_testfile;
 
-void test_exempi_init()
+void prepare_test(int argc, char * argv[], const char *filename)
 {
-	size_t len;
-	char * buffer;
-	
-	FILE * f = fopen(g_testfile.c_str(), "rb");
-
-	BOOST_CHECK(f != NULL);
-	if (f == NULL) {
-		exit(128);
+	if (argc == 1) {
+		// no argument, lets run like we are in "check"
+		const char * srcdir = getenv("TEST_DIR");
+		
+		BOOST_ASSERT(srcdir != NULL);
+		g_testfile = std::string(srcdir);
+		g_testfile += "/";
+		g_testfile += filename;
 	}
- 	fseek(f, 0, SEEK_END);
-	len = ftell(f);
- 	fseek(f, 0, SEEK_SET);
-
-	buffer = (char*)malloc(len + 1);
-	size_t rlen = fread(buffer, 1, len, f);
-
-	BOOST_CHECK(rlen == len);
-	BOOST_CHECK(len != 0);
-
-	BOOST_CHECK(xmp_init());
-	BOOST_CHECK(xmp_init());
-
-	XmpPtr xmp = xmp_new_empty();
-	BOOST_CHECK(xmp_parse(xmp, buffer, len));
-	BOOST_CHECK(xmp != NULL);
-	BOOST_CHECK(xmp_free(xmp));
-	
-	xmp_terminate();
-	
-	xmp = xmp_new_empty();
-	BOOST_CHECK(xmp_parse(xmp, buffer, len));
-	BOOST_CHECK(xmp != NULL);
-	BOOST_CHECK(xmp_free(xmp));
-	
-	xmp_terminate();
-
-	free(buffer);
+	else {
+		g_testfile = argv[1];
+	}
 }
-
-
-
-test_suite*
-init_unit_test_suite( int argc, char * argv[] ) 
-{
-    test_suite* test = BOOST_TEST_SUITE("test exempi");
-	
-	prepare_test(argc, argv, "test1.xmp");
-	
-	test->add(BOOST_TEST_CASE(&test_exempi_init));
-
-    return test;
-}
-

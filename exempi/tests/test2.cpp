@@ -43,12 +43,11 @@
 #include <boost/static_assert.hpp>
 #include <boost/test/auto_unit_test.hpp>
 
+#include "utils.h"
 #include "xmp.h"
 #include "xmpconsts.h"
 
 using boost::unit_test::test_suite;
-
-std::string g_testfile;
 
 
 void test_xmpfiles_write()
@@ -148,17 +147,7 @@ init_unit_test_suite( int argc, char * argv[] )
 {
     test_suite* test = BOOST_TEST_SUITE("test xmpfiles");
 	
-	if (argc == 1) {
-		// no argument, lets run like we are in "check"
-		const char * srcdir = getenv("srcdir");
-		
-		BOOST_ASSERT(srcdir != NULL);
-		g_testfile = std::string(srcdir);
-		g_testfile += "/../../samples/BlueSquares/BlueSquare.jpg";
-	}
-	else {
-		g_testfile = argv[1];
-	}
+	prepare_test(argc, argv, "../../samples/BlueSquares/BlueSquare.jpg");
 	
 	test->add(BOOST_TEST_CASE(&test_xmpfiles));
 	test->add(BOOST_TEST_CASE(&test_xmpfiles_write));

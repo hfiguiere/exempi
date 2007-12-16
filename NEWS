@@ -1,5 +1,6 @@
 1.99.6
 
+- Test: refactor a the tests preparation
 - Test: add a test for multiple initializations.
 - Bug: fix configure to allow building on MacOS X. Closes bug #13596
 
