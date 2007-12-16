@@ -230,7 +230,7 @@ bool xmp_files_can_put_xmp(XmpFilePtr xf, XmpPtr xmp)
 bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp)
 {
 	CHECK_PTR(xf, false);
-	CHECK_PTR(xmp, NULL);
+	CHECK_PTR(xmp, false);
 	SXMPFiles *txf = (SXMPFiles*)xf;
 	
 	try {
