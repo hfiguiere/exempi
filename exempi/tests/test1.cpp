@@ -100,6 +100,7 @@ void test_write_new_property()
 	the_dt.second = 42;
 	the_dt.tzSign = XMP_TZ_UTC;
 	the_dt.tzHour = 0;
+	the_dt.tzMinute = 0;
 	the_dt.nanoSecond = 0;
 	BOOST_CHECK(xmp_set_property_date(xmp, NS_EXIF, "DateTimeOriginal", 
 									  &the_dt, NULL));	
