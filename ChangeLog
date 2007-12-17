@@ -1,3 +1,8 @@
+2007-12-17  Hubert Figuiere  <hub@figuiere.net>
+
+	* autogen.sh: added for conveniance for non-tarball builders.
+	(Closes #13707)
+
 2007-12-16  Hubert Figuiere  <hub@figuiere.net>
 
 	* exempi/*: added new API for get/set datetime.
