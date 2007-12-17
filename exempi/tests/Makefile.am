@@ -43,6 +43,8 @@ check_SCRIPTS = testcore.sh
 
 check_DATA = test1.xmp
 
+noinst_HEADERS = utils.h
+
 EXTRA_DIST = $(check_DATA) $(check_SCRIPTS)
 CLEANFILES = test.jpg
 
