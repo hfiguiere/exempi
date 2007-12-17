@@ -63,6 +63,20 @@ static void set_error(const XMP_Error & e)
 	std::cerr << e.GetErrMsg() << std::endl;
 }
 
+#define ASSIGN(dst, src) \
+	dst.year = src.year; \
+	dst.month = src.month;\
+	dst.day = src.day; \
+	dst.hour = src.hour; \
+	dst.minute = src.minute; \
+	dst.second = src.second; \
+	dst.tzSign = src.tzSign; \
+	dst.tzHour = src.tzHour; \
+	dst.tzMinute = src.tzMinute; \
+	dst.nanoSecond = src.nanoSecond;
+
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -359,7 +373,7 @@ bool xmp_get_property(XmpPtr xmp, const char *schema,
 		SXMPMeta *txmp = (SXMPMeta *)xmp;
 		XMP_OptionBits optionBits;
 		ret = txmp->GetProperty(schema, name, STRING(property), 
-																 &optionBits);
+								&optionBits);
 		if(propsBits) {
 			*propsBits = optionBits;
 		}
@@ -369,6 +383,52 @@ bool xmp_get_property(XmpPtr xmp, const char *schema,
 	}
 	return ret;
 }
+
+bool xmp_get_property_date(XmpPtr xmp, const char *schema, 
+					  const char *name, XmpDateTime *property,
+					  uint32_t *propsBits)
+{
+	CHECK_PTR(xmp, false);
+
+	bool ret = false;
+	try {
+		SXMPMeta *txmp = (SXMPMeta *)xmp;
+		XMP_OptionBits optionBits;
+		XMP_DateTime dt;
+//		memset((void*)&dt, 1, sizeof(XMP_DateTime)); 
+		ret = txmp->GetProperty_Date(schema, name, &dt, &optionBits);
+		ASSIGN((*property), dt);
+		if(propsBits) {
+			*propsBits = optionBits;
+		}
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	return ret;
+}
+
+bool xmp_get_property_float(XmpPtr xmp, const char *schema, 
+							const char *name, double * property,
+							uint32_t *propsBits)
+{
+	CHECK_PTR(xmp, false);
+
+	bool ret = false;
+	try {
+		SXMPMeta *txmp = (SXMPMeta *)xmp;
+		XMP_OptionBits optionBits;
+		ret = txmp->GetProperty_Float(schema, name, property, &optionBits);
+		if(propsBits) {
+			*propsBits = optionBits;
+		}
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	return ret;
+}
+
 
 
 bool xmp_get_array_item(XmpPtr xmp, const char *schema, 
@@ -412,6 +472,30 @@ bool xmp_set_property(XmpPtr xmp, const char *schema,
 	}
 	return ret;
 }
+
+
+bool xmp_set_property_date(XmpPtr xmp, const char *schema, 
+						   const char *name, const XmpDateTime *value,
+						   uint32_t optionBits)
+{
+	CHECK_PTR(xmp, false);
+
+	bool ret = false;
+	SXMPMeta *txmp = (SXMPMeta *)xmp;
+	try {
+		XMP_DateTime dt;
+		ASSIGN(dt, (*value));
+		txmp->SetProperty_Date(schema, name, dt, optionBits);
+		ret = true;
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	catch(...) {
+	}
+	return ret;
+}
+
 
 
 bool xmp_set_array_item(XmpPtr xmp, const char *schema, 

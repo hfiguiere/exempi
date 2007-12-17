@@ -43,6 +43,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <time.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -56,19 +58,19 @@ typedef enum {
 	XMP_OPEN_READ           = 0x00000001, /**< Open for read-only access. */
 	XMP_OPEN_FORUPDATE      = 0x00000002, /**< Open for reading and writing. */
 	XMP_OPEN_OPNLYXMP       = 0x00000004, /**< Only the XMP is wanted, 
-																				 * allows space/time optimizations. */
+										   * allows space/time optimizations. */
 	XMP_OPEN_CACHETNAIL     = 0x00000008, /**< Cache thumbnail if possible, 
-																				 * GetThumbnail will be called. */
+										   * GetThumbnail will be called. */
 	XMP_OPEN_STRICTLY       = 0x00000010, /**< Be strict about locating XMP 
-																				 * and reconciling with other forms. */
+										   * and reconciling with other forms. */
 	XMP_OPEN_USESMARTHANDLER= 0x00000020, /**< Require the use of a smart 
-																				 * handler. */
+										   * handler. */
 	XMP_OPEN_USEPACKETSCANNING = 0x00000040, /**< Force packet scanning, 
-																						* don't use a smart handler. */
+											  * don't use a smart handler. */
 	XMP_OPEN_LIMITSCANNING  = 0x00000080, /**< Only packet scan files "known" 
-																				 * to need scanning. */
+										   * to need scanning. */
 	XMP_OPEN_INBACKGROUND   = 0x10000000  /**< Set if calling from background 
-																				 * thread. */
+										   * thread. */
 } XmpOpenFileOptions;
 
 
@@ -76,7 +78,7 @@ typedef enum {
 typedef enum {
 	XMP_CLOSE_NOOPTION      = 0x0000, /**< No close option */
 	XMP_CLOSE_SAFEUPDATE    = 0x0001  /**< Write into a temporary file and 
-																		 * swap for crash safety. */
+									   * swap for crash safety. */
 } XmpCloseFileOptions;
 
 
@@ -90,7 +92,7 @@ typedef enum {
 	XMP_FT_PDF      = 0x50444620UL,  /* 'PDF ' */
 	XMP_FT_PS       = 0x50532020UL,  /* 'PS  ', general PostScript following DSC conventions. */
 	XMP_FT_EPS      = 0x45505320UL,  /* 'EPS ', encapsulated PostScript. */
-
+	
 	XMP_FT_JPEG     = 0x4A504547UL,  /* 'JPEG' */
 	XMP_FT_JPEG2K   = 0x4A505820UL,  /* 'JPX ', ISO 15444-1 */
 	XMP_FT_TIFF     = 0x54494646UL,  /* 'TIFF' */
@@ -101,10 +103,10 @@ typedef enum {
 	XMP_FT_FLA      = 0x464C4120UL,  /* 'FLA ' */
 	XMP_FT_FLV      = 0x464C5620UL,  /* 'FLV ' */
 	
-  XMP_FT_MOV      = 0x4D4F5620UL,  /* 'MOV ', Quicktime */
-  XMP_FT_AVI      = 0x41564920UL,  /* 'AVI ' */
-  XMP_FT_CIN      = 0x43494E20UL,  /* 'CIN ', Cineon */
-  XMP_FT_WAV      = 0x57415620UL,  /* 'WAV ' */
+	XMP_FT_MOV      = 0x4D4F5620UL,  /* 'MOV ', Quicktime */
+	XMP_FT_AVI      = 0x41564920UL,  /* 'AVI ' */
+	XMP_FT_CIN      = 0x43494E20UL,  /* 'CIN ', Cineon */
+	XMP_FT_WAV      = 0x57415620UL,  /* 'WAV ' */
 	XMP_FT_MP3      = 0x4D503320UL,  /* 'MP3 ' */
 	XMP_FT_SES      = 0x53455320UL,  /* 'SES ', Audition session */
 	XMP_FT_CEL      = 0x43454C20UL,  /* 'CEL ', Audition loop */
@@ -140,25 +142,25 @@ typedef enum {
 	XMP_ITER_CLASSMASK      = 0x00FFUL,  /**< The low 8 bits are an enum of 
 																				* what data structure to iterate. */
 	XMP_ITER_PROPERTIES     = 0x0000UL,  /**< Iterate the property tree of 
-																				* a TXMPMeta object. */
+										  * a TXMPMeta object. */
 	XMP_ITER_ALIASES        = 0x0001UL,  /**< Iterate the global alias table. */
 	XMP_ITER_NAMESPACES     = 0x0002UL,  /**< Iterate the global namespace table. */
 	XMP_ITER_JUSTCHILDREN   = 0x0100UL,  /**< Just do the immediate children 
-																				* of the root, default is subtree. */
+										  * of the root, default is subtree. */
 	XMP_ITER_JUSTLEAFNODES  = 0x0200UL,  /**< Just do the leaf nodes, default 
-																				* is all nodes in the subtree. */
+										  * is all nodes in the subtree. */
 	XMP_ITER_JUSTLEAFNAME   = 0x0400UL,  /**< Return just the leaf part of the 
-																				* path, default is the full path. */
+										  * path, default is the full path. */
 	XMP_ITER_INCLUDEALIASES = 0x0800UL,  /**< Include aliases, default is just 
-																				* actual properties. */
+										  * actual properties. */
 	XMP_ITER_OMITQUALIFIERS = 0x1000UL   /* Omit all qualifiers. */
 } XmpIterOptions;
 
 typedef enum {
 	XMP_ITER_SKIPSUBTREE   = 0x0001UL,  /**< Skip the subtree below the 
-																			 * current node. */
+										 * current node. */
 	XMP_ITER_SKIPSIBLINGS  = 0x0002UL   /**< Skip the subtree below and remaining
-																			 * siblings of the current node. */
+										 * siblings of the current node. */
 } XmpIterSkipOptions;
 
 
@@ -166,35 +168,35 @@ typedef enum {
 typedef enum {
   /** Options relating to the XML string form of the property value. */
 	XMP_PROP_VALUE_IS_URI     = 0x00000002UL, /**< The value is a URI, use 
-																						 * rdf:resource attribute. 
-																						 * DISCOURAGED */
+											   * rdf:resource attribute. 
+											   * DISCOURAGED */
 	/** Options relating to qualifiers attached to a property. */
 	XMP_PROP_HAS_QUALIFIERS   = 0x00000010UL, /**< The property has qualifiers,
-																						 * includes rdf:type and 
-																						 * xml:lang. */
+											   * includes rdf:type and 
+											   * xml:lang. */
 	XMP_PROP_IS_QUALIFIER     = 0x00000020UL, /**< This is a qualifier, 
-																						 * includes rdf:type and 
-																						 * xml:lang. */
+											   * includes rdf:type and 
+											   * xml:lang. */
 	XMP_PROP_HAS_LANG         = 0x00000040UL, /**< Implies XMP_PropHasQualifiers, 
-																						 * property has xml:lang. */
+											   * property has xml:lang. */
 	XMP_PROP_HAS_TYPE         = 0x00000080UL, /**< Implies XMP_PropHasQualifiers, 
-																						 * property has rdf:type. */
+											   * property has rdf:type. */
 	
 	/* Options relating to the data structure form. */
 	XMP_PROP_VALUE_IS_STRUCT = 0x00000100UL,  /**< The value is a structure 
-																						 * with nested fields. */
+											   * with nested fields. */
 	XMP_PROP_VALUE_IS_ARRAY  = 0x00000200UL,  /**< The value is an array 
-																						 * (RDF alt/bag/seq). */
+											   * (RDF alt/bag/seq). */
 	XMP_PROP_ARRAY_IS_UNORDERED = XMP_PROP_VALUE_IS_ARRAY,  /**< The item order 
-																													 * does not matter.*/
+															 * does not matter.*/
 	XMP_PROP_ARRAY_IS_ORDERED = 0x00000400UL, /**< Implies XMP_PropValueIsArray,
-																						 * item order matters. */
+											   * item order matters. */
 	XMP_PROP_ARRAY_IS_ALT    = 0x00000800UL,  /**< Implies XMP_PropArrayIsOrdered,
-																						 * items are alternates. */
+											   * items are alternates. */
 	
 	/** Additional struct and array options. */
 	XMP_PROP_ARRAY_IS_ALTTEXT = 0x00001000UL,  /**< Implies kXMP_PropArrayIsAlternate,
-																							* items are localized text. */
+												* items are localized text. */
 	/* kXMP_InsertBeforeItem  = 0x00004000UL,  ! Used by SetXyz functions. */
 	/* kXMP_InsertAfterItem   = 0x00008000UL,  ! Used by SetXyz functions. */
 	
@@ -245,25 +247,25 @@ typedef enum {
 
 enum {  /* Options for xmp_serialize */
 	XMP_SERIAL_OMITPACKETWRAPPER   = 0x0010UL,  /**< Omit the XML packet 
-																							 * wrapper. */
+												 * wrapper. */
 	XMP_SERIAL_READONLYPACKET      = 0x0020UL,  /**< Default is a writeable 
-																							 * packet. */
+												 * packet. */
 	XMP_SERIAL_USECOMPACTFORMAT    = 0x0040UL,  /**< Use a compact form of 
-																								 RDF. */
-
+												 * RDF. */
+	
 	XMP_SERIAL_INCLUDETHUMBNAILPAD = 0x0100UL,  /**< Include a padding allowance 
-																							 * for a thumbnail image. */
+												 * for a thumbnail image. */
 	XMP_SERIAL_EXACTPACKETLENGTH   = 0x0200UL,  /**< The padding parameter is 
-																							 * the overall packet length. */
+												 * the overall packet length. */
 	XMP_SERIAL_WRITEALIASCOMMENTS  = 0x0400UL,  /**< Show aliases as XML 
-																							 * comments. */
+												 * comments. */
 	XMP_SERIAL_OMITALLFORMATTING   = 0x0800UL,  /**< Omit all formatting 
-																							 * whitespace. */
+												 * whitespace. */
 	
 	_XMP_LITTLEENDIAN_BIT    = 0x0001UL,  /* ! Don't use directly, see the combined values below! */
 	_XMP_UTF16_BIT           = 0x0002UL,
 	_XMP_UTF32_BIT           = 0x0004UL,
-
+	
 	XMP_SERIAL_ENCODINGMASK        = 0x0007UL,
 	XMP_SERIAL_ENCODEUTF8          = 0UL,
 	XMP_SERIAL_ENCODEUTF16BIG      = _XMP_UTF16_BIT,
@@ -277,6 +279,26 @@ typedef struct _Xmp *XmpPtr;
 typedef struct _XmpFile *XmpFilePtr;
 typedef struct _XmpString *XmpStringPtr;
 typedef struct _XmpIterator *XmpIteratorPtr;
+
+typedef struct _XmpDateTime {
+	int32_t year;
+    int32_t month;      /* 1..12 */
+    int32_t day;        /* 1..31 */
+    int32_t hour;       /* 0..23 */
+    int32_t minute;     /* 0..59 */
+    int32_t second;     /* 0..59 */
+    int32_t tzSign;     /* -1..+1, 0 means UTC, -1 is west, +1 is east. */
+    int32_t tzHour;     /* 0..23 */
+    int32_t tzMinute;   /* 0..59 */
+    int32_t nanoSecond;
+} XmpDateTime;
+
+/** Values used for tzSign field. */
+enum {  
+    XMP_TZ_WEST = -1, /**< West of UTC   */
+	XMP_TZ_UTC =  0,  /**< UTC           */
+    XMP_TZ_EAST = +1  /**< East of UTC   */
+};
 
 /** Init the library. Must be called before anything else */
 bool xmp_init();
@@ -398,6 +420,13 @@ bool xmp_get_property(XmpPtr xmp, const char *schema,
 					  const char *name, XmpStringPtr property,
 					  uint32_t *propsBits);
 
+bool xmp_get_property_date(XmpPtr xmp, const char *schema, 
+						   const char *name, XmpDateTime * property,
+						   uint32_t *propsBits);
+bool xmp_get_property_float(XmpPtr xmp, const char *schema, 
+							const char *name, double * property,
+							uint32_t *propsBits);
+
 /** Get an item frpm an array property
  * @param xmp the xmp meta
  * @param schema the schema
@@ -423,6 +452,9 @@ bool xmp_set_property(XmpPtr xmp, const char *schema,
 					  const char *name, const char *value,
 					  uint32_t optionBits);
 
+bool xmp_set_property_date(XmpPtr xmp, const char *schema, 
+						   const char *name, const XmpDateTime *value,
+						   uint32_t optionBits);
 
 bool xmp_set_array_item(XmpPtr xmp, const char *schema, 
 						const char *name, int32_t index, const char *value,

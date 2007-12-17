@@ -90,6 +90,34 @@ void test_write_new_property()
 	XmpStringPtr the_prop = xmp_string_new();
 	BOOST_CHECK(xmp_get_property(xmp, NS_CC, "License", the_prop, NULL));
 	BOOST_CHECK_EQUAL(strcmp("Foo", xmp_string_cstr(the_prop)),	0); 
+
+	XmpDateTime the_dt;
+	the_dt.year = 2005;
+	the_dt.month = 12;
+	the_dt.day = 25;
+	the_dt.hour = 12;
+	the_dt.minute = 42;
+	the_dt.second = 42;
+	the_dt.tzSign = XMP_TZ_UTC;
+	the_dt.tzHour = 0;
+	the_dt.nanoSecond = 0;
+	BOOST_CHECK(xmp_set_property_date(xmp, NS_EXIF, "DateTimeOriginal", 
+									  &the_dt, NULL));	
+
+	BOOST_CHECK(xmp_get_property(xmp, NS_EXIF, "DateTimeOriginal", 
+								 the_prop, NULL));
+	BOOST_CHECK_EQUAL(strcmp("2005-12-25T12:42:42Z", 
+							 xmp_string_cstr(the_prop)), 0); 	
+
+	XmpDateTime the_dt2;
+	BOOST_CHECK(xmp_get_property_date(xmp, NS_EXIF, "DateTimeOriginal", 
+									  &the_dt2, NULL));
+
+	BOOST_CHECK(the_dt2.year == 2005);
+	BOOST_CHECK(the_dt2.minute == 42);
+	BOOST_CHECK(the_dt2.tzSign == XMP_TZ_UTC);
+
+
 	xmp_string_free(the_prop);
 
 	BOOST_CHECK(xmp_free(xmp));
@@ -116,6 +144,7 @@ void test_serialize()
 
 	BOOST_CHECK(rlen == len);
 	BOOST_CHECK(len != 0);
+	buffer[rlen] = 0;
 
 	BOOST_CHECK(xmp_init());
 
@@ -233,9 +262,25 @@ void test_exempi()
 	
 	BOOST_CHECK(xmp_delete_property(xmp, NS_DC, "creator[3]"));
 	BOOST_CHECK_EQUAL(xmp_has_property(xmp, NS_DC, "creator[3]"), false);
+
+
+	BOOST_CHECK(xmp_get_property(xmp, NS_EXIF, "DateTimeOriginal", 
+											the_prop, NULL));
+	BOOST_CHECK_EQUAL(strcmp("2006-12-07T23:20:43-05:00", 
+							 xmp_string_cstr(the_prop)), 0); 
 	
 	xmp_string_free(the_prop);
+
+	XmpDateTime the_dt;
+	bool ret;
+	BOOST_CHECK(ret = xmp_get_property_date(xmp, NS_EXIF, "DateTimeOriginal", 
+											&the_dt, NULL));
+	BOOST_CHECK(the_dt.year == 2006);
+	BOOST_CHECK(the_dt.minute == 20);
+	BOOST_CHECK(the_dt.tzSign == XMP_TZ_WEST);
+
 	BOOST_CHECK(xmp_free(xmp));
+
 
 	free(buffer);
 	fclose(f);

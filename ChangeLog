@@ -1,5 +1,7 @@
 2007-12-16  Hubert Figuiere  <hub@figuiere.net>
 
+	* exempi/*: added new API for get/set datetime.
+
 	* exempi/tests/*: refactor the test preparation.
 
 2007-11-13  Hubert Figuiere  <hub@figuiere.net>
