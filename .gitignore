@@ -6,6 +6,7 @@ config.sub
 config.log
 config.status
 aclocal.m4
+autogen.err
 configure
 depcomp
 install-sh
