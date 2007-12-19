@@ -88,6 +88,8 @@ void test_exempi_init()
 	xmp_terminate();
 
 	free(buffer);
+	BOOST_CHECK(!g_lt->check_leaks());
+	BOOST_CHECK(!g_lt->check_errors());
 }
 
 

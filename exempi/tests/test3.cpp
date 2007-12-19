@@ -109,6 +109,9 @@ void test_exempi_iterate()
 	free(buffer);
 	fclose(f);
 	xmp_terminate();
+
+	BOOST_CHECK(!g_lt->check_leaks());
+	BOOST_CHECK(!g_lt->check_errors());
 }
 
 

@@ -1,3 +1,8 @@
+2007-12-19  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/tests/*, configure.ac: detect valgrind.
+	Add leak detection support.
+
 2007-12-17  Hubert Figuiere  <hub@figuiere.net>
 
 	* autogen.sh: added for convenience for non-tarball builders.

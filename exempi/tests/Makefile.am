@@ -49,7 +49,7 @@ EXTRA_DIST = $(check_DATA) $(check_SCRIPTS)
 CLEANFILES = test.jpg
 
 TESTS = testcore.sh testinit test1 test2 test3
-TESTS_ENVIRONMENT = TEST_DIR=$(srcdir)
+TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) @VALGRIND@
 
 testinit_SOURCES = testinit.cpp utils.cpp
 testinit_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIB@

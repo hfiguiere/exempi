@@ -127,6 +127,9 @@ void test_write_new_property()
 	fclose(f);
 
 	xmp_terminate();
+
+	BOOST_CHECK(!g_lt->check_leaks());
+	BOOST_CHECK(!g_lt->check_errors());
 }
 
 
@@ -171,6 +174,9 @@ void test_serialize()
 	fclose(f);
 
 	xmp_terminate();
+
+	BOOST_CHECK(!g_lt->check_leaks());
+	BOOST_CHECK(!g_lt->check_errors());
 }
 
 
@@ -287,6 +293,9 @@ void test_exempi()
 	fclose(f);
 
 	xmp_terminate();
+
+	BOOST_CHECK(!g_lt->check_leaks());
+	BOOST_CHECK(!g_lt->check_errors());
 }
 
 
@@ -301,7 +310,7 @@ init_unit_test_suite( int argc, char * argv[] )
 	test->add(BOOST_TEST_CASE(&test_exempi));
 	test->add(BOOST_TEST_CASE(&test_serialize));
 	test->add(BOOST_TEST_CASE(&test_write_new_property));
-	
+
     return test;
 }
 

@@ -107,6 +107,9 @@ void test_xmpfiles_write()
 
 //	unlink("test.jpg");
 	xmp_terminate();
+
+	BOOST_CHECK(!g_lt->check_leaks());
+	BOOST_CHECK(!g_lt->check_errors());
 }
 
 
@@ -138,6 +141,9 @@ void test_xmpfiles()
 
 	BOOST_CHECK(xmp_files_free(f));
 	xmp_terminate();
+
+	BOOST_CHECK(!g_lt->check_leaks());
+	BOOST_CHECK(!g_lt->check_errors());
 }
 
 

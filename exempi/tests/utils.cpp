@@ -40,6 +40,7 @@
 #include "utils.h"
 
 std::string g_testfile;
+boost::scoped_ptr<LeakTracker> g_lt(new LeakTracker) ;
 
 void prepare_test(int argc, char * argv[], const char *filename)
 {
@@ -55,4 +56,65 @@ void prepare_test(int argc, char * argv[], const char *filename)
 	else {
 		g_testfile = argv[1];
 	}
+}
+
+
+
+#ifdef HAVE_VALGRIND_MEMCHECK_H
+# include <valgrind/memcheck.h>
+# include <valgrind/valgrind.h>
+# define CC_EXTENSION __extension__
+#else
+# define VALGRIND_COUNT_ERRORS 0
+# define VALGRIND_DO_LEAK_CHECK
+# define VALGRIND_COUNT_LEAKS(a,b,c,d) (a=b=c=d=0)
+# define CC_EXTENSION
+#endif
+
+
+
+LeakTracker::LeakTracker()
+	: m_leaks(0),
+	  m_dubious(0),
+	  m_reachable(0),
+	  m_suppressed(0),
+	  m_errors(0)
+{
+
+}
+
+
+LeakTracker::~LeakTracker()
+{
+	printf("LeakTracker: leaked = %d, errors = %d\n", m_leaks, m_errors);
+}
+
+
+int LeakTracker::check_leaks()
+{
+    int leaked = 0;
+	int dubious = 0;
+	int reachable = 0;
+	int suppressed = 0;
+
+    VALGRIND_DO_LEAK_CHECK;
+    VALGRIND_COUNT_LEAKS(leaked, dubious, reachable, suppressed);
+	printf("memleaks: sure:%d dubious:%d reachable:%d suppress:%d\n",
+		   leaked, dubious, reachable, suppressed);
+	bool has_leaks = (m_leaks != leaked);
+
+	m_leaks = leaked;
+	m_dubious = dubious;
+	m_reachable = reachable;
+	m_suppressed = suppressed;
+
+	return has_leaks;
+}
+
+int LeakTracker::check_errors()
+{
+	int errors = (int)(CC_EXTENSION VALGRIND_COUNT_ERRORS);
+	bool has_new_errors = (m_errors != errors);
+	m_errors = errors;
+    return has_new_errors;
 }

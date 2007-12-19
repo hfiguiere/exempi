@@ -3,6 +3,7 @@
 - New: xmp_get_property_date() / xmp_set_property_date()
 - Test: refactor a the tests preparation
 - Test: add a test for multiple initializations.
+- Test: use valgrind is available.
 - Bug: fix configure to allow building on MacOS X. Closes bug #13596
 - Bug #13707: add autogen.sh
 

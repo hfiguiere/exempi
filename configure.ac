@@ -1,4 +1,4 @@
- AC_PREREQ(2.50)
+AC_PREREQ(2.50)
 AC_INIT(exempi/xmp.h)
 AM_INIT_AUTOMAKE(exempi, 1.99.6)
 AM_MAINTAINER_MODE
@@ -86,7 +86,6 @@ AC_CHECK_HEADER(iconv.h, ,
 AX_BOOST_BASE([1.33.0])
 AX_BOOST_UNIT_TEST_FRAMEWORK
 
-
 case $build_vendor in
 	apple)
 		EXEMPI_PLATFORM_DEF=MAC_ENV
@@ -99,6 +98,24 @@ case $build_vendor in
 esac
 
 AC_SUBST(EXEMPI_PLATFORM_DEF)
+
+AM_CONDITIONAL(WITH_UNIT_TEST, true || test "x$HAVE_BOOST" != "x")
+
+dnl Check for valgrind (optional) for make check.
+AC_CHECK_PROG(VALGRIND, valgrind, valgrind)
+AC_CHECK_HEADERS(valgrind/memcheck.h)
+if test "$VALGRIND" = ""; then
+        AC_MSG_WARN([Valgrind is missing. checks will run without])
+fi
+if test "$VALGRIND" != ""; then
+dnl due to stupid m4 I had to double the [ and ] in the regexp
+        vg_ver=`valgrind --version | sed -e  's/.*-\([[0-9]]\)\.[[0-9]].*/\1/'`
+        VALGRIND="$VALGRIND --tool=memcheck --leak-check=yes --num-callers=10"
+        if test "$vg_ver" != "3" ; then
+           VALGRIND="$VALGRIND --logfile-fd=-1"
+        fi
+fi
+AC_SUBST(VALGRIND)
 
 
 AC_OUTPUT([

@@ -42,8 +42,29 @@
 
 #include <string>
 
+#include <boost/scoped_ptr.hpp>
+
 extern std::string g_testfile;
 
 void prepare_test(int argc, char * argv[], const char * filename);
+
+class LeakTracker
+{
+public:
+	LeakTracker();
+	~LeakTracker();
+/** return false if there is NO leak. Will print on stdout */
+	int check_leaks();
+	int check_errors();
+private:
+	int m_leaks;
+	int m_dubious;
+	int m_reachable;
+	int m_suppressed;
+	int m_errors;
+};
+
+
+extern boost::scoped_ptr<LeakTracker> g_lt;
 
 #endif
