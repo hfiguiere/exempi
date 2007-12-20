@@ -1,5 +1,11 @@
 2007-12-19  Hubert Figuiere  <hub@figuiere.net>
 
+	* exempi/exempi.cpp, exempi/tests/test1.cpp, 
+	exempi/tests/test1.xmp, exempi/xmp.h: 
+	Add setter/getter for int32, int64, bool, float.
+
+	* exempi/xmpconsts.h, exempi/exempi.cpp: add ACR schema namespace
+	
 	* public/include/TXMPMeta.hpp, public/include/client-glue/TXMPMeta.incl_cpp,
 	samples/source/XMPCoreCoverage.cpp, 
 	source/XMPFiles/FormatSupport/ReconcileTIFF.cpp:

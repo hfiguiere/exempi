@@ -54,6 +54,8 @@ extern const char NS_EXIF_AUX[];
 extern const char NS_CRS[];
 extern const char NS_LIGHTROOM[];
 extern const char NS_PHOTOSHOP[];
+extern const char NS_CAMERA_RAW_SETTINGS[];
+extern const char NS_CAMERA_RAW_SAVED_SETTINGS[];
 extern const char NS_IPTC4XMP[];
 extern const char NS_TPG[];
 extern const char NS_DIMENSIONS_TYPE[];

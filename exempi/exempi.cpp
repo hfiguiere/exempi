@@ -92,6 +92,8 @@ const char NS_DC[] = kXMP_NS_DC;
 const char NS_EXIF_AUX[] = kXMP_NS_EXIF_Aux;
 const char NS_CRS[] = kXMP_NS_CameraRaw;
 const char NS_LIGHTROOM[] = "http://ns.adobe.com/lightroom/1.0/";
+const char NS_CAMERA_RAW_SETTINGS[] = kXMP_NS_CameraRaw;
+const char NS_CAMERA_RAW_SAVED_SETTINGS[] = "http://ns.adobe.com/camera-raw-saved-settings/1.0/";
 const char NS_PHOTOSHOP[] = kXMP_NS_Photoshop;
 const char NS_IPTC4XMP[] = kXMP_NS_IPTCCore;
 const char NS_TPG[] = kXMP_NS_XMP_PagedFile;
@@ -429,6 +431,70 @@ bool xmp_get_property_float(XmpPtr xmp, const char *schema,
 	return ret;
 }
 
+bool xmp_get_property_bool(XmpPtr xmp, const char *schema, 
+							const char *name, bool * property,
+							uint32_t *propsBits)
+{
+	CHECK_PTR(xmp, false);
+
+	bool ret = false;
+	try {
+		SXMPMeta *txmp = (SXMPMeta *)xmp;
+		XMP_OptionBits optionBits;
+		ret = txmp->GetProperty_Bool(schema, name, property, &optionBits);
+		if(propsBits) {
+			*propsBits = optionBits;
+		}
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	return ret;
+}
+
+bool xmp_get_property_int32(XmpPtr xmp, const char *schema, 
+							const char *name, int32_t * property,
+							uint32_t *propsBits)
+{
+	CHECK_PTR(xmp, false);
+
+	bool ret = false;
+	try {
+		SXMPMeta *txmp = (SXMPMeta *)xmp;
+		XMP_OptionBits optionBits;
+		// the long converstion is needed until XMPCore is fixed it use proper types.
+		ret = txmp->GetProperty_Int(schema, name, property, &optionBits);
+		if(propsBits) {
+			*propsBits = optionBits;
+		}
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	return ret;
+}
+
+bool xmp_get_property_int64(XmpPtr xmp, const char *schema, 
+							const char *name, int64_t * property,
+							uint32_t *propsBits)
+{
+	CHECK_PTR(xmp, false);
+
+	bool ret = false;
+	try {
+		SXMPMeta *txmp = (SXMPMeta *)xmp;
+		XMP_OptionBits optionBits;
+		ret = txmp->GetProperty_Int64(schema, name, property, &optionBits);
+		if(propsBits) {
+			*propsBits = optionBits;
+		}
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	return ret;
+}
+
 
 
 bool xmp_get_array_item(XmpPtr xmp, const char *schema, 
@@ -496,6 +562,87 @@ bool xmp_set_property_date(XmpPtr xmp, const char *schema,
 	return ret;
 }
 
+bool xmp_set_property_float(XmpPtr xmp, const char *schema, 
+							const char *name, double value,
+							uint32_t optionBits)
+{
+	CHECK_PTR(xmp, false);
+
+	bool ret = false;
+	SXMPMeta *txmp = (SXMPMeta *)xmp;
+	try {
+		txmp->SetProperty_Float(schema, name, value, optionBits);
+		ret = true;
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	catch(...) {
+	}
+	return ret;
+}
+
+
+bool xmp_set_property_bool(XmpPtr xmp, const char *schema, 
+						   const char *name, bool value,
+						   uint32_t optionBits)
+{
+	CHECK_PTR(xmp, false);
+
+	bool ret = false;
+	SXMPMeta *txmp = (SXMPMeta *)xmp;
+	try {
+		txmp->SetProperty_Bool(schema, name, value, optionBits);
+		ret = true;
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	catch(...) {
+	}
+	return ret;
+}
+
+
+bool xmp_set_property_int32(XmpPtr xmp, const char *schema, 
+							const char *name, int32_t value,
+							uint32_t optionBits)
+{
+	CHECK_PTR(xmp, false);
+
+	bool ret = false;
+	SXMPMeta *txmp = (SXMPMeta *)xmp;
+	try {
+		txmp->SetProperty_Int(schema, name, value, optionBits);
+		ret = true;
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	catch(...) {
+	}
+	return ret;
+}
+
+bool xmp_set_property_int64(XmpPtr xmp, const char *schema, 
+							const char *name, int64_t value,
+							uint32_t optionBits)
+{
+	CHECK_PTR(xmp, false);
+
+	bool ret = false;
+	SXMPMeta *txmp = (SXMPMeta *)xmp;
+	try {
+		txmp->SetProperty_Int64(schema, name, value, optionBits);
+		ret = true;
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	catch(...) {
+	}
+	return ret;
+}
 
 
 bool xmp_set_array_item(XmpPtr xmp, const char *schema, 

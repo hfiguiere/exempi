@@ -79,7 +79,82 @@
   </rdf:Description>
   <rdf:Description rdf:about=""
     xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/">
-   <crs:AlreadyApplied>False</crs:AlreadyApplied>
+       <crs:AlreadyApplied>False</crs:AlreadyApplied>
+       <crs:WhiteBalance>As Shot</crs:WhiteBalance>
+       <crs:Exposure>0.00</crs:Exposure>
+       <crs:Shadows>5</crs:Shadows>
+       <crs:Brightness>+50</crs:Brightness>
+       <crs:Contrast>+25</crs:Contrast>
+       <crs:Saturation>0</crs:Saturation>
+       <crs:Sharpness>25</crs:Sharpness>
+       <crs:LuminanceSmoothing>0</crs:LuminanceSmoothing>
+       <crs:ColorNoiseReduction>25</crs:ColorNoiseReduction>
+       <crs:ChromaticAberrationR>0</crs:ChromaticAberrationR>
+       <crs:ChromaticAberrationB>0</crs:ChromaticAberrationB>
+       <crs:VignetteAmount>0</crs:VignetteAmount>
+       <crs:ShadowTint>0</crs:ShadowTint>
+       <crs:RedHue>0</crs:RedHue>
+       <crs:RedSaturation>0</crs:RedSaturation>
+       <crs:GreenHue>0</crs:GreenHue>
+       <crs:GreenSaturation>0</crs:GreenSaturation>
+       <crs:BlueHue>0</crs:BlueHue>
+       <crs:BlueSaturation>0</crs:BlueSaturation>
+       <crs:FillLight>0</crs:FillLight>
+       <crs:Vibrance>0</crs:Vibrance>
+       <crs:HighlightRecovery>0</crs:HighlightRecovery>
+       <crs:Clarity>0</crs:Clarity>
+       <crs:Defringe>0</crs:Defringe>
+       <crs:HueAdjustmentRed>0</crs:HueAdjustmentRed>
+       <crs:HueAdjustmentOrange>0</crs:HueAdjustmentOrange>
+       <crs:HueAdjustmentYellow>0</crs:HueAdjustmentYellow>
+       <crs:HueAdjustmentGreen>0</crs:HueAdjustmentGreen>
+       <crs:HueAdjustmentAqua>0</crs:HueAdjustmentAqua>
+       <crs:HueAdjustmentBlue>0</crs:HueAdjustmentBlue>
+       <crs:HueAdjustmentPurple>0</crs:HueAdjustmentPurple>
+       <crs:HueAdjustmentMagenta>0</crs:HueAdjustmentMagenta>
+       <crs:SaturationAdjustmentRed>0</crs:SaturationAdjustmentRed>
+       <crs:SaturationAdjustmentOrange>0</crs:SaturationAdjustmentOrange>
+       <crs:SaturationAdjustmentYellow>0</crs:SaturationAdjustmentYellow>
+       <crs:SaturationAdjustmentGreen>0</crs:SaturationAdjustmentGreen>
+       <crs:SaturationAdjustmentAqua>0</crs:SaturationAdjustmentAqua>
+       <crs:SaturationAdjustmentBlue>0</crs:SaturationAdjustmentBlue>
+       <crs:SaturationAdjustmentPurple>0</crs:SaturationAdjustmentPurple>
+       <crs:SaturationAdjustmentMagenta>0</crs:SaturationAdjustmentMagenta>
+       <crs:LuminanceAdjustmentRed>0</crs:LuminanceAdjustmentRed>
+       <crs:LuminanceAdjustmentOrange>0</crs:LuminanceAdjustmentOrange>
+       <crs:LuminanceAdjustmentYellow>0</crs:LuminanceAdjustmentYellow>
+       <crs:LuminanceAdjustmentGreen>0</crs:LuminanceAdjustmentGreen>
+       <crs:LuminanceAdjustmentAqua>0</crs:LuminanceAdjustmentAqua>
+       <crs:LuminanceAdjustmentBlue>0</crs:LuminanceAdjustmentBlue>
+       <crs:LuminanceAdjustmentPurple>0</crs:LuminanceAdjustmentPurple>
+       <crs:LuminanceAdjustmentMagenta>0</crs:LuminanceAdjustmentMagenta>
+       <crs:SplitToningShadowHue>0</crs:SplitToningShadowHue>
+       <crs:SplitToningShadowSaturation>0</crs:SplitToningShadowSaturation>
+       <crs:SplitToningHighlightHue>0</crs:SplitToningHighlightHue>
+       <crs:SplitToningHighlightSaturation>0</crs:SplitToningHighlightSaturation>
+       <crs:SplitToningBalance>0</crs:SplitToningBalance>
+       <crs:ParametricShadows>0</crs:ParametricShadows>
+       <crs:ParametricDarks>0</crs:ParametricDarks>
+       <crs:ParametricLights>0</crs:ParametricLights>
+       <crs:ParametricHighlights>0</crs:ParametricHighlights>
+       <crs:ParametricShadowSplit>25</crs:ParametricShadowSplit>
+       <crs:ParametricMidtoneSplit>50</crs:ParametricMidtoneSplit>
+       <crs:ParametricHighlightSplit>75</crs:ParametricHighlightSplit>
+       <crs:SharpenRadius>+1.0</crs:SharpenRadius>
+       <crs:SharpenDetail>25</crs:SharpenDetail>
+       <crs:SharpenEdgeMasking>0</crs:SharpenEdgeMasking>
+       <crs:ConvertToGrayscale>False</crs:ConvertToGrayscale>
+       <crs:ToneCurveName>Medium Contrast</crs:ToneCurveName>
+       <crs:ToneCurve>
+        <rdf:Seq>
+         <rdf:li>0, 0</rdf:li>
+         <rdf:li>32, 22</rdf:li>
+         <rdf:li>64, 56</rdf:li>
+         <rdf:li>128, 128</rdf:li>
+         <rdf:li>192, 196</rdf:li>
+         <rdf:li>255, 255</rdf:li>
+        </rdf:Seq>
+       </crs:ToneCurve>
   </rdf:Description>
   <rdf:Description rdf:about=""
     xmlns:crx="http://ns.adobe.com/lightroom-settings-experimental/1.0/">

@@ -403,9 +403,9 @@ bool xmp_serialize(XmpPtr xmp, XmpStringPtr buffer, uint32_t options,
  * @return TRUE if success.
  */
 bool xmp_serialize_and_format(XmpPtr xmp, XmpStringPtr buffer, 
-																uint32_t options, 
-																uint32_t padding, const char *newline, 
-																const char *tab, int32_t indent);
+							  uint32_t options, 
+							  uint32_t padding, const char *newline, 
+							  const char *tab, int32_t indent);
 
 
 /** Get an XMP property and it option bits from the XMP packet
@@ -426,6 +426,15 @@ bool xmp_get_property_date(XmpPtr xmp, const char *schema,
 bool xmp_get_property_float(XmpPtr xmp, const char *schema, 
 							const char *name, double * property,
 							uint32_t *propsBits);
+bool xmp_get_property_bool(XmpPtr xmp, const char *schema, 
+							const char *name, bool * property,
+							uint32_t *propsBits);
+bool xmp_get_property_int32(XmpPtr xmp, const char *schema, 
+							const char *name, int32_t * property,
+							uint32_t *propsBits);
+bool xmp_get_property_int64(XmpPtr xmp, const char *schema, 
+							const char *name, int64_t * property,
+							uint32_t *propsBits);
 
 /** Get an item frpm an array property
  * @param xmp the xmp meta
@@ -440,7 +449,7 @@ bool xmp_get_array_item(XmpPtr xmp, const char *schema,
 						const char *name, int32_t index, XmpStringPtr property,
 						uint32_t *propsBits);
 
-/** Set an XMP property from the XMP packet
+/** Set an XMP property in the XMP packet
  * @param xmp the XMP packet
  * @param schema
  * @param name
@@ -452,9 +461,38 @@ bool xmp_set_property(XmpPtr xmp, const char *schema,
 					  const char *name, const char *value,
 					  uint32_t optionBits);
 
+/** Set a date XMP property in the XMP packet
+ * @param xmp the XMP packet
+ * @param schema
+ * @param name
+ * @param value the date-time struct
+ * @param optionBits
+ * @return false if failure
+ */
 bool xmp_set_property_date(XmpPtr xmp, const char *schema, 
 						   const char *name, const XmpDateTime *value,
 						   uint32_t optionBits);
+
+/** Set a float XMP property in the XMP packet
+ * @param xmp the XMP packet
+ * @param schema
+ * @param name
+ * @param value the float value
+ * @param optionBits
+ * @return false if failure
+ */
+bool xmp_set_property_float(XmpPtr xmp, const char *schema, 
+							const char *name, double value,
+							uint32_t optionBits);
+bool xmp_set_property_bool(XmpPtr xmp, const char *schema, 
+							const char *name, bool value,
+							uint32_t optionBits);
+bool xmp_set_property_int32(XmpPtr xmp, const char *schema, 
+							const char *name, int32_t value,
+							uint32_t optionBits);
+bool xmp_set_property_int64(XmpPtr xmp, const char *schema, 
+							const char *name, int64_t value,
+							uint32_t optionBits);
 
 bool xmp_set_array_item(XmpPtr xmp, const char *schema, 
 						const char *name, int32_t index, const char *value,

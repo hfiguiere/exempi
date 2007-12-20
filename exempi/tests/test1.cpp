@@ -278,6 +278,7 @@ void test_exempi()
 	
 	xmp_string_free(the_prop);
 
+	// testing date time get
 	XmpDateTime the_dt;
 	bool ret;
 	BOOST_CHECK(ret = xmp_get_property_date(xmp, NS_EXIF, "DateTimeOriginal", 
@@ -285,6 +286,49 @@ void test_exempi()
 	BOOST_CHECK(the_dt.year == 2006);
 	BOOST_CHECK(the_dt.minute == 20);
 	BOOST_CHECK(the_dt.tzSign == XMP_TZ_WEST);
+
+
+	// testing float get set
+	double float_value = 0.0;
+	BOOST_CHECK(xmp_get_property_float(xmp, NS_CAMERA_RAW_SETTINGS, 
+									   "SharpenRadius", &float_value, NULL));
+	BOOST_CHECK_EQUAL(float_value, 1.0);
+	BOOST_CHECK(xmp_set_property_float(xmp, NS_CAMERA_RAW_SETTINGS, 
+									   "SharpenRadius", 2.5, 0));
+	BOOST_CHECK(xmp_get_property_float(xmp, NS_CAMERA_RAW_SETTINGS, 
+									   "SharpenRadius", &float_value, NULL));
+	BOOST_CHECK_EQUAL(float_value, 2.5);
+	
+
+	// testing bool get set
+	bool bool_value = true;
+	BOOST_CHECK(xmp_get_property_bool(xmp, NS_CAMERA_RAW_SETTINGS, 
+									   "AlreadyApplied", &bool_value, NULL));
+	BOOST_CHECK_EQUAL(bool_value, false);
+	BOOST_CHECK(xmp_set_property_bool(xmp, NS_CAMERA_RAW_SETTINGS, 
+									   "AlreadyApplied", true, NULL));
+	BOOST_CHECK(xmp_get_property_bool(xmp, NS_CAMERA_RAW_SETTINGS, 
+									   "AlreadyApplied", &bool_value, NULL));
+	BOOST_CHECK_EQUAL(bool_value, true);	
+
+	// testing int get set
+	int32_t value = 0;
+	BOOST_CHECK(xmp_get_property_int32(xmp, NS_EXIF, "MeteringMode",
+									   &value, NULL));
+	BOOST_CHECK_EQUAL(value, 5);
+	BOOST_CHECK(xmp_set_property_int32(xmp, NS_EXIF, "MeteringMode",
+									   10, NULL));
+	int64_t valuelarge = 0;
+	BOOST_CHECK(xmp_get_property_int64(xmp, NS_EXIF, "MeteringMode",
+									   &valuelarge, NULL));
+	BOOST_CHECK_EQUAL(valuelarge, 10);
+	BOOST_CHECK(xmp_set_property_int64(xmp, NS_EXIF, "MeteringMode",
+									   32, NULL));
+
+	BOOST_CHECK(xmp_get_property_int32(xmp, NS_EXIF, "MeteringMode",
+									   &value, NULL));
+	BOOST_CHECK_EQUAL(value, 32);
+
 
 	BOOST_CHECK(xmp_free(xmp));
 
