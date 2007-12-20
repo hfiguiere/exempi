@@ -915,7 +915,7 @@ XMPUtils::ConvertFromInt ( XMP_Int32	   binValue,
 {
 	XMP_Assert ( (format != 0) && (strValue != 0) && (strSize != 0) );	// Enforced by wrapper.
 
-	if ( *format == 0 ) format = "%d";
+	if ( *format == 0 ) format = "%d";  // format for int, which is 32bits on most arch including x86_64
 	
 	sConvertedValue->erase();
 	sConvertedValue->reserve ( 100 );		// More than enough for any reasonable format and value.
@@ -944,7 +944,7 @@ XMPUtils::ConvertFromInt64 ( XMP_Int64	     binValue,
 {
 	XMP_Assert ( (format != 0) && (strValue != 0) && (strSize != 0) );	// Enforced by wrapper.
 
-	if ( *format == 0 ) format = "%d";
+	if ( *format == 0 ) format = "%lld"; // format for long long int which should be ok for most arch.
 	
 	sConvertedValue->erase();
 	sConvertedValue->reserve ( 100 );		// More than enough for any reasonable format and value.
