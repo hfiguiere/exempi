@@ -2068,7 +2068,7 @@ ExportSingleTIFF_Short ( const SXMPMeta & xmp, const char * xmpNS, const char * 
 {
 	try {	// Don't let errors with one stop the others.
 
-		long xmpValue;
+		XMP_Int32 xmpValue;
 
 		bool foundXMP = xmp.GetProperty_Int ( xmpNS, xmpProp, &xmpValue, 0 );
 		if ( ! foundXMP ) {

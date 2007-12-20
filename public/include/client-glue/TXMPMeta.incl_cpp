@@ -707,12 +707,10 @@ GetProperty_Bool ( XMP_StringPtr    schemaNS,
 XMP_MethodIntro(TXMPMeta,bool)::
 GetProperty_Int ( XMP_StringPtr    schemaNS,
                   XMP_StringPtr    propName,
-				  long *           propValue,
+				  XMP_Int32 *      propValue,
 				  XMP_OptionBits * options ) const
 {
-	XMP_Int32 abiValue;
-	WrapCheckBool ( found, zXMPMeta_GetProperty_Int_1 ( schemaNS, propName, &abiValue, options ) );
-	if ( found && (propValue != 0) ) *propValue = abiValue;
+	WrapCheckBool ( found, zXMPMeta_GetProperty_Int_1 ( schemaNS, propName, propValue, options ) );
 	return found;
 }
 
@@ -721,12 +719,10 @@ GetProperty_Int ( XMP_StringPtr    schemaNS,
 XMP_MethodIntro(TXMPMeta,bool)::
 GetProperty_Int64 ( XMP_StringPtr    schemaNS,
                     XMP_StringPtr    propName,
-				    long long *      propValue,
+				    XMP_Int64 *      propValue,
 				    XMP_OptionBits * options ) const
 {
-	XMP_Int64 abiValue;
-	WrapCheckBool ( found, zXMPMeta_GetProperty_Int64_1 ( schemaNS, propName, &abiValue, options ) );
-	if ( found && (propValue != 0) ) *propValue = abiValue;
+	WrapCheckBool ( found, zXMPMeta_GetProperty_Int64_1 ( schemaNS, propName, propValue, options ) );
 	return found;
 }
 
@@ -770,7 +766,7 @@ SetProperty_Bool ( XMP_StringPtr  schemaNS,
 XMP_MethodIntro(TXMPMeta,void)::
 SetProperty_Int ( XMP_StringPtr  schemaNS,
                   XMP_StringPtr  propName,
-				  long           propValue,
+				  XMP_Int32       propValue,
 				  XMP_OptionBits options /* = 0 */ )
 {
 	WrapCheckVoid ( zXMPMeta_SetProperty_Int_1 ( schemaNS, propName, propValue, options ) );
@@ -781,7 +777,7 @@ SetProperty_Int ( XMP_StringPtr  schemaNS,
 XMP_MethodIntro(TXMPMeta,void)::
 SetProperty_Int64 ( XMP_StringPtr  schemaNS,
                     XMP_StringPtr  propName,
-				    long long      propValue,
+				    XMP_Int64      propValue,
 				    XMP_OptionBits options /* = 0 */ )
 {
 	WrapCheckVoid ( zXMPMeta_SetProperty_Int64_1 ( schemaNS, propName, propValue, options ) );

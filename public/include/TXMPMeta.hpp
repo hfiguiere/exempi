@@ -1250,7 +1250,7 @@ public:
     bool
     GetProperty_Int ( XMP_StringPtr    schemaNS,
                       XMP_StringPtr    propName,
-                      long *           propValue,
+                      XMP_Int32 *      propValue,
                       XMP_OptionBits * options ) const;
 
     //  --------------------------------------------------------------------------------------------
@@ -1271,7 +1271,7 @@ public:
     bool
     GetProperty_Int64 ( XMP_StringPtr    schemaNS,
                         XMP_StringPtr    propName,
-                        long long *      propValue,
+                        XMP_Int64 *      propValue,
                         XMP_OptionBits * options ) const;
 
     //  --------------------------------------------------------------------------------------------
@@ -1348,7 +1348,7 @@ public:
     void
     SetProperty_Int ( XMP_StringPtr  schemaNS,
                       XMP_StringPtr  propName,
-                      long           propValue,
+                      XMP_Int32      propValue,
                       XMP_OptionBits options = 0 );
 
     //  --------------------------------------------------------------------------------------------
@@ -1365,7 +1365,7 @@ public:
     void
     SetProperty_Int64 ( XMP_StringPtr  schemaNS,
                         XMP_StringPtr  propName,
-                        long long      propValue,
+                        XMP_Int64      propValue,
                         XMP_OptionBits options = 0 );
 
     //  --------------------------------------------------------------------------------------------
