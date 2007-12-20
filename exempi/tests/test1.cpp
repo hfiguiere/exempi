@@ -103,7 +103,7 @@ void test_write_new_property()
 	the_dt.tzMinute = 0;
 	the_dt.nanoSecond = 0;
 	BOOST_CHECK(xmp_set_property_date(xmp, NS_EXIF, "DateTimeOriginal", 
-									  &the_dt, NULL));	
+									  &the_dt, 0));	
 
 	BOOST_CHECK(xmp_get_property(xmp, NS_EXIF, "DateTimeOriginal", 
 								 the_prop, NULL));
@@ -306,7 +306,7 @@ void test_exempi()
 									   "AlreadyApplied", &bool_value, NULL));
 	BOOST_CHECK_EQUAL(bool_value, false);
 	BOOST_CHECK(xmp_set_property_bool(xmp, NS_CAMERA_RAW_SETTINGS, 
-									   "AlreadyApplied", true, NULL));
+									   "AlreadyApplied", true, 0));
 	BOOST_CHECK(xmp_get_property_bool(xmp, NS_CAMERA_RAW_SETTINGS, 
 									   "AlreadyApplied", &bool_value, NULL));
 	BOOST_CHECK_EQUAL(bool_value, true);	
@@ -317,13 +317,13 @@ void test_exempi()
 									   &value, NULL));
 	BOOST_CHECK_EQUAL(value, 5);
 	BOOST_CHECK(xmp_set_property_int32(xmp, NS_EXIF, "MeteringMode",
-									   10, NULL));
+									   10, 0));
 	int64_t valuelarge = 0;
 	BOOST_CHECK(xmp_get_property_int64(xmp, NS_EXIF, "MeteringMode",
 									   &valuelarge, NULL));
 	BOOST_CHECK_EQUAL(valuelarge, 10);
 	BOOST_CHECK(xmp_set_property_int64(xmp, NS_EXIF, "MeteringMode",
-									   32, NULL));
+									   32, 0));
 
 	BOOST_CHECK(xmp_get_property_int32(xmp, NS_EXIF, "MeteringMode",
 									   &value, NULL));
