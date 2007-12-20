@@ -1,5 +1,9 @@
 2007-12-19  Hubert Figuiere  <hub@figuiere.net>
 
+	* source/XMPFiles/FormatSupport/TIFF_FileWriter.cpp, exempi/tests/*: 
+	Fix a memory leak. See http://www.adobeforums.com/webx/.3bc42b73
+	And test case.
+
 	* exempi/tests/*, configure.ac: detect valgrind.
 	Add leak detection support.
 

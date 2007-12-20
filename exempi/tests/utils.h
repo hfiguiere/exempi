@@ -45,6 +45,7 @@
 #include <boost/scoped_ptr.hpp>
 
 extern std::string g_testfile;
+extern std::string g_src_testdir;
 
 void prepare_test(int argc, char * argv[], const char * filename);
 

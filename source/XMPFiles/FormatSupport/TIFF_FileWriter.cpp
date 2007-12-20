@@ -878,6 +878,7 @@ XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, L
 			currTag->dataPtr = (XMP_Uns8*) malloc ( currTag->dataLen );
 			if ( currTag->dataPtr == 0 ) XMP_Throw ( "No data block", kXMPErr_NoMemory );
 			memcpy ( currTag->dataPtr, ioBuf->ptr, currTag->dataLen );	// AUDIT: Safe, malloc'ed currTag->dataLen bytes above.
+			currTag->changed = true;        // Memory leaks otherwise
 		}
 	
 	}
@@ -900,7 +901,7 @@ XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, L
 
 		currTag->dataPtr = (XMP_Uns8*) malloc ( currTag->dataLen );
 		if ( currTag->dataPtr == 0 ) XMP_Throw ( "No data block", kXMPErr_NoMemory );
-		
+		currTag->changed = true;        // Memory leaks otherwise	
 		if ( currTag->dataLen > kIOBufferSize ) {
 			// This value is bigger than the I/O buffer, read it directly and restore the file position.
 			LFA_Seek ( fileRef, currTag->origOffset, SEEK_SET );

@@ -40,6 +40,7 @@
 #include "utils.h"
 
 std::string g_testfile;
+std::string g_src_testdir;
 boost::scoped_ptr<LeakTracker> g_lt(new LeakTracker) ;
 
 void prepare_test(int argc, char * argv[], const char *filename)
@@ -49,11 +50,11 @@ void prepare_test(int argc, char * argv[], const char *filename)
 		const char * srcdir = getenv("TEST_DIR");
 		
 		BOOST_ASSERT(srcdir != NULL);
-		g_testfile = std::string(srcdir);
-		g_testfile += "/";
-		g_testfile += filename;
+		g_src_testdir = std::string(srcdir) + "/";
+		g_testfile = g_src_testdir + filename;
 	}
 	else {
+		g_src_testdir = "./";
 		g_testfile = argv[1];
 	}
 }
