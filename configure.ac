@@ -83,8 +83,8 @@ AC_CHECK_HEADER(expat.h, ,
 AC_CHECK_HEADER(iconv.h, ,
 	 AC_MSG_ERROR([iconv headers missing]))
 
-AX_BOOST_BASE([1.33.0])
-AX_BOOST_UNIT_TEST_FRAMEWORK
+BOOST_REQUIRE([1.33.0])
+BOOST_TEST([mt-s])
 
 case $build_vendor in
 	apple)
@@ -99,7 +99,7 @@ esac
 
 AC_SUBST(EXEMPI_PLATFORM_DEF)
 
-AM_CONDITIONAL(WITH_UNIT_TEST, true || test "x$HAVE_BOOST" != "x")
+AM_CONDITIONAL(WITH_UNIT_TEST, true || test "x$BOOST_CPPFLAGS" != "x")
 
 dnl Check for valgrind (optional) for make check.
 AC_CHECK_PROG(VALGRIND, valgrind, valgrind)

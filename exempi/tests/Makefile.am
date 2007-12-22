@@ -36,9 +36,11 @@
 
 
 INCLUDES = -I$(srcdir)/.. -I$(top_srcdir)/public/include
-
+if WITH_UNIT_TEST
 check_PROGRAMS = test1 test2 test3 testinit
-
+TESTS = testcore.sh testinit test1 test2 test3
+TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) @VALGRIND@
+endif
 check_SCRIPTS = testcore.sh
 
 check_DATA = test1.xmp
@@ -48,21 +50,19 @@ noinst_HEADERS = utils.h
 EXTRA_DIST = $(check_DATA) $(check_SCRIPTS)
 CLEANFILES = test.jpg
 
-TESTS = testcore.sh testinit test1 test2 test3
-TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) @VALGRIND@
 
 testinit_SOURCES = testinit.cpp utils.cpp
-testinit_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIB@
-testinit_LDFLAGS = -static
+testinit_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+testinit_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
 
 test1_SOURCES = test1.cpp utils.cpp
-test1_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIB@
-test1_LDFLAGS = -static
+test1_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+test1_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
 
 test2_SOURCES = test2.cpp utils.cpp
-test2_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIB@
-test2_LDFLAGS = -static
+test2_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+test2_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
 
 test3_SOURCES = test3.cpp utils.cpp
-test3_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIB@
-test3_LDFLAGS = -static
+test3_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+test3_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@

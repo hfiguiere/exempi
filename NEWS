@@ -8,6 +8,7 @@
 - Test: use valgrind is available.
 - Bug: fix configure to allow building on MacOS X. Closes bug #13596
 - Bug #13707: add autogen.sh
+- Bug #13713: fix boost macros to link boost.test statically (for 1.34).
 
 1.99.5
 
