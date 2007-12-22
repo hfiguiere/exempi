@@ -1,5 +1,8 @@
 2007-12-22  Hubert Figuiere  <hub@figuiere.net>
 
+	* configure.ac: make boost optional as it is only for 	
+	the unit tests. (Closes #13712)
+
 	* configure.ac, m4/boost.m4, exempi/test/Makefile.am: 
 	Change the BOOST detection macros.
 	(Closes #13713)

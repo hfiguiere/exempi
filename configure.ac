@@ -99,7 +99,7 @@ esac
 
 AC_SUBST(EXEMPI_PLATFORM_DEF)
 
-AM_CONDITIONAL(WITH_UNIT_TEST, true || test "x$BOOST_CPPFLAGS" != "x")
+AM_CONDITIONAL(WITH_UNIT_TEST, test "x$BOOST_CPPFLAGS" != "x")
 
 dnl Check for valgrind (optional) for make check.
 AC_CHECK_PROG(VALGRIND, valgrind, valgrind)
