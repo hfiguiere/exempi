@@ -1,3 +1,8 @@
+2008-01-11  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/tests/test2.cpp (test_tiff_leak): Ensure that the file is
+	writable.
+
 2007-12-22  Hubert Figuiere  <hub@figuiere.net>
 
 	* configure.ac: make boost optional as it is only for 	

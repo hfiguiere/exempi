@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include <string>
 
@@ -156,7 +157,7 @@ test_tiff_leak()
 	std::string command = "cp ";
 	command += orig_tiff_file + " test.tif";
 	BOOST_CHECK(system(command.c_str()) >= 0);
-
+	BOOST_CHECK(chmod("test.tif", S_IRUSR|S_IWUSR) == 0);
 	BOOST_CHECK(xmp_init());
 
 	XmpFilePtr f = xmp_files_open_new("test.tif", XMP_OPEN_FORUPDATE);
