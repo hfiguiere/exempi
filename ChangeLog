@@ -2,6 +2,8 @@
 
 	* autogen.sh: Don't run autoheader. (Closes #14049)
 
+	* autogen.sh: re-order commands in autogens.sh
+
 === 1.99.7 ===
 	
 2008-01-12  Hubert Figuiere  <hub@figuiere.net>
