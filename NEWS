@@ -1,3 +1,7 @@
+1.99.7
+
+- Bug: fix soversion.
+
 1.99.6
 
 - New: API xmp_get_property_date() / xmp_set_property_date() with tests.
