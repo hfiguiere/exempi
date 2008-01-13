@@ -33,7 +33,7 @@ $ACLOCAL -I m4 >> autogen.err 2>&1
 
 $AUTOMAKE --add-missing --copy --foreign 
 $LIBTOOLIZE --force
-autoheader --force
+#autoheader --force
 $AUTOCONF
 
 cd $builddir

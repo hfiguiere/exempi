@@ -1,3 +1,7 @@
+1.99.8
+
+- Bug #14049: don't run autoheader.
+
 1.99.7
 
 - Bug: fix soversion.
