@@ -1,5 +1,8 @@
 2008-01-13  Hubert Figuiere  <hub@figuiere.net>
 
+	* configure.ac: Allow disabling unittest if you
+	don't have boost (Closes #13712)
+
 	* autogen.sh: Don't run autoheader. (Closes #14049)
 
 	* autogen.sh: re-order commands in autogens.sh

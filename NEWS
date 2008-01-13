@@ -1,6 +1,7 @@
 1.99.8
 
 - Bug #14049: don't run autoheader.
+- Bug #13712: add --enable-unittest to disable tests.
 
 1.99.7
 

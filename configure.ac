@@ -1,8 +1,7 @@
 AC_PREREQ(2.50)
 AC_INIT(exempi/xmp.h)
-AM_INIT_AUTOMAKE(exempi, 1.99.7)
+AM_INIT_AUTOMAKE(exempi, 1.99.8)
 AM_MAINTAINER_MODE
-
 
 dnl ---------------------------------------------------------------------------
 dnl Advanced information about versioning:
@@ -35,6 +34,7 @@ dnl ABI breakage reset major to 3
 dnl 1.99.5 is the revision 3.0.0
 dnl 1.99.6 is the revision 3.1.0 WHICH IS WRONG!!!
 dnl 1.99.7 is the revision 4.1.0
+dnl 1.99.8
 AC_SUBST([EXEMPI_REVISION], [0])
 AC_SUBST([EXEMPI_AGE],      [1])
 AC_SUBST([EXEMPI_CURRENT],  [4])
@@ -84,8 +84,18 @@ AC_CHECK_HEADER(expat.h, ,
 AC_CHECK_HEADER(iconv.h, ,
 	 AC_MSG_ERROR([iconv headers missing]))
 
-BOOST_REQUIRE([1.33.0])
-BOOST_TEST([mt-s])
+AC_ARG_ENABLE(unittest,
+              AC_HELP_STRING([--enable-unittest=yes|no],
+                            [enable the unittest. requires boost (default is yes)]),
+              ENABLE_UNITTEST=$enableval,
+              ENABLE_UNITTEST=yes)
+if test x$ENABLE_UNITTEST = xyes ; then
+   BOOST_REQUIRE([1.33.0])
+   BOOST_TEST([mt-s])
+else
+    ENABLE_UNINITEST=no
+fi
+
 
 case $build_vendor in
 	apple)
@@ -100,7 +110,7 @@ esac
 
 AC_SUBST(EXEMPI_PLATFORM_DEF)
 
-AM_CONDITIONAL(WITH_UNIT_TEST, test "x$BOOST_CPPFLAGS" != "x")
+AM_CONDITIONAL(WITH_UNIT_TEST, test x$ENABLE_UNITTEST = xyes)
 
 dnl Check for valgrind (optional) for make check.
 AC_CHECK_PROG(VALGRIND, valgrind, valgrind)
@@ -150,4 +160,5 @@ Defines:
    EXEMPI_PLATFORM_DEF = $EXEMPI_PLATFORM_DEF
    CPPFLAGS            = $CPPFLAGS
    LDFLAGS             = $LDFLAGS
+   Run unit test       = $ENABLE_UNITTEST
 "
