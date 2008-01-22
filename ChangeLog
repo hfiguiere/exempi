@@ -1,3 +1,7 @@
+2008-01-22  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/xmp.h: Fix a typo. (Closes #14200)
+
 2008-01-18  Hubert Figuiere  <hub@figuiere.net>
 
 	* source/XMPFiles/Makefile.am: Disable strict aliasing. This fix

@@ -3,6 +3,7 @@
 - Bug #14049: don't run autoheader.
 - Bug #13712: add --enable-unittest to disable tests.
 - Bug: Disable strict aliasing in XMPFiles due to bad casting.
+- Bug #14200: fix a typo.
 
 1.99.7
 
