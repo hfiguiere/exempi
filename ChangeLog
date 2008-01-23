@@ -1,3 +1,8 @@
+2008-01-23  Hubert Figuiere  <hub@figuiere.net>
+
+	* source/XMPFiles/FormatSupport/GIF_Support.cpp (GIF_Support): Fix
+	a nasty buffer overflow. Closes Debian #454297. Closes Gnome #484105
+
 2008-01-22  Hubert Figuiere  <hub@figuiere.net>
 
 	* exempi/xmp.h: Fix a typo. (Closes #14200)
