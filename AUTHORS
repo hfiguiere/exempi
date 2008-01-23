@@ -1,8 +1,12 @@
 The package is based on Adobe XMP SDK 4.1.1.
 
-Authors are:
-
+Maintainer:
 Hubert Figuiere <hub@figuiere.net>
+
+Original XMP code by:
 Adobe Systems Incorporated (XMP SDK)
+
+Contributions by:
 Ian Jacobi
 Jason Kivlighn
+Michael Biebl <biebl@debian.org>

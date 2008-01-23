@@ -2,6 +2,7 @@
 
 	* source/XMPFiles/FormatSupport/GIF_Support.cpp (GIF_Support): Fix
 	a nasty buffer overflow. Closes Debian #454297. Closes Gnome #484105
+	Patch by Michael Biebl <biebl@debian.org>
 
 2008-01-22  Hubert Figuiere  <hub@figuiere.net>
 

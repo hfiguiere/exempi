@@ -1,7 +1,7 @@
 /*
  * exempi - xmp.h
  *
- * Copyright (C) 2007 Hubert Figuiere
+ * Copyright (C) 2007-2008 Hubert Figuiere
  * Copyright 2002-2007 Adobe Systems Incorporated
  * All rights reserved.
  *
