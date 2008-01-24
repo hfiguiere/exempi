@@ -1,8 +1,10 @@
 2008-01-23  Hubert Figuiere  <hub@figuiere.net>
 
-	* source/XMPFiles/FormatSupport/GIF_Support.cpp (GIF_Support): Fix
+	* source/XMPFiles/FormatSupport/GIF_Support.cpp (ReadHeader): Fix
 	a nasty buffer overflow. Closes Debian #454297. Closes Gnome #484105
 	Patch by Michael Biebl <biebl@debian.org>
+	(ReadBlock): Fix another possible overflow similar to the one in
+	ReadHeader()
 
 2008-01-22  Hubert Figuiere  <hub@figuiere.net>
 

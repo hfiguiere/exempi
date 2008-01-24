@@ -4,7 +4,8 @@
 - Bug #13712: add --enable-unittest to disable tests.
 - Bug: Disable strict aliasing in XMPFiles due to bad casting.
 - Bug #14200: fix a typo.
-- Bug: fix a buffer overflow. Closes Debian #454297. Closes Gnome #484105
+- Bug: fix a couple of buffer overflows in GIF support. Closes Debian #454297.
+  Closes Gnome #484105
 
 1.99.7
 

@@ -98,7 +98,7 @@ namespace GIF_Support
 			XMP_Uns64 startPosition = inOutPosition;
 			long bytesRead;
 			long blockSize;
-			unsigned char buffer[256];
+			unsigned char buffer[768];
 
 			bytesRead = LFA_Read ( fileRef, buffer, 1 );
 			if ( bytesRead != 1 ) return false;
