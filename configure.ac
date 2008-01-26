@@ -34,8 +34,8 @@ dnl ABI breakage reset major to 3
 dnl 1.99.5 is the revision 3.0.0
 dnl 1.99.6 is the revision 3.1.0 WHICH IS WRONG!!!
 dnl 1.99.7 is the revision 4.1.0
-dnl 1.99.8
-AC_SUBST([EXEMPI_REVISION], [0])
+dnl 1.99.8 is the revision 4.1.1
+AC_SUBST([EXEMPI_REVISION], [1])
 AC_SUBST([EXEMPI_AGE],      [1])
 AC_SUBST([EXEMPI_CURRENT],  [4])
 AC_SUBST([EXEMPI_CURRENT_MIN],
