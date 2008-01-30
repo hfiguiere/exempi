@@ -1,6 +1,6 @@
 AC_PREREQ(2.50)
 AC_INIT(exempi/xmp.h)
-AM_INIT_AUTOMAKE(exempi, 1.99.8)
+AM_INIT_AUTOMAKE(exempi, 1.99.9)
 AM_MAINTAINER_MODE
 
 dnl ---------------------------------------------------------------------------
@@ -35,6 +35,7 @@ dnl 1.99.5 is the revision 3.0.0
 dnl 1.99.6 is the revision 3.1.0 WHICH IS WRONG!!!
 dnl 1.99.7 is the revision 4.1.0
 dnl 1.99.8 is the revision 4.1.1
+dnl 1.99.9 is the revision 4.1.1 (no library change have been made)
 AC_SUBST([EXEMPI_REVISION], [1])
 AC_SUBST([EXEMPI_AGE],      [1])
 AC_SUBST([EXEMPI_CURRENT],  [4])
