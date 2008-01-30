@@ -1,3 +1,10 @@
+2008-01-30  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/xmp.h (XMP_OPEN_OPNLYXMP): Bad API breakage fix (introduced
+	in 1.99.8)
+
+=== 1.99.8 ===
+
 2008-01-23  Hubert Figuiere  <hub@figuiere.net>
 
 	* source/XMPFiles/FormatSupport/GIF_Support.cpp (ReadHeader): Fix

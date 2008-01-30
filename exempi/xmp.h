@@ -73,6 +73,10 @@ typedef enum {
 										   * thread. */
 } XmpOpenFileOptions;
 
+/* bad work-around for a typo-fix in 1.99.8 
+ * deprecate.
+ */
+#define XMP_OPEN_OPNLYXMP XMP_OPEN_ONLYXMP
 
 /** Option bits for xmp_files_close() */
 typedef enum {
