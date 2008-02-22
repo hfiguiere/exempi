@@ -11,6 +11,8 @@
 
 #include "Reconcile_Impl.hpp"
 
+#include <stdio.h>
+
 #if XMP_WinBuild
 	#pragma warning ( disable : 4800 )	// forcing value to bool 'true' or 'false' (performance warning)
 	#pragma warning ( disable : 4996 )	// '...' was declared deprecated

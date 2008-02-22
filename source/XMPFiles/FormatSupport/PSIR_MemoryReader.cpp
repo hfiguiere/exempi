@@ -10,6 +10,8 @@
 #include "PSIR_Support.hpp"
 #include "EndianUtils.hpp"
 
+#include <string.h>
+
 // =================================================================================================
 /// \file PSIR_MemoryReader.cpp
 /// \brief Implementation of the memory-based read-only form of PSIR_Manager.

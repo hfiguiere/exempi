@@ -14,6 +14,7 @@
 
 #include <map>
 #include <stdlib.h>
+#include <string.h>
 
 #include "XMP_Const.h"
 #include "XMPFiles_Impl.hpp"

@@ -12,6 +12,8 @@
 #include "XMP_Environment.h"	// ! This must be the first include!
 #include "XMPCore_Impl.hpp"
 
+#include <stdio.h>
+
 #include "XMPMeta.hpp"
 #include "XMPIterator.hpp"
 #include "XMPUtils.hpp"

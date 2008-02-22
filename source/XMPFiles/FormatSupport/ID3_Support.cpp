@@ -15,6 +15,8 @@
 #include "UnicodeConversions.hpp"
 #include "Reconcile_Impl.hpp"
 
+#include <stdio.h>
+
 #if XMP_WinBuild
 	#pragma warning ( disable : 4996 )	// '...' was declared deprecated
 #endif

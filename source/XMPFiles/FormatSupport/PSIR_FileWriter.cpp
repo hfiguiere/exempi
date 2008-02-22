@@ -10,6 +10,8 @@
 #include "PSIR_Support.hpp"
 #include "EndianUtils.hpp"
 
+#include <string.h>
+
 // =================================================================================================
 /// \file PSIR_FileWriter.cpp
 /// \brief Implementation of the file-based or read-write form of PSIR_Manager.

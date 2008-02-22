@@ -1,5 +1,15 @@
 2008-02-22  Hubert Figuiere  <hub@figuiere.net>
 
+	* source/XMPCore/XMPMeta.cpp, 
+	source/XMPFiles/FormatSupport/GIF_Support.cpp,
+	source/XMPFiles/FormatSupport/ID3_Support.cpp,
+	source/XMPFiles/FormatSupport/PNG_Support.cpp,
+	source/XMPFiles/FormatSupport/PSIR_FileWriter.cpp,
+	source/XMPFiles/FormatSupport/PSIR_MemoryReader.cpp,
+	source/XMPFiles/FormatSupport/ReconcileIPTC.cpp,
+	source/XMPFiles/FormatSupport/TIFF_Support.hpp:
+	Add some missing includes. (Closes #14615)
+
 	* source/XMPFiles/FormatSupport/EndianUtils.hpp: endian
 	detection on Solaris. (Closes #14614)
 

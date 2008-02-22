@@ -8,6 +8,7 @@
 // =================================================================================================
 
 #include "PNG_Support.hpp"
+#include <string.h>
 
 typedef std::basic_string<unsigned char> filebuffer;
 
