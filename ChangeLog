@@ -1,3 +1,5 @@
+=== 1.99.9 ===
+
 2008-01-30  Hubert Figuiere  <hub@figuiere.net>
 
 	* exempi/xmp.h (XMP_OPEN_OPNLYXMP): Bad API breakage fix (introduced
