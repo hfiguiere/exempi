@@ -1,6 +1,6 @@
 1.99.10
 
-
+- Bug #14614: endian detection on Solaris.
 
 1.99.9
 
