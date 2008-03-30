@@ -36,8 +36,8 @@ dnl 1.99.6 is the revision 3.1.0 WHICH IS WRONG!!!
 dnl 1.99.7 is the revision 4.1.0
 dnl 1.99.8 is the revision 4.1.1
 dnl 1.99.9 is the revision 4.1.1 (no library change have been made)
-dnl 1.99.10 is the revision
-AC_SUBST([EXEMPI_REVISION], [1])
+dnl 1.99.10 is the revision 4.1.2
+AC_SUBST([EXEMPI_REVISION], [2])
 AC_SUBST([EXEMPI_AGE],      [1])
 AC_SUBST([EXEMPI_CURRENT],  [4])
 AC_SUBST([EXEMPI_CURRENT_MIN],
@@ -64,6 +64,9 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_LIBTOOL
+
+AC_C_BIGENDIAN
+AC_DEFINE(CHECKED_ENDIANNESS)
 
 AC_ARG_WITH(darwinports,[  --with-darwinports     add /opt/local/... to CPP/LDFLAGS (Mac OSX)],[
         if test "x$withval" != "xno"; then
@@ -95,7 +98,7 @@ if test x$ENABLE_UNITTEST = xyes ; then
    BOOST_REQUIRE([1.33.0])
    BOOST_TEST([mt-s])
 else
-    ENABLE_UNINITEST=no
+   ENABLE_UNITTEST=no
 fi
 
 

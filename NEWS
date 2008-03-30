@@ -1,6 +1,6 @@
 1.99.10
 
-- Bug #14614: endian detection on Solaris.
+- Bug #14614, Bug #15263: endian detection in configure.
 - Bug #14615: missing includes for Solaris.
 
 1.99.9

@@ -1,3 +1,8 @@
+2008-03-30  Hubert Figuiere  <hub@figuiere.net>
+
+	* source/XMPFiles/FormatSupport/EndianUtils.hpp,
+	configure.ac: Fix the endian detection. (Closes #15263)
+
 2008-02-22  Hubert Figuiere  <hub@figuiere.net>
 
 	* source/XMPCore/XMPMeta.cpp, 
