@@ -1,4 +1,8 @@
-1.99.10
+2.0.1
+
+- 
+
+2.0.0
 
 - Bug #14614, Bug #15263: endian detection in configure.
 - Bug #14615: missing includes for Solaris.
