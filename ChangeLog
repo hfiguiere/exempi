@@ -1,5 +1,7 @@
 2008-04-01  Hubert Figuiere  <hub@figuiere.net>
 
+	* configure.ac: This is really 2.0.0
+
 	* exempi/tests/test1.cpp, exempi/tests/test1.xmp:
 	Add a test on "Rating:".
 
