@@ -275,6 +275,10 @@ void test_exempi()
 											the_prop, NULL));
 	BOOST_CHECK_EQUAL(strcmp("2006-12-07T23:20:43-05:00", 
 							 xmp_string_cstr(the_prop)), 0); 
+
+	BOOST_CHECK(xmp_get_property(xmp, NS_XAP, "Rating",
+				the_prop, NULL));
+	BOOST_CHECK_EQUAL(strcmp("3", xmp_string_cstr(the_prop)), 0); 
 	
 	xmp_string_free(the_prop);
 
