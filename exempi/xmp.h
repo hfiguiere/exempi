@@ -40,7 +40,10 @@
 #define __EXEMPI_XMP_H_
 
 #include <stdlib.h>
+/* stdbool choke on Sun (bug# 14612) */
+#if !defined(__sun)
 #include <stdbool.h>
+#endif
 #include <stdint.h>
 
 #include <time.h>

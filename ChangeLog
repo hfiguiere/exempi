@@ -1,3 +1,8 @@
+2008-04-04  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/xmp.h: no stdbool.h on Sun compilers
+	(Closes #14612)
+
 === 2.0.0 ===
 
 2008-04-01  Hubert Figuiere  <hub@figuiere.net>

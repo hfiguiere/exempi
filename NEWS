@@ -1,6 +1,6 @@
 2.0.1
 
-- 
+- Bug #14612: no stdbool.h for Sun compilers.
 
 2.0.0
 
