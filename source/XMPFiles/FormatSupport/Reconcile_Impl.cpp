@@ -249,7 +249,7 @@ void ReconcileUtils::UTF8ToLatin1 ( const void * _utf8Ptr, size_t utf8Len, std::
 	
 		iconv_t cd = iconv_open( "ISO8859-1", "UTF-8" );
 
-		char * in = (char *)utf8Ptr;
+		ICONV_CONST char * in = (ICONV_CONST char *)utf8Ptr;
 		size_t inLen = utf8Len;
 		size_t outLen = utf8Len * 4;
 		char * buf = (char *)calloc( outLen, 1 );
@@ -406,7 +406,7 @@ void ReconcileUtils::Latin1ToUTF8 ( const void * _latin1Ptr, size_t latin1Len, s
 	
 		iconv_t cd = iconv_open( "UTF-8", "ISO8859-1" );
 
-		char * in = (char *)_latin1Ptr;
+		ICONV_CONST char * in = (ICONV_CONST char *)_latin1Ptr;
 		size_t inLen = latin1Len;
 		size_t outLen = latin1Len * 4;
 		char * buf = (char *)calloc( outLen, 1 );

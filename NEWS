@@ -4,7 +4,8 @@
 
 2.0.1
 
-- 
+- Bug #14612: no stdbool.h for Sun compilers.
+- Bug #14613: check for iconv() const-ness.
 
 2.0.0
 
