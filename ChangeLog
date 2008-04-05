@@ -1,3 +1,8 @@
+2008-04-05  Hubert Figuiere  <hub@figuiere.net>
+
+	* source/XMPFiles/FormatSupport/Reconcile_Impl.cpp, 
+	configure.ac: Check for iconv constness. (Closes #14613)
+
 2008-04-04  Hubert Figuiere  <hub@figuiere.net>
 
 	* exempi/xmp.h: no stdbool.h on Sun compilers
