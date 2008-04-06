@@ -1,6 +1,6 @@
 2.1.0
 
-- 
+- New: API xmp_prefix_namespace_uri() and xmp_namespace_prefix(). Feat #14962.
 
 2.0.1
 

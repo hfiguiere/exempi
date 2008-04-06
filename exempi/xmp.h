@@ -355,8 +355,27 @@ bool xmp_files_free(XmpFilePtr xf);
  *  @return true if success, false otherwise.
  */
 bool xmp_register_namespace(const char *namespaceURI, 
-														const char *suggestedPrefix,
-														XmpStringPtr registeredPrefix);
+							const char *suggestedPrefix,
+							XmpStringPtr registeredPrefix);
+
+
+/** Check is a namespace is registered
+ *  @param ns the namespace to check.
+ *  @param prefix The prefix associated if registered. Pass NULL
+ *  if not interested.
+ *  @return true if registered.
+ *  NEW in 2.1
+ */
+bool xmp_namespace_prefix(const char *ns, XmpStringPtr prefix);
+
+/** Check if a ns prefix is registered.
+ *  @param prefix the prefix to check.
+ *  @param ns the namespace associated if registered. Pass NULL 
+ *  if not interested.
+ *  @return true if registered.
+ *  NEW in 2.1
+ */
+bool xmp_prefix_namespace_uri(const char *prefix, XmpStringPtr ns);
 
 
 XmpPtr xmp_new_empty();

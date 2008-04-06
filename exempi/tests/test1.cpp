@@ -81,7 +81,13 @@ void test_write_new_property()
 
 	XmpStringPtr reg_prefix = xmp_string_new();
 	BOOST_CHECK(xmp_register_namespace(NS_CC, "cc", reg_prefix));
-	BOOST_CHECK_EQUAL(strcmp("cc:", xmp_string_cstr(reg_prefix)),	0); 
+	BOOST_CHECK_EQUAL(strcmp("cc:", xmp_string_cstr(reg_prefix)), 0); 
+
+	BOOST_CHECK(xmp_prefix_namespace_uri("cc", reg_prefix));
+	BOOST_CHECK_EQUAL(strcmp(NS_CC, xmp_string_cstr(reg_prefix)), 0); 	
+
+	BOOST_CHECK(xmp_namespace_prefix(NS_CC, reg_prefix));
+	BOOST_CHECK_EQUAL(strcmp("cc:", xmp_string_cstr(reg_prefix)), 0); 	
 
 	xmp_string_free(reg_prefix);
 

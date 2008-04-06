@@ -140,6 +140,31 @@ bool xmp_register_namespace(const char *namespaceURI,
 }
 
 
+bool xmp_namespace_prefix(const char *ns, XmpStringPtr prefix)
+{
+	try {
+		return SXMPMeta::GetNamespacePrefix(ns,
+											STRING(prefix));
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	return false;
+}
+
+
+bool xmp_prefix_namespace_uri(const char *prefix, XmpStringPtr ns)
+{
+	try {
+		return SXMPMeta::GetNamespaceURI(prefix, STRING(ns));
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	return false;
+}
+
+
 XmpFilePtr xmp_files_new()
 {
 	SXMPFiles *txf = NULL;

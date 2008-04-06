@@ -1,3 +1,10 @@
+2008-04-06  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/xmp.h, exempi/exempi.cpp: add new API
+	xmp_namespace_prefix(), xmp_prefix_namespace_uri().
+	* exempi/tests/test1.cpp: corresponding test.
+	(Closes #14962)
+
 2008-04-04  Hubert Figuiere  <hub@figuiere.net>
 
 	* Start 2.1.0
