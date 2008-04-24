@@ -2,6 +2,8 @@
 
 - Bug #14612: no stdbool.h for Sun compilers.
 - Bug #14613: check for iconv() const-ness.
+- Make the error checking more robust.
+- Make error code thread-safe (ie local to the thread).
 
 2.0.0
 

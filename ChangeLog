@@ -1,3 +1,9 @@
+2008-04-24  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/exempi.cpp: RESET_ERROR is called
+	upon entry of any functions. 
+	error code is local thread storage.
+
 2008-04-05  Hubert Figuiere  <hub@figuiere.net>
 
 	* source/XMPFiles/FormatSupport/Reconcile_Impl.cpp, 

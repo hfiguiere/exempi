@@ -50,7 +50,8 @@
 #include "XMP.hpp"
 #include "XMP.incl_cpp"
 
-int static g_error = 0;
+/* TODO make the thread local storage portable */
+static __thread int g_error = 0;
 
 static void set_error(int err)
 {
@@ -62,6 +63,8 @@ static void set_error(const XMP_Error & e)
 	set_error(-e.GetID());
 	std::cerr << e.GetErrMsg() << std::endl;
 }
+
+#define RESET_ERROR set_error(0)
 
 #define ASSIGN(dst, src) \
 	dst.year = src.year; \
@@ -128,6 +131,7 @@ bool xmp_register_namespace(const char *namespaceURI,
 							const char *suggestedPrefix,
 							XmpStringPtr registeredPrefix)
 {
+	RESET_ERROR;
 	try {
 		return SXMPMeta::RegisterNamespace(namespaceURI, 
 										   suggestedPrefix,
@@ -142,6 +146,7 @@ bool xmp_register_namespace(const char *namespaceURI,
 
 XmpFilePtr xmp_files_new()
 {
+	RESET_ERROR;
 	SXMPFiles *txf = NULL;
 	try {
 		txf = new SXMPFiles();
@@ -155,6 +160,7 @@ XmpFilePtr xmp_files_new()
 XmpFilePtr xmp_files_open_new(const char *path, XmpOpenFileOptions options)
 {
 	CHECK_PTR(path, NULL);
+	RESET_ERROR;
 	SXMPFiles *txf = NULL;
 	try {
 		txf = new SXMPFiles(path, XMP_FT_UNKNOWN, options);
@@ -170,6 +176,7 @@ XmpFilePtr xmp_files_open_new(const char *path, XmpOpenFileOptions options)
 bool xmp_files_open(XmpFilePtr xf, const char *path, XmpOpenFileOptions options)
 {
 	CHECK_PTR(xf, false);
+	RESET_ERROR;
 	SXMPFiles *txf = (SXMPFiles*)xf;
 	try {
 		return txf->OpenFile(path, XMP_FT_UNKNOWN, options);
@@ -184,6 +191,7 @@ bool xmp_files_open(XmpFilePtr xf, const char *path, XmpOpenFileOptions options)
 bool xmp_files_close(XmpFilePtr xf, XmpCloseFileOptions options)
 {
 	CHECK_PTR(xf, false);
+	RESET_ERROR;
 	try {
 		SXMPFiles *txf = (SXMPFiles*)xf;
 		txf->CloseFile(options);
@@ -199,6 +207,7 @@ bool xmp_files_close(XmpFilePtr xf, XmpCloseFileOptions options)
 XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf)
 {
 	CHECK_PTR(xf, NULL);
+	RESET_ERROR;
 	SXMPMeta *xmp = new SXMPMeta();
 	SXMPFiles *txf = (SXMPFiles*)xf;
 
@@ -221,6 +230,7 @@ bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp)
 {
 	CHECK_PTR(xf, false);
 	CHECK_PTR(xmp, NULL);
+	RESET_ERROR;
 	bool result = false;
 	try {
 		SXMPFiles *txf = (SXMPFiles*)xf;
@@ -237,6 +247,7 @@ bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp)
 bool xmp_files_can_put_xmp(XmpFilePtr xf, XmpPtr xmp)
 {
 	CHECK_PTR(xf, false);
+	RESET_ERROR;
 	SXMPFiles *txf = (SXMPFiles*)xf;
 
 	return txf->CanPutXMP(*(SXMPMeta*)xmp);
@@ -247,6 +258,7 @@ bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp)
 {
 	CHECK_PTR(xf, false);
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 	SXMPFiles *txf = (SXMPFiles*)xf;
 	
 	try {
@@ -263,6 +275,7 @@ bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp)
 bool xmp_files_free(XmpFilePtr xf)
 {
 	CHECK_PTR(xf, false);
+	RESET_ERROR;
 	SXMPFiles *txf = (SXMPFiles*)xf;
 	try {
 		delete txf;
@@ -277,6 +290,7 @@ bool xmp_files_free(XmpFilePtr xf)
 
 XmpPtr xmp_new_empty()
 {
+	RESET_ERROR;
 	SXMPMeta *txmp = new SXMPMeta;
 	return (XmpPtr)txmp;
 }
@@ -285,6 +299,7 @@ XmpPtr xmp_new_empty()
 XmpPtr xmp_new(const char *buffer, size_t len)
 {
 	CHECK_PTR(buffer, NULL);
+	RESET_ERROR;
 
 	SXMPMeta *txmp;
 	try {
@@ -301,6 +316,7 @@ XmpPtr xmp_new(const char *buffer, size_t len)
 XmpPtr xmp_copy(XmpPtr xmp)
 {
 	CHECK_PTR(xmp, NULL);
+	RESET_ERROR;
 
 	SXMPMeta *txmp = new SXMPMeta(*(SXMPMeta*)xmp);
 	return (XmpPtr)txmp;
@@ -328,6 +344,7 @@ bool xmp_parse(XmpPtr xmp, const char *buffer, size_t len)
 bool xmp_serialize(XmpPtr xmp, XmpStringPtr buffer, uint32_t options, 
 				   uint32_t padding)
 {
+	RESET_ERROR;
 	return xmp_serialize_and_format(xmp, buffer, options, padding, 
 									"\n", " ", 0);
 }
@@ -340,6 +357,7 @@ bool xmp_serialize_and_format(XmpPtr xmp, XmpStringPtr buffer,
 {
 	CHECK_PTR(xmp, false);
 	CHECK_PTR(buffer, false);
+	RESET_ERROR;
 
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
 	try {
@@ -358,6 +376,7 @@ bool xmp_serialize_and_format(XmpPtr xmp, XmpStringPtr buffer,
 bool xmp_free(XmpPtr xmp)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
 	delete txmp;
 	return true;
@@ -369,6 +388,7 @@ bool xmp_get_property(XmpPtr xmp, const char *schema,
 					  uint32_t *propsBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	try {
@@ -391,6 +411,7 @@ bool xmp_get_property_date(XmpPtr xmp, const char *schema,
 					  uint32_t *propsBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	try {
@@ -415,6 +436,7 @@ bool xmp_get_property_float(XmpPtr xmp, const char *schema,
 							uint32_t *propsBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	try {
@@ -436,6 +458,7 @@ bool xmp_get_property_bool(XmpPtr xmp, const char *schema,
 							uint32_t *propsBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	try {
@@ -457,6 +480,7 @@ bool xmp_get_property_int32(XmpPtr xmp, const char *schema,
 							uint32_t *propsBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	try {
@@ -479,6 +503,7 @@ bool xmp_get_property_int64(XmpPtr xmp, const char *schema,
 							uint32_t *propsBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	try {
@@ -502,6 +527,7 @@ bool xmp_get_array_item(XmpPtr xmp, const char *schema,
 												uint32_t *propsBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	try {
@@ -524,6 +550,7 @@ bool xmp_set_property(XmpPtr xmp, const char *schema,
 											uint32_t optionBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
@@ -545,6 +572,7 @@ bool xmp_set_property_date(XmpPtr xmp, const char *schema,
 						   uint32_t optionBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
@@ -567,6 +595,7 @@ bool xmp_set_property_float(XmpPtr xmp, const char *schema,
 							uint32_t optionBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
@@ -588,6 +617,7 @@ bool xmp_set_property_bool(XmpPtr xmp, const char *schema,
 						   uint32_t optionBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
@@ -609,6 +639,7 @@ bool xmp_set_property_int32(XmpPtr xmp, const char *schema,
 							uint32_t optionBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
@@ -629,6 +660,7 @@ bool xmp_set_property_int64(XmpPtr xmp, const char *schema,
 							uint32_t optionBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
@@ -650,6 +682,7 @@ bool xmp_set_array_item(XmpPtr xmp, const char *schema,
 											 uint32_t optionBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
@@ -670,6 +703,7 @@ bool xmp_append_array_item(XmpPtr xmp, const char *schema, const char *name,
 			   uint32_t optionBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
@@ -689,6 +723,7 @@ bool xmp_append_array_item(XmpPtr xmp, const char *schema, const char *name,
 bool xmp_delete_property(XmpPtr xmp, const char *schema, const char *name)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = true;
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
@@ -708,6 +743,7 @@ bool xmp_delete_property(XmpPtr xmp, const char *schema, const char *name)
 bool xmp_has_property(XmpPtr xmp, const char *schema, const char *name)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = true;
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
@@ -730,6 +766,7 @@ bool xmp_get_localized_text(XmpPtr xmp, const char *schema, const char *name,
 			    uint32_t *propsBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = false;
 	try {
@@ -754,6 +791,7 @@ bool xmp_set_localized_text(XmpPtr xmp, const char *schema, const char *name,
 			    const char *value, uint32_t optionBits)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = true;
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
@@ -773,10 +811,11 @@ bool xmp_set_localized_text(XmpPtr xmp, const char *schema, const char *name,
 
 
 bool xmp_delete_localized_text(XmpPtr xmp, const char *schema,
-															 const char *name, const char *genericLang,
-															 const char *specificLang)
+							   const char *name, const char *genericLang,
+							   const char *specificLang)
 {
 	CHECK_PTR(xmp, false);
+	RESET_ERROR;
 
 	bool ret = true;
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
@@ -818,6 +857,7 @@ XmpIteratorPtr xmp_iterator_new(XmpPtr xmp, const char * schema,
 								const char * propName, XmpIterOptions options)
 {
 	CHECK_PTR(xmp, NULL);
+	RESET_ERROR;
 	return (XmpIteratorPtr)new SXMPIterator(*(SXMPMeta*)xmp, schema, propName, options);
 }
 
@@ -825,6 +865,7 @@ XmpIteratorPtr xmp_iterator_new(XmpPtr xmp, const char * schema,
 bool xmp_iterator_free(XmpIteratorPtr iter)
 {
 	CHECK_PTR(iter, false);
+	RESET_ERROR;
 	SXMPIterator *titer = (SXMPIterator*)iter;
 	delete titer;
 	return true;
@@ -835,6 +876,7 @@ bool xmp_iterator_next(XmpIteratorPtr iter, XmpStringPtr schema,
 					   uint32_t *options)
 {
 	CHECK_PTR(iter, false);
+	RESET_ERROR;
 	SXMPIterator *titer = (SXMPIterator*)iter;
 	return titer->Next(reinterpret_cast<std::string*>(schema),
 										 reinterpret_cast<std::string*>(propName),
@@ -845,6 +887,7 @@ bool xmp_iterator_next(XmpIteratorPtr iter, XmpStringPtr schema,
 bool xmp_iterator_skip(XmpIteratorPtr iter, XmpIterSkipOptions options)
 {
 	CHECK_PTR(iter, false);
+	RESET_ERROR;
 	SXMPIterator *titer = (SXMPIterator*)iter;
 	titer->Skip(options);
 	return true;
