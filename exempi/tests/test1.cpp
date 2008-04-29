@@ -1,7 +1,7 @@
 /*
  * exempi - test1.cpp
  *
- * Copyright (C) 2007 Hubert Figuiere
+ * Copyright (C) 2007-2008 Hubert Figuiere
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,29 +72,37 @@ void test_write_new_property()
 	BOOST_CHECK(len != 0);
 
 	BOOST_CHECK(xmp_init());
+	BOOST_CHECK_EQUAL(xmp_get_error(), 0);
 
 	XmpPtr xmp = xmp_new_empty();
+	BOOST_CHECK_EQUAL(xmp_get_error(), 0);
 
 	BOOST_CHECK(xmp_parse(xmp, buffer, len));
+	BOOST_CHECK_EQUAL(xmp_get_error(), 0);
 
 	BOOST_CHECK(xmp != NULL);
 
 	XmpStringPtr reg_prefix = xmp_string_new();
 	BOOST_CHECK(xmp_register_namespace(NS_CC, "cc", reg_prefix));
+	BOOST_CHECK_EQUAL(xmp_get_error(), 0);
 	BOOST_CHECK_EQUAL(strcmp("cc:", xmp_string_cstr(reg_prefix)), 0); 
 
 	BOOST_CHECK(xmp_prefix_namespace_uri("cc", reg_prefix));
+	BOOST_CHECK_EQUAL(xmp_get_error(), 0);
 	BOOST_CHECK_EQUAL(strcmp(NS_CC, xmp_string_cstr(reg_prefix)), 0); 	
 
 	BOOST_CHECK(xmp_namespace_prefix(NS_CC, reg_prefix));
+	BOOST_CHECK_EQUAL(xmp_get_error(), 0);
 	BOOST_CHECK_EQUAL(strcmp("cc:", xmp_string_cstr(reg_prefix)), 0); 	
 
 	xmp_string_free(reg_prefix);
 
 	BOOST_CHECK(xmp_set_property(xmp, NS_CC, "License", "Foo", 0));
+	BOOST_CHECK_EQUAL(xmp_get_error(), 0);
 
 	XmpStringPtr the_prop = xmp_string_new();
 	BOOST_CHECK(xmp_get_property(xmp, NS_CC, "License", the_prop, NULL));
+	BOOST_CHECK_EQUAL(xmp_get_error(), 0);
 	BOOST_CHECK_EQUAL(strcmp("Foo", xmp_string_cstr(the_prop)),	0); 
 
 	XmpDateTime the_dt;
@@ -110,15 +118,18 @@ void test_write_new_property()
 	the_dt.nanoSecond = 0;
 	BOOST_CHECK(xmp_set_property_date(xmp, NS_EXIF, "DateTimeOriginal", 
 									  &the_dt, 0));	
+	BOOST_CHECK_EQUAL(xmp_get_error(), 0);
 
 	BOOST_CHECK(xmp_get_property(xmp, NS_EXIF, "DateTimeOriginal", 
 								 the_prop, NULL));
+	BOOST_CHECK_EQUAL(xmp_get_error(), 0);
 	BOOST_CHECK_EQUAL(strcmp("2005-12-25T12:42:42Z", 
 							 xmp_string_cstr(the_prop)), 0); 	
 
 	XmpDateTime the_dt2;
 	BOOST_CHECK(xmp_get_property_date(xmp, NS_EXIF, "DateTimeOriginal", 
 									  &the_dt2, NULL));
+	BOOST_CHECK_EQUAL(xmp_get_error(), 0);
 
 	BOOST_CHECK(the_dt2.year == 2005);
 	BOOST_CHECK(the_dt2.minute == 42);
@@ -157,10 +168,13 @@ void test_serialize()
 	buffer[rlen] = 0;
 
 	BOOST_CHECK(xmp_init());
+	BOOST_CHECK_EQUAL(xmp_get_error(), 0);
 
 	XmpPtr xmp = xmp_new_empty();
+	BOOST_CHECK_EQUAL(xmp_get_error(), 0);
 
 	BOOST_CHECK(xmp_parse(xmp, buffer, len));
+	BOOST_CHECK_EQUAL(xmp_get_error(), 0);
 
 	std::string b1(buffer);
 	std::string b2;
@@ -169,6 +183,7 @@ void test_serialize()
 	BOOST_CHECK(xmp_serialize_and_format(xmp, output, 
 										 XMP_SERIAL_OMITPACKETWRAPPER, 
 										 0, "\n", " ", 0));
+	BOOST_CHECK_EQUAL(xmp_get_error(), 0);
 	b2 = xmp_string_cstr(output);
 	// find a way to compare that.
 //	BOOST_CHECK_EQUAL(b1, b2);
