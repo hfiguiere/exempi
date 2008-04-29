@@ -1,3 +1,7 @@
+2008-04-28  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/tests/test1.cpp: Check that errors are unset.
+
 2008-04-24  Hubert Figuiere  <hub@figuiere.net>
 
 	* exempi/exempi.cpp: RESET_ERROR is called
