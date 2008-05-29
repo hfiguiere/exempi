@@ -254,7 +254,7 @@ XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf)
 bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp)
 {
 	CHECK_PTR(xf, false);
-	CHECK_PTR(xmp, NULL);
+	CHECK_PTR(xmp, false);
 	RESET_ERROR;
 	bool result = false;
 	try {
