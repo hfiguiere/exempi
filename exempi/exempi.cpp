@@ -45,7 +45,6 @@
 #include <iostream>
 
 #define XMP_INCLUDE_XMPFILES 1
-#define UNIX_ENV 1
 #define TXMP_STRING_TYPE std::string
 #include "XMP.hpp"
 #include "XMP.incl_cpp"

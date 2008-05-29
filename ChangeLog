@@ -1,7 +1,11 @@
 2008-05-29  Hubert Figuiere  <hub@figuiere.net>
 
+	* exempi/exempi.cpp, exempi/Makefile.am: don't define 
+	UNIX_ENV in the source code but use the CPPFLAGS.
+
 	* exempi/exempi.cpp (xmp_files_get_xmp): CHECK_PTR should 
 	return false and not NULL.
+	
 
 2008-04-06  Hubert Figuiere  <hub@figuiere.net>
 

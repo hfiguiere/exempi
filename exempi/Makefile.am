@@ -42,7 +42,7 @@ exempi_HEADERS = xmp.h xmpconsts.h xmperrors.h
 
 INCLUDES = -I$(top_srcdir)/public/include
 
-AM_CPPFLAGS = -Wall
+AM_CPPFLAGS = -Wall -D@EXEMPI_PLATFORM_DEF@=1
 lib_LTLIBRARIES = libexempi.la
 
 pkgconfig_DATA = exempi-@EXEMPI_MAJOR_VERSION@.pc
