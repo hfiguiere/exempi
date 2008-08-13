@@ -1,7 +1,7 @@
 /*
  * exempi - exempi.cpp
  *
- * Copyright (C) 2007 Hubert Figuiere
+ * Copyright (C) 2007-2008 Hubert Figuiere
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,7 @@
 #include "xmp.h"
 #include "xmperrors.h"
 
+
 #include <string>
 #include <iostream>
 
@@ -50,13 +51,75 @@
 #include "XMP.hpp"
 #include "XMP.incl_cpp"
 
-/* TODO make the thread local storage portable */
-static __thread int g_error = 0;
+
+#if HAVE_NATIVE_TLS
+
+static TLS int g_error = 0;
 
 static void set_error(int err)
 {
-	g_error = err;
+    g_error = err;
 }
+
+#else
+
+#include <pthread.h>
+
+/* Portable thread local storage using pthreads */
+static pthread_key_t key = NULL;
+static pthread_once_t key_once = PTHREAD_ONCE_INIT;
+
+/* Destructor called when a thread exits - ensure to delete allocated int pointer */ 
+static void destroy_tls_key( void * ptr )
+{
+	int* err_ptr = static_cast<int*>(ptr);
+	delete err_ptr;
+}
+
+/* Create a key for use with pthreads local storage */ 
+static void create_tls_key()
+{
+	(void) pthread_key_create(&key, destroy_tls_key);
+}
+
+/* Obtain the latest xmp error for this specific thread - defaults to 0 */
+static int get_error_for_thread() 
+{
+	int * err_ptr;
+	
+	pthread_once(&key_once, create_tls_key);
+	err_ptr = (int *) pthread_getspecific(key);
+	
+	if(err_ptr == NULL) {
+		return 0;
+	}
+	 
+	return *err_ptr;
+}
+
+/* set the current xmp error for this specific thread */
+static void set_error(int err)
+{
+	int * err_ptr;
+	
+	// Ensure that create_thread_local_storage_key is only called
+	// once, by the first thread, to create the key.
+	pthread_once(&key_once, create_tls_key);
+	 
+	// Retrieve pointer to int for this thread.
+	err_ptr = (int *) pthread_getspecific(key);
+	
+	// Allocate it, if it does not exists.
+	if( err_ptr == NULL ) {
+		err_ptr = new int;
+		pthread_setspecific(key, err_ptr);
+	}
+	 
+	// Save the error for this thread.
+	*err_ptr = err;
+}
+
+#endif
 
 static void set_error(const XMP_Error & e)
 {
@@ -111,7 +174,11 @@ const char NS_CC[] = "http://creativecommons.org/ns#";
 
 int xmp_get_error()
 {
-	return g_error;
+#if HAVE_NATIVE_TLS
+    return g_error;
+#else
+	return get_error_for_thread();
+#endif
 }
 
 bool xmp_init()

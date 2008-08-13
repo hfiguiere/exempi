@@ -1,3 +1,7 @@
+2.0.2
+
+- Bug #16598: address the lack of TLS for sone platforms.
+
 2.0.1
 
 - Bug #14612: no stdbool.h for Sun compilers.

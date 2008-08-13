@@ -1,3 +1,15 @@
+2008-08-12  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/exempi.cpp (set_error): Use pthread for the TLS 
+	if there is no compiler support.
+	(Closes #16598)
+
+	* configure.ac:
+	* m4/ax_tls.m4:
+	Check for TLS.
+
+=== 2.0.1 ===
+
 2008-04-28  Hubert Figuiere  <hub@figuiere.net>
 
 	* exempi/tests/test1.cpp: Check that errors are unset.
