@@ -4,6 +4,10 @@
 - Bug: fix a typo in a CHECK_PTR call causing warnings on gcc < 4.
 - Bug: no longer define UNIX_ENV in exempi.cpp and let CPPFLAGS do it.
 
+2.0.2
+
+- Bug #16598: address the lack of TLS for sone platforms.
+
 2.0.1
 
 - Bug #14612: no stdbool.h for Sun compilers.

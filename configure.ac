@@ -47,6 +47,7 @@ dnl 1.99.8 is the revision 4.1.1
 dnl 1.99.9 is the revision 4.1.1 (no library change have been made)
 dnl 2.0.0 is the revision 4.1.2
 dnl 2.0.1 is the revision 4.1.3
+dnl 2.0.2 is the revision 4.1.4
 dnl 2.1.0 is the revision 5.2.0
 AC_SUBST([EXEMPI_REVISION], [0])
 AC_SUBST([EXEMPI_AGE],      [2])
@@ -125,6 +126,14 @@ AC_DEFINE_UNQUOTED(ICONV_CONST, $am_cv_proto_iconv_arg1,
       [Define as const if the declaration of iconv() needs const.])
 dnl end iconv checks
 
+
+dnl TLS.
+AX_TLS
+if test "$ac_cv_tls" != "none"; then
+   AC_DEFINE(HAVE_NATIVE_TLS, [1], [Define if compiler has native TLS.])
+fi
+dnl end TLS
+
 AC_ARG_ENABLE(unittest,
               AC_HELP_STRING([--enable-unittest=yes|no],
                             [enable the unittest. requires boost (default is yes)]),
@@ -198,8 +207,9 @@ exempi/exempi-2.0.pc
 echo "
 Defines:
 
-   EXEMPI_PLATFORM_DEF = $EXEMPI_PLATFORM_DEF
-   CPPFLAGS            = $CPPFLAGS
-   LDFLAGS             = $LDFLAGS
-   Run unit test       = $ENABLE_UNITTEST
+   EXEMPI_PLATFORM_DEF  = $EXEMPI_PLATFORM_DEF
+   CPPFLAGS             = $CPPFLAGS
+   LDFLAGS              = $LDFLAGS
+   Thread Local Storage = $ac_cv_tls
+   Run unit test        = $ENABLE_UNITTEST
 "

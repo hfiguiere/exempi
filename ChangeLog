@@ -5,7 +5,6 @@
 
 	* exempi/exempi.cpp (xmp_files_get_xmp): CHECK_PTR should 
 	return false and not NULL.
-	
 
 2008-04-06  Hubert Figuiere  <hub@figuiere.net>
 
@@ -17,6 +16,18 @@
 2008-04-04  Hubert Figuiere  <hub@figuiere.net>
 
 	* Start 2.1.0
+
+=== 2.0.2 ===
+
+2008-08-12  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/exempi.cpp (set_error): Use pthread for the TLS 
+	if there is no compiler support.
+	(Closes #16598)
+
+	* configure.ac:
+	* m4/ax_tls.m4:
+	Check for TLS.
 
 === 2.0.1 ===
 
