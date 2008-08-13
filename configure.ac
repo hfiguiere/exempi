@@ -9,7 +9,7 @@ dnl the same distribution terms as the rest of that program.
 
 AC_PREREQ(2.50)
 AC_INIT(exempi/xmp.h)
-AM_INIT_AUTOMAKE(exempi, 2.0.1)
+AM_INIT_AUTOMAKE(exempi, 2.0.2)
 AM_MAINTAINER_MODE
 
 dnl ---------------------------------------------------------------------------
