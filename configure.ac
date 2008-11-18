@@ -100,6 +100,8 @@ AC_CHECK_HEADER(expat.h, ,
 	 AC_MSG_ERROR([expat headers missing]))
 AC_CHECK_HEADER(iconv.h, ,
 	 AC_MSG_ERROR([iconv headers missing]))
+AC_CHECK_HEADER(zlib.h, ,
+	 AC_MSG_ERROR([zlib headers missing]))
 
 dnl Blatently copied from iconv.m4 to remove the crack about libtool
 dnl But check for constness of the iconv parameters.
@@ -191,7 +193,7 @@ source/XMPFiles/FileHandlers/Makefile
 source/XMPFiles/FormatSupport/Makefile
 samples/Makefile
 samples/source/Makefile
-samples/BlueSquares/Makefile
+samples/testfiles/Makefile
 build/Makefile
 public/Makefile
 public/include/Makefile

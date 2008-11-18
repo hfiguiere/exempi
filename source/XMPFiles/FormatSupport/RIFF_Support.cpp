@@ -7,6 +7,8 @@
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
 
+#include <stdlib.h>
+
 #include "RIFF_Support.hpp"
 
 #if XMP_WinBuild
@@ -171,13 +173,14 @@ namespace RIFF_Support {
 
 	bool MakeChunk ( LFA_FileRef inFileRef, RiffState & inOutRiffState, long riffType, UInt32 len )
 	{
-		long starttag, taglen;
+		long starttag;
+		UInt32 taglen;
 		UInt32 rifflen, avail;
 		UInt64 pos;
 	
 		/* look for top level Premiere padding chunk */
 		starttag = 0;
-		while ( FindChunk ( inOutRiffState, ckidPremierePadding, riffType, 0, &starttag, reinterpret_cast<unsigned long*>(&taglen), &pos ) ) {
+		while ( FindChunk ( inOutRiffState, ckidPremierePadding, riffType, 0, &starttag, &taglen, &pos ) ) {
 	
 			pos -= 8;
 			taglen += 8;

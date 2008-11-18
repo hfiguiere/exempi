@@ -1,3 +1,39 @@
+2008-11-18  Hubert Figuiere  <hub@figuiere.net>
+
+	* NEWS,	configure.ac, exempi/Makefile.am, 
+	exempi/tests/test2.cpp, exempi/tests/testcore.sh, 
+	samples/Makefile.am, samples/source/Makefile.am, 
+	source/XMPFiles/FileHandlers/Makefile.am,
+	source/XMPFiles/FormatSupport/Makefile.am,
+	source/XMPCore/Makefile.am, source/common/Makefile.am:
+	Fix the build system.
+	* source/XMPFiles/FileHandlers/AVCHD_Handler.cpp
+	source/XMPFiles/FileHandlers/MP3_Handler.cpp,
+	source/XMPFiles/FileHandlers/MP3_Handler.hpp,
+	source/XMPFiles/FileHandlers/P2_Handler.cpp,
+	source/XMPFiles/FileHandlers/SonyHDV_Handler.cpp,
+	source/XMPFiles/FileHandlers/WAV_Handler.cpp,
+	source/XMPFiles/FileHandlers/WAV_Handler.hpp,
+	source/XMPFiles/FileHandlers/XDCAMEX_Handler.cpp,
+	source/XMPFiles/FileHandlers/XDCAM_Handler.cpp,
+	source/XMPFiles/FormatSupport/ID3_Support.cpp,
+	source/XMPFiles/FormatSupport/ID3_Support.hpp,
+	source/XMPFiles/FormatSupport/RIFF_Support.cpp,
+	source/XMPFiles/FormatSupport/RIFF_Support.hpp,
+	source/XMPFiles/FormatSupport/ReconcileTIFF.cpp,
+	source/XMPFiles/FormatSupport/Reconcile_Impl.cpp,
+	source/XMPFiles/FormatSupport/Reconcile_Impl.hpp,
+	source/XMPFiles/FormatSupport/TIFF_Support.hpp:
+	Enable all the file formats that Adobe disabled on 
+	purpose.
+	* samples/source/ModifyingXMP.cpp,
+	source/common/EndianUtils.hpp,
+	source/common/LargeFileAccess.hpp,
+	source/common/XML_Node.cpp:
+	Other misc merge fixes.
+	
+	* Merge the XPM SDK 4.4.2
+
 2008-05-29  Hubert Figuiere  <hub@figuiere.net>
 
 	* exempi/exempi.cpp, exempi/Makefile.am: don't define 

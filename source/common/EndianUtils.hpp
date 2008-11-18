@@ -31,14 +31,6 @@
 		#error "Neither __BIG_ENDIAN__ nor __LITTLE_ENDIAN__ is set"
 	#endif
 #elif XMP_UNIXBuild
-	#ifndef kBigEndianHost	// Typically in the makefile for generic UNIX.
-		#if __GNUC__ && (__i386__ || __x86_64__)
-			#define kBigEndianHost 0
-		#else
-			#error "Must define kBigEndianHost as 0 or 1 in the makefile."
-		#endif
-	#endif
-#elif XMP_UNIXBuild
 
 #ifdef CHECKED_ENDIANNESS
 
@@ -70,6 +62,8 @@
 
 #endif // CHECKED_ENDIANNESS
 
+#else
+	#error "Unknown build environment"
 #endif
 
 // =================================================================================================

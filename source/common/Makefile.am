@@ -49,7 +49,9 @@ AM_CPPFLAGS = \
 
 
 
-noinst_HEADERS = UnicodeConversions.hpp
+noinst_HEADERS = UnicodeConversions.hpp ExpatAdapter.hpp EndianUtils.hpp\
+	LargeFileAccess.hpp XMLParserAdapter.hpp
 
 
-libxmpcommon_la_SOURCES = UnicodeInlines.incl_cpp UnicodeConversions.cpp
+libxmpcommon_la_SOURCES = UnicodeInlines.incl_cpp UnicodeConversions.cpp\
+	XML_Node.cpp LargeFileAccess.cpp 

@@ -153,7 +153,7 @@ void
 test_tiff_leak()
 {
 	std::string orig_tiff_file = g_src_testdir 
-		+ "../../samples/BlueSquares/BlueSquare.tif";
+		+ "../../samples/testfiles/BlueSquare.tif";
 	std::string command = "cp ";
 	command += orig_tiff_file + " test.tif";
 	BOOST_CHECK(system(command.c_str()) >= 0);
@@ -190,7 +190,7 @@ init_unit_test_suite( int argc, char * argv[] )
 {
     test_suite* test = BOOST_TEST_SUITE("test xmpfiles");
 	
-	prepare_test(argc, argv, "../../samples/BlueSquares/BlueSquare.jpg");
+	prepare_test(argc, argv, "../../samples/testfiles/BlueSquare.jpg");
 	
 	test->add(BOOST_TEST_CASE(&test_xmpfiles));
 	test->add(BOOST_TEST_CASE(&test_xmpfiles_write));

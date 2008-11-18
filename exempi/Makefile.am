@@ -53,5 +53,5 @@ libexempi_la_LIBADD = $(top_builddir)/source/common/libxmpcommon.la \
 	$(top_builddir)/source/XMPCore/libXMPCore.la \
 	$(top_builddir)/source/XMPFiles/libXMPFiles.la \
 	$(top_builddir)/third-party/MD5/libmd5.la \
-	-lexpat 
+	-lexpat -lz
 libexempi_la_LDFLAGS = -version-info @EXEMPI_VERSION_INFO@

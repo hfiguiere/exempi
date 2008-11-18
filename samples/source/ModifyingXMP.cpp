@@ -25,6 +25,8 @@
 // Provide access to the API
 #include "XMP.hpp"
 
+#include <string.h>
+
 #include <iostream>
 #include <fstream>
 

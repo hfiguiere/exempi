@@ -36,10 +36,10 @@ namespace RIFF_Support
 {
 	// Some types, if not already defined
 	#ifndef UInt64
-		typedef unsigned long long UInt64;
+		typedef XMP_Uns64 UInt64;
 	#endif
 	#ifndef UInt32
-		typedef unsigned long UInt32;
+		typedef XMP_Uns32 UInt32;
 	#endif
 
 	/**

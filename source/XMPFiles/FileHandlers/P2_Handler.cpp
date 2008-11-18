@@ -7,6 +7,8 @@
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
 
+#include <stdlib.h>
+
 #include "P2_Handler.hpp"
 
 #include "MD5.h"

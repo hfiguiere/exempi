@@ -11,7 +11,7 @@
 // =================================================================================================
 
 #include "XMP_Environment.h"	// ! This must be the first include.
-#if ! XMP_UNIXBuild				//	Closes at very bottom. Disabled on UNIX until legacy-as-local is fixed.
+//#if ! XMP_UNIXBuild				//	Closes at very bottom. Disabled on UNIX until legacy-as-local is fixed.
 
 #include "XMPFiles_Impl.hpp"
 
@@ -56,5 +56,5 @@ private:
 
 // =================================================================================================
 
-#endif	// XMP_UNIXBuild
+//#endif	// XMP_UNIXBuild
 #endif /* __MP3_Handler_hpp__ */

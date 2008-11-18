@@ -9,6 +9,8 @@
 #include "XMP_Environment.h"	// ! Must be the first #include!
 #include "XMLParserAdapter.hpp"
 
+#include <string.h>
+#include <cstring>
 #include <map>
 
 // ! Can't include XMP..._Impl.hpp - used by both Core and Files.

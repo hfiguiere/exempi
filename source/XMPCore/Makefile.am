@@ -52,7 +52,7 @@ AM_CPPFLAGS = -Wall \
 
 
 
-noinst_HEADERS = ExpatAdapter.hpp  XMLParserAdapter.hpp  \
+noinst_HEADERS =  \
 	XMPCore_Impl.hpp  XMPIterator.hpp \
 	XMPMeta.hpp  XMPUtils.hpp
 

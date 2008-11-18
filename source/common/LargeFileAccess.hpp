@@ -16,7 +16,11 @@
 
 #include "EndianUtils.hpp"
 
+#if XMP_UNIXBuild
+typedef int LFA_FileRef;
+#else
 typedef void * LFA_FileRef;
+#endif
 
 enum { // used by LFA_Throw, re-route to whatever you need
 	kLFAErr_InternalFailure = 1,

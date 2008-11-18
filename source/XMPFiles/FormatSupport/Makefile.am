@@ -35,7 +35,7 @@
 #
 
 noinst_LTLIBRARIES = libformatsupport.la
-noinst_HEADERS = EndianUtils.hpp  IPTC_Support.hpp  PSIR_Support.hpp\
+noinst_HEADERS = IPTC_Support.hpp  PSIR_Support.hpp\
 	Reconcile_Impl.hpp   RIFF_Support.hpp  XMPScanner.hpp\
 	ID3_Support.hpp  PNG_Support.hpp   QuickTime_Support.hpp\
 	QuickTime_Support.cpp\
@@ -56,4 +56,8 @@ libformatsupport_la_SOURCES = ID3_Support.cpp   PSIR_FileWriter.cpp    Reconcile
 	IPTC_Support.cpp  PSIR_MemoryReader.cpp  ReconcileIPTC.cpp   \
 	RIFF_Support.cpp     TIFF_Support.cpp \
 	PNG_Support.cpp   ReconcileLegacy.cpp  \
-	TIFF_FileWriter.cpp  XMPScanner.cpp  GIF_Support.cpp
+	SWF_Support.hpp SWF_Support.cpp\
+	XDCAM_Support.hpp XDCAM_Support.cpp\
+	TIFF_FileWriter.cpp  XMPScanner.cpp  GIF_Support.cpp \
+	ASF_Support.hpp ASF_Support.cpp \
+	$(NULL)

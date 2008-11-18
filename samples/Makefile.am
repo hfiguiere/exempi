@@ -36,4 +36,4 @@
 
 
 SUBDIRS = source
-DIST_SUBDIRS = source BlueSquares
+DIST_SUBDIRS = source testfiles

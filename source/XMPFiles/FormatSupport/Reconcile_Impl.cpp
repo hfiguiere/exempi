@@ -171,18 +171,15 @@ bool ReconcileUtils::IsUTF8 ( const void * utf8Ptr, size_t utf8Len )
 #elif XMP_UNIXBuild
 
 // use UTF-8 instead
-	// ! Does not exist, must not be called, for Generic UNIX builds. It is not clear at this time
-	// ! what notion of local encoding should be used for generic UNIX, especially in a server product.
+//#error "UTF8ToHostEncoding is not implemented for UNIX"
+	// *** A nice definition of Windows 1252 is at http://www.microsoft.com/globaldev/reference/sbcs/1252.mspx
+	// *** We should code our own conversions for this, and use it for UNIX - unless better POSIX routines exist.
 
 #endif
 
 // =================================================================================================
 // ReconcileUtils::UTF8ToLocal
 // ===========================
-
-#if ! XMP_UNIXBuild
-// ! Does not exist, must not be called, for Generic UNIX builds. It is not clear at this time
-// ! what notion of local encoding should be used for generic UNIX, especially in a server product.
 
 void ReconcileUtils::UTF8ToLocal ( const void * _utf8Ptr, size_t utf8Len, std::string * local )
 {
@@ -219,17 +216,12 @@ void ReconcileUtils::UTF8ToLocal ( const void * _utf8Ptr, size_t utf8Len, std::s
 
 }	// ReconcileUtils::UTF8ToLocal
 
-#endif
-
 // =================================================================================================
 // ReconcileUtils::UTF8ToLatin1
 // ============================
 //
 // Actually to the Windows code page 1252 superset of 8859-1.
 
-#if ! XMP_UNIXBuild
-// ! Does not exist, must not be called, for Generic UNIX builds. At some point we could consider
-// ! creating our own private implementation. So far only needed for the ID3 legacy in MP3 files.
 
 void ReconcileUtils::UTF8ToLatin1 ( const void * _utf8Ptr, size_t utf8Len, std::string * latin1 )
 {
@@ -273,7 +265,6 @@ void ReconcileUtils::UTF8ToLatin1 ( const void * _utf8Ptr, size_t utf8Len, std::
 
 }	// ReconcileUtils::UTF8ToLatin1
 
-#endif
 
 // =================================================================================================
 // HostEncodingToUTF8
@@ -343,16 +334,11 @@ void ReconcileUtils::UTF8ToLatin1 ( const void * _utf8Ptr, size_t utf8Len, std::
 
 #elif XMP_UNIXBuild
 
-
 #endif
 
 // =================================================================================================
 // ReconcileUtils::LocalToUTF8
 // ===========================
-
-#if ! XMP_UNIXBuild
-// ! Does not exist, must not be called, for Generic UNIX builds. It is not clear at this time
-// ! what notion of local encoding should be used for generic UNIX, especially in a server product.
 
 void ReconcileUtils::LocalToUTF8 ( const void * _localPtr, size_t localLen, std::string * utf8 )
 {
@@ -388,17 +374,12 @@ void ReconcileUtils::LocalToUTF8 ( const void * _localPtr, size_t localLen, std:
 
 }	// ReconcileUtils::LocalToUTF8
 
-#endif
 
 // =================================================================================================
 // ReconcileUtils::Latin1ToUTF8
 // ============================
 //
 // Actually from the Windows code page 1252 superset of 8859-1.
-
-#if ! XMP_UNIXBuild
-// ! Does not exist, must not be called, for Generic UNIX builds. At some point we could consider
-// ! creating our own private implementation. So far only needed for the ID3 legacy in MP3 files.
 
 void ReconcileUtils::Latin1ToUTF8 ( const void * _latin1Ptr, size_t latin1Len, std::string * utf8 )
 {
@@ -441,4 +422,3 @@ void ReconcileUtils::Latin1ToUTF8 ( const void * _latin1Ptr, size_t latin1Len, s
 
 }	// ReconcileUtils::Latin1ToUTF8
 
-#endif

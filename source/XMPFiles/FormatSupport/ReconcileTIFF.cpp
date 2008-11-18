@@ -1461,12 +1461,12 @@ ImportTIFF_OECFTable ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
 		bytePtr += 4;	// Move to the list of names.
 		for ( size_t i = columns; i > 0; --i ) {
 			size_t nameLen = strlen((XMP_StringPtr)bytePtr) + 1;	// ! Include the terminating nul.
-			if ( (bytePtr + nameLen) > byteEnd ) throw BadExif();
+			if ( (bytePtr + nameLen) > byteEnd ) { xmp->DeleteProperty ( xmpNS, xmpProp ); return; };
 			xmp->AppendArrayItem ( xmpNS, arrayPath.c_str(), kXMP_PropArrayIsOrdered, (XMP_StringPtr)bytePtr );
 			bytePtr += nameLen;
 		}
 		
-		if ( (byteEnd - bytePtr) != (8 * columns * rows) ) throw BadExif();	// Make sure the values are present.
+		if ( (byteEnd - bytePtr) != (8 * columns * rows) ) { xmp->DeleteProperty ( xmpNS, xmpProp ); return; };	// Make sure the values are present.
 		SXMPUtils::ComposeStructFieldPath ( xmpNS, xmpProp, kXMP_NS_EXIF, "Values", &arrayPath );
 	
 		XMP_Int32 * binPtr = (XMP_Int32*)bytePtr;
@@ -1486,11 +1486,7 @@ ImportTIFF_OECFTable ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
 		}
 		
 		return;
-	}
-	catch ( const BadExif & ) {
-		// Ignore the tag if the table is ill-formed.
-		xmp->DeleteProperty ( xmpNS, xmpProp );
-		return;
+
 	} catch ( ... ) {
 		// Do nothing, let other imports proceed.
 		// ? Notify client?
@@ -1535,12 +1531,12 @@ ImportTIFF_SFRTable ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
 		bytePtr += 4;	// Move to the list of names.
 		for ( size_t i = columns; i > 0; --i ) {
 			size_t nameLen = strlen((XMP_StringPtr)bytePtr) + 1;	// ! Include the terminating nul.
-			if ( (bytePtr + nameLen) > byteEnd ) throw BadExif();
+			if ( (bytePtr + nameLen) > byteEnd ) { xmp->DeleteProperty ( xmpNS, xmpProp ); return; };
 			xmp->AppendArrayItem ( xmpNS, arrayPath.c_str(), kXMP_PropArrayIsOrdered, (XMP_StringPtr)bytePtr );
 			bytePtr += nameLen;
 		}
 		
-		if ( (byteEnd - bytePtr) != (8 * columns * rows) ) throw BadExif();	// Make sure the values are present.
+		if ( (byteEnd - bytePtr) != (8 * columns * rows) ) { xmp->DeleteProperty ( xmpNS, xmpProp ); return; };	// Make sure the values are present.
 		SXMPUtils::ComposeStructFieldPath ( xmpNS, xmpProp, kXMP_NS_EXIF, "Values", &arrayPath );
 	
 		XMP_Uns32 * binPtr = (XMP_Uns32*)bytePtr;
@@ -1560,11 +1556,7 @@ ImportTIFF_SFRTable ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
 		}
 		
 		return;
-	}
-	catch ( const BadExif & ) {
-		// Ignore the tag if the table is ill-formed.
-		xmp->DeleteProperty ( xmpNS, xmpProp );
-		return;
+
 	} catch ( ... ) {
 		// Do nothing, let other imports proceed.
 		// ? Notify client?

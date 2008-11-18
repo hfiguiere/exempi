@@ -7,6 +7,8 @@
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
 
+#include <stdlib.h>
+
 #include "SonyHDV_Handler.hpp"
 
 #include "MD5.h"

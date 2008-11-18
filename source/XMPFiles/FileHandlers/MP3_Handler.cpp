@@ -8,7 +8,7 @@
 // =================================================================================================
 
 #include "XMP_Environment.h"	// ! This must be the first include.
-#if ! XMP_UNIXBuild				//	Closes at very bottom. Disabled on UNIX until legacy-as-local is fixed.
+//#if ! XMP_UNIXBuild				//	Closes at very bottom. Disabled on UNIX until legacy-as-local is fixed.
 
 #include "MP3_Handler.hpp"
 #include "ID3_Support.hpp"
@@ -343,4 +343,4 @@ bool MP3_MetaHandler::LoadPropertyFromID3 ( LFA_FileRef inFileRef, char * strFra
 
 // =================================================================================================
 
-#endif	// XMP_UNIXBuild
+//#endif	// XMP_UNIXBuild
