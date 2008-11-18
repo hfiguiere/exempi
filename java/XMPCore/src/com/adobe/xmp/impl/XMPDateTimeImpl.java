@@ -10,7 +10,9 @@
 package com.adobe.xmp.impl;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Locale;
 import java.util.TimeZone;
 
 import com.adobe.xmp.XMPDateTime;
@@ -63,14 +65,48 @@ public class XMPDateTimeImpl implements XMPDateTime
 	 */
 	public XMPDateTimeImpl(Calendar calendar)
 	{
-		year = calendar.get(Calendar.YEAR);
-		month = calendar.get(Calendar.MONTH) + 1; // cal is from 0..12
-		day = calendar.get(Calendar.DAY_OF_MONTH);
-		hour = calendar.get(Calendar.HOUR_OF_DAY);
-		minute = calendar.get(Calendar.MINUTE);
-		second = calendar.get(Calendar.SECOND);
-		nanoSeconds = calendar.get(Calendar.MILLISECOND) * 1000000;
-		timeZone = calendar.getTimeZone();
+		// extract the date and timezone from the calendar provided
+        Date date = calendar.getTime();
+        TimeZone zone = calendar.getTimeZone();
+
+        // put that date into a calendar the pretty much represents ISO8601
+        // I use US because it is close to the "locale" for the ISO8601 spec
+        GregorianCalendar intCalendar = 
+        	(GregorianCalendar) Calendar.getInstance(Locale.US);
+        intCalendar.setGregorianChange(new Date(Long.MIN_VALUE));       
+        intCalendar.setTimeZone(zone);           
+        intCalendar.setTime(date); 		
+		
+		this.year = intCalendar.get(Calendar.YEAR);
+		this.month = intCalendar.get(Calendar.MONTH) + 1; // cal is from 0..12
+		this.day = intCalendar.get(Calendar.DAY_OF_MONTH);
+		this.hour = intCalendar.get(Calendar.HOUR_OF_DAY);
+		this.minute = intCalendar.get(Calendar.MINUTE);
+		this.second = intCalendar.get(Calendar.SECOND);
+		this.nanoSeconds = intCalendar.get(Calendar.MILLISECOND) * 1000000;
+		this.timeZone = intCalendar.getTimeZone();
+	}
+
+	
+	/**
+	 * Creates an <code>XMPDateTime</code>-instance from 
+	 * a <code>Date</code> and a <code>TimeZone</code>.
+	 * 
+	 * @param date a date describing an absolute point in time
+	 * @param timeZone a TimeZone how to interpret the date
+	 */
+	public XMPDateTimeImpl(Date date, TimeZone timeZone)
+	{
+		GregorianCalendar calendar = new GregorianCalendar(timeZone);
+		calendar.setTime(date);
+		this.year = calendar.get(Calendar.YEAR);
+		this.month = calendar.get(Calendar.MONTH) + 1; // cal is from 0..12
+		this.day = calendar.get(Calendar.DAY_OF_MONTH);
+		this.hour = calendar.get(Calendar.HOUR_OF_DAY);
+		this.minute = calendar.get(Calendar.MINUTE);
+		this.second = calendar.get(Calendar.SECOND);
+		this.nanoSeconds = calendar.get(Calendar.MILLISECOND) * 1000000;
+		this.timeZone = timeZone;
 	}
 
 	
@@ -277,9 +313,16 @@ public class XMPDateTimeImpl implements XMPDateTime
 	 */
 	public Calendar getCalendar()
 	{
-		Calendar calendar = new GregorianCalendar(year, month - 1, day, hour, minute, second);
-		calendar.set(Calendar.MILLISECOND, nanoSeconds / 1000000);
+		GregorianCalendar calendar = (GregorianCalendar) Calendar.getInstance(Locale.US);
+		calendar.setGregorianChange(new Date(Long.MIN_VALUE));
 		calendar.setTimeZone(timeZone);
+		calendar.set(Calendar.YEAR, year);
+		calendar.set(Calendar.MONTH, month - 1);
+		calendar.set(Calendar.DAY_OF_MONTH, day);
+		calendar.set(Calendar.HOUR_OF_DAY, hour);
+		calendar.set(Calendar.MINUTE, minute);
+		calendar.set(Calendar.SECOND, second);
+		calendar.set(Calendar.MILLISECOND, nanoSeconds / 1000000);
 		return calendar;
 	}
 

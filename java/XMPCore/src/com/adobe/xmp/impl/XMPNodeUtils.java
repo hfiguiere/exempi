@@ -9,7 +9,7 @@
 
 package com.adobe.xmp.impl;
 
-import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.Iterator;
 
 import com.adobe.xmp.XMPConst;
@@ -416,9 +416,9 @@ public class XMPNodeUtils implements XMPConst
 		{
 			strValue = XMPUtils.convertFromDate((XMPDateTime) value);
 		}
-		else if (value instanceof Calendar)
+		else if (value instanceof GregorianCalendar)
 		{
-			XMPDateTime dt = XMPDateTimeFactory.createFromCalendar((Calendar) value);
+			XMPDateTime dt = XMPDateTimeFactory.createFromCalendar((GregorianCalendar) value);
 			strValue = XMPUtils.convertFromDate(dt);
 		}
 		else if (value instanceof byte[])
@@ -578,20 +578,14 @@ public class XMPNodeUtils implements XMPConst
 			throw new XMPException("Array index not digits.", XMPError.BADXPATH);
 		}
 	
-		if (index == arrayNode.getChildrenLength() + 1  &&  createNodes)
+		if (createNodes  &&  index == arrayNode.getChildrenLength() + 1)
 		{
 			// Append a new last + 1 node.
 			XMPNode newItem = new XMPNode(ARRAY_ITEM_NAME, null);
 			newItem.setImplicit(true);
 			arrayNode.addChild(newItem);
 		}
-	
-		// Don't throw here for a too large index. setProperty() will throw,
-		// getProperty() will not.
-		if (index > arrayNode.getChildrenLength())
-		{
-			index = -1;
-		}
+
 		return index;
 	}
 	

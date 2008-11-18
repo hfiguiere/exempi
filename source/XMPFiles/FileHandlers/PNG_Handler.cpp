@@ -138,7 +138,7 @@ void PNG_MetaHandler::ProcessXMP()
 	
 		XMP_Assert ( this->containsXMP );
 		XMP_StringPtr packetStr = this->xmpPacket.c_str();
-		XMP_StringLen packetLen = this->xmpPacket.size();
+		XMP_StringLen packetLen = (XMP_StringLen)this->xmpPacket.size();
 
 		this->xmpObj.ParseFromBuffer ( packetStr, packetLen );
 
@@ -160,7 +160,7 @@ void PNG_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	if ( doSafeUpdate ) XMP_Throw ( "PNG_MetaHandler::UpdateFile: Safe update not supported", kXMPErr_Unavailable );
 	
 	XMP_StringPtr packetStr = xmpPacket.c_str();
-	XMP_StringLen packetLen = xmpPacket.size();
+	XMP_StringLen packetLen = (XMP_StringLen)xmpPacket.size();
 	if ( packetLen == 0 ) return;
 
 	LFA_FileRef fileRef(this->parent->fileRef);
@@ -227,7 +227,7 @@ void PNG_MetaHandler::WriteFile ( LFA_FileRef sourceRef, const std::string & sou
 		if (PNG_Support::CheckIHDRChunkHeader(chunk))
 		{
 			XMP_StringPtr packetStr = xmpPacket.c_str();
-			XMP_StringLen packetLen = xmpPacket.size();
+			XMP_StringLen packetLen = (XMP_StringLen)xmpPacket.size();
 
 			PNG_Support::WriteXMPChunk(destRef, packetLen, packetStr );
 		}

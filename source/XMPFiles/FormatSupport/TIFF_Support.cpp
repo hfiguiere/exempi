@@ -259,7 +259,7 @@ struct StreamRational { XMP_Uns32 num, denom; };
 void TIFF_Manager::SetTag_ASCII ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_StringPtr data )
 {
 
-	this->SetTag ( ifd, id, kTIFF_ASCIIType, (strlen(data) + 1), data );	// ! Include trailing nul.
+	this->SetTag ( ifd, id, kTIFF_ASCIIType, (XMP_Uns32)(strlen(data) + 1), data );	// ! Include trailing nul.
 
 }	// TIFF_Manager::SetTag_ASCII
 

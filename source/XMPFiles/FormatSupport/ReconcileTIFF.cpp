@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -491,7 +491,11 @@ ImportSingleTIFF_ASCII ( const TIFF_Manager::TagInfo & tagInfo,
 			if ( isUTF8 ) {
 				strValue.assign ( chPtr, tagInfo.dataLen );
 			} else {
-				ReconcileUtils::LocalToUTF8 ( chPtr, tagInfo.dataLen, &strValue );
+				#if ! XMP_UNIXBuild
+					ReconcileUtils::LocalToUTF8 ( chPtr, tagInfo.dataLen, &strValue );
+				#else
+					return;	// ! Hack until legacy-as-local issues are resolved for generic UNIX.
+				#endif
 			}
 			xmp->SetProperty ( xmpNS, xmpProp, strValue.c_str() );
 		}
@@ -865,7 +869,11 @@ ImportArrayTIFF_ASCII ( const TIFF_Manager::TagInfo & tagInfo,
 			if ( isUTF8 ) {
 				strValue.assign ( chPtr, tagInfo.dataLen );
 			} else {
-				ReconcileUtils::LocalToUTF8 ( chPtr, tagInfo.dataLen, &strValue );
+				#if ! XMP_UNIXBuild
+					ReconcileUtils::LocalToUTF8 ( chPtr, tagInfo.dataLen, &strValue );
+				#else
+					return;	// ! Hack until legacy-as-local issues are resolved for generic UNIX.
+				#endif
 			}
 			chPtr = strValue.c_str();
 			chEnd = chPtr + strValue.size();
@@ -1333,7 +1341,11 @@ ImportTIFF_LocTextASCII ( const TIFF_Manager & tiff, XMP_Uns8 ifd, XMP_Uns16 tag
 			if ( isUTF8 ) {
 				strValue.assign ( chPtr, tagInfo.dataLen );
 			} else {
-				ReconcileUtils::LocalToUTF8 ( chPtr, tagInfo.dataLen, &strValue );
+				#if ! XMP_UNIXBuild
+					ReconcileUtils::LocalToUTF8 ( chPtr, tagInfo.dataLen, &strValue );
+				#else
+					return;	// ! Hack until legacy-as-local issues are resolved for generic UNIX.
+				#endif
 			}
 			xmp->SetLocalizedText ( xmpNS, xmpProp, "", "x-default", strValue.c_str() );
 		}
@@ -1351,14 +1363,20 @@ ImportTIFF_LocTextASCII ( const TIFF_Manager & tiff, XMP_Uns8 ifd, XMP_Uns16 tag
 
 static void
 ImportTIFF_EncodedString ( const TIFF_Manager & tiff, const TIFF_Manager::TagInfo & tagInfo,
-						   SXMPMeta * xmp, const char * xmpNS, const char * xmpProp )
+						   SXMPMeta * xmp, const char * xmpNS, const char * xmpProp, bool isLangAlt = false )
 {
 	try {	// Don't let errors with one stop the others.
 
 		std::string strValue;
 	
 		bool ok = tiff.DecodeString ( tagInfo.dataPtr, tagInfo.dataLen, &strValue );
-		if ( ok ) xmp->SetProperty ( xmpNS, xmpProp, strValue.c_str() );
+		if ( ! ok ) return;
+
+		if ( ! isLangAlt ) {
+			xmp->SetProperty ( xmpNS, xmpProp, strValue.c_str() );
+		} else {
+			xmp->SetLocalizedText ( xmpNS, xmpProp, "", "x-default", strValue.c_str() );
+		}
 
 	} catch ( ... ) {
 		// Do nothing, let other imports proceed.
@@ -1547,7 +1565,6 @@ ImportTIFF_SFRTable ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
 		// Ignore the tag if the table is ill-formed.
 		xmp->DeleteProperty ( xmpNS, xmpProp );
 		return;
-
 	} catch ( ... ) {
 		// Do nothing, let other imports proceed.
 		// ? Notify client?
@@ -1920,7 +1937,7 @@ ReconcileUtils::ImportExif ( const TIFF_Manager & tiff, SXMPMeta * xmp, int dige
 	ok = ImportTIFF_VerifyImport ( tiff, xmp, digestState, kTIFF_ExifIFD, kTIFF_UserComment,
 								   kXMP_NS_EXIF, "UserComment", &tagInfo );
 	if ( ok ) {
-		ImportTIFF_EncodedString ( tiff, tagInfo, xmp, kXMP_NS_EXIF, "UserComment" );
+		ImportTIFF_EncodedString ( tiff, tagInfo, xmp, kXMP_NS_EXIF, "UserComment", true /* isLangAlt */ );
 	}
 
 	// 36867 DateTimeOriginal is a date master with 37521 SubSecTimeOriginal.
@@ -1928,6 +1945,11 @@ ReconcileUtils::ImportExif ( const TIFF_Manager & tiff, SXMPMeta * xmp, int dige
 								   kXMP_NS_EXIF, "DateTimeOriginal", &tagInfo );
 	if ( ok && (tagInfo.type == kTIFF_ASCIIType) && (tagInfo.count == 20) ) {
 		ImportTIFF_Date ( tiff, tagInfo, kTIFF_SubSecTimeOriginal, xmp, kXMP_NS_EXIF, "DateTimeOriginal" );
+	}
+	if ( ! xmp->DoesPropertyExist ( kXMP_NS_XMP, "CreateDate" ) ) {
+		std::string exifDate;
+		ok = xmp->GetProperty ( kXMP_NS_EXIF, "DateTimeOriginal", &exifDate, 0 );
+		if ( ok ) xmp->SetProperty ( kXMP_NS_XMP, "CreateDate", exifDate.c_str() );
 	}
 
 	// 36868 DateTimeDigitized is a date master with 37522 SubSecTimeDigitized.
@@ -2164,7 +2186,7 @@ ExportSingleTIFF_ASCII ( const SXMPMeta & xmp, const char * xmpNS, const char * 
 
 		if ( ! XMP_PropIsSimple ( xmpFlags ) ) return;	// ? Complain? Delete the tag?
 
-		tiff->SetTag ( ifd, id, kTIFF_ASCIIType, xmpValue.size()+1, xmpValue.c_str() );
+		tiff->SetTag ( ifd, id, kTIFF_ASCIIType, (XMP_Uns32)( xmpValue.size()+1 ), xmpValue.c_str() );
 		
 	} catch ( ... ) {
 		// Do nothing, let other exports proceed.
@@ -2198,13 +2220,13 @@ ExportArrayTIFF_ASCII ( const SXMPMeta & xmp, const char * xmpNS, const char * x
 		
 		size_t count = xmp.CountArrayItems ( xmpNS, xmpProp );
 		for ( size_t i = 1; i <= count; ++i ) {	// ! XMP arrays are indexed from 1.
-			(void) xmp.GetArrayItem ( xmpNS, xmpProp, i, &itemValue, &xmpFlags );
+			(void) xmp.GetArrayItem ( xmpNS, xmpProp, (XMP_Index)i, &itemValue, &xmpFlags );
 			if ( ! XMP_PropIsSimple ( xmpFlags ) ) continue;	// ? Complain?
 			fullValue.append ( itemValue );
 			fullValue.append ( 1, '\x0' );
 		}
 		
-		tiff->SetTag ( ifd, id, kTIFF_ASCIIType, fullValue.size(), fullValue.c_str() );	// ! Already have trailing nul.
+		tiff->SetTag ( ifd, id, kTIFF_ASCIIType, (XMP_Uns32)fullValue.size(), fullValue.c_str() );	// ! Already have trailing nul.
 
 	} catch ( ... ) {
 		// Do nothing, let other exports proceed.
@@ -2281,7 +2303,7 @@ ExportTIFF_LocTextASCII ( const SXMPMeta & xmp, const char * xmpNS, const char *
 			return;
 		}
 		
-		tiff->SetTag ( ifd, id, kTIFF_ASCIIType, xmpValue.size()+1, xmpValue.c_str() );
+		tiff->SetTag ( ifd, id, kTIFF_ASCIIType, (XMP_Uns32)( xmpValue.size()+1 ), xmpValue.c_str() );
 
 	} catch ( ... ) {
 		// Do nothing, let other exports proceed.
@@ -2296,7 +2318,7 @@ ExportTIFF_LocTextASCII ( const SXMPMeta & xmp, const char * xmpNS, const char *
 
 static void
 ExportTIFF_EncodedString ( const SXMPMeta & xmp, const char * xmpNS, const char * xmpProp,
-						   TIFF_Manager * tiff, XMP_Uns8 ifd, XMP_Uns16 id )
+						   TIFF_Manager * tiff, XMP_Uns8 ifd, XMP_Uns16 id, bool isLangAlt = false )
 {
 	try {	// Don't let errors with one stop the others.
 
@@ -2309,7 +2331,13 @@ ExportTIFF_EncodedString ( const SXMPMeta & xmp, const char * xmpNS, const char 
 			return;
 		}
 
-		if ( ! XMP_PropIsSimple ( xmpFlags ) ) return;	// ? Complain? Delete the tag?
+		if ( ! isLangAlt ) {
+			if ( ! XMP_PropIsSimple ( xmpFlags ) ) return;	// ? Complain? Delete the tag?
+		} else {
+			if ( ! XMP_ArrayIsAltText ( xmpFlags ) ) return;	// ? Complain? Delete the tag?
+			bool ok = xmp.GetLocalizedText ( xmpNS, xmpProp, "", "x-default", 0, &xmpValue, 0 );
+			if ( ! ok ) return;	// ? Complain? Delete the tag?
+		}
 		
 		XMP_Uns8 encoding = kTIFF_EncodeASCII;
 		for ( size_t i = 0; i < xmpValue.size(); ++i ) {
@@ -2327,6 +2355,93 @@ ExportTIFF_EncodedString ( const SXMPMeta & xmp, const char * xmpNS, const char 
 	}
 	
 }	// ExportTIFF_EncodedString
+
+// =================================================================================================
+// ExportTIFF_GPSCoordinate
+// ========================
+//
+// The XMP format is either "deg,min,secR" or "deg,min.fracR", where 'R' is the reference direction,
+// 'N', 'S', 'E', or 'W'. The location gets output as ( deg/1, min/1, sec/1 ) for the first form,
+// and ( deg/1, minFrac/denom, 0/1 ) for the second form.
+
+// ! We arbitrarily limit the number of fractional minute digits to 6 to avoid overflow in the
+// ! combined numerator. But we don't otherwise check for overflow or range errors.
+
+static void
+ExportTIFF_GPSCoordinate ( const SXMPMeta & xmp, const char * xmpNS, const char * xmpProp,
+						   TIFF_Manager * tiff, XMP_Uns8 ifd, XMP_Uns16 _id )
+{
+	XMP_Uns16 refID = _id-1;	// ! The GPS refs and locations are all tag N-1 and N pairs.
+	XMP_Uns16 locID = _id;
+	
+	XMP_Assert ( (locID & 1) == 0 );
+	
+	try {	// Don't let errors with one stop the others.
+
+		std::string xmpValue;
+		XMP_OptionBits xmpFlags;
+
+		bool foundXMP = xmp.GetProperty ( xmpNS, xmpProp, &xmpValue, &xmpFlags );
+		if ( ! foundXMP ) {
+			tiff->DeleteTag ( ifd, refID );
+			tiff->DeleteTag ( ifd, locID );
+			return;
+		}
+		
+		if ( ! XMP_PropIsSimple ( xmpFlags ) ) return;
+		
+		const char * chPtr = xmpValue.c_str();
+		
+		XMP_Uns32 deg=0, minNum=0, minDenom=1, sec=0;
+		
+		for ( ; ('0' <= *chPtr) && (*chPtr <= '9'); ++chPtr ) deg = deg*10 + (*chPtr - '0');
+		if ( *chPtr != ',' ) return;	// Bad XMP string.
+		++chPtr;	// Skip the comma.
+		
+		for ( ; ('0' <= *chPtr) && (*chPtr <= '9'); ++chPtr ) minNum = minNum*10 + (*chPtr - '0');
+		if ( (*chPtr != ',') && (*chPtr != '.') ) return;	// Bad XMP string.
+		
+		if ( *chPtr == ',' ) {
+
+			++chPtr;	// Skip the comma.
+			for ( ; ('0' <= *chPtr) && (*chPtr <= '9'); ++chPtr ) sec = sec*10 + (*chPtr - '0');
+
+		} else {
+
+			XMP_Assert ( *chPtr == '.' );
+			++chPtr;	// Skip the period.
+			for ( ; ('0' <= *chPtr) && (*chPtr <= '9'); ++chPtr ) {
+				if ( minDenom > 100*1000 ) continue;	// Don't accumulate any more digits.
+				minDenom *= 10;
+				minNum = minNum*10 + (*chPtr - '0');
+			}
+
+		}
+		
+		if ( *(chPtr+1) != 0 ) return;	// Bad XMP string.
+		
+		char ref[2];
+		ref[0] = *chPtr;
+		ref[1] = 0;
+		
+		tiff->SetTag ( ifd, refID, kTIFF_ASCIIType, 2, &ref[0] );
+		
+		XMP_Uns32 loc[6];
+		tiff->PutUns32 ( deg, &loc[0] );
+		tiff->PutUns32 ( 1,   &loc[1] );
+		tiff->PutUns32 ( minNum,   &loc[2] );
+		tiff->PutUns32 ( minDenom, &loc[3] );
+		tiff->PutUns32 ( sec, &loc[4] );
+		tiff->PutUns32 ( 1,   &loc[5] );
+		
+		tiff->SetTag ( ifd, locID, kTIFF_RationalType, 3, &loc[0] );
+
+	} catch ( ... ) {
+		// Do nothing, let other exports proceed.
+		// ? Notify client?
+	}
+	
+}	// ExportTIFF_GPSCoordinate
 
 // =================================================================================================
 // =================================================================================================
@@ -2386,12 +2501,17 @@ ReconcileUtils::ExportTIFF ( const SXMPMeta & xmp, TIFF_Manager * tiff )
 // ReconcileUtils::ExportExif
 // ==========================
 //
-// Only a few tags are written back from XMP to the Exif IFD, they are each handled explicitly.
-// The writeback tags are:
+// Only a few tags are written back from XMP to the Exif and GPS IFDs, they are each handled
+// explicitly. The Exif writeback tags are:
 //   36867 - DateTimeOriginal (plus 37521 SubSecTimeOriginal)
 //   36868 - DateTimeDigitized (plus 37522 SubSecTimeDigitized)
 //   37510 - UserComment
 //   40964 - RelatedSoundFile
+// The GPS writeback tags are:
+//   1 - GPSLatitudeRef
+//   2 - GPSLatitude
+//   3 - GPSLongitudeRef
+//   4 - GPSLongitude
 
 // ! Older versions of Photoshop did not import the UserComment or RelatedSoundFile tags. Don't
 // ! export the current XMP unless the original XMP had the tag or the current XMP has the tag.
@@ -2413,12 +2533,20 @@ ReconcileUtils::ExportExif ( const SXMPMeta & xmp, TIFF_Manager * tiff )
 
 	if ( tiff->xmpHadUserComment || xmp.DoesPropertyExist ( kXMP_NS_EXIF, "UserComment" ) ) {
 		ExportTIFF_EncodedString ( xmp, kXMP_NS_EXIF, "UserComment",
-								   tiff, kTIFF_ExifIFD, kTIFF_UserComment );
+								   tiff, kTIFF_ExifIFD, kTIFF_UserComment, true /* isLangAlt */ );
 	}
 
 	if ( tiff->xmpHadRelatedSoundFile || xmp.DoesPropertyExist ( kXMP_NS_EXIF, "RelatedSoundFile" ) ) {
 		ExportSingleTIFF_ASCII ( xmp, kXMP_NS_EXIF, "RelatedSoundFile",
 								 tiff, kTIFF_ExifIFD, kTIFF_RelatedSoundFile );
+	}
+
+	if ( xmp.DoesPropertyExist ( kXMP_NS_EXIF, "GPSLatitude" ) ) {
+		ExportTIFF_GPSCoordinate ( xmp, kXMP_NS_EXIF, "GPSLatitude", tiff, kTIFF_GPSInfoIFD, kTIFF_GPSLatitude );
+	}
+
+	if ( xmp.DoesPropertyExist ( kXMP_NS_EXIF, "GPSLongitude" ) ) {
+		ExportTIFF_GPSCoordinate ( xmp, kXMP_NS_EXIF, "GPSLongitude", tiff, kTIFF_GPSInfoIFD, kTIFF_GPSLongitude );
 	}
 
 }	// ReconcileUtils::ExportExif;

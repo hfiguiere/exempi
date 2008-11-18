@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -226,11 +226,11 @@ void IPTC_Manager::ParseMemoryDataSets ( const void* data, XMP_Uns32 length, boo
 		if ( recNum == 2 ) {
 			if ( ! foundRec2 ) {
 				foundRec2 = true;
-				this->rec2Offset = dsPtr - this->iptcContent;
+				this->rec2Offset = (XMP_Uns32) (dsPtr - this->iptcContent);
 				this->rec2Length = this->iptcLength - this->rec2Offset;	// ! In case there are no other records.
 			}
 		} else {
-			this->rec2Length = dsPtr - (this->iptcContent + this->rec2Offset);
+			this->rec2Length = (XMP_Uns32) (dsPtr - (this->iptcContent + this->rec2Offset));
 			break;	// The records are in ascending order, done.
 		}
 		
@@ -298,7 +298,13 @@ size_t IPTC_Manager::GetDataSet_UTF8 ( XMP_Uns8 id, std::string * utf8Str, size_
 		if ( this->utf8Encoding ) {
 			utf8Str->assign ( (char*)dsInfo.dataPtr, dsInfo.dataLen );
 		} else {
-			ReconcileUtils::LocalToUTF8 ( dsInfo.dataPtr, dsInfo.dataLen, utf8Str );
+			#if ! XMP_UNIXBuild
+				ReconcileUtils::LocalToUTF8 ( dsInfo.dataPtr, dsInfo.dataLen, utf8Str );
+			#else
+				// ! Hack until legacy-as-local issues are resolved for generic UNIX.
+				if ( ! ReconcileUtils::IsUTF8 ( dsInfo.dataPtr, dsInfo.dataLen ) ) return 0;
+				utf8Str->assign ( (char*)dsInfo.dataPtr, dsInfo.dataLen );
+			#endif
 		}
 	}
 	
@@ -332,6 +338,8 @@ void IPTC_Manager::DisposeLooseValue ( DataSetInfo & dsInfo )
 
 // =================================================================================================
 // =================================================================================================
+
+#if ! XMP_UNIXBuild	// ! Disable IPTC output for generic UNIX until the legacy-as-local issues are resolved.
 
 // =================================================================================================
 // IPTC_Writer::~IPTC_Writer
@@ -381,7 +389,7 @@ void IPTC_Writer::SetDataSet_UTF8 ( XMP_Uns8 id, const void* utf8Ptr, XMP_Uns32 
 
 			// It round-tripped without loss, keep local encoding.
 			tempPtr = (XMP_Uns8*) localStr.data();
-			dataLen = localStr.size();
+			dataLen = (XMP_Uns32)localStr.size();
 
 //		} else {
 
@@ -401,7 +409,7 @@ void IPTC_Writer::SetDataSet_UTF8 ( XMP_Uns8 id, const void* utf8Ptr, XMP_Uns32 
 	// Back up to just before a byte with 11 in the high order 2 bits.
 
 	if ( dataLen > knownDS->maxLen ) {
-		dataLen = knownDS->maxLen;
+		dataLen = (XMP_Uns32)knownDS->maxLen;
 		if ( this->utf8Encoding && ((tempPtr[dataLen] >> 6) == 2) ) {
 			for ( ; (dataLen > 0) && ((tempPtr[dataLen] >> 6) != 3); --dataLen ) {}
 		}
@@ -591,7 +599,7 @@ XMP_Uns32 IPTC_Writer::UpdateMemoryDataSets ( void** dataPtr )
 	
 	this->ParseMemoryDataSets ( newContent, newLength, false );	// Don't make another copy of the content.
 	XMP_Assert ( this->iptcLength == newLength );
-	this->ownedContent = true;	// We really do own the new content.
+	this->ownedContent = (newLength > 0);	// We really do own the new content, if not empty.
 	
 	// Done.
 
@@ -700,4 +708,8 @@ bool IPTC_Writer::CheckRoundTripLoss()
 
 }	// IPTC_Writer::CheckRoundTripLoss
 
-#endif
+#endif	// Round-trip loss checking
+
+// =================================================================================================
+
+#endif	// ! XMP_UNIXBuild

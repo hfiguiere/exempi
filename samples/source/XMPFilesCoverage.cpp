@@ -1,3 +1,16 @@
+// =================================================================================================
+// Copyright 2002-2008 Adobe Systems Incorporated
+// All Rights Reserved.
+//
+// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+// of the Adobe license agreement accompanying it.
+// =================================================================================================
+
+/**
+* Demonstrates syntax and usage by exercising most of the API functions of XMPFiles Toolkit SDK component, 
+* using a sample XMP Packet that contains all of the different property and attribute types.
+*/
+
 #include <vector>
 #include <string>
 #include <stdexcept>
@@ -239,7 +252,15 @@ static void TestOneFile ( const char * fileName )
 
 	xmpFile.PutXMP ( xmpMeta );
 	XMP_OptionBits closeOptions = 0;
-	if ( (xmpMeta.CountArrayItems ( kXMP_NS_XMP, "XMPFileStamps" ) & 1) == 0 ) closeOptions |= kXMPFiles_UpdateSafely;
+	XMP_OptionBits capabilities = 0;
+	XMP_FileFormat fileFormat = 0;
+	xmpFile.GetFileInfo( NULL, NULL, &fileFormat, NULL);
+	SXMPFiles::GetFormatInfo( fileFormat, &capabilities);
+
+	if ( (xmpMeta.CountArrayItems ( kXMP_NS_XMP, "XMPFileStamps" ) & 1) == 0
+			&& ( capabilities & kXMPFiles_AllowsSafeUpdate ) ) 
+		closeOptions |= kXMPFiles_UpdateSafely;
+
 	xmpFile.CloseFile ( closeOptions );
 
 	fprintf ( sLogFile, "\n" );
@@ -259,7 +280,7 @@ extern "C" int main ( int argc, const char * argv[] )
 	int result = 0;
 
 	char   logName[256];
-	int    nameLen = strlen ( argv[0] );
+	int    nameLen = (int) strlen ( argv[0] );
 	if ( (nameLen >= 4) && (strcmp ( argv[0]+nameLen-4, ".exe" ) == 0) ) nameLen -= 4;
 	memcpy ( logName, argv[0], nameLen );
 	memcpy ( &logName[nameLen], "Log.txt", 8 );	// Include final null.
@@ -286,18 +307,18 @@ extern "C" int main ( int argc, const char * argv[] )
 		
 		DumpHandlerInfo();
 	
-		TestOneFile ( "BlueSquares/BlueSquare.ai" );
-		TestOneFile ( "BlueSquares/BlueSquare.eps" );
-		TestOneFile ( "BlueSquares/BlueSquare.indd" );
-		TestOneFile ( "BlueSquares/BlueSquare.jpg" );
-		TestOneFile ( "BlueSquares/BlueSquare.pdf" );
-		TestOneFile ( "BlueSquares/BlueSquare.psd" );
-		TestOneFile ( "BlueSquares/BlueSquare.tif" );
-		TestOneFile ( "BlueSquares/BlueSquare.avi" );
-		TestOneFile ( "BlueSquares/BlueSquare.mov" );
-		TestOneFile ( "BlueSquares/BlueSquare.mp3" );
-		TestOneFile ( "BlueSquares/BlueSquare.wav" );
-		TestOneFile ( "BlueSquares/BlueSquare.png" );
+		TestOneFile ( "../../../testfiles/BlueSquare.ai" );
+		TestOneFile ( "../../../testfiles/BlueSquare.eps" );
+		TestOneFile ( "../../../testfiles/BlueSquare.indd" );
+		TestOneFile ( "../../../testfiles/BlueSquare.jpg" );
+		TestOneFile ( "../../../testfiles/BlueSquare.pdf" );
+		TestOneFile ( "../../../testfiles/BlueSquare.psd" );
+		TestOneFile ( "../../../testfiles/BlueSquare.tif" );
+		TestOneFile ( "../../../testfiles/BlueSquare.avi" );
+		TestOneFile ( "../../../testfiles/BlueSquare.mov" );
+		TestOneFile ( "../../../testfiles/BlueSquare.mp3" );
+		TestOneFile ( "../../../testfiles/BlueSquare.wav" );
+		TestOneFile ( "../../../testfiles/BlueSquare.png" );
 
 	} catch ( XMP_Error & excep ) {
 
@@ -318,6 +339,9 @@ extern "C" int main ( int argc, const char * argv[] )
 	fprintf ( sLogFile, "\nXMPFilesCoverage finished %s", ctime(&now) );
 	fprintf ( sLogFile,	"Final status = %d\n", result );
 	fclose ( sLogFile );
+	
+	printf( "\nresults have been logged into %s\n", logName );
+	
 	return result;
 
 }	// main

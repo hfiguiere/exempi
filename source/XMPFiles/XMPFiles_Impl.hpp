@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2004-2007 Adobe Systems Incorporated
+// Copyright 2004-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -22,6 +22,7 @@
 #include "XMP.hpp"
 
 #include "XMPFiles.hpp"
+#include "LargeFileAccess.hpp"
 
 #include <vector>
 #include <string>
@@ -29,13 +30,20 @@
 
 #include <cassert>
 
-#if XMP_MacBuild
-	#include <Multiprocessing.h>
-#elif XMP_WinBuild
+#if XMP_WinBuild
 	#include <Windows.h>
 	#define snprintf _snprintf
-#elif XMP_UNIXBuild
+#else
+	#if XMP_MacBuild
+		#include <Files.h>
+	#endif
+	// POSIX headers for both Mac and generic UNIX.
 	#include <pthread.h>
+	#include <fcntl.h>
+	#include <unistd.h>
+	#include <dirent.h>
+	#include <sys/stat.h>
+	#include <sys/types.h>
 #endif
 
 // =================================================================================================
@@ -101,17 +109,6 @@ extern long sXMPFilesInitCount;
 
 #endif
 
-#ifndef TrackMallocFree
-	#define TrackMallocFree 0
-#endif
-
-#if TrackMallocFree
-	#define malloc(size) XMPFiles_Malloc ( size )
-	#define free(addr)   XMPFiles_Free ( addr )
-	extern void* XMPFiles_Malloc ( size_t size );
-	extern void  XMPFiles_Free ( void* addr );
-#endif
-
 extern XMP_FileFormat voidFileFormat;	// Used as sink for unwanted output parameters.
 extern XMP_PacketInfo voidPacketInfo;
 extern void *         voidVoidPtr;
@@ -133,6 +130,7 @@ struct FileExtMapping {
 
 extern const FileExtMapping kFileExtMap[];
 extern const char * kKnownScannedFiles[];
+extern const char * kKnownRejectedFiles[];
 
 #define Uns8Ptr(p) ((XMP_Uns8 *) (p))
 
@@ -144,6 +142,25 @@ extern const char * kKnownScannedFiles[];
 #define IsSpaceOrTab( ch ) ( ((ch) == ' ') || ((ch) == kTab) )
 #define IsWhitespace( ch ) ( IsSpaceOrTab ( ch ) || IsNewline ( ch ) )
 
+static inline void MakeLowerCase ( std::string * str )
+{
+	for ( size_t i = 0, limit = str->size(); i < limit; ++i ) {
+		char ch = (*str)[i];
+		if ( ('A' <= ch) && (ch <= 'Z') ) (*str)[i] += 0x20;
+	}
+}
+
+static inline void MakeUpperCase ( std::string * str )
+{
+	for ( size_t i = 0, limit = str->size(); i < limit; ++i ) {
+		char ch = (*str)[i];
+		if ( ('a' <= ch) && (ch <= 'z') ) (*str)[i] -= 0x20;
+	}
+}
+
+#define XMP_LitMatch(s,l)		(std::strcmp((s),(l)) == 0)
+#define XMP_LitNMatch(s,l,n)	(std::strncmp((s),(l),(n)) == 0)
+
 #define IgnoreParam(p)	voidVoidPtr = (void*)&p
 
 // =================================================================================================
@@ -151,6 +168,7 @@ extern const char * kKnownScannedFiles[];
 
 #define _MakeStr(p)			#p
 #define _NotifyMsg(n,c,f,l)	#n " failed: " #c " in " f " at line " _MakeStr(l)
+#define _NotifyMsg2(msg,c,e) #e " " #msg ": " #c
 
 #if ! XMP_DebugBuild
 	#define XMP_Assert(c)	((void) 0)
@@ -163,6 +181,12 @@ extern const char * kKnownScannedFiles[];
 			const char * assert_msg = _NotifyMsg ( XMP_Enforce, (c), __FILE__, __LINE__ );			\
 			XMP_Throw ( assert_msg , kXMPErr_EnforceFailure );										\
 		}
+#define XMP_Validate(c,msg,e)																	\
+	if ( ! (c) ) {																				\
+		const char * enforce_msg = _NotifyMsg2(msg,c,e);										\
+		XMP_Throw ( enforce_msg , e );															\
+	}
+
 // =================================================================================================
 // Support for memory leak tracking
 
@@ -247,11 +271,10 @@ typedef std::string	XMP_VarString;
 
 // -------------------------------------------------------------------------------------------------
 
-#if XMP_MacBuild
-	typedef MPCriticalRegionID XMP_Mutex;
-#elif XMP_WinBuild
+#if XMP_WinBuild
 	typedef CRITICAL_SECTION XMP_Mutex;
-#elif XMP_UNIXBuild
+#else
+	// Use pthread for both Mac and generic UNIX.
 	typedef pthread_mutex_t XMP_Mutex;
 #endif
 
@@ -338,9 +361,7 @@ private:
 
 extern void ReadXMPPacket ( XMPFileHandler * handler );
 
-extern XMP_Uns8 GetPacketCharForm ( XMP_StringPtr packetStr, XMP_StringLen packetLen );
-extern size_t   GetPacketPadSize  ( XMP_StringPtr packetStr, XMP_StringLen packetLen );
-extern bool     GetPacketRWMode   ( XMP_StringPtr packetStr, XMP_StringLen packetLen, size_t charSize );
+extern void FillPacketInfo ( const XMP_VarString & packet, XMP_PacketInfo * info );
 
 class XMPFileHandler {	// See XMPFiles.hpp for usage notes.
 public:
@@ -358,6 +379,8 @@ public:
 	virtual void CacheFileData() = 0;
 	virtual void ProcessTNail();	// The default implementation just sets processedTNail to true.
 	virtual void ProcessXMP();		// The default implementation just parses the XMP.
+	
+	virtual XMP_OptionBits GetSerializeOptions();	// The default is compact.
 
 	virtual void UpdateFile ( bool doSafeUpdate ) = 0;
     virtual void WriteFile ( LFA_FileRef sourceRef, const std::string & sourcePath ) = 0;
@@ -374,8 +397,8 @@ public:
 	bool processedXMP;		// True if the XMP is parsed and reconciled.
 	bool needsUpdate;		// True if the file needs to be updated.
 
-	XMP_PacketInfo packetInfo;
-	std::string    xmpPacket;
+	XMP_PacketInfo packetInfo;	// ! This is always info about the packet in the file, if any!
+	std::string    xmpPacket;	// ! This is the current XMP, updated by XMPFiles::PutXMP.
 	SXMPMeta       xmpObj;
 
 	XMP_ThumbnailInfo tnailInfo;
@@ -384,36 +407,23 @@ public:
 
 typedef XMPFileHandler * (* XMPFileHandlerCTor) ( XMPFiles * parent );
 
-typedef bool (* CheckFormatProc ) ( XMP_FileFormat format,
-									XMP_StringPtr  filePath,
-                                    LFA_FileRef    fileRef,
-                                    XMPFiles *   parent );
+typedef bool (* CheckFileFormatProc ) ( XMP_FileFormat format,
+										XMP_StringPtr  filePath,
+										LFA_FileRef    fileRef,
+										XMPFiles *     parent );
+
+typedef bool (*CheckFolderFormatProc ) ( XMP_FileFormat format,
+										 const std::string & rootPath,
+										 const std::string & gpName,
+										 const std::string & parentName,
+										 const std::string & leafName,
+										 XMPFiles * parent );
 
 // =================================================================================================
-// File I/O support
-
-// *** Change the model of the LFA functions to not throw for "normal" open/create errors.
-// *** Make sure the semantics of open/create/rename are consistent, e.g. about create of existing.
-
-extern LFA_FileRef LFA_Open     ( const char * fileName, char openMode );	// Mode is 'r' or 'w'.
-extern LFA_FileRef LFA_Create   ( const char * fileName );
-extern void        LFA_Delete   ( const char * fileName );
-extern void        LFA_Rename   ( const char * oldName, const char * newName );
-extern void        LFA_Close    ( LFA_FileRef file );
-extern XMP_Int64   LFA_Seek     ( LFA_FileRef file, XMP_Int64 offset, int seekMode, bool * okPtr = 0 );
-extern XMP_Int32   LFA_Read     ( LFA_FileRef file, void * buffer, XMP_Int32 bytes, bool requireAll = false );
-extern void        LFA_Write    ( LFA_FileRef file, const void * buffer, XMP_Int32 bytes );
-extern void        LFA_Flush    ( LFA_FileRef file );
-extern XMP_Int64   LFA_Measure  ( LFA_FileRef file );
-extern void        LFA_Extend   ( LFA_FileRef file, XMP_Int64 length );
-extern void        LFA_Truncate ( LFA_FileRef file, XMP_Int64 length );
 
 #if XMP_MacBuild
 	extern LFA_FileRef LFA_OpenRsrc ( const char * fileName, char openMode );	// Open the Mac resource fork.
 #endif
-
-extern void LFA_Copy ( LFA_FileRef sourceFile, LFA_FileRef destFile, XMP_Int64 length,	// Not a primitive.
-                       XMP_AbortProc abortProc = 0, void * abortArg = 0 );
 
 extern void CreateTempFile ( const std::string & origPath, std::string * tempPath, bool copyMacRsrc = false );
 enum { kCopyMacRsrc = true };
@@ -424,20 +434,85 @@ struct AutoFile {	// Provides auto close of files on exit or exception.
 	~AutoFile() { if ( fileRef != 0 ) LFA_Close ( fileRef ); };
 };
 
-enum { kLFA_RequireAll = true };	// Used for requireAll to LFA_Read.
+enum { kFMode_DoesNotExist, kFMode_IsFile, kFMode_IsFolder, kFMode_IsOther };
+typedef XMP_Uns8 FileMode;
+
+#if XMP_WinBuild
+	#define kDirChar '\\'
+#else
+	#define kDirChar '/'
+#endif
+
+class XMP_FolderInfo {
+public:
+
+	XMP_FolderInfo() : dirRef(0) {};
+	~XMP_FolderInfo() { if ( this->dirRef != 0 ) this->Close(); };
+	
+	void Open ( const char * folderPath );
+	void Close();
+	
+	bool GetFolderPath ( XMP_VarString * folderPath );
+	bool GetNextChild ( XMP_VarString * childName );
+
+private:
+
+	std::string folderPath;
+
+	#if XMP_WinBuild
+		HANDLE dirRef;	// Windows uses FindFirstFile and FindNextFile.
+	#else
+		DIR * dirRef;	// Mac and UNIX use the POSIX opendir/readdir/closedir functions.
+	#endif
+	
+};
+
+extern FileMode GetFileMode ( const char * path );
+
+static inline FileMode GetChildMode ( std::string & path, XMP_StringPtr childName )
+{
+	size_t pathLen = path.size();
+	path += kDirChar;
+	path += childName;
+	FileMode mode = GetFileMode ( path.c_str() );
+	path.erase ( pathLen );
+	return mode;
+}
+
+static inline void SplitLeafName ( std::string * path, std::string * leafName )
+{
+	size_t dirPos = path->size();
+	if ( dirPos == 0 ) {
+		leafName->erase();
+		return;
+	}
+	
+	for ( --dirPos; dirPos > 0; --dirPos ) {
+		#if XMP_WinBuild
+			if ( (*path)[dirPos] == '/' ) (*path)[dirPos] = kDirChar;	// Tolerate both '\' and '/'.
+		#endif
+		if ( (*path)[dirPos] == kDirChar ) break;
+	}
+	if ( (*path)[dirPos] == kDirChar ) {
+		leafName->assign ( &(*path)[dirPos+1] );
+		path->erase ( dirPos );
+	} else if ( dirPos == 0 ) {
+		leafName->erase();
+		leafName->swap ( *path );
+	}
+
+}
 
 // -------------------------------------------------------------------------------------------------
 
-static inline bool
-CheckBytes ( const void * left, const void * right, size_t length )
+static inline bool CheckBytes ( const void * left, const void * right, size_t length )
 {
 	return (std::memcmp ( left, right, length ) == 0);
 }
 
 // -------------------------------------------------------------------------------------------------
 
-static inline bool
-CheckCString ( const void * left, const void * right )
+static inline bool CheckCString ( const void * left, const void * right )
 {
 	return (std::strcmp ( (char*)left, (char*)right ) == 0);
 }
@@ -475,8 +550,7 @@ struct IOBuffer {
 	IOBuffer() : filePos(0), ptr(&data[0]), limit(ptr), len(0) {};
 };
 
-static inline void
-FillBuffer ( LFA_FileRef fileRef, XMP_Int64 fileOffset, IOBuffer* ioBuf )
+static inline void FillBuffer ( LFA_FileRef fileRef, XMP_Int64 fileOffset, IOBuffer* ioBuf )
 {
 	ioBuf->filePos = LFA_Seek ( fileRef, fileOffset, SEEK_SET );
 	if ( ioBuf->filePos != fileOffset ) XMP_Throw ( "Seek failure in FillBuffer", kXMPErr_ExternalFailure );
@@ -485,10 +559,9 @@ FillBuffer ( LFA_FileRef fileRef, XMP_Int64 fileOffset, IOBuffer* ioBuf )
 	ioBuf->limit = ioBuf->ptr + ioBuf->len;
 }
 
-static inline void
-MoveToOffset ( LFA_FileRef fileRef, XMP_Int64 fileOffset, IOBuffer* ioBuf )
+static inline void MoveToOffset ( LFA_FileRef fileRef, XMP_Int64 fileOffset, IOBuffer* ioBuf )
 {
-	if ( (ioBuf->filePos <= fileOffset) && (fileOffset < (ioBuf->filePos + ioBuf->len)) ) {
+	if ( (ioBuf->filePos <= fileOffset) && (fileOffset < (XMP_Int64)(ioBuf->filePos + ioBuf->len)) ) {
 		size_t bufOffset = (size_t)(fileOffset - ioBuf->filePos);
 		ioBuf->ptr = &ioBuf->data[bufOffset];
 	} else {
@@ -496,8 +569,7 @@ MoveToOffset ( LFA_FileRef fileRef, XMP_Int64 fileOffset, IOBuffer* ioBuf )
 	}
 }
 
-static inline void
-RefillBuffer ( LFA_FileRef fileRef, IOBuffer* ioBuf )
+static inline void RefillBuffer ( LFA_FileRef fileRef, IOBuffer* ioBuf )
 {
 	ioBuf->filePos += (ioBuf->ptr - &ioBuf->data[0]);	// ! Increment before the read.
 	size_t bufTail = ioBuf->limit - ioBuf->ptr;	// We'll re-read the tail portion of the buffer.

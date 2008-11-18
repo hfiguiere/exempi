@@ -193,10 +193,10 @@ public final class XMPSchemaRegistryImpl implements XMPSchemaRegistry, XMPConst
 		registerNamespace(NS_X, "x");
 		registerNamespace(NS_IX, "iX");
 
-		registerNamespace(NS_XMP, "xap");
-		registerNamespace(NS_XMP_RIGHTS, "xapRights");
-		registerNamespace(NS_XMP_MM, "xapMM");
-		registerNamespace(NS_XMP_BJ, "xapBJ");
+		registerNamespace(NS_XMP, "xmp");
+		registerNamespace(NS_XMP_RIGHTS, "xmpRights");
+		registerNamespace(NS_XMP_MM, "xmpMM");
+		registerNamespace(NS_XMP_BJ, "xmpBJ");
 		registerNamespace(NS_XMP_NOTE, "xmpNote");
 		
 		registerNamespace(NS_PDF, "pdf");
@@ -218,6 +218,7 @@ public final class XMPSchemaRegistryImpl implements XMPSchemaRegistry, XMPConst
 		registerNamespace(NS_JP2K, "jp2k");
 		registerNamespace(NS_CAMERARAW, "crs");
 		registerNamespace(NS_ADOBESTOCKPHOTO, "bmsp");
+		registerNamespace(NS_CREATOR_ATOM, "creatorAtom");
 		registerNamespace(NS_ASF, "asf");
 		registerNamespace(NS_WAV, "wav");
 		
@@ -226,10 +227,10 @@ public final class XMPSchemaRegistryImpl implements XMPSchemaRegistry, XMPConst
 		registerNamespace(NS_TRANSIENT, "xmpx");
 		
 		// register Adobe standard type namespaces
-		registerNamespace(TYPE_TEXT, "xapT");
-		registerNamespace(TYPE_PAGEDFILE, "xapTPg");
-		registerNamespace(TYPE_GRAPHICS, "xapG");
-		registerNamespace(TYPE_IMAGE, "xapGImg");
+		registerNamespace(TYPE_TEXT, "xmpT");
+		registerNamespace(TYPE_PAGEDFILE, "xmpTPg");
+		registerNamespace(TYPE_GRAPHICS, "xmpG");
+		registerNamespace(TYPE_IMAGE, "xmpGImg");
 		registerNamespace(TYPE_FONT, "stFNT");
 		registerNamespace(TYPE_DIMENSIONS, "stDim");
 		registerNamespace(TYPE_RESOURCEEVENT, "stEvt");

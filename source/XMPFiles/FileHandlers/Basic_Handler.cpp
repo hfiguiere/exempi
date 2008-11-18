@@ -71,7 +71,7 @@ void Basic_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 	LFA_Seek ( fileRef, 0, SEEK_END );
 	this->WriteXMPPrefix();
-	LFA_Write ( fileRef, xmpPacket.c_str(), xmpPacket.size() );
+	LFA_Write ( fileRef, xmpPacket.c_str(), (XMP_StringLen)xmpPacket.size() );
 	this->WriteXMPSuffix();
 	if ( checkAbort && abortProc(abortArg) ) {
 		XMP_Throw ( "Basic_MetaHandler::UpdateFile - User abort", kXMPErr_UserAbort );
@@ -135,7 +135,7 @@ void Basic_MetaHandler::WriteFile ( LFA_FileRef sourceRef, const std::string & s
 	// Write the new XMP section to the destination.
 	
 	this->WriteXMPPrefix();
-	LFA_Write ( destRef, this->xmpPacket.c_str(), this->xmpPacket.size() );
+	LFA_Write ( destRef, this->xmpPacket.c_str(), (XMP_StringLen)this->xmpPacket.size() );
 	this->WriteXMPSuffix();
 	if ( checkAbort && abortProc(abortArg) ) {
 		XMP_Throw ( "Basic_MetaHandler::WriteFile - User abort", kXMPErr_UserAbort );

@@ -9,15 +9,7 @@
 
 #include "XMPFiles_Impl.hpp"
 
-#if XMP_MacBuild
-	#include <Files.h>
-#elif XMP_WinBuild
-	#include <Windows.h>
-#elif XMP_UNIXBuild
-	#include <fcntl.h>
-	#include <sys/stat.h>
-	#include <unistd.h>
-#endif
+#include "UnicodeConversions.hpp"
 
 using namespace std;
 
@@ -54,15 +46,36 @@ using namespace std;
 XMP_FileFormat voidFileFormat = 0;	// Used as sink for unwanted output parameters.
 XMP_Mutex sXMPFilesLock;
 int sXMPFilesLockCount = 0;
-XMP_VarString * sXMPFilesExceptionMessage = 0;
+std::string * sXMPFilesExceptionMessage = 0;
 
 #if TraceXMPCalls
 	FILE * xmpFilesOut = stderr;
 #endif
 
+//only define in one non-public-source, non-header(.cpp) place
+void LFA_Throw ( const char* msg, int id )
+{
+	switch(id)
+	{
+		case kLFAErr_InternalFailure:
+			XMP_Throw(msg,kXMPErr_InternalFailure);
+			break;
+		case kLFAErr_ExternalFailure:
+			XMP_Throw(msg,kXMPErr_ExternalFailure);
+			break;
+		case kLFAErr_UserAbort:
+			XMP_Throw(msg,kXMPErr_UserAbort);
+			break;
+		default:
+			XMP_Throw(msg,kXMPErr_UnknownException);
+			break;
+	}
+}
+
 // =================================================================================================
 
-const FileExtMapping kFileExtMap[] =	// Add all known mappings, multiple mappings (tif, tiff) are OK.
+// Add all known mappings, multiple mappings (tif, tiff) are OK.
+const FileExtMapping kFileExtMap[] =
 	{ { "pdf",  kXMP_PDFFile },
 	  { "ps",   kXMP_PostScriptFile },
 	  { "eps",  kXMP_EPSFile },
@@ -88,6 +101,9 @@ const FileExtMapping kFileExtMap[] =	// Add all known mappings, multiple mapping
 	  { "wav",  kXMP_WAVFile },
 	  { "mp3",  kXMP_MP3File },
 	  { "mp4",  kXMP_MPEG4File },
+	  { "m4v",  kXMP_MPEG4File },
+	  { "m4a",  kXMP_MPEG4File },
+	  { "f4v",  kXMP_MPEG4File },
 	  { "ses",  kXMP_SESFile },
 	  { "cel",  kXMP_CELFile },
 	  { "wma",  kXMP_WMAVFile },
@@ -118,20 +134,28 @@ const FileExtMapping kFileExtMap[] =	// Add all known mappings, multiple mapping
 	  { "indd", kXMP_InDesignFile },
 	  { "indt", kXMP_InDesignFile },
 	  { "aep",  kXMP_AEProjectFile },
+	  { "aepx", kXMP_AEProjectFile },
 	  { "aet",  kXMP_AEProjTemplateFile },
 	  { "ffx",  kXMP_AEFilterPresetFile },
 	  { "ncor", kXMP_EncoreProjectFile },
 	  { "prproj", kXMP_PremiereProjectFile },
 	  { "prtl", kXMP_PremiereTitleFile },
-
+	  { "ucf", kXMP_UCFFile },
+	  { "xfl", kXMP_UCFFile },
+	  { "pdfxml", kXMP_UCFFile },
+	  { "mars", kXMP_UCFFile },
+	  { "idml", kXMP_UCFFile },
 	  { "", 0 } };	// ! Must be last as a sentinel.
 
-const char * kKnownScannedFiles[] =	// Files known to contain XMP but have no smart handling, here or elsewhere.
-	{ "ai",		// Illustrator, actually a PDF file.
+// Files known to contain XMP but have no smart handling, here or elsewhere.
+const char * kKnownScannedFiles[] =
+    { "ai",		// Illustrator, actually a PDF file.
 	  "ait",	// Illustrator template, actually a PDF file.
 	  "svg",	// SVG, an XML file.
 	  "aet",	// After Effects template project file.
 	  "ffx",	// After Effects filter preset file.
+	  "aep",	// After Effects project file in proprietary format
+	  "aepx",	// After Effects project file in XML format
 	  "inx",	// InDesign interchange, an XML file.
 	  "inds",	// InDesign snippet, an XML file.
 	  "inpk",	// InDesign package for GoLive, a text file (not XML).
@@ -140,682 +164,39 @@ const char * kKnownScannedFiles[] =	// Files known to contain XMP but have no sm
 	  "incx",	// InCopy interchange, an XML file.
 	  "fm",		// FrameMaker file, proprietary format.
 	  "book",	// FrameMaker book, proprietary format.
+	  "icml",	// an inCopy (inDesign) format 
+	  "icmt",	// an inCopy (inDesign) format 
+	  "idms",	// an inCopy (inDesign) format 
 	  0 };		// ! Keep a 0 sentinel at the end.
 
-// =================================================================================================
+
+// Extensions that XMPFiles never handles.
+const char * kKnownRejectedFiles[] =
+	{ 
+		// RAW files
+		"cr2", "erf", "fff", "dcr", "kdc", "mos", "mfw", "mef",
+		"raw", "nef", "orf", "pef", "arw", "sr2", "srf", "sti",
+		"3fr",
+		// not supported UCF subformats
+		"air",
+	  0 };	// ! Keep a 0 sentinel at the end.
 
 // =================================================================================================
 
 // =================================================================================================
-// LFA implementations for Macintosh
-// =================================
-
-#if XMP_MacBuild
-
-	// ---------------------------------------------------------------------------------------------
-
-	// ! Can't use Apple's 64 bit POSIX functions because frigging MSL has type clashes.
-
-	LFA_FileRef LFA_Open ( const char * fileName, char mode )
-	{
-		XMP_Assert ( (mode == 'r') || (mode == 'w') );
-		
-		FSRef fileRef;
-		SInt8 perm = ( (mode == 'r') ? fsRdPerm : fsRdWrPerm );
-		HFSUniStr255 dataForkName;
-		SInt16 refNum;
-		
-		OSErr err = FSGetDataForkName ( &dataForkName );
-		if ( err != noErr ) XMP_Throw ( "LFA_Open: FSGetDataForkName failure", kXMPErr_ExternalFailure );
-		
-		err = FSPathMakeRef ( (XMP_Uns8*)fileName, &fileRef, 0 );
-		if ( err != noErr ) XMP_Throw ( "LFA_Open: FSPathMakeRef failure", kXMPErr_ExternalFailure );
-		
-		err = FSOpenFork ( &fileRef, dataForkName.length, dataForkName.unicode, perm, &refNum );
-		if ( err != noErr ) XMP_Throw ( "LFA_Open: FSOpenFork failure", kXMPErr_ExternalFailure );
-		
-		return (LFA_FileRef)refNum;
-
-	}	// LFA_Open
-
-	// ---------------------------------------------------------------------------------------------
-
-	LFA_FileRef LFA_Create ( const char * fileName )
-	{
-		// *** Hack: Use fopen to avoid parent/child name separation needed by FSCreateFileUnicode.
-
-		FILE * temp;
-		temp = fopen ( fileName, "r" );	// Make sure the file does not exist.
-		if ( temp != 0 ) {
-			fclose ( temp );
-			XMP_Throw ( "LFA_Create: file already exists", kXMPErr_ExternalFailure );
-		}
-
-		temp = fopen ( fileName, "w" );
-		if ( temp == 0 ) XMP_Throw ( "LFA_Create: fopen failure", kXMPErr_ExternalFailure );
-		fclose ( temp );
-		
-		return LFA_Open ( fileName, 'w' );
-
-	}	// LFA_Create
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Delete ( const char * fileName )
-	{
-		int err = remove ( fileName );	// *** Better to use an FS function.
-		if ( err != 0 ) XMP_Throw ( "LFA_Delete: remove failure", kXMPErr_ExternalFailure );
-		
-	}	// LFA_Delete
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Rename ( const char * oldName, const char * newName )
-	{
-		int err = rename ( oldName, newName );	// *** Better to use an FS function.
-		if ( err != 0 ) XMP_Throw ( "LFA_Rename: rename failure", kXMPErr_ExternalFailure );
-		
-	}	// LFA_Rename
-
-	// ---------------------------------------------------------------------------------------------
-
-	LFA_FileRef LFA_OpenRsrc ( const char * fileName, char mode )
-	{
-		XMP_Assert ( (mode == 'r') || (mode == 'w') );
-		
-		FSRef fileRef;
-		SInt8 perm = ( (mode == 'r') ? fsRdPerm : fsRdWrPerm );
-		HFSUniStr255 rsrcForkName;
-		SInt16 refNum;
-		
-		OSErr err = FSGetResourceForkName ( &rsrcForkName );
-		if ( err != noErr ) XMP_Throw ( "LFA_Open: FSGetResourceForkName failure", kXMPErr_ExternalFailure );
-		
-		err = FSPathMakeRef ( (XMP_Uns8*)fileName, &fileRef, 0 );
-		if ( err != noErr ) XMP_Throw ( "LFA_Open: FSPathMakeRef failure", kXMPErr_ExternalFailure );
-		
-		err = FSOpenFork ( &fileRef, rsrcForkName.length, rsrcForkName.unicode, perm, &refNum );
-		if ( err != noErr ) XMP_Throw ( "LFA_Open: FSOpenFork failure", kXMPErr_ExternalFailure );
-		
-		return (LFA_FileRef)refNum;
-
-	}	// LFA_OpenRsrc
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Close ( LFA_FileRef file )
-	{
-		if ( file == 0 ) return;	// Can happen if LFA_Open throws an exception.
-		long refNum = (long)file;	// ! Use long to avoid size warnings for SInt16 cast.
-
-		OSErr err = FSCloseFork ( refNum );
-		if ( err != noErr ) XMP_Throw ( "LFA_Close: FSCloseFork failure", kXMPErr_ExternalFailure );
-
-	}	// LFA_Close
-
-	// ---------------------------------------------------------------------------------------------
-
-	XMP_Int64 LFA_Seek ( LFA_FileRef file, XMP_Int64 offset, int mode, bool * okPtr )
-	{
-		long refNum = (long)file;	// ! Use long to avoid size warnings for SInt16 cast.
-
-		UInt16 posMode;
-		switch ( mode ) {
-			case SEEK_SET :
-				posMode = fsFromStart;
-				break;
-			case SEEK_CUR :
-				posMode = fsFromMark;
-				break;
-			case SEEK_END :
-				posMode = fsFromLEOF;
-				break;
-			default :
-				XMP_Throw ( "Invalid seek mode", kXMPErr_InternalFailure );
-				break;
-		}
-
-		OSErr err;
-		XMP_Int64 newPos;
-
-		err = FSSetForkPosition ( refNum, posMode, offset );
-
-		if ( err == eofErr ) {
-			// FSSetForkPosition does not implicitly grow the file. Grow then seek to the new EOF.
-			err = FSSetForkSize ( refNum, posMode, offset );
-			if ( err == noErr ) err = FSSetForkPosition ( refNum, fsFromLEOF, 0 );
-		}
-
-		if ( err == noErr ) err = FSGetForkPosition ( refNum, &newPos );
-
-		if ( okPtr != 0 ) {
-			*okPtr = (err == noErr);
-		} else {
-			if ( err != noErr ) XMP_Throw ( "LFA_Seek: FSSetForkPosition failure", kXMPErr_ExternalFailure );
-		}
-		
-		return newPos;
-
-	}	// LFA_Seek
-
-	// ---------------------------------------------------------------------------------------------
-
-	XMP_Int32 LFA_Read ( LFA_FileRef file, void * buffer, XMP_Int32 bytes, bool requireAll )
-	{
-		long refNum = (long)file;	// ! Use long to avoid size warnings for SInt16 cast.
-		ByteCount bytesRead;
-		
-		OSErr err = FSReadFork ( refNum, fsAtMark, 0, bytes, buffer, &bytesRead );
-		if ( ((err != noErr) && (err != eofErr)) || (requireAll && (bytesRead != (ByteCount)bytes)) ) {
-			// ! FSReadFork returns eofErr for a normal encounter with the end of file.
-			XMP_Throw ( "LFA_Read: FSReadFork failure", kXMPErr_ExternalFailure );
-		}
-		
-		return bytesRead;
-		
-	}	// LFA_Read
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Write ( LFA_FileRef file, const void * buffer, XMP_Int32 bytes )
-	{
-		long refNum = (long)file;	// ! Use long to avoid size warnings for SInt16 cast.
-		ByteCount bytesWritten;
-		
-		OSErr err = FSWriteFork ( refNum, fsAtMark, 0, bytes, buffer, &bytesWritten );
-		if ( (err != noErr) | (bytesWritten != (ByteCount)bytes) ) XMP_Throw ( "LFA_Write: FSWriteFork failure", kXMPErr_ExternalFailure );
-
-	}	// LFA_Write
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Flush ( LFA_FileRef file )
-	{
-		long refNum = (long)file;	// ! Use long to avoid size warnings for SInt16 cast.
-
-		OSErr err = FSFlushFork ( refNum );
-		if ( err != noErr ) XMP_Throw ( "LFA_Flush: FSFlushFork failure", kXMPErr_ExternalFailure );
-
-	}	// LFA_Flush
-
-	// ---------------------------------------------------------------------------------------------
-
-	XMP_Int64 LFA_Measure ( LFA_FileRef file )
-	{
-		long refNum = (long)file;	// ! Use long to avoid size warnings for SInt16 cast.
-		XMP_Int64 length;
-		
-		OSErr err = FSGetForkSize ( refNum, &length );
-		if ( err != noErr ) XMP_Throw ( "LFA_Measure: FSSetForkSize failure", kXMPErr_ExternalFailure );
-		
-		return length;
-		
-	}	// LFA_Measure
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Extend ( LFA_FileRef file, XMP_Int64 length )
-	{
-		long refNum = (long)file;	// ! Use long to avoid size warnings for SInt16 cast.
-		
-		OSErr err = FSSetForkSize ( refNum, fsFromStart, length );
-		if ( err != noErr ) XMP_Throw ( "LFA_Extend: FSSetForkSize failure", kXMPErr_ExternalFailure );
-		
-	}	// LFA_Extend
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Truncate ( LFA_FileRef file, XMP_Int64 length )
-	{
-		long refNum = (long)file;	// ! Use long to avoid size warnings for SInt16 cast.
-		
-		OSErr err = FSSetForkSize ( refNum, fsFromStart, length );
-		if ( err != noErr ) XMP_Throw ( "LFA_Truncate: FSSetForkSize failure", kXMPErr_ExternalFailure );
-		
-	}	// LFA_Truncate
-
-	// ---------------------------------------------------------------------------------------------
-
-#endif	// XMP_MacBuild
 
 // =================================================================================================
-// LFA implementations for Windows
-// ===============================
 
-#if XMP_WinBuild
-
-	// ---------------------------------------------------------------------------------------------
-
-	LFA_FileRef LFA_Open ( const char * fileName, char mode )
-	{
-		XMP_Assert ( (mode == 'r') || (mode == 'w') );
-		
-		DWORD access = GENERIC_READ;	// Assume read mode.
-		DWORD share  = FILE_SHARE_READ;
-		
-		if ( mode == 'w' ) {
-			access |= GENERIC_WRITE;
-			share  = 0;
-		}
-
-		std::string wideName;
-		const size_t utf8Len = strlen(fileName);
-		const size_t maxLen = 2 * (utf8Len+1);
-
-		wideName.reserve ( maxLen );
-		wideName.assign ( maxLen, ' ' );
-		int wideLen = MultiByteToWideChar ( CP_UTF8, 0, fileName, -1, (LPWSTR)wideName.data(), maxLen );
-		if ( wideLen == 0 ) XMP_Throw ( "LFA_Open: MultiByteToWideChar failure", kXMPErr_ExternalFailure );
-
-		HANDLE fileHandle = CreateFileW ( (LPCWSTR)wideName.data(), access, share, 0, OPEN_EXISTING,
-										  (FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS), 0 );
-		if ( fileHandle == INVALID_HANDLE_VALUE ) XMP_Throw ( "LFA_Open: CreateFileW failure", kXMPErr_ExternalFailure );
-		
-		return (LFA_FileRef)fileHandle;
-
-	}	// LFA_Open
-
-	// ---------------------------------------------------------------------------------------------
-
-	LFA_FileRef LFA_Create ( const char * fileName )
-	{
-		std::string wideName;
-		const size_t utf8Len = strlen(fileName);
-		const size_t maxLen = 2 * (utf8Len+1);
-
-		wideName.reserve ( maxLen );
-		wideName.assign ( maxLen, ' ' );
-		int wideLen = MultiByteToWideChar ( CP_UTF8, 0, fileName, -1, (LPWSTR)wideName.data(), maxLen );
-		if ( wideLen == 0 ) XMP_Throw ( "LFA_Create: MultiByteToWideChar failure", kXMPErr_ExternalFailure );
-
-		HANDLE fileHandle;
-		
-		fileHandle = CreateFileW ( (LPCWSTR)wideName.data(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING,
-								   (FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS), 0 );
-		if ( fileHandle != INVALID_HANDLE_VALUE ) {
-			CloseHandle ( fileHandle );
-			XMP_Throw ( "LFA_Create: file already exists", kXMPErr_ExternalFailure );
-		}
-
-		fileHandle = CreateFileW ( (LPCWSTR)wideName.data(), (GENERIC_READ | GENERIC_WRITE), 0, 0, CREATE_ALWAYS,
-								   (FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS), 0 );
-		if ( fileHandle == INVALID_HANDLE_VALUE ) XMP_Throw ( "LFA_Create: CreateFileW failure", kXMPErr_ExternalFailure );
-		
-		return (LFA_FileRef)fileHandle;
-
-	}	// LFA_Create
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Delete ( const char * fileName )
-	{
-		std::string wideName;
-		const size_t utf8Len = strlen(fileName);
-		const size_t maxLen = 2 * (utf8Len+1);
-
-		wideName.reserve ( maxLen );
-		wideName.assign ( maxLen, ' ' );
-		int wideLen = MultiByteToWideChar ( CP_UTF8, 0, fileName, -1, (LPWSTR)wideName.data(), maxLen );
-		if ( wideLen == 0 ) XMP_Throw ( "LFA_Delete: MultiByteToWideChar failure", kXMPErr_ExternalFailure );
-
-		BOOL ok = DeleteFileW ( (LPCWSTR)wideName.data() );
-		if ( ! ok ) XMP_Throw ( "LFA_Delete: DeleteFileW failure", kXMPErr_ExternalFailure );
-
-	}	// LFA_Delete
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Rename ( const char * oldName, const char * newName )
-	{
-		std::string wideOldName, wideNewName;
-		size_t utf8Len = strlen(oldName);
-		if ( utf8Len < strlen(newName) ) utf8Len = strlen(newName);
-		const size_t maxLen = 2 * (utf8Len+1);
-		int wideLen;
-
-		wideOldName.reserve ( maxLen );
-		wideOldName.assign ( maxLen, ' ' );
-		wideLen = MultiByteToWideChar ( CP_UTF8, 0, oldName, -1, (LPWSTR)wideOldName.data(), maxLen );
-		if ( wideLen == 0 ) XMP_Throw ( "LFA_Rename: MultiByteToWideChar failure", kXMPErr_ExternalFailure );
-
-		wideNewName.reserve ( maxLen );
-		wideNewName.assign ( maxLen, ' ' );
-		wideLen = MultiByteToWideChar ( CP_UTF8, 0, newName, -1, (LPWSTR)wideNewName.data(), maxLen );
-		if ( wideLen == 0 ) XMP_Throw ( "LFA_Rename: MultiByteToWideChar failure", kXMPErr_ExternalFailure );
-		
-		BOOL ok = MoveFileW ( (LPCWSTR)wideOldName.data(), (LPCWSTR)wideNewName.data() );
-		if ( ! ok ) XMP_Throw ( "LFA_Rename: MoveFileW failure", kXMPErr_ExternalFailure );
-
-	}	// LFA_Rename
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Close ( LFA_FileRef file )
-	{
-		if ( file == 0 ) return;	// Can happen if LFA_Open throws an exception.
-		HANDLE fileHandle = (HANDLE)file;
-
-		BOOL ok = CloseHandle ( fileHandle );
-		if ( ! ok ) XMP_Throw ( "LFA_Close: CloseHandle failure", kXMPErr_ExternalFailure );
-
-	}	// LFA_Close
-
-	// ---------------------------------------------------------------------------------------------
-
-	XMP_Int64 LFA_Seek ( LFA_FileRef file, XMP_Int64 offset, int mode, bool * okPtr )
-	{
-		HANDLE fileHandle = (HANDLE)file;
-
-		DWORD method;
-		switch ( mode ) {
-			case SEEK_SET :
-				method = FILE_BEGIN;
-				break;
-			case SEEK_CUR :
-				method = FILE_CURRENT;
-				break;
-			case SEEK_END :
-				method = FILE_END;
-				break;
-			default :
-				XMP_Throw ( "Invalid seek mode", kXMPErr_InternalFailure );
-				break;
-		}
-
-		LARGE_INTEGER seekOffset, newPos;
-		seekOffset.QuadPart = offset;
-		
-		BOOL ok = SetFilePointerEx ( fileHandle, seekOffset, &newPos, method );
-		if ( okPtr != 0 ) {
-			*okPtr = ok;
-		} else {
-			if ( ! ok ) XMP_Throw ( "LFA_Seek: SetFilePointerEx failure", kXMPErr_ExternalFailure );
-		}
-		
-		return newPos.QuadPart;
-
-	}	// LFA_Seek
-
-	// ---------------------------------------------------------------------------------------------
-
-	XMP_Int32 LFA_Read ( LFA_FileRef file, void * buffer, XMP_Int32 bytes, bool requireAll )
-	{
-		HANDLE fileHandle = (HANDLE)file;
-		DWORD  bytesRead;
-		
-		BOOL ok = ReadFile ( fileHandle, buffer, bytes, &bytesRead, 0 );
-		if ( (! ok) || (requireAll && (bytesRead != bytes)) ) XMP_Throw ( "LFA_Read: ReadFile failure", kXMPErr_ExternalFailure );
-		
-		return bytesRead;
-
-	}	// LFA_Read
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Write ( LFA_FileRef file, const void * buffer, XMP_Int32 bytes )
-	{
-		HANDLE fileHandle = (HANDLE)file;
-		DWORD  bytesWritten;
-		
-		BOOL ok = WriteFile ( fileHandle, buffer, bytes, &bytesWritten, 0 );
-		if ( (! ok) || (bytesWritten != bytes) ) XMP_Throw ( "LFA_Write: WriteFile failure", kXMPErr_ExternalFailure );
-
-	}	// LFA_Write
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Flush ( LFA_FileRef file )
-	{
-		HANDLE fileHandle = (HANDLE)file;
-
-		BOOL ok = FlushFileBuffers ( fileHandle );
-		if ( ! ok ) XMP_Throw ( "LFA_Flush: FlushFileBuffers failure", kXMPErr_ExternalFailure );
-
-	}	// LFA_Flush
-
-	// ---------------------------------------------------------------------------------------------
-
-	XMP_Int64 LFA_Measure ( LFA_FileRef file )
-	{
-		HANDLE fileHandle = (HANDLE)file;
-		LARGE_INTEGER length;
-		
-		BOOL ok = GetFileSizeEx ( fileHandle, &length );
-		if ( ! ok ) XMP_Throw ( "LFA_Measure: GetFileSizeEx failure", kXMPErr_ExternalFailure );
-		
-		return length.QuadPart;
-		
-	}	// LFA_Measure
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Extend ( LFA_FileRef file, XMP_Int64 length )
-	{
-		HANDLE fileHandle = (HANDLE)file;
-
-		LARGE_INTEGER winLength;
-		winLength.QuadPart = length;
-
-		BOOL ok = SetFilePointerEx ( fileHandle, winLength, 0, FILE_BEGIN );
-		if ( ! ok ) XMP_Throw ( "LFA_Extend: SetFilePointerEx failure", kXMPErr_ExternalFailure );
-		ok = SetEndOfFile ( fileHandle );
-		if ( ! ok ) XMP_Throw ( "LFA_Extend: SetEndOfFile failure", kXMPErr_ExternalFailure );
-
-	}	// LFA_Extend
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Truncate ( LFA_FileRef file, XMP_Int64 length )
-	{
-		HANDLE fileHandle = (HANDLE)file;
-
-		LARGE_INTEGER winLength;
-		winLength.QuadPart = length;
-
-		BOOL ok = SetFilePointerEx ( fileHandle, winLength, 0, FILE_BEGIN );
-		if ( ! ok ) XMP_Throw ( "LFA_Truncate: SetFilePointerEx failure", kXMPErr_ExternalFailure );
-		ok = SetEndOfFile ( fileHandle );
-		if ( ! ok ) XMP_Throw ( "LFA_Truncate: SetEndOfFile failure", kXMPErr_ExternalFailure );
-
-	}	// LFA_Truncate
-
-	// ---------------------------------------------------------------------------------------------
-
-#endif	// XMP_WinBuild
-
-// =================================================================================================
-// LFA implementations for POSIX
-// =============================
-
-#if XMP_UNIXBuild
-
-	// ---------------------------------------------------------------------------------------------
-
-	// Make sure off_t is 64 bits and signed.
-	static char check_off_t_size [ (sizeof(off_t) == 8) ? 1 : -1 ];
-	// *** No std::numeric_limits?  static char check_off_t_sign [ std::numeric_limits<off_t>::is_signed ? -1 : 1 ];
-
-	// ---------------------------------------------------------------------------------------------
-
-	LFA_FileRef LFA_Open ( const char * fileName, char mode )
-	{
-		XMP_Assert ( (mode == 'r') || (mode == 'w') );
-		
-		int flags = ((mode == 'r') ? O_RDONLY : O_RDWR);	// *** Include O_EXLOCK?
-		
-		int descr = open ( fileName, flags, 0 );
-		if ( descr == -1 ) XMP_Throw ( "LFA_Open: open failure", kXMPErr_ExternalFailure );
-		
-		return (LFA_FileRef)descr;
-
-	}	// LFA_Open
-
-	// ---------------------------------------------------------------------------------------------
-
-	LFA_FileRef LFA_Create ( const char * fileName )
-	{
-		int descr;
-		
-		descr = open ( fileName, O_RDONLY, 0 );	// Make sure the file does not exist yet.
-		if ( descr != -1 ) {
-			close ( descr );
-			XMP_Throw ( "LFA_Create: file already exists", kXMPErr_ExternalFailure );
-		}
-
-		descr = open ( fileName, (O_CREAT | O_RDWR), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) );	// *** Include O_EXCL? O_EXLOCK?
-		if ( descr == -1 ) XMP_Throw ( "LFA_Create: open failure", kXMPErr_ExternalFailure );
-		
-		return (LFA_FileRef)descr;
-
-	}	// LFA_Create
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Delete ( const char * fileName )
-	{
-		int err = unlink ( fileName );
-		if ( err != 0 ) XMP_Throw ( "LFA_Delete: unlink failure", kXMPErr_ExternalFailure );
-		
-	}	// LFA_Delete
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Rename ( const char * oldName, const char * newName )
-	{
-		int err = rename ( oldName, newName );	// *** POSIX rename clobbers existing destination!
-		if ( err != 0 ) XMP_Throw ( "LFA_Rename: rename failure", kXMPErr_ExternalFailure );
-		
-	}	// LFA_Rename
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Close ( LFA_FileRef file )
-	{
-		if ( file == 0 ) return;	// Can happen if LFA_Open throws an exception.
-		int descr = (int)file;
-
-		int err = close ( descr );
-		if ( err != 0 ) XMP_Throw ( "LFA_Close: close failure", kXMPErr_ExternalFailure );
-
-	}	// LFA_Close
-
-	// ---------------------------------------------------------------------------------------------
-
-	XMP_Int64 LFA_Seek ( LFA_FileRef file, XMP_Int64 offset, int mode, bool * okPtr )
-	{
-		int descr = (int)file;
-		
-		off_t newPos = lseek ( descr, offset, mode );
-		if ( okPtr != 0 ) {
-			*okPtr = (newPos != -1);
-		} else {
-			if ( newPos == -1 ) XMP_Throw ( "LFA_Seek: lseek failure", kXMPErr_ExternalFailure );
-		}
-		
-		return newPos;
-
-	}	// LFA_Seek
-
-	// ---------------------------------------------------------------------------------------------
-
-	XMP_Int32 LFA_Read ( LFA_FileRef file, void * buffer, XMP_Int32 bytes, bool requireAll )
-	{
-		int descr = (int)file;
-		
-		ssize_t bytesRead = read ( descr, buffer, bytes );
-		if ( (bytesRead == -1) || (requireAll && (bytesRead != bytes)) ) XMP_Throw ( "LFA_Read: read failure", kXMPErr_ExternalFailure );
-		
-		return bytesRead;
-
-	}	// LFA_Read
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Write ( LFA_FileRef file, const void * buffer, XMP_Int32 bytes )
-	{
-		int descr = (int)file;
-
-		ssize_t bytesWritten = write ( descr, buffer, bytes );
-		if ( bytesWritten != bytes ) XMP_Throw ( "LFA_Write: write failure", kXMPErr_ExternalFailure );
-
-	}	// LFA_Write
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Flush ( LFA_FileRef file )
-	{
-		int descr = (int)file;
-
-		int err = fsync ( descr );
-		if ( err != 0 ) XMP_Throw ( "LFA_Flush: fsync failure", kXMPErr_ExternalFailure );
-
-	}	// LFA_Flush
-
-	// ---------------------------------------------------------------------------------------------
-
-	XMP_Int64 LFA_Measure ( LFA_FileRef file )
-	{
-		int descr = (int)file;
-		
-		off_t currPos = lseek ( descr, 0, SEEK_CUR );
-		off_t length  = lseek ( descr, 0, SEEK_END );
-		if ( (currPos == -1) || (length == -1) ) XMP_Throw ( "LFA_Measure: lseek failure", kXMPErr_ExternalFailure );
-		(void) lseek ( descr, currPos, SEEK_SET );
-		
-		return length;
-		
-	}	// LFA_Measure
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Extend ( LFA_FileRef file, XMP_Int64 length )
-	{
-		int descr = (int)file;
-		
-		int err = ftruncate ( descr, length );
-		if ( err != 0 ) XMP_Throw ( "LFA_Extend: ftruncate failure", kXMPErr_ExternalFailure );
-
-	}	// LFA_Extend
-
-	// ---------------------------------------------------------------------------------------------
-
-	void LFA_Truncate ( LFA_FileRef file, XMP_Int64 length )
-	{
-		int descr = (int)file;
-		
-		int err = ftruncate ( descr, length );
-		if ( err != 0 ) XMP_Throw ( "LFA_Truncate: ftruncate failure", kXMPErr_ExternalFailure );
-
-	}	// LFA_Truncate
-
-	// ---------------------------------------------------------------------------------------------
-
-#endif	// XMP_UNIXBuild
-
-// =================================================================================================
-
-void LFA_Copy ( LFA_FileRef sourceFile, LFA_FileRef destFile, XMP_Int64 length,
-                XMP_AbortProc abortProc /* = 0 */, void * abortArg /* = 0 */ )
-{
-	enum { kBufferLen = 64*1024 };
-	XMP_Uns8 buffer [kBufferLen];
-	
-	const bool checkAbort = (abortProc != 0);
-	
-	while ( length > 0 ) {
-		if ( checkAbort && abortProc(abortArg) ) {
-			XMP_Throw ( "LFA_Copy - User abort", kXMPErr_UserAbort );
-		}
-		XMP_Int32 ioCount = kBufferLen;
-		if ( length < kBufferLen ) ioCount = (XMP_Int32)length;
-		LFA_Read ( sourceFile, buffer, ioCount, kLFA_RequireAll );
-		LFA_Write ( destFile, buffer, ioCount );
-		length -= ioCount;
+#if XMP_MacBuild | XMP_UNIXBuild
+	//copy from LargeFileAccess.cpp
+	static bool FileExists ( const char * filePath )
+	{	
+		struct stat info;
+		int err = stat ( filePath, &info );
+		return (err == 0);
 	}
+#endif
 
-}	// LFA_Copy
-
-// =================================================================================================
 
 static bool CreateNewFile ( const char * newPath, const char * origPath, size_t filePos, bool copyMacRsrc )
 {
@@ -823,29 +204,27 @@ static bool CreateNewFile ( const char * newPath, const char * origPath, size_t 
 	// *** The ownership and permissions are not handled on all platforms.
 
 	#if XMP_MacBuild | XMP_UNIXBuild
-	{
-		FILE * temp = fopen ( newPath, "r" );	// Make sure the file does not exist.
-		if ( temp != 0 ) {
-			fclose ( temp );
-			return false;
-		}
-	}
+
+		if ( FileExists ( newPath ) ) return false;
+
 	#elif XMP_WinBuild
-	{
-		std::string wideName;
-		const size_t utf8Len = strlen(newPath);
-		const size_t maxLen = 2 * (utf8Len+1);
-		wideName.reserve ( maxLen );
-		wideName.assign ( maxLen, ' ' );
-		int wideLen = MultiByteToWideChar ( CP_UTF8, 0, newPath, -1, (LPWSTR)wideName.data(), maxLen );
-		if ( wideLen == 0 ) return false;
-		HANDLE temp = CreateFileW ( (LPCWSTR)wideName.data(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING,
-								    (FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS), 0 );
-		if ( temp != INVALID_HANDLE_VALUE ) {
-			CloseHandle ( temp );
-			return false;
+
+		{
+			std::string wideName;
+			const size_t utf8Len = strlen(newPath);
+			const size_t maxLen = 2 * (utf8Len+1);
+			wideName.reserve ( maxLen );
+			wideName.assign ( maxLen, ' ' );
+			int wideLen = MultiByteToWideChar ( CP_UTF8, 0, newPath, -1, (LPWSTR)wideName.data(), (int)maxLen );
+			if ( wideLen == 0 ) return false;
+			HANDLE temp = CreateFileW ( (LPCWSTR)wideName.data(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING,
+										(FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS), 0 );
+			if ( temp != INVALID_HANDLE_VALUE ) {
+				CloseHandle ( temp );
+				return false;
+			}
 		}
-	}
+
 	#endif
 	
 	try {
@@ -880,7 +259,18 @@ static bool CreateNewFile ( const char * newPath, const char * origPath, size_t 
 		err = FSGetCatalogInfo ( &origFSRef, kFSCatInfoGettableInfo, &catInfo, 0, 0, 0 );
 		if ( err != noErr ) XMP_Throw ( "CreateNewFile: FSGetCatalogInfo failure", kXMPErr_ExternalFailure );
 		err = FSSetCatalogInfo ( &newFSRef, kFSCatInfoSettableInfo, &catInfo );
-		if ( err != noErr ) XMP_Throw ( "CreateNewFile: FSSetCatalogInfo failure", kXMPErr_ExternalFailure );
+		
+		// *** [1841019] tolerate non mac filesystems, i.e. SMB mounts
+		// this measure helps under 10.5, albeit not reliably under 10.4
+		if ( err == afpAccessDenied ) 
+			copyMacRsrc = false;
+		else if ( err != noErr ) // all other errors are still an error
+			XMP_Throw ( "CreateNewFile: FSSetCatalogInfo failure", kXMPErr_ExternalFailure );
+
+		// *** [1841019] tolerate non mac filesystems, i.e. SMB mounts
+		// this measure helps under 10.4 (and besides might be an optimization)
+		if ( catInfo.rsrcLogicalSize == 0 )
+			copyMacRsrc = false;
 		
 		if ( copyMacRsrc ) {	// Copy the resource fork as a byte stream.
 			LFA_FileRef origRsrcRef = 0;
@@ -906,17 +296,15 @@ static bool CreateNewFile ( const char * newPath, const char * origPath, size_t 
 	
 		IgnoreParam(filePos); IgnoreParam(copyMacRsrc);
 		// *** Can't use on Mac because of frigging CW POSIX header problems!
+
+		// *** Don't handle UNIX specific info yet.
 		
 		int err, newRef;
 		struct stat origInfo;
 		err = stat ( origPath, &origInfo );
 		if ( err != 0 ) XMP_Throw ( "CreateNewFile: stat failure", kXMPErr_ExternalFailure );
-
-		newRef = open ( newPath, (O_CREAT | O_EXCL | O_RDWR), origInfo.st_mode );
-		if ( newRef != -1 ) {
-			(void) fchown ( newRef, origInfo.st_uid, origInfo.st_gid );	// Tolerate failure.
-			close ( newRef );
-		}
+		
+		(void) chmod ( newPath, origInfo.st_mode );	// Ignore errors.
 	
 	#endif
 	
@@ -992,6 +380,193 @@ void CreateTempFile ( const std::string & origPath, std::string * tempPath, bool
 }	// CreateTempFile
 
 // =================================================================================================
+// File mode and folder info utilities
+// -----------------------------------
+
+#if XMP_WinBuild
+	
+	// ---------------------------------------------------------------------------------------------
+
+	static DWORD kOtherAttrs = (FILE_ATTRIBUTE_DEVICE | FILE_ATTRIBUTE_OFFLINE);
+	
+	FileMode GetFileMode ( const char * path )
+	{
+		std::string utf16;	// GetFileAttributes wants native UTF-16.
+		ToUTF16Native ( (UTF8Unit*)path, strlen(path), &utf16 );
+		utf16.append ( 2, '\0' );	// Make sure there are at least 2 final zero bytes.
+
+		// ! A shortcut is seen as a file, we would need extra code to recognize it and find the target.
+		
+		DWORD fileAttrs = GetFileAttributesW ( (LPCWSTR) utf16.c_str() );
+		if ( fileAttrs == INVALID_FILE_ATTRIBUTES ) return kFMode_DoesNotExist;	// ! Any failure turns into does-not-exist.
+
+		if ( fileAttrs & FILE_ATTRIBUTE_DIRECTORY ) return kFMode_IsFolder;
+		if ( fileAttrs & kOtherAttrs ) return kFMode_IsOther;
+		return kFMode_IsFile;
+
+	}	// GetFileMode
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	void XMP_FolderInfo::Open ( const char * folderPath )
+	{
+
+		if ( this->dirRef != 0 ) this->Close();
+		
+		this->folderPath = folderPath;
+
+	}	// XMP_FolderInfo::Open
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	void XMP_FolderInfo::Close()
+	{
+
+		if ( this->dirRef != 0 ) (void) FindClose ( this->dirRef );
+		this->dirRef = 0;
+		this->folderPath.erase();
+
+	}	// XMP_FolderInfo::Close
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	bool XMP_FolderInfo::GetFolderPath ( std::string * folderPath )
+	{
+
+		if ( this->folderPath.empty() ) return false;
+		
+		*folderPath = this->folderPath;
+		return true;
+
+	}	// XMP_FolderInfo::GetFolderPath
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	bool XMP_FolderInfo::GetNextChild ( std::string * childName )
+	{
+		bool found = false;
+		WIN32_FIND_DATAW childInfo;
+
+		if ( this->dirRef != 0 ) {
+
+			found = FindNextFile ( this->dirRef, &childInfo );
+			if ( ! found ) return false;
+
+		} else {
+
+			if ( this->folderPath.empty() ) {
+				XMP_Throw ( "XMP_FolderInfo::GetNextChild - not open", kXMPErr_InternalFailure );
+			}
+
+			std::string findPath = this->folderPath;
+			findPath += "\\*";
+			std::string utf16;	// FindFirstFile wants native UTF-16.
+			ToUTF16Native ( (UTF8Unit*)findPath.c_str(), findPath.size(), &utf16 );
+			utf16.append ( 2, '\0' );	// Make sure there are at least 2 final zero bytes.
+
+			this->dirRef = FindFirstFileW ( (LPCWSTR) utf16.c_str(), &childInfo );
+			if ( this->dirRef == 0 ) return false;
+			found = true;
+
+		}
+
+		// Ignore all children with names starting in '.'. This covers ., .., .DS_Store, etc.
+		while ( found && (childInfo.cFileName[0] == '.') ) {
+			found = FindNextFile ( this->dirRef, &childInfo );
+		}
+		if ( ! found ) return false;
+		
+		size_t len16 = 0;
+		while ( childInfo.cFileName[len16] != 0 ) ++len16;
+		FromUTF16Native ( (UTF16Unit*)childInfo.cFileName, len16, childName );	// The cFileName field is native UTF-16.
+
+		return true;
+
+	}	// XMP_FolderInfo::GetNextChild
+	
+	// ---------------------------------------------------------------------------------------------
+
+#else	// Mac and UNIX both use POSIX functions.
+	
+	// ---------------------------------------------------------------------------------------------
+
+	FileMode GetFileMode ( const char * path )
+	{
+		struct stat fileInfo;
+		
+		int err = stat ( path, &fileInfo );
+		if ( err != 0 ) return kFMode_DoesNotExist;	// ! Any failure turns into does-not-exist.
+		
+		// ! The target of a symlink is properly recognized, not the symlink itself. A Mac alias is
+		// ! seen as a file, we would need extra code to recognize it and find the target.
+		
+		if ( S_ISREG ( fileInfo.st_mode ) ) return kFMode_IsFile;
+		if ( S_ISDIR ( fileInfo.st_mode ) ) return kFMode_IsFolder;
+		return kFMode_IsOther;
+
+	}	// GetFileMode
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	void XMP_FolderInfo::Open ( const char * folderPath )
+	{
+
+		if ( this->dirRef != 0 ) this->Close();
+		
+		this->dirRef = opendir ( folderPath );
+		if ( this->dirRef == 0 ) XMP_Throw ( "XMP_FolderInfo::Open - opendir failed", kXMPErr_ExternalFailure );
+		this->folderPath = folderPath;
+
+	}	// XMP_FolderInfo::Open
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	void XMP_FolderInfo::Close()
+	{
+
+		if ( this->dirRef != 0 ) (void) closedir ( this->dirRef );
+		this->dirRef = 0;
+		this->folderPath.erase();
+
+	}	// XMP_FolderInfo::Close
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	bool XMP_FolderInfo::GetFolderPath ( std::string * folderPath )
+	{
+
+		if ( this->folderPath.empty() ) return false;
+		
+		*folderPath = this->folderPath;
+		return true;
+
+	}	// XMP_FolderInfo::GetFolderPath
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	bool XMP_FolderInfo::GetNextChild ( std::string * childName )
+	{
+		struct dirent * childInfo = 0;
+
+		if ( this->dirRef == 0 ) XMP_Throw ( "XMP_FolderInfo::GetNextChild - not open", kXMPErr_InternalFailure );
+		
+		while ( true ) {
+			// Ignore all children with names starting in '.'. This covers ., .., .DS_Store, etc.
+			childInfo = readdir ( this->dirRef );	// ! Depends on global lock, readdir is not thread safe.
+			if ( childInfo == 0 ) return false;
+			if ( *childInfo->d_name != '.' ) break;
+		}
+		
+		*childName = childInfo->d_name;
+		return true;
+
+	}	// XMP_FolderInfo::GetNextChild
+	
+	// ---------------------------------------------------------------------------------------------
+
+#endif
+
+// =================================================================================================
 // GetPacketCharForm
 // =================
 //
@@ -1011,12 +586,31 @@ void CreateTempFile ( const std::string & origPath, std::string * tempPath, bool
 //      nn 00 00 00 - Little endian UTF-32
 //      nn 00 -- -- - Little endian UTF-16
 
-XMP_Uns8 GetPacketCharForm ( XMP_StringPtr packetStr, XMP_StringLen packetLen )
+static XMP_Uns8 GetPacketCharForm ( XMP_StringPtr packetStr, XMP_StringLen packetLen )
 {
 	XMP_Uns8   charForm = kXMP_CharUnknown;
 	XMP_Uns8 * unsBytes = (XMP_Uns8*)packetStr;	// ! Make sure comparisons are unsigned.
+	
+	if ( packetLen < 2 ) return kXMP_Char8Bit;
 
-	if ( packetLen < 4 ) XMP_Throw ( "Can't determine character encoding", kXMPErr_BadXMP );
+	if ( packetLen < 4 ) {
+	
+		// These cases are based on the first 2 bytes:
+		//   00 nn Big endian UTF-16
+		//   nn 00 Little endian UTF-16
+		//   FE FF Big endian UTF-16
+		//   FF FE Little endian UTF-16
+		//   Otherwise UTF-8
+		
+		if ( packetStr[0] == 0 ) return kXMP_Char16BitBig;
+		if ( packetStr[1] == 0 ) return kXMP_Char16BitLittle;
+		if ( CheckBytes ( packetStr, "\xFE\xFF", 2 ) ) return kXMP_Char16BitBig;
+		if ( CheckBytes ( packetStr, "\xFF\xFE", 2 ) ) return kXMP_Char16BitLittle;
+		return kXMP_Char8Bit;
+
+	}
+	
+	// If we get here the packet is at least 4 bytes, could be any form.
 	
 	if ( unsBytes[0] == 0 ) {
 	
@@ -1067,60 +661,67 @@ XMP_Uns8 GetPacketCharForm ( XMP_StringPtr packetStr, XMP_StringLen packetLen )
 
 	}
 	
-	if ( charForm == kXMP_CharUnknown ) XMP_Throw ( "Unknown character encoding", kXMPErr_BadXMP );
+	//	XMP_Assert ( charForm != kXMP_CharUnknown );
 	return charForm;
 
 }	// GetPacketCharForm
 
 // =================================================================================================
-// GetPacketRWMode
-// ===============
+// FillPacketInfo
+// ==============
+//
+// If a packet wrapper is present, the the packet string is roughly:
+//   <?xpacket begin= ...?>
+//   <outer-XML-element>
+//     ... more XML ...
+//   </outer-XML-element>
+//   ... whitespace padding ...
+//   <?xpacket end='.'?>
 
-bool GetPacketRWMode ( XMP_StringPtr packetStr, XMP_StringLen packetLen, size_t charSize )
+// The 8-bit form is 14 bytes, the 16-bit form is 28 bytes, the 32-bit form is 56 bytes.
+#define k8BitTrailer  "<?xpacket end="
+#define k16BitTrailer "<\0?\0x\0p\0a\0c\0k\0e\0t\0 \0e\0n\0d\0=\0"
+#define k32BitTrailer "<\0\0\0?\0\0\0x\0\0\0p\0\0\0a\0\0\0c\0\0\0k\0\0\0e\0\0\0t\0\0\0 \0\0\0e\0\0\0n\0\0\0d\0\0\0=\0\0\0"
+static XMP_StringPtr kPacketTrailiers[3] = { k8BitTrailer, k16BitTrailer, k32BitTrailer };
+
+void FillPacketInfo ( const std::string & packet, XMP_PacketInfo * info )
 {
-	bool isWriteable = false;
-	XMP_StringPtr packetLim = packetStr + packetLen;
-	XMP_StringPtr rwPtr = packetStr + packetLen - 1;
-
-	for ( ; rwPtr >= packetStr; --rwPtr ) if ( *rwPtr == '<' ) break;	// Byte at a time, don't know endianness.
-	if ( *rwPtr != '<' ) XMP_Throw ( "Bad packet trailer", kXMPErr_BadXMP );
-
-	for ( ; rwPtr < packetLim; rwPtr += charSize ) if ( *rwPtr == '=' ) break;
-	if ( *rwPtr != '=' ) XMP_Throw ( "Bad packet trailer", kXMPErr_BadXMP );
-
-	rwPtr += (2 * charSize);
-	if ( rwPtr >= packetLim ) XMP_Throw ( "Bad packet trailer", kXMPErr_BadXMP );
-
-	if ( *rwPtr == 'r' ) {
-		isWriteable = false;
-	} else if ( *rwPtr == 'w' ) {
-		isWriteable = true;
-	} else {
-		XMP_Throw ( "Bad packet trailer", kXMPErr_BadXMP );
-	}
+	XMP_StringPtr packetStr = packet.c_str();
+	XMP_StringLen packetLen = (XMP_StringLen) packet.size();
+	if ( packetLen == 0 ) return;
 	
-	return isWriteable;
+	info->charForm = GetPacketCharForm ( packetStr, packetLen );
+	XMP_StringLen charSize = XMP_GetCharSize ( info->charForm );
+	
+	// Look for a packet wrapper. For our purposes, we can be lazy and just look for the trailer PI.
+	// If that is present we'll assume that a recognizable header is present. First do a bytewise
+	// search for '<', then a char sized comparison for the start of the trailer. We don't really
+	// care about big or little endian here. We're looking for ASCII bytes with zeroes between.
+	// Shorten the range comparisons (n*charSize) by 1 to easily tolerate both big and little endian.
 
-}	// GetPacketRWMode
+	XMP_StringLen padStart, padEnd;
+	XMP_StringPtr packetTrailer = kPacketTrailiers [ charSize>>1 ];
 
-// =================================================================================================
-// GetPacketPadSize
-// ================
-
-size_t GetPacketPadSize ( XMP_StringPtr packetStr, XMP_StringLen packetLen )
-{
-	XMP_Int32 padEnd = packetLen - 1;	// ! Must be signed.
+	padEnd = packetLen - 1;
 	for ( ; padEnd > 0; --padEnd ) if ( packetStr[padEnd] == '<' ) break;
-	if ( padEnd == 0 ) return 0;
+	if ( (packetStr[padEnd] != '<') || ((packetLen - padEnd) < (18*charSize)) ) return;
+	if ( ! CheckBytes ( &packetStr[padEnd], packetTrailer, (13*charSize) ) ) return;
 	
-	XMP_Int32 padStart = padEnd;	// ! Must be signed.
-	for ( ; padStart > 0; --padStart ) if ( packetStr[padStart] == '>' ) break;
-	if ( padStart == 0 ) return 0;
-	++padStart;
+	info->hasWrapper = true;
 	
-	return (padEnd - padStart);
-		
-}	// GetPacketPadSize
+	char rwFlag = packetStr [padEnd + 15*charSize];
+	if ( rwFlag == 'w' ) info->writeable = true;
+	
+	// Look for the start of the padding, right after the last XML end tag.
+	
+	padStart = padEnd;	// Don't do the -charSize here, might wrap below zero.
+	for ( ; padStart >= charSize; padStart -= charSize ) if ( packetStr[padStart] == '>' ) break;
+	if ( padStart < charSize ) return;
+	padStart += charSize;	// The padding starts after the '>'.
+	
+	info->padSize = padEnd - padStart;	// We want bytes of padding, not character units.
+
+}	// FillPacketInfo
 
 // =================================================================================================
 // ReadXMPPacket
@@ -1173,37 +774,23 @@ void XMPFileHandler::ProcessXMP()
 	}
 
 	SXMPUtils::RemoveProperties ( &this->xmpObj, 0, 0, kXMPUtil_DoAllProperties );
-	this->xmpObj.ParseFromBuffer ( this->xmpPacket.c_str(), this->xmpPacket.size() );
+	this->xmpObj.ParseFromBuffer ( this->xmpPacket.c_str(), (XMP_StringLen)this->xmpPacket.size() );
 	this->processedXMP = true;
 	
 }	// XMPFileHandler::ProcessXMP
 
 // =================================================================================================
+// XMPFileHandler::GetSerializeOptions
+// ===================================
+//
+// This base implementation just selects compact serialization. The character form and padding/in-place
+// settings are added in the common code before calling SerializeToBuffer.
 
-#if TrackMallocFree
+XMP_OptionBits XMPFileHandler::GetSerializeOptions()
+{
 
-	#undef malloc
-	#undef free
-	
-	#define kTrackAddr 0x509DF6
-	
-	void* XMPFiles_Malloc ( size_t size )
-	{
-		void* addr = malloc ( size );
-		if ( addr == (void*)kTrackAddr ) {
-			printf ( "XMPFiles_Malloc: allocated %.8X\n", kTrackAddr );
-		}
-		return addr;
-	}
-	
-	void  XMPFiles_Free ( void* addr )
-	{
-		if ( addr == (void*)kTrackAddr ) {
-			printf ( "XMPFiles_Free: deallocating %.8X\n", kTrackAddr );
-		}
-		free ( addr );
-	}
+	return kXMP_UseCompactFormat;
 
-#endif
+}	// XMPFileHandler::GetSerializeOptions
 
 // =================================================================================================

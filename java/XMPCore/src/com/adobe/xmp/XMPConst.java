@@ -88,6 +88,8 @@ public interface XMPConst
 	/** */
 	String NS_ADOBESTOCKPHOTO = "http://ns.adobe.com/StockPhoto/1.0/";
 	/** */
+	String NS_CREATOR_ATOM = "http://ns.adobe.com/creatorAtom/1.0/";
+	/** */
 	String NS_ASF = "http://ns.adobe.com/asf/1.0/";
 	/** */
 	String NS_WAV = "http://ns.adobe.com/xmp/wav/1.0/";
@@ -99,6 +101,8 @@ public interface XMPConst
 	String NS_DM = "http://ns.adobe.com/xmp/1.0/DynamicMedia/";
 	/** */
 	String NS_TRANSIENT = "http://ns.adobe.com/xmp/transient/1.0/";	
+	/** legaciy dublin core NS, will be converted to NS_DC */
+	String NS_DC_DEPRECATED = "http://purl.org/dc/1.1/";
 	
 	
 	// XML namespace constants for qualifiers and structured property fields.
@@ -154,6 +158,10 @@ public interface XMPConst
 	/** rdf:type qualfifier */
 	String RDF_TYPE = "rdf:type";
 	
-	/** legaciy dublin core NS, will be converted to NS_DC */
-	String NS_DC_DEPRECATED = "http://purl.org/dc/1.1/";
+	/** Processing Instruction (PI) for xmp packet */
+	String XMP_PI = "xpacket";
+	/** XMP meta tag version new */
+	String TAG_XMPMETA = "xmpmeta";
+	/** XMP meta tag version old */
+	String TAG_XAPMETA = "xapmeta";
 }

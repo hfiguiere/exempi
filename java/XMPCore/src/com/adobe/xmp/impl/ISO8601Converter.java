@@ -355,14 +355,16 @@ public final class ISO8601Converter
 			// time zone
 			if (dateTime.getTimeZone() != null)
 			{
-				if (dateTime.getTimeZone().getRawOffset() == 0)
+				// used to calculate the time zone offset incl. Daylight Savings
+				long timeInMillis = dateTime.getCalendar().getTimeInMillis();
+				int offset = dateTime.getTimeZone().getOffset(timeInMillis);				
+				if (offset == 0)
 				{
 					// UTC
 					buffer.append('Z');
 				}
 				else
 				{
-					int offset = dateTime.getTimeZone().getRawOffset();
 					int thours = offset / 3600000;
 					int tminutes = Math.abs(offset % 3600000 / 60000);
 					df.applyPattern("+00;-00");

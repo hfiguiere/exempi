@@ -57,6 +57,7 @@
 static const XMP_OptionBits kBasic_HandlerFlags = (kXMPFiles_CanInjectXMP |
                                                    kXMPFiles_CanExpand |
                                                    kXMPFiles_CanRewrite |
+                                                   kXMPFiles_PrefersInPlace |
                                                    kXMPFiles_AllowsOnlyXMP |
                                                    kXMPFiles_ReturnsRawPacket |
                                                    kXMPFiles_AllowsSafeUpdate);

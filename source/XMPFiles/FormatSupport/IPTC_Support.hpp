@@ -270,6 +270,8 @@ private:
 // IPTC_Writer
 // ===========
 
+#if ! XMP_UNIXBuild	// ! Disable IPTC output for generic UNIX until the legacy-as-local issues are resolved.
+
 class IPTC_Writer : public IPTC_Manager {
 public:
 		
@@ -297,6 +299,8 @@ private:
 #endif	// *** Disable the round trip loss checking for now.
 
 };	// IPTC_Writer
+
+#endif	// ! XMP_UNIXBuild
 
 // =================================================================================================
 

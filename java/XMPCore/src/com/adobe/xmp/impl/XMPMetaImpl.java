@@ -53,7 +53,9 @@ public class XMPMetaImpl implements XMPMeta, XMPConst
 
 	/** root of the metadata tree */
 	private XMPNode tree;
-
+	/** the xpacket processing instructions content */ 
+	private String packetHeader = null;
+	
 
 	/**
 	 * Constructor for an empty metadata object.
@@ -1195,7 +1197,7 @@ public class XMPMetaImpl implements XMPMeta, XMPConst
 		return tree.getName() != null ? tree.getName() : "";
 	}
 
-
+	
 	/**
 	 * @see XMPMeta#setObjectName(String)
 	 */
@@ -1204,7 +1206,26 @@ public class XMPMetaImpl implements XMPMeta, XMPConst
 		tree.setName(name);
 	}
 
+	
+	/**
+	 * @see XMPMeta#getPacketHeader()
+	 */
+	public String getPacketHeader()
+	{
+		return packetHeader;
+	}
 
+	
+	/**
+	 * Sets the packetHeader attributes, only used by the parser.
+	 * @param packetHeader the processing instruction content
+	 */
+	public void setPacketHeader(String packetHeader)
+	{
+		this.packetHeader = packetHeader;
+	}
+	
+	
 	/**
 	 * Performs a deep clone of the XMPMeta-object
 	 * 

@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2006 Adobe Systems Incorporated
+// Copyright 2002-2007 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -9,10 +9,11 @@
 // one format in a file with a different format', inventors: Sean Parent, Greg Gilley.
 // =================================================================================================
 
-#if WIN_ENV
+#if WIN32
 	#pragma warning ( disable : 4127 )	// conditional expression is constant
-	#pragma warning ( disable : 4702 )	// unreachable code
-	#pragma warning ( disable : 4786 )	// The VC++ debugger can't handle long symbol names.
+	#pragma warning ( disable : 4510 )	// default constructor could not be generated
+	#pragma warning ( disable : 4610 )	// user defined constructor required
+	#pragma warning ( disable : 4786 )	// debugger can't handle long symbol names
 #endif
 
 
@@ -20,11 +21,15 @@
 
 #include <cassert>
 #include <string>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
 #include <cstdlib>
 #include <cstring>
+
+#if DEBUG
+	#include <iostream>
+	#include <iomanip>
+	#include <fstream>
+#endif
+
 
 #ifndef UseStringPushBack	// VC++ 6.x does not provide push_back for strings!
 	#define UseStringPushBack	0
@@ -81,7 +86,7 @@ using namespace std;
 // PacketMachine
 // =============
 
-XMPScanner::PacketMachine::PacketMachine ( SInt64 bufferOffset, const void * bufferOrigin, SInt64 bufferLength ) :
+XMPScanner::PacketMachine::PacketMachine ( XMP_Int64 bufferOffset, const void * bufferOrigin, XMP_Int64 bufferLength ) :
 
 	// Public members
 	fPacketStart ( 0 ),
@@ -130,7 +135,7 @@ XMPScanner::PacketMachine::~PacketMachine ()
 // ===============
 
 void
-XMPScanner::PacketMachine::AssociateBuffer ( SInt64 bufferOffset, const void * bufferOrigin, SInt64 bufferLength )
+XMPScanner::PacketMachine::AssociateBuffer ( XMP_Int64 bufferOffset, const void * bufferOrigin, XMP_Int64 bufferLength )
 {
 
 	fBufferOffset = bufferOffset;
@@ -783,13 +788,15 @@ XMPScanner::PacketMachine::CheckPacketEnd ( PacketMachine * ths, const char * /*
 
 	if ( ths->fPosition == 0 ) {	// First call, decide if there is trailing padding.
 	
-		const SInt64 currLength = (ths->fBufferOffset + (ths->fBufferPtr - ths->fBufferOrigin)) - ths->fPacketStart;
-
+		const XMP_Int64 currLen64 = (ths->fBufferOffset + (ths->fBufferPtr - ths->fBufferOrigin)) - ths->fPacketStart;
+		if ( currLen64 > 0x7FFFFFFF ) throw std::runtime_error ( "Packet length exceeds 2GB-1" );
+		const XMP_Int32 currLength = (XMP_Int32)currLen64;
+		
 		if ( (ths->fBytesAttr != -1) && (ths->fBytesAttr != currLength) ) {
 			if ( ths->fBytesAttr < currLength ) {
 				ths->fBogusPacket = true;	// The bytes attribute value is too small.
 			} else {
-				ths->fPosition = (signed long)(ths->fBytesAttr - currLength);
+				ths->fPosition = ths->fBytesAttr - currLength;
 				if ( (ths->fPosition % ths->fBytesPerChar) != 0 ) {
 					ths->fBogusPacket = true;	// The padding is not a multiple of the character size.
 					ths->fPosition = (ths->fPosition / ths->fBytesPerChar) * ths->fBytesPerChar;
@@ -815,7 +822,9 @@ XMPScanner::PacketMachine::CheckPacketEnd ( PacketMachine * ths, const char * /*
 
 	}
 	
-	ths->fPacketLength = (ths->fBufferOffset + (ths->fBufferPtr - ths->fBufferOrigin)) - ths->fPacketStart;
+	const XMP_Int64 currLen64 = (ths->fBufferOffset + (ths->fBufferPtr - ths->fBufferOrigin)) - ths->fPacketStart;
+	if ( currLen64 > 0x7FFFFFFF ) throw std::runtime_error ( "Packet length exceeds 2GB-1" );
+	ths->fPacketLength = (XMP_Int32)currLen64;
 	return eTriYes;
 
 }	// CheckPacketEnd
@@ -985,7 +994,7 @@ XMPScanner::PacketMachine::FindNextPacket ()
 // InternalSnip
 // ============
 
-XMPScanner::InternalSnip::InternalSnip ( SInt64 offset, SInt64 length )
+XMPScanner::InternalSnip::InternalSnip ( XMP_Int64 offset, XMP_Int64 length )
 {
 
 	fInfo.fOffset = offset;
@@ -1029,12 +1038,13 @@ XMPScanner::InternalSnip::~InternalSnip ()
 // DumpSnipList
 // ============
 
+#if DEBUG
+
 static const char *	snipStateName [6] = { "not-seen", "pending", "raw-data", "good-packet", "partial", "bad-packet" };
 
 void
 XMPScanner::DumpSnipList ( const char * title )
 {
-#if 1
 	InternalSnipIterator currPos = fInternalSnips.begin();
 	InternalSnipIterator endPos  = fInternalSnips.end();
 	
@@ -1046,8 +1056,9 @@ XMPScanner::DumpSnipList ( const char * title )
 		     << currSnip->fOffset << ".." << (currSnip->fOffset + currSnip->fLength - 1)
 			 << ' ' << currSnip->fLength << ' ' << endl;
 	}
-#endif
 }	// DumpSnipList
+
+#endif
 
 
 // =================================================================================================
@@ -1079,7 +1090,7 @@ XMPScanner::NextSnip ( InternalSnipIterator snipPos )
 //
 // Initialize the scanner object with one "not seen" snip covering the whole stream.
 
-XMPScanner::XMPScanner ( SInt64 streamLength ) :
+XMPScanner::XMPScanner ( XMP_Int64 streamLength ) :
 
 	fStreamLength ( streamLength )
 	
@@ -1146,7 +1157,7 @@ XMPScanner::StreamAllScanned ()
 // *** happen in parallel, serialize all mucking with the list.
 
 void
-XMPScanner::SplitInternalSnip ( InternalSnipIterator snipPos, SInt64 relOffset, SInt64 newLength )
+XMPScanner::SplitInternalSnip ( InternalSnipIterator snipPos, XMP_Int64 relOffset, XMP_Int64 newLength )
 {
 
 	assert ( (relOffset + newLength) > relOffset );	// Check for overflow.
@@ -1180,7 +1191,7 @@ XMPScanner::SplitInternalSnip ( InternalSnipIterator snipPos, SInt64 relOffset, 
 	if ( newLength < snipPos->fInfo.fLength ) {
 
 		InternalSnipIterator nextPos    = NextSnip ( snipPos );
-		const SInt64         tailLength = snipPos->fInfo.fLength - newLength;
+		const XMP_Int64      tailLength = snipPos->fInfo.fLength - newLength;
 
 		if ( (nextPos != fInternalSnips.end()) && (snipPos->fInfo.fState == nextPos->fInfo.fState) ) {
 			nextPos->fInfo.fOffset -= tailLength;		// Adjust the following snip.
@@ -1219,9 +1230,9 @@ XMPScanner::MergeInternalSnips ( InternalSnipIterator firstPos, InternalSnipIter
 // ====
 
 void
-XMPScanner::Scan ( const void * bufferOrigin, SInt64 bufferOffset, SInt64 bufferLength )
+XMPScanner::Scan ( const void * bufferOrigin, XMP_Int64 bufferOffset, XMP_Int64 bufferLength )
 {
-	SInt64	relOffset;
+	XMP_Int64	relOffset;
 	
 	#if 0
 		cout << "Scan: @ " << bufferOrigin << ", " << bufferOffset << ", " << bufferLength << endl;
@@ -1244,7 +1255,7 @@ XMPScanner::Scan ( const void * bufferOrigin, SInt64 bufferOffset, SInt64 buffer
 	
 	// *** It would be friendly for rescans for out of order problems to accept any buffer postion.
 	
-	const SInt64			endOffset	= bufferOffset + bufferLength - 1;
+	const XMP_Int64			endOffset	= bufferOffset + bufferLength - 1;
 	InternalSnipIterator	snipPos	= fInternalSnips.begin();
 	
 	while ( endOffset > (snipPos->fInfo.fOffset + snipPos->fInfo.fLength - 1) ) ++ snipPos;

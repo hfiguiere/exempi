@@ -171,9 +171,9 @@ public class Utils implements XMPConst
 		}
 		else if (NS_XMP.equals(schema))
 		{
-			if ("xap:BaseURL".equals(prop) || "xap:CreatorTool".equals(prop)
-					|| "xap:Format".equals(prop) || "xap:Locale".equals(prop)
-					|| "xap:MetadataDate".equals(prop) || "xap:ModifyDate".equals(prop))
+			if ("xmp:BaseURL".equals(prop) || "xmp:CreatorTool".equals(prop)
+					|| "xmp:Format".equals(prop) || "xmp:Locale".equals(prop)
+					|| "xmp:MetadataDate".equals(prop) || "xmp:ModifyDate".equals(prop))
 			{
 				isInternal = true;
 			}

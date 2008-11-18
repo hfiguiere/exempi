@@ -6,7 +6,6 @@
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
-
 #include "PNG_Support.hpp"
 #include <string.h>
 
@@ -115,7 +114,7 @@ namespace PNG_Support
 		// read first and following chunks
 		while ( ReadChunk ( fileRef, inOutChunkState, &name, &len, pos) ) {}
 	
-		return inOutChunkState.chunks.size();
+		return (long)inOutChunkState.chunks.size();
 
 	}
 

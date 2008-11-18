@@ -1,3 +1,15 @@
+// =================================================================================================
+// Copyright 2002-2008 Adobe Systems Incorporated
+// All Rights Reserved.
+//
+// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+// of the Adobe license agreement accompanying it.
+// =================================================================================================
+
+/**
+* Demonstrates syntax and usage by exercising most of the API functions of XMPCore Toolkit SDK component, 
+* using a sample XMP Packet that contains all of the different property and attribute types.
+*/
 #include <string>
 #include <iostream>
 #include <iomanip>
@@ -19,6 +31,7 @@ using namespace std;
 #if WIN_ENV
 	#pragma warning ( disable : 4100 )	// ignore unused variable
 	#pragma warning ( disable : 4127 )	// conditional expression is constant
+	#pragma warning ( disable : 4267 )	// possible loss of data (temporary for 64-bit builds)
 	#pragma warning ( disable : 4505 )	// unreferenced local function has been removed
 	#pragma warning ( disable : 4996 )	// '...' was declared deprecated
 #endif
@@ -1928,6 +1941,8 @@ extern "C" int main ( int /*argc*/, const char * argv [] )
 
 	try {
 
+// *** Add memory leak checking for both DLL and static builds ***
+
 		if ( ! SXMPMeta::Initialize() ) {
 			fprintf ( log, "## XMPMeta::Initialize failed!\n" );
 			return -1;
@@ -1947,10 +1962,14 @@ extern "C" int main ( int /*argc*/, const char * argv [] )
 	}
 
 	SXMPMeta::Terminate();
+
 	now = time(0);
 	fprintf ( log, "XMPCoreCoverage finished %s", ctime(&now) );
 	fprintf ( log,	"Final status = %d\n", result );
 	fclose ( log );
+	
+	printf( "results have been logged into %s\n", logName );
+	
 	return result;
 
 }

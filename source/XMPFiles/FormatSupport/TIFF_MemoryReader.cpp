@@ -73,7 +73,7 @@ void TIFF_MemoryReader::SortIFD ( TweakedIFDInfo* thisIFD )
 
 			// Out of order, move this tag up, prevTag is unchanged. Might still be a duplicate!
 			XMP_Int32 j;	// ! Need a signed value.
-			for ( j = i-1; j >= 0; --j ) {
+			for ( j = (XMP_Int32)i-1; j >= 0; --j ) {
 				if ( ifdEntries[j].id <= thisTag ) break;
 			}
 			
@@ -122,12 +122,8 @@ bool TIFF_MemoryReader::GetIFD ( XMP_Uns8 ifd, TagInfoMap* ifdMap ) const
 			TweakedIFDEntry* thisTag = &(thisIFD->entries[i]);
 
 			TagInfo info ( thisTag->id, thisTag->type, 0, 0, thisTag->bytes );
-			info.count = info.dataLen / kTIFF_TypeSizes[info.type];
-			if ( info.dataLen <= 4 ) {
-				info.dataPtr = &(thisTag->dataOrPtr);
-			} else {
-				info.dataPtr = (const void*)(thisTag->dataOrPtr);
-			}
+			info.count = info.dataLen / (XMP_Uns32)kTIFF_TypeSizes[info.type];
+			info.dataPtr = this->GetDataPtr ( thisTag );
 
 			(*ifdMap)[info.id] = info;
 
@@ -191,10 +187,9 @@ XMP_Uns32 TIFF_MemoryReader::GetValueOffset ( XMP_Uns8 ifd, XMP_Uns16 id ) const
 	const TweakedIFDEntry* thisTag = this->FindTagInIFD ( ifd, id );
 	if ( thisTag == 0 ) return 0;
 	
-	XMP_Uns8 * valuePtr = (XMP_Uns8*) thisTag->dataOrPtr;
-	if ( thisTag->bytes <= 4 ) valuePtr = (XMP_Uns8*) &(thisTag->dataOrPtr);
+	XMP_Uns8 * valuePtr = (XMP_Uns8*) this->GetDataPtr ( thisTag );
 	
-	return (valuePtr - this->tiffStream.ptr);
+	return (XMP_Uns32)(valuePtr - this->tiffStream);	// ! TIFF streams can't exceed 4GB.
 	
 }	// TIFF_MemoryReader::GetValueOffset
 
@@ -211,14 +206,10 @@ bool TIFF_MemoryReader::GetTag ( XMP_Uns8 ifd, XMP_Uns16 id, TagInfo* info ) con
 
 		info->id = thisTag->id;
 		info->type = thisTag->type;
-		info->count = thisTag->bytes / kTIFF_TypeSizes[thisTag->type];
+		info->count = thisTag->bytes / (XMP_Uns32)kTIFF_TypeSizes[thisTag->type];
 		info->dataLen = thisTag->bytes;
 		
-		if ( thisTag->bytes <= 4 ) {
-			info->dataPtr = &(thisTag->dataOrPtr);
-		} else {
-			info->dataPtr = (const void*)(thisTag->dataOrPtr);
-		}
+		info->dataPtr = this->GetDataPtr ( thisTag );
 
 	}
 	
@@ -238,10 +229,10 @@ bool TIFF_MemoryReader::GetTag_Integer ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns32* 
 	if ( data != 0 ) {
 		if ( thisTag->type == kTIFF_ShortType ) {
 			if ( thisTag->bytes != 2 ) return false;	// Wrong count.
-			*data = this->GetUns16 ( &(thisTag->dataOrPtr) );
+			*data = this->GetUns16 ( this->GetDataPtr ( thisTag ) );
 		} else if ( thisTag->type == kTIFF_LongType ) {
 			if ( thisTag->bytes != 4 ) return false;	// Wrong count.
-			*data = this->GetUns32 ( &(thisTag->dataOrPtr) );
+			*data = this->GetUns32 ( this->GetDataPtr ( thisTag ) );
 		} else {
 			return false;
 		}
@@ -262,7 +253,7 @@ bool TIFF_MemoryReader::GetTag_Byte ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns8* data
 	if ( (thisTag->type != kTIFF_ByteType) || (thisTag->bytes != 1) ) return false;
 	
 	if ( data != 0 ) {
-		*data = * ( (XMP_Uns8*) (&(thisTag->dataOrPtr)) );
+		*data = * ( (XMP_Uns8*) this->GetDataPtr ( thisTag ) );
 	}
 	
 	return true;
@@ -280,7 +271,7 @@ bool TIFF_MemoryReader::GetTag_SByte ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Int8* dat
 	if ( (thisTag->type != kTIFF_SByteType) || (thisTag->bytes != 1) ) return false;
 	
 	if ( data != 0 ) {
-		*data = * ( (XMP_Int8*) (&(thisTag->dataOrPtr)) );
+		*data = * ( (XMP_Int8*) this->GetDataPtr ( thisTag ) );
 	}
 	
 	return true;
@@ -298,7 +289,7 @@ bool TIFF_MemoryReader::GetTag_Short ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns16* da
 	if ( (thisTag->type != kTIFF_ShortType) || (thisTag->bytes != 2) ) return false;
 	
 	if ( data != 0 ) {
-		*data = this->GetUns16 ( &(thisTag->dataOrPtr) );
+		*data = this->GetUns16 ( this->GetDataPtr ( thisTag ) );
 	}
 	
 	return true;
@@ -316,7 +307,7 @@ bool TIFF_MemoryReader::GetTag_SShort ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Int16* d
 	if ( (thisTag->type != kTIFF_SShortType) || (thisTag->bytes != 2) ) return false;
 	
 	if ( data != 0 ) {
-		*data = (XMP_Int16) this->GetUns16 ( &(thisTag->dataOrPtr) );
+		*data = (XMP_Int16) this->GetUns16 ( this->GetDataPtr ( thisTag ) );
 	}
 	
 	return true;
@@ -334,7 +325,7 @@ bool TIFF_MemoryReader::GetTag_Long ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns32* dat
 	if ( (thisTag->type != kTIFF_LongType) || (thisTag->bytes != 4) ) return false;
 	
 	if ( data != 0 ) {
-		*data = this->GetUns32 ( &(thisTag->dataOrPtr) );
+		*data = this->GetUns32 ( this->GetDataPtr ( thisTag ) );
 	}
 	
 	return true;
@@ -352,7 +343,7 @@ bool TIFF_MemoryReader::GetTag_SLong ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Int32* da
 	if ( (thisTag->type != kTIFF_SLongType) || (thisTag->bytes != 4) ) return false;
 	
 	if ( data != 0 ) {
-		*data = (XMP_Int32) this->GetUns32 ( &(thisTag->dataOrPtr) );
+		*data = (XMP_Int32) this->GetUns32 ( this->GetDataPtr ( thisTag ) );
 	}
 	
 	return true;
@@ -370,7 +361,7 @@ bool TIFF_MemoryReader::GetTag_Rational ( XMP_Uns8 ifd, XMP_Uns16 id, Rational* 
 	if ( (thisTag->type != kTIFF_RationalType) || (thisTag->bytes != 8) ) return false;
 	
 	if ( data != 0 ) {
-		XMP_Uns32* dataPtr = (XMP_Uns32*)thisTag->dataOrPtr;
+		XMP_Uns32* dataPtr = (XMP_Uns32*) this->GetDataPtr ( thisTag );
 		data->num = this->GetUns32 ( dataPtr );
 		data->denom = this->GetUns32 ( dataPtr+1 );
 	}
@@ -390,7 +381,7 @@ bool TIFF_MemoryReader::GetTag_SRational ( XMP_Uns8 ifd, XMP_Uns16 id, SRational
 	if ( (thisTag->type != kTIFF_SRationalType) || (thisTag->bytes != 8) ) return false;
 	
 	if ( data != 0 ) {
-		XMP_Uns32* dataPtr = (XMP_Uns32*)thisTag->dataOrPtr;
+		XMP_Uns32* dataPtr = (XMP_Uns32*) this->GetDataPtr ( thisTag );
 		data->num = (XMP_Int32) this->GetUns32 ( dataPtr );
 		data->denom = (XMP_Int32) this->GetUns32 ( dataPtr+1 );
 	}
@@ -410,7 +401,7 @@ bool TIFF_MemoryReader::GetTag_Float ( XMP_Uns8 ifd, XMP_Uns16 id, float* data )
 	if ( (thisTag->type != kTIFF_FloatType) || (thisTag->bytes != 4) ) return false;
 	
 	if ( data != 0 ) {
-		*data = this->GetFloat ( &(thisTag->dataOrPtr) );
+		*data = this->GetFloat ( this->GetDataPtr ( thisTag ) );
 	}
 	
 	return true;
@@ -428,7 +419,7 @@ bool TIFF_MemoryReader::GetTag_Double ( XMP_Uns8 ifd, XMP_Uns16 id, double* data
 	if ( (thisTag->type != kTIFF_DoubleType) || (thisTag->bytes != 8) ) return false;
 	
 	if ( data != 0 ) {
-		double* dataPtr = (double*)thisTag->dataOrPtr;
+		double* dataPtr = (double*) this->GetDataPtr ( thisTag );
 		*data = this->GetDouble ( dataPtr );
 	}
 	
@@ -447,8 +438,7 @@ bool TIFF_MemoryReader::GetTag_ASCII ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_StringPtr
 	if ( thisTag->type != kTIFF_ASCIIType ) return false;
 	
 	if ( dataPtr != 0 ) {
-		*dataPtr = (XMP_StringPtr)thisTag->dataOrPtr;
-		if ( thisTag->bytes <= 4 ) *dataPtr = (XMP_StringPtr)(&thisTag->dataOrPtr);
+		*dataPtr = (XMP_StringPtr) this->GetDataPtr ( thisTag );
 	}
 	
 	if ( dataLen != 0 ) *dataLen = thisTag->bytes;
@@ -469,7 +459,7 @@ bool TIFF_MemoryReader::GetTag_EncodedString ( XMP_Uns8 ifd, XMP_Uns16 id, std::
 	
 	if ( utf8Str == 0 ) return true;	// Return true if the converted string is not wanted.
 	
-	bool ok = this->DecodeString ( (void*)thisTag->dataOrPtr, thisTag->bytes, utf8Str );
+	bool ok = this->DecodeString ( this->GetDataPtr ( thisTag ), thisTag->bytes, utf8Str );
 	return ok;
 
 }	// TIFF_MemoryReader::GetTag_EncodedString
@@ -484,9 +474,9 @@ void TIFF_MemoryReader::ParseMemoryStream ( const void* data, XMP_Uns32 length, 
 {
 	// Get rid of any current TIFF.
 	
-	if ( this->ownedStream ) free ( this->tiffStream.ptr );
+	if ( this->ownedStream ) free ( this->tiffStream );
 	this->ownedStream = false;
-	this->tiffStream.ptr  = 0;
+	this->tiffStream  = 0;
 	this->tiffLength  = 0;
 	
 	for ( size_t i = 0; i < kTIFF_KnownIFDCount; ++i ) {
@@ -500,12 +490,12 @@ void TIFF_MemoryReader::ParseMemoryStream ( const void* data, XMP_Uns32 length, 
 	
 	if ( ! copyData ) {
 		XMP_Assert ( ! this->ownedStream );
-		this->tiffStream.ptr = (XMP_Uns8*) data;
+		this->tiffStream = (XMP_Uns8*) data;
 	} else {
 		if ( length > 100*1024*1024 ) XMP_Throw ( "Outrageous length for memory-based TIFF", kXMPErr_BadTIFF );
-		this->tiffStream.ptr = (XMP_Uns8*) malloc(length);
-		if ( this->tiffStream.ptr == 0 ) XMP_Throw ( "Out of memory", kXMPErr_NoMemory );
-		memcpy ( this->tiffStream.ptr, data, length );	// AUDIT: Safe, malloc'ed length bytes above.
+		this->tiffStream = (XMP_Uns8*) malloc(length);
+		if ( this->tiffStream == 0 ) XMP_Throw ( "Out of memory", kXMPErr_NoMemory );
+		memcpy ( this->tiffStream, data, length );	// AUDIT: Safe, malloc'ed length bytes above.
 		this->ownedStream = true;
 	}
 
@@ -513,26 +503,26 @@ void TIFF_MemoryReader::ParseMemoryStream ( const void* data, XMP_Uns32 length, 
 	
 	// Find and process the primary, Exif, GPS, and Interoperability IFDs.
 	
-	XMP_Uns32 primaryIFDOffset = this->CheckTIFFHeader ( this->tiffStream.ptr, length );
+	XMP_Uns32 primaryIFDOffset = this->CheckTIFFHeader ( this->tiffStream, length );
 	XMP_Uns32 tnailIFDOffset   = 0;
 	
 	if ( primaryIFDOffset != 0 ) tnailIFDOffset = this->ProcessOneIFD ( primaryIFDOffset, kTIFF_PrimaryIFD );
 
 	const TweakedIFDEntry* exifIFDTag = this->FindTagInIFD ( kTIFF_PrimaryIFD, kTIFF_ExifIFDPointer );
 	if ( (exifIFDTag != 0) && (exifIFDTag->type == kTIFF_LongType) && (exifIFDTag->bytes == 4) ) {
-		XMP_Uns32 exifOffset = this->GetUns32 ( &exifIFDTag->dataOrPtr );
+		XMP_Uns32 exifOffset = this->GetUns32 ( &exifIFDTag->dataOrPos );
 		(void) this->ProcessOneIFD ( exifOffset, kTIFF_ExifIFD );
 	}
 
 	const TweakedIFDEntry* gpsIFDTag = this->FindTagInIFD ( kTIFF_PrimaryIFD, kTIFF_GPSInfoIFDPointer );
 	if ( (gpsIFDTag != 0) && (gpsIFDTag->type == kTIFF_LongType) && (gpsIFDTag->bytes == 4) ) {
-		XMP_Uns32 gpsOffset = this->GetUns32 ( &gpsIFDTag->dataOrPtr );
+		XMP_Uns32 gpsOffset = this->GetUns32 ( &gpsIFDTag->dataOrPos );
 		(void) this->ProcessOneIFD ( gpsOffset, kTIFF_GPSInfoIFD );
 	}
 
 	const TweakedIFDEntry* interopIFDTag = this->FindTagInIFD ( kTIFF_ExifIFD, kTIFF_InteroperabilityIFDPointer );
 	if ( (interopIFDTag != 0) && (interopIFDTag->type == kTIFF_LongType) && (interopIFDTag->bytes == 4) ) {
-		XMP_Uns32 interopOffset = this->GetUns32 ( &interopIFDTag->dataOrPtr );
+		XMP_Uns32 interopOffset = this->GetUns32 ( &interopIFDTag->dataOrPos );
 		(void) this->ProcessOneIFD ( interopOffset, kTIFF_InteropIFD );
 	}
 	
@@ -543,8 +533,8 @@ void TIFF_MemoryReader::ParseMemoryStream ( const void* data, XMP_Uns32 length, 
 		(void) this->ProcessOneIFD ( tnailIFDOffset, kTIFF_TNailIFD );
 		const TweakedIFDEntry* jpegInfo = FindTagInIFD ( kTIFF_TNailIFD, kTIFF_JPEGInterchangeFormat );
 		if ( jpegInfo != 0 ) {
-			XMP_Uns32 tnailImageOffset = this->GetUns32 ( &jpegInfo->dataOrPtr );
-			this->jpegTNailPtr = (XMP_Uns8*)this->tiffStream.ptr + tnailImageOffset;
+			XMP_Uns32 tnailImageOffset = this->GetUns32 ( &jpegInfo->dataOrPos );
+			this->jpegTNailPtr = (XMP_Uns8*)this->tiffStream + tnailImageOffset;
 		}
 	}
 
@@ -562,7 +552,7 @@ XMP_Uns32 TIFF_MemoryReader::ProcessOneIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd )
 		XMP_Throw ( "Bad IFD offset", kXMPErr_BadTIFF );
 	}
 		
-	XMP_Uns8* ifdPtr = this->tiffStream.ptr + ifdOffset;
+	XMP_Uns8* ifdPtr = this->tiffStream + ifdOffset;
 	XMP_Uns16 ifdCount = this->GetUns16 ( ifdPtr );
 	TweakedIFDEntry* ifdEntries = (TweakedIFDEntry*)(ifdPtr+2);
 
@@ -589,11 +579,10 @@ XMP_Uns32 TIFF_MemoryReader::ProcessOneIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd )
 
 		if ( (thisEntry->type < kTIFF_ByteType) || (thisEntry->type > kTIFF_LastType) ) continue;	// Bad type, skip this tag.
 
-		thisEntry->bytes *= kTIFF_TypeSizes[thisEntry->type];
+		thisEntry->bytes *= (XMP_Uns32)kTIFF_TypeSizes[thisEntry->type];
 		if ( thisEntry->bytes > this->tiffLength ) XMP_Throw ( "Bad TIFF data size", kXMPErr_BadTIFF );
 		if ( thisEntry->bytes > 4 ) {
-			if ( ! this->nativeEndian ) Flip4 ( &thisEntry->dataOrPtr );
-			thisEntry->dataOrPtr += this->tiffStream.off;
+			if ( ! this->nativeEndian ) Flip4 ( &thisEntry->dataOrPos );
 		}
 
 	}

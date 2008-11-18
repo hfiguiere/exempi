@@ -81,7 +81,7 @@ void PSIR_MemoryReader::ParseMemoryResources ( const void* data, XMP_Uns32 lengt
 
 		XMP_Uns32 dataLen = GetUns32BE(psirPtr);
 		psirPtr += 4;	// Advance to the resource data.
-		XMP_Uns32 psirOffset = psirPtr - this->psirContent;
+		XMP_Uns32 psirOffset = (XMP_Uns32) (psirPtr - this->psirContent);
 		
 		if ( (dataLen > length) || (psirPtr > psirEnd-dataLen) ) break;	// Bad image resource. Throw instead?
 		

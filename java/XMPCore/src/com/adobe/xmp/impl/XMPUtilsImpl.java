@@ -172,7 +172,10 @@ public class XMPUtilsImpl implements XMPConst
 	{
 		ParameterAsserts.assertSchemaNS(schemaNS);
 		ParameterAsserts.assertArrayName(arrayName);
-		ParameterAsserts.assertNotNull(catedStr);
+		if (catedStr == null)
+		{
+			throw new XMPException("Parameter must not be null", XMPError.BADPARAM);
+		}
 		ParameterAsserts.assertImplementation(xmp);
 		XMPMetaImpl xmpImpl = (XMPMetaImpl) xmp;
 

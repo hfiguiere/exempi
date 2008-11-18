@@ -76,7 +76,7 @@ PickMainPacket ( std::vector<CandidateInfo>& candidates, bool beLenient )
 	int	main = -1;	// Assume the worst.
 	XMP_OptionBits options;
 
-	int metaCount = candidates.size();
+	int metaCount = (int)candidates.size();
 	if ( metaCount == 0 ) return -1;
 	if ( metaCount == 1 ) return 0;
 	
@@ -281,10 +281,10 @@ void Scanner_MetaHandler::CacheFileData()
 			try {
 				for ( bufPos = 0; bufPos < snips[pkt].fLength; bufPos += bufLen ) {
 					bufLen = kBufferSize;
-					if ( (bufPos + bufLen) > snips[pkt].fLength ) bufLen = size_t ( snips[pkt].fLength - bufPos );
-					(void) LFA_Read ( fileRef, buffer, bufLen, kLFA_RequireAll );
+					if ( (bufPos + bufLen) > (size_t)snips[pkt].fLength ) bufLen = size_t ( snips[pkt].fLength - bufPos );
+					(void) LFA_Read ( fileRef, buffer, (XMP_Int32)bufLen, kLFA_RequireAll );
 					xmpPacket.append ( (const char *)buffer, bufLen );
-					newMeta->ParseFromBuffer ( (char *)buffer, bufLen, kXMP_ParseMoreBuffers );
+					newMeta->ParseFromBuffer ( (char *)buffer, (XMP_StringLen)bufLen, kXMP_ParseMoreBuffers );
 				}
 				newMeta->ParseFromBuffer ( 0, 0, kXMP_NoOptions );
 			} catch ( ... ) {

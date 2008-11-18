@@ -2,7 +2,7 @@
 #define __XMPScanner_hpp__
 
 // =================================================================================================
-// Copyright 2002-2005 Adobe Systems Incorporated
+// Copyright 2002-2007 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -12,12 +12,15 @@
 // one format in a file with a different format', inventors: Sean Parent, Greg Gilley.
 // =================================================================================================
 
+#include "XMP_Environment.h"	// ! This must be the first include.
+
 #include <list>
 #include <vector>
 #include <string>
 #include <memory>
 #include <stdexcept>
 
+#include "XMP_Const.h"
 
 // =================================================================================================
 // The XMPScanner class is used to scan a stream of input for XMP packets.  A scanner object is
@@ -50,10 +53,6 @@ public:
 	// It is possible to have ill-formed packets.  These have a syntactically valid header and
 	// trailer, but some semantic error.  For example, if the "bytes" attribute length does not span
 	// to the end of the trailer, or if the following packet begins within trailing padding.
-
-	typedef unsigned char	UInt8;
-	typedef unsigned long	UInt32;
-	typedef long long		SInt64;
 	
 	enum {
 		eNotSeenSnip,		// This snip has not been seen yet.
@@ -63,7 +62,7 @@ public:
 		ePartialPacketSnip,	// This snip contains the start of a possible XMP packet.
 		eBadPacketSnip		// This snip contains a complete, but semantically incorrect XMP packet.
 	};
-	typedef UInt8	SnipState;
+	typedef XMP_Uns8	SnipState;
 	
 	enum {	// The values allow easy testing for 16/32 bit and big/little endian.
 		eChar8Bit			= 0,
@@ -72,7 +71,7 @@ public:
 		eChar32BitBig		= 4,
 		eChar32BitLittle	= 5
 	};
-	typedef UInt8	CharacterForm;
+	typedef XMP_Uns8	CharacterForm;
 
 	enum {
 		eChar16BitMask			= 2,	// These constant shouldn't be used directly, they are mainly
@@ -88,14 +87,14 @@ public:
 	
 	struct SnipInfo {
 
-		SInt64			fOffset;		// The byte offset of this snip within the input stream.
-		SInt64			fLength;		// The length in bytes of this snip.
+		XMP_Int64		fOffset;		// The byte offset of this snip within the input stream.
+		XMP_Int64		fLength;		// The length in bytes of this snip.
 		SnipState		fState;			// The state of this snip.
 		bool			fOutOfOrder;	// If true, this snip was seen before the one in front of it.
 		char			fAccess;		// The read-only/read-write access from the end attribute.
 		CharacterForm	fCharForm;		// How the packet is divided into characters.
 		const char *	fEncodingAttr;	// The value of the encoding attribute, if any, with nulls removed.
-		SInt64			fBytesAttr;		// The value of the bytes attribute, -1 if not present.
+		XMP_Int64		fBytesAttr;		// The value of the bytes attribute, -1 if not present.
 
 		SnipInfo() :
 			fOffset ( 0 ),
@@ -108,7 +107,7 @@ public:
 			fBytesAttr( -1 )
 		{ }
 
-		SnipInfo ( SnipState state, SInt64 offset, SInt64 length ) :
+		SnipInfo ( SnipState state, XMP_Int64 offset, XMP_Int64 length ) :
 			fOffset ( offset ),
 			fLength ( length ),
 			fState ( state ),
@@ -123,7 +122,7 @@ public:
 	
 	typedef std::vector<SnipInfo>	SnipInfoVector;
 
-	XMPScanner ( SInt64 streamLength );
+	XMPScanner ( XMP_Int64 streamLength );
 	// Constructs a new XMPScanner object for a stream with the given length.
 	
 	~XMPScanner();
@@ -134,7 +133,7 @@ public:
  	bool StreamAllScanned();
  	// Returns true if all of the stream has been seen.
 	
-	void Scan ( const void * bufferOrigin, SInt64 bufferOffset, SInt64 bufferLength );
+	void Scan ( const void * bufferOrigin, XMP_Int64 bufferOffset, XMP_Int64 bufferLength );
 	// Scans the given part of the input, incorporating it in to the known snips.
 	// The bufferOffset is the offset of this block of input relative to the entire stream.
 	// The bufferLength is the length in bytes of this block of input.
@@ -159,10 +158,9 @@ private:	// XMPScanner
 		SnipInfo	fInfo;							// The public info about this snip.
 		std::auto_ptr<PacketMachine>	fMachine;	// The state machine for "active" snips.
 		
-		InternalSnip() {};	// Let everything default.
-		InternalSnip ( SInt64 offset, SInt64 length );
+		InternalSnip ( XMP_Int64 offset, XMP_Int64 length );
 		InternalSnip ( const InternalSnip & );
-		~InternalSnip();
+		~InternalSnip ();
 
 	};	// InternalSnip
 
@@ -172,9 +170,9 @@ private:	// XMPScanner
 	class PacketMachine {
 	public:
 		
-		SInt64			fPacketStart;	// Byte offset relative to the entire stream.
-		SInt64			fPacketLength;	// Length in bytes to the end of the trailer processing instruction.
-		SInt64			fBytesAttr;		// The value of the bytes attribute, -1 if not present.
+		XMP_Int64		fPacketStart;	// Byte offset relative to the entire stream.
+		XMP_Int32		fPacketLength;	// Length in bytes to the end of the trailer processing instruction.
+		XMP_Int32		fBytesAttr;		// The value of the bytes attribute, -1 if not present.
 		std::string		fEncodingAttr;	// The value of the encoding attribute, if any, with nulls removed.
 		CharacterForm	fCharForm;		// How the packet is divided into characters.
 		char			fAccess;		// The read-only/read-write access from the end attribute.
@@ -190,9 +188,9 @@ private:	// XMPScanner
 
 		TriState FindNextPacket();
 		
-		void AssociateBuffer ( SInt64 bufferOffset, const void * bufferOrigin, SInt64 bufferLength );
+		void AssociateBuffer ( XMP_Int64 bufferOffset, const void * bufferOrigin, XMP_Int64 bufferLength );
 		
-		PacketMachine ( SInt64 bufferOffset, const void * bufferOrigin, SInt64 bufferLength );
+		PacketMachine ( XMP_Int64 bufferOffset, const void * bufferOrigin, XMP_Int64 bufferLength );
 		~PacketMachine();
 	
 	private:	// PacketMachine
@@ -240,7 +238,7 @@ private:	// XMPScanner
 
 		};
 		
-		SInt64			fBufferOffset;	// The offset of the data buffer within the input stream.
+		XMP_Int64		fBufferOffset;	// The offset of the data buffer within the input stream.
 		const char *	fBufferOrigin;	// The starting address of the data buffer for this snip.
 		const char *	fBufferPtr;		// The current postion in the data buffer.
 		const char *	fBufferLimit;	// The address one past the last byte in the data buffer.
@@ -308,25 +306,25 @@ private:	// XMPScanner
 		
 	};	// PacketMachine
 	
-	SInt64				fStreamLength;
+	XMP_Int64			fStreamLength;
 	InternalSnipList	fInternalSnips;
 
 	void
-	SplitInternalSnip ( InternalSnipIterator snipPos, SInt64 relOffset, SInt64 newLength );
+	SplitInternalSnip ( InternalSnipIterator snipPos, XMP_Int64 relOffset, XMP_Int64 newLength );
 
 	InternalSnipIterator
 	MergeInternalSnips ( InternalSnipIterator firstPos, InternalSnipIterator secondPos );
-
-	void
-	DumpSnipList ( const char * title );
 
 	InternalSnipIterator
 	PrevSnip ( InternalSnipIterator snipPos );
 
 	InternalSnipIterator
 	NextSnip ( InternalSnipIterator snipPos );
+
+	#if DEBUG
+		void DumpSnipList ( const char * title );
+	#endif
 	
 };	// XMPScanner
-
 
 #endif	// __XMPScanner_hpp__

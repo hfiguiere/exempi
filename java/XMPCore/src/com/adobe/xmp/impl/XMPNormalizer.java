@@ -162,7 +162,7 @@ public class XMPNormalizer
 			}
 			else if (XMPConst.NS_XMP_RIGHTS.equals(currSchema.getName()))
 			{
-				XMPNode arrayNode = XMPNodeUtils.findChildNode(currSchema, "xapRights:UsageTerms",
+				XMPNode arrayNode = XMPNodeUtils.findChildNode(currSchema, "xmpRights:UsageTerms",
 						false);			
 				if (arrayNode != null)
 				{	
@@ -477,7 +477,6 @@ public class XMPNormalizer
 			cal.set(Calendar.MONTH, binOtherDate.getMonth());
 			cal.set(Calendar.DAY_OF_MONTH, binOtherDate.getDay());
 			binGPSStamp = new XMPDateTimeImpl(cal);
-			
 			gpsDateTime.setValue(XMPUtils.convertFromDate (binGPSStamp));
 		}
 		catch (XMPException e)

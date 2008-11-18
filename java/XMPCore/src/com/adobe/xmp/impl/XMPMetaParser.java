@@ -23,6 +23,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.ProcessingInstruction;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -76,11 +77,13 @@ public class XMPMetaParser
 		Document document = parseXml(input, options);
 
 		boolean xmpmetaRequired = options.getRequireXMPMeta();
-		Object[] result = findRootNode(document, xmpmetaRequired);
+		Object[] result = new Object[3];
+		result = findRootNode(document, xmpmetaRequired, result);
 		
 		if (result != null  &&  result[1] == XMP_RDF)
 		{
 			XMPMetaImpl xmp = ParseRDF.parse((Node) result[0]);
+			xmp.setPacketHeader((String) result[2]);
 			return XMPNormalizer.process(xmp, options);
 		}
 		else
@@ -294,9 +297,18 @@ public class XMPMetaParser
 	 * @param root the root of the xml document
 	 * @param xmpmetaRequired flag if the xmpmeta-tag is still required, might be set 
 	 * 		initially to <code>true</code>, if the parse option "REQUIRE_XMP_META" is set
-	 * @return Returns the rdf:RDF-node or <code>null</code>.
+	 * @param result The result array that is filled during the recursive process.
+	 * @return Returns an array that contains the result or <code>null</code>. 
+	 * 		   The array contains:
+	 * <ol>
+	 * 		<li>the rdf:RDF-node
+	 * 		<li>an object that is either XMP_RDF or XMP_PLAIN
+	 * 		<li>a flag that is true if a <?xpacket..> processing instruction has been found
+	 * 		<li>the body text of the xpacket-instruction.
+	 * </ol>
+	 * 
 	 */
-	private static Object[] findRootNode(Node root, boolean xmpmetaRequired)
+	private static Object[] findRootNode(Node root, boolean xmpmetaRequired, Object[] result)
 	{
 		// Look among this parent's content for x:xapmeta or x:xmpmeta.
 		// The recursion for x:xmpmeta is broader than the strictly defined choice, 
@@ -305,32 +317,49 @@ public class XMPMetaParser
 		for (int i = 0; i < children.getLength(); i++)
 		{
 			root = children.item(i);
-			if (Node.TEXT_NODE != root.getNodeType()  &&  
+			if (Node.PROCESSING_INSTRUCTION_NODE == root.getNodeType()  &&
+				((ProcessingInstruction) root).getTarget() == XMPConst.XMP_PI)
+			{
+				// Store the processing instructions content
+				if (result != null)
+				{	
+					result[2] = ((ProcessingInstruction) root).getData();
+				}	
+			}
+			else if (Node.TEXT_NODE != root.getNodeType()  &&  
 				Node.PROCESSING_INSTRUCTION_NODE != root.getNodeType())
 			{	
 				String rootNS = root.getNamespaceURI();
 				String rootLocal = root.getLocalName();
 				if (
-						("xmpmeta".equals(rootLocal)  ||  "xapmeta".equals(rootLocal))  &&
+						(
+							XMPConst.TAG_XMPMETA.equals(rootLocal)  ||  
+							XMPConst.TAG_XAPMETA.equals(rootLocal)
+						)  &&
 						XMPConst.NS_X.equals(rootNS)
 				   )
 				{
 					// by not passing the RequireXMPMeta-option, the rdf-Node will be valid
-					return findRootNode(root, false);
+					return findRootNode(root, false, result);
 				}
 				else if (!xmpmetaRequired  &&
 						"RDF".equals(rootLocal)  &&
 						 XMPConst.NS_RDF.equals(rootNS))
 				{	
-					return new Object[] {root, XMP_RDF};
+					if (result != null)
+					{	
+						result[0] = root;
+						result[1] = XMP_RDF;
+					}	
+					return result;
 				}
 				else
 				{
 					// continue searching
-					Object[] result = findRootNode(root, xmpmetaRequired);
-					if (result != null)
+					Object[] newResult = findRootNode(root, xmpmetaRequired, result);
+					if (newResult != null)
 					{
-						return result;
+						return newResult;
 					}
 					else
 					{

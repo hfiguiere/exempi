@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -208,14 +208,15 @@ void InDesign_MetaHandler::CacheFileData()
 	
 	XMP_Assert ( ! this->streamBigEndian );
 	if ( cobjEndian == kINDD_BigEndian ) this->streamBigEndian = true;
-	
+
 	// ---------------------------------------------------------------------------------------------
 	// Look for the XMP contiguous object stream. Most of the time there will be just one stream and
 	// it will be the XMP. So we might as well fill the whole buffer and not worry about reading too
 	// much and seeking back to the start of the following stream.
 	
 	XMP_Int64 cobjPos = (XMP_Int64)dbPages * kINDD_PageSize;	// ! Use a 64 bit multiply!
-	XMP_Uns32 streamLength = (XMP_Uns32)(-(long)(2*sizeof(InDesignContigObjMarker)));	// ! For the first pass in the loop.
+	cobjPos -= (2 * sizeof(InDesignContigObjMarker));			// ! For the first pass in the loop.
+	XMP_Uns32 streamLength = 0;									// ! For the first pass in the loop.
 
 	while ( true ) {
 
@@ -225,7 +226,7 @@ void InDesign_MetaHandler::CacheFileData()
 
 		// Fetch the start of the next stream and check the contiguous object header.
 		// ! The writeable bit of fObjectClassID is ignored, we use the packet trailer flag.
-		
+
 		cobjPos += streamLength + (2 * sizeof(InDesignContigObjMarker));
 		ioBuf.filePos = cobjPos;
 		ioBuf.ptr = ioBuf.limit;	// Make sure RefillBuffer does a simple read.
@@ -331,18 +332,18 @@ void InDesign_MetaHandler::WriteXMPPrefix()
 	// Write the contiguous object header and the 4 byte length of the XMP packet.
 
 	LFA_FileRef fileRef = this->parent->fileRef;
-	XMP_PacketInfo & packetInfo = this->packetInfo;
+	XMP_Uns32 packetSize = (XMP_Uns32)this->xmpPacket.size();
 	
 	InDesignContigObjMarker header;
 	memcpy ( header.fGUID, kINDDContigObjHeaderGUID, sizeof(header.fGUID) );	// AUDIT: Use of dest sizeof for length is safe.
 	header.fObjectUID = this->xmpObjID;
 	header.fObjectClassID = this->xmpClassID;
-	header.fStreamLength = MakeUns32LE ( 4 + packetInfo.length );
+	header.fStreamLength = MakeUns32LE ( 4 + packetSize );
 	header.fChecksum = (XMP_Uns32)(-1);
 	LFA_Write ( fileRef, &header, sizeof(header) );
 	
-	XMP_Uns32 pktLength = MakeUns32LE ( packetInfo.length );
-	if ( this->streamBigEndian ) pktLength = MakeUns32BE ( packetInfo.length );
+	XMP_Uns32 pktLength = MakeUns32LE ( packetSize );
+	if ( this->streamBigEndian ) pktLength = MakeUns32BE ( packetSize );
 	LFA_Write ( fileRef, &pktLength, sizeof(pktLength) );
 	
 }	// InDesign_MetaHandler::WriteXMPPrefix
@@ -356,14 +357,14 @@ void InDesign_MetaHandler::WriteXMPSuffix()
 	// Write the contiguous object trailer.
 
 	LFA_FileRef fileRef = this->parent->fileRef;
-	XMP_PacketInfo & packetInfo = this->packetInfo;
+	XMP_Uns32 packetSize = (XMP_Uns32)this->xmpPacket.size();
 	
 	InDesignContigObjMarker trailer;
 	
 	memcpy ( trailer.fGUID, kINDDContigObjTrailerGUID, sizeof(trailer.fGUID) );	// AUDIT: Use of dest sizeof for length is safe.
 	trailer.fObjectUID = this->xmpObjID;
 	trailer.fObjectClassID = this->xmpClassID;
-	trailer.fStreamLength = MakeUns32LE ( 4 + packetInfo.length );
+	trailer.fStreamLength = MakeUns32LE ( 4 + packetSize );
 	trailer.fChecksum = (XMP_Uns32)(-1);
 	
 	LFA_Write ( fileRef, &trailer, sizeof(trailer) );
@@ -409,7 +410,6 @@ void InDesign_MetaHandler::RestoreFileEnding()
 	// Pad the file with zeros to a page boundary.
 
 	LFA_FileRef fileRef = this->parent->fileRef;
-	XMP_PacketInfo & packetInfo = this->packetInfo;
 	
 	XMP_Int64 dataLength = LFA_Measure ( fileRef );
 	XMP_Int32 padLength  = (kINDD_PageSize - ((XMP_Int32)dataLength & kINDD_PageMask)) & kINDD_PageMask;

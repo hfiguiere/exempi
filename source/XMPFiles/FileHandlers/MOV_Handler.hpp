@@ -3,12 +3,15 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
+
+#include "XMP_Environment.h"		// ! This must be the first include.
+#if ! ( XMP_64 || XMP_UNIXBuild)	//	Closes at very bottom.
 
 #include "XMPFiles_Impl.hpp"
 
@@ -53,9 +56,23 @@ public:
 	~MOV_MetaHandler();
 
 	void CacheFileData();
+	void ProcessXMP();
 
 	void UpdateFile ( bool doSafeUpdate );
     void WriteFile  ( LFA_FileRef sourceRef, const std::string & sourcePath );
+
+	struct CreatorAtomStrings {
+		std::string	posixProjectPath;
+		std::string uncProjectPath;
+		std::string projectRefType;
+		std::string applicationCode;
+		std::string invocationAppleEvent;
+		std::string extension;
+		std::string invocationFlags;
+		std::string creatorTool;
+	};
+
+	CreatorAtomStrings	mCreatorAtomStrings;	// ! Public so utility code can muck with them.
 
 protected:
 
@@ -73,4 +90,5 @@ protected:
 
 // =================================================================================================
 
+#endif	// XMP_64 || XMP_UNIXBuild
 #endif /* __MOV_Handler_hpp__ */

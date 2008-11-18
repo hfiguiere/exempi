@@ -10,8 +10,10 @@
 // =================================================================================================
 
 #if WIN32
-	// The VC++ debugger can't handle long symbol names.
-	#pragma warning ( disable : 4786 )
+	#pragma warning ( disable : 4127 )	// conditional expression is constant
+	#pragma warning ( disable : 4510 )	// default constructor could not be generated
+	#pragma warning ( disable : 4610 )	// user defined constructor required
+	#pragma warning ( disable : 4786 )	// debugger can't handle long symbol names
 #endif
 
 
@@ -224,11 +226,11 @@ XMPScanner::PacketMachine::FindLessThan ( PacketMachine * ths, const char * whic
 XMPScanner::PacketMachine::TriState
 XMPScanner::PacketMachine::MatchString ( PacketMachine * ths, const char * literal )
 {
-	const int		bytesPerChar	= ths->fBytesPerChar;
-	const char *	litPtr			= literal + ths->fPosition;
-	const int		charsToGo		= strlen ( literal ) - ths->fPosition;
-	int				charsDone		= 0;
-	
+	const int			bytesPerChar	= ths->fBytesPerChar;
+	const char *		litPtr			= literal + ths->fPosition;
+	const XMP_Int32		charsToGo		= (XMP_Int32) strlen ( literal ) - ths->fPosition;
+	int					charsDone		= 0;
+
 	while ( (charsDone < charsToGo) && (ths->fBufferPtr < ths->fBufferLimit) ) {
 		if ( *litPtr != *ths->fBufferPtr ) return eTriNo;
 		charsDone++;
@@ -348,7 +350,7 @@ XMPScanner::PacketMachine::CaptureAttrName ( PacketMachine * ths, const char * /
 	}
 	
 	if ( ths->fBufferPtr < ths->fBufferLimit ) return eTriYes;
-	ths->fPosition = ths->fAttrName.size();	// The name might span into the next buffer.
+	ths->fPosition = (long) ths->fAttrName.size();	// The name might span into the next buffer.
 	return eTriMaybe;
 
 }	// CaptureAttrName
@@ -671,7 +673,7 @@ XMPScanner::PacketMachine::RecordHeadAttr ( PacketMachine * ths, const char * /*
 	} else if ( ths->fAttrName == "bytes" ) {
 			
 		long	value	= 0;
-		int		count	= ths->fAttrValue.size();
+		int		count	= (int) ths->fAttrValue.size();
 		int		i;
 		
 		assert ( ths->fBytesAttr == -1 );
@@ -970,7 +972,7 @@ XMPScanner::PacketMachine::FindNextPacket ()
 						continue;
 					
 					case eTriMaybe :
-						fBufferOverrun = fBufferPtr - fBufferLimit;
+						fBufferOverrun = (unsigned char)(fBufferPtr - fBufferLimit);
 						return eTriMaybe;	// Keep this recognizer intact, to be resumed later.
 				
 				}
@@ -1119,7 +1121,7 @@ long
 XMPScanner::GetSnipCount ()
 {
 
-	return fInternalSnips.size();
+	return (long)fInternalSnips.size();
 
 }	// GetSnipCount
 
@@ -1460,7 +1462,7 @@ XMPScanner::Scan ( const void * bufferOrigin, XMP_Int64 bufferOffset, XMP_Int64 
 void
 XMPScanner::Report ( SnipInfoVector& snips )
 {
-	const int				count	= fInternalSnips.size();
+	const int				count	= (int)fInternalSnips.size();
 	InternalSnipIterator	snipPos	= fInternalSnips.begin();
 	
 	int	s;

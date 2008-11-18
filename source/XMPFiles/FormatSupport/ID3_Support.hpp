@@ -11,6 +11,7 @@
 // =================================================================================================
 
 #include "XMP_Environment.h"	// ! This must be the first include.
+#if ! XMP_UNIXBuild				//	Closes at very bottom. Disabled on UNIX until legacy-as-local is fixed.
 
 #include <vector>
 
@@ -36,4 +37,5 @@ namespace ID3_Support
 
 } // namespace ID3_Support
 
+#endif	// XMP_UNIXBuild
 #endif	// __ID3_Support_hpp__

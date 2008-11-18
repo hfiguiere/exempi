@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -120,6 +120,22 @@ void TIFF_MetaHandler::CacheFileData()
 	
 	this->tiffMgr.ParseFileStream ( fileRef );
 	
+	TIFF_Manager::TagInfo dngInfo;
+	if ( this->tiffMgr.GetTag ( kTIFF_PrimaryIFD, kTIFF_DNGVersion, &dngInfo ) ) {
+
+		// Reject DNG files that are version 2.0 or beyond, this is being written at the time of 
+		// DNG version 1.2. The DNG team says it is OK to use 2.0, not strictly 1.2. Use the
+		// DNGBackwardVersion if it is present, else the DNGVersion. Note that the version value is
+		// supposed to be type BYTE, so the file order is always essentially big endian.
+
+		XMP_Uns8 majorVersion = *((XMP_Uns8*)dngInfo.dataPtr);	// Start with DNGVersion.
+		if ( this->tiffMgr.GetTag ( kTIFF_PrimaryIFD, kTIFF_DNGBackwardVersion, &dngInfo ) ) {
+			majorVersion = *((XMP_Uns8*)dngInfo.dataPtr);	// Use DNGBackwardVersion if possible.
+		}
+		if ( majorVersion > 1 ) XMP_Throw ( "DNG version beyond 1.x", kXMPErr_BadTIFF );
+
+	}
+	
 	TIFF_Manager::TagInfo xmpInfo;
 	bool found = this->tiffMgr.GetTag ( kTIFF_PrimaryIFD, kTIFF_XMP, &xmpInfo );
 	
@@ -198,7 +214,12 @@ void TIFF_MetaHandler::ProcessXMP()
 		this->iptcMgr = new IPTC_Reader();
 	} else {
 		this->psirMgr = new PSIR_FileWriter();
-		this->iptcMgr = new IPTC_Writer();
+		#if ! XMP_UNIXBuild
+			this->iptcMgr = new IPTC_Writer();	// ! Parse it later.
+		#else
+			// ! Hack until the legacy-as-local issues are resolved for generic UNIX.
+			this->iptcMgr = new IPTC_Reader();	// ! Import IPTC but don't export it.
+		#endif
 	}
 
 	TIFF_Manager & tiff = this->tiffMgr;	// Give the compiler help in recognizing non-aliases.
@@ -264,7 +285,7 @@ void TIFF_MetaHandler::ProcessXMP()
 		XMP_Assert ( this->containsXMP );
 		// Common code takes care of packetInfo.charForm, .padSize, and .writeable.
 		XMP_StringPtr packetStr = this->xmpPacket.c_str();
-		XMP_StringLen packetLen = this->xmpPacket.size();
+		XMP_StringLen packetLen = (XMP_StringLen)this->xmpPacket.size();
 		try {
 			this->xmpObj.ParseFromBuffer ( packetStr, packetLen );
 		} catch ( ... ) {
@@ -312,21 +333,27 @@ void TIFF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	if ( oldPacketOffset == kXMPFiles_UnknownOffset ) oldPacketOffset = 0;	// ! Simplify checks.
 	if ( oldPacketLength == kXMPFiles_UnknownLength ) oldPacketLength = 0;
 	
-	bool doInPlace = (oldPacketOffset != 0) && (oldPacketLength != 0);	// ! Has old packet and new packet fits.
-	if ( doInPlace && (this->tiffMgr.IsLegacyChanged()) ) doInPlace = false;
+	bool doInPlace = (this->xmpPacket.size() <= (size_t)this->packetInfo.length);
+	if ( this->tiffMgr.IsLegacyChanged() ) doInPlace = false;
 
 	if ( doInPlace ) {
 
 		#if GatherPerformanceData
 			sAPIPerf->back().extraInfo += ", TIFF in-place update";
 		#endif
+		
+		if ( this->xmpPacket.size() < (size_t)this->packetInfo.length ) {
+			// They ought to match, cheap to be sure.
+			size_t extraSpace = (size_t)this->packetInfo.length - this->xmpPacket.size();
+			this->xmpPacket.append ( extraSpace, ' ' );
+		}
 	
 		LFA_FileRef liveFile = this->parent->fileRef;
 	
 		XMP_Assert ( this->xmpPacket.size() == (size_t)oldPacketLength );	// ! Done by common PutXMP logic.
 		
 		LFA_Seek ( liveFile, oldPacketOffset, SEEK_SET );
-		LFA_Write ( liveFile, this->xmpPacket.c_str(), this->xmpPacket.size() );
+		LFA_Write ( liveFile, this->xmpPacket.c_str(), (XMP_Int32)this->xmpPacket.size() );
 	
 	} else {
 
@@ -337,10 +364,10 @@ void TIFF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		// Reserialize the XMP to get standard padding, PutXMP has probably done an in-place serialize.
 		this->xmpObj.SerializeToBuffer ( &this->xmpPacket, kXMP_UseCompactFormat );
 		this->packetInfo.offset = kXMPFiles_UnknownOffset;
-		this->packetInfo.length = this->xmpPacket.size();
-		this->packetInfo.padSize = GetPacketPadSize ( this->xmpPacket.c_str(), this->xmpPacket.size() );
+		this->packetInfo.length = (XMP_Int32)this->xmpPacket.size();
+		FillPacketInfo ( this->xmpPacket, &this->packetInfo );
 	
-		this->tiffMgr.SetTag ( kTIFF_PrimaryIFD, kTIFF_XMP, kTIFF_ByteType, this->xmpPacket.size(), this->xmpPacket.c_str() );
+		this->tiffMgr.SetTag ( kTIFF_PrimaryIFD, kTIFF_XMP, kTIFF_ByteType, (XMP_Uns32)this->xmpPacket.size(), this->xmpPacket.c_str() );
 		
 		this->tiffMgr.UpdateFileStream ( destRef );
 	

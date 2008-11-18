@@ -10,18 +10,20 @@
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
 
-#include "XMP_Environment.h"	// ! This must be the first include.
+#include "XMP_Environment.h"		// ! This must be the first include.
+#if ! ( XMP_64 || XMP_UNIXBuild)	//	Closes at very bottom.
 
 namespace QuickTime_Support 
 {
 	extern bool sMainInitOK;
 	
-	bool MainInitialize();	// For the main thread.
-	void MainTerminate();
+	bool MainInitialize ( bool ignoreInit );	// For the main thread.
+	void MainTerminate ( bool ignoreInit );
 	
 	bool ThreadInitialize();	// For background threads.
 	void ThreadTerminate();
 
 } // namespace QuickTime_Support
 
+#endif	// XMP_64 || XMP_UNIXBuild
 #endif	// __QuickTime_Support_hpp__
