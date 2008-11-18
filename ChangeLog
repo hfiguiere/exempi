@@ -1,5 +1,8 @@
 2008-11-18  Hubert Figuiere  <hub@figuiere.net>
 
+	* samples/testfiles/BlueSquare.gif,
+	samples/testfiles/Makefile.am: Forgotten files.
+
 	* NEWS,	configure.ac, exempi/Makefile.am, 
 	exempi/tests/test2.cpp, exempi/tests/testcore.sh, 
 	samples/Makefile.am, samples/source/Makefile.am, 
