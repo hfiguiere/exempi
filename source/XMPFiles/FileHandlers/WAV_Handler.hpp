@@ -3,12 +3,15 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
+
+#include "XMP_Environment.h"	// ! This must be the first include.
+#if ! XMP_UNIXBuild				//	Closes at very bottom. Disabled on UNIX until legacy-as-local is fixed.
 
 #include "XMPFiles_Impl.hpp"
 
@@ -68,4 +71,5 @@ private:
 
 // =================================================================================================
 
-#endif /* __WAV_Handler_hpp__ */
+#endif	// XMP_UNIXBuild
+#endif	// __WAV_Handler_hpp__

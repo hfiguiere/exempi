@@ -1,11 +1,6 @@
 #ifndef __XMP_Environment_h__
 #define __XMP_Environment_h__ 1
 
-/* --------------------------------------------------------------------------------------------- */
-/* ** IMPORTANT ** This file must be usable by strict ANSI C compilers. No "//" comments, etc.   */
-/* --------------------------------------------------------------------------------------------- */
-
-/*
 // =================================================================================================
 // XMP_Environment.h - Build environment flags for the XMP toolkit.
 // ================================================================
@@ -14,9 +9,7 @@
 // It must be the first #include in any chain since it might affect things in other #includes.
 //
 // =================================================================================================
-*/
 
-/*
 // =================================================================================================
 // Copyright 2002-2007 Adobe Systems Incorporated
 // All Rights Reserved.
@@ -24,22 +17,21 @@
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
-*/
 
-/* ============================================================================================== */
-/* Determine the Platform */
-/* ====================== */
+// =================================================================================================
+// Determine the Platform
+// ======================
 
-/* One of MAC_ENV, WIN_ENV, or UNIX_ENV must be defined by the client. Since some other code   */
-/* requires these to be defined without values, they are only used here to define XMP-specific */
-/* macros with 0 or 1 values.                                                                  */
+// One of MAC_ENV, WIN_ENV, or UNIX_ENV must be defined by the client. Since some other code
+// requires these to be defined without values, they are only used here to define XMP-specific
+// macros with 0 or 1 values.
 
-/* ! Tempting though it might be to have a standard macro for big or little endian, there seems    */
-/* ! to be no decent way to do that on our own in UNIX. Forcing it on the client isn't acceptable. */
+// ! Tempting though it might be to have a standard macro for big or little endian, there seems to
+// ! be no decent way to do that on our own in UNIX. Forcing it on the client isn't acceptable.
 
 #if defined ( MAC_ENV )
 
-	#if 0	/* ! maybe someday - ! MAC_ENV */
+	#if 0	// ! maybe someday - ! MAC_ENV
 		#error "MAC_ENV must be defined so that \"#if MAC_ENV\" is true"
 	#endif
 	
@@ -53,7 +45,7 @@
 
 #elif defined ( WIN_ENV )
 
-	#if 0	/* ! maybe someday - ! WIN_ENV */
+	#if 0	// ! maybe someday - ! WIN_ENV
 		#error "WIN_ENV must be defined so that \"#if WIN_ENV\" is true"
 	#endif
 	
@@ -67,7 +59,7 @@
 
 #elif defined ( UNIX_ENV )
 
-	#if 0	/* ! maybe someday - ! UNIX_ENV */
+	#if 0	// ! maybe someday - ! UNIX_ENV
 		#error "UNIX_ENV must be defined so that \"#if UNIX_ENV\" is true"
 	#endif
 	
@@ -81,9 +73,9 @@
 
 #endif
 
-/* ============================================================================================== */
-/* Common Macros */
-/* ============= */
+// =================================================================================================
+// Common Macros
+// =============
 
 #if defined ( DEBUG )
     #if defined ( NDEBUG )
@@ -101,21 +93,29 @@
 #endif
 
 #if XMP_DebugBuild
-    #include <stdio.h>  /* The assert macro needs printf. */
+    #include <stdio.h>  // The assert macro needs printf.
 #endif
 
-/* ============================================================================================== */
-/* Macintosh Specific Settings */
-/* =========================== */
+#ifndef XMP_64
+	#if _WIN64
+		#define XMP_64 1
+	#else
+		#define XMP_64 0
+	#endif
+#endif
 
-/* ============================================================================================== */
-/* Windows Specific Settings */
-/* ========================= */
+// =================================================================================================
+// Macintosh Specific Settings
+// ===========================
 
-/* ============================================================================================== */
-/* UNIX Specific Settings */
-/* ====================== */
+// =================================================================================================
+// Windows Specific Settings
+// =========================
 
-/* ============================================================================================== */
+// =================================================================================================
+// UNIX Specific Settings
+// ======================
 
-#endif  /* __XMP_Environment_h__ */
+// =================================================================================================
+
+#endif  // __XMP_Environment_h__

@@ -577,7 +577,6 @@ public class ParseRDF implements XMPError, XMPConst
 					}				
 					
 					found = true;
-					break;
 				}
 				else if (found)
 				{

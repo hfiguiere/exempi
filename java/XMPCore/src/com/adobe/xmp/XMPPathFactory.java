@@ -78,16 +78,21 @@ public final class XMPPathFactory
 	 * @return Returns the composed path basing on fullPath. This will be of the form
 	 *         <tt>ns:arrayName[i]</tt>, where &quot;ns&quot; is the prefix for schemaNS and
 	 *         &quot;i&quot; is the decimal representation of itemIndex.
+	 * @throws XMPException Throws exeption if index zero is used.
 	 */
-	public static String composeArrayItemPath(String arrayName, int itemIndex)
+	public static String composeArrayItemPath(String arrayName, int itemIndex) throws XMPException
 	{
 		if (itemIndex > 0)
 		{
 			return arrayName + '[' + itemIndex + ']';
 		}
-		else
+		else  if (itemIndex == XMPConst.ARRAY_LAST_ITEM)
 		{
 			return arrayName + "[last()]";
+		}
+		else
+		{
+			throw new XMPException("Array index must be larger than zero", XMPError.BADINDEX);
 		}
 	}
 

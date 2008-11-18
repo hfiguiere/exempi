@@ -34,11 +34,14 @@ namespace ReconcileUtils {
 	static const char * kHexDigits = "0123456789ABCDEF";
 	
 	bool IsUTF8       ( const void * _utf8Ptr, size_t utf8Len );
-	void UTF8ToLocal  ( const void * _utf8Ptr, size_t utf8Len, std::string * local );
-	void UTF8ToLatin1 ( const void * _utf8Ptr, size_t utf8Len, std::string * latin1 );
-	void LocalToUTF8  ( const void * _localPtr, size_t localLen, std::string * utf8 );
-	void Latin1ToUTF8 ( const void * _latin1Ptr, size_t latin1Len, std::string * utf8 );
-		// *** These ought to be with the Unicode conversions.
+	
+	#if ! XMP_UNIXBuild	// Remove from generic UNIX until legacy-as-local issues are resolved.
+		void UTF8ToLocal  ( const void * _utf8Ptr, size_t utf8Len, std::string * local );
+		void UTF8ToLatin1 ( const void * _utf8Ptr, size_t utf8Len, std::string * latin1 );
+		void LocalToUTF8  ( const void * _localPtr, size_t localLen, std::string * utf8 );
+		void Latin1ToUTF8 ( const void * _latin1Ptr, size_t latin1Len, std::string * utf8 );
+			// *** These ought to be with the Unicode conversions.
+	#endif
 
 	int CheckIPTCDigest ( IPTC_Manager * iptc, const PSIR_Manager & psir );
 	int CheckTIFFDigest ( const TIFF_Manager & tiff, const SXMPMeta & xmp );

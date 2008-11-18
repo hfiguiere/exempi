@@ -10,7 +10,7 @@
 package com.adobe.xmp;
 
 /**
- * XMP Toolkit Version Information
+ * XMP Toolkit Version Information.
  * <p>
  * Version information for the XMP toolkit is stored in the jar-library and available through a
  * runtime call, {@link XMPMetaFactory#getVersionInfo()},  addition static version numbers are
@@ -32,14 +32,14 @@ public interface XMPVersionInfo
 	int getMicro();
 
 
-	/** @return Returns true if this is a debug build. */
-	boolean isDebug();
-
-
 	/** @return Returns a rolling build number, monotonically increasing in a release. */
 	int getBuild();
 
 
+	/** @return Returns true if this is a debug build. */
+	boolean isDebug();
+	
+	
 	/** @return Returns a comprehensive version information string. */
 	String getMessage();
 }

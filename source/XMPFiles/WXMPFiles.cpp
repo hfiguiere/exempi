@@ -158,6 +158,30 @@ void WXMPFiles_GetFormatInfo_1 ( XMP_FileFormat   format,
 
 // =================================================================================================
 
+void WXMPFiles_CheckFileFormat_1 ( XMP_StringPtr filePath,
+								   WXMP_Result * wResult )
+{
+	XMP_ENTER_WRAPPER ( "WXMPFiles_CheckFileFormat_1" )
+	
+		wResult->int32Result = XMPFiles::CheckFileFormat ( filePath );
+	
+	XMP_EXIT_WRAPPER
+}
+
+// =================================================================================================
+
+void WXMPFiles_CheckPackageFormat_1 ( XMP_StringPtr folderPath,
+                       				  WXMP_Result * wResult )
+{
+	XMP_ENTER_WRAPPER ( "WXMPFiles_CheckPackageFormat_1" )
+	
+		wResult->int32Result = XMPFiles::CheckPackageFormat ( folderPath );
+	
+	XMP_EXIT_WRAPPER
+}
+
+// =================================================================================================
+
 void WXMPFiles_OpenFile_1 ( XMPFilesRef    xmpFilesRef,
                             XMP_StringPtr  filePath,
 			                XMP_FileFormat format,

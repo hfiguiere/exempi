@@ -14,7 +14,6 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URL;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
@@ -46,7 +45,6 @@ import com.adobe.xmp.properties.XMPPropertyInfo;
  * It covers most of the functionality of XMPCore,
  * but does not provide any meaningful workflow.
  * 
- * @author  smakswit
  * @since   11.02.2007
  */
 public class XMPCoreCoverage implements XMPCoreCoverageConst
@@ -958,7 +956,7 @@ public class XMPCoreCoverage implements XMPCoreCoverageConst
 		XMPDateTime	date1	= XMPDateTimeFactory.create(2000, 1, 31, 12, 34, 56, -1);
 		date1.setTimeZone(TimeZone.getTimeZone("PST"));
 		XMPDateTime	date2	= XMPDateTimeFactory.create(0, 0, 0, 0, 0, 0, 0);
-		Calendar cal = new GregorianCalendar(2007, 1, 28);
+		GregorianCalendar cal = new GregorianCalendar(2007, 1, 28);
 		XMPDateTime	date3	= XMPDateTimeFactory.createFromCalendar(cal);
 		XMPDateTime currentDateTime = XMPDateTimeFactory.getCurrentDateTime();
 

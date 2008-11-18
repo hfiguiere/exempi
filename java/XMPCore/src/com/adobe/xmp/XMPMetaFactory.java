@@ -250,11 +250,12 @@ public final class XMPMetaFactory
 	
 	
 	/**
-	 * Obtain version information.
+	 * Obtain version information. The XMPVersionInfo singleton is created the first time
+	 * its requested.
 	 * 
 	 * @return Returns the version information.
 	 */
-	public static XMPVersionInfo getVersionInfo()
+	public static synchronized XMPVersionInfo getVersionInfo()
 	{
 		if (versionInfo == null)
 		{

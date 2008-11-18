@@ -13,7 +13,6 @@ package samples;
 /**
  * Constants for the XMPCoreCoverage example.
  * 
- * @author  smakswit
  * @since   21.02.2007
  */
 public interface XMPCoreCoverageConst

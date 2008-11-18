@@ -702,8 +702,8 @@ XMPUtils::ComposeArrayItemPath ( XMP_StringPtr	 schemaNS,
 	sComposedPath->append ( reserveLen, ' ' );
 	
 	if ( itemIndex != kXMP_ArrayLastItem ) {
-		// AUDIT: Using string->capacity() for the snprintf length is safe.
-		snprintf ( const_cast<char*>(sComposedPath->c_str()), sComposedPath->capacity(), "%s[%d]", arrayName, itemIndex );
+		// AUDIT: Using string->size() for the snprintf length is safe.
+		snprintf ( const_cast<char*>(sComposedPath->c_str()), sComposedPath->size(), "%s[%d]", arrayName, itemIndex );
 	} else {
 		*sComposedPath = arrayName;
 		*sComposedPath += "[last()] ";
@@ -921,8 +921,8 @@ XMPUtils::ConvertFromInt ( XMP_Int32	   binValue,
 	sConvertedValue->reserve ( 100 );		// More than enough for any reasonable format and value.
 	sConvertedValue->append ( 100, ' ' );
 	
-	// AUDIT: Using string->capacity() for the snprintf length is safe.
-	snprintf ( const_cast<char*>(sConvertedValue->c_str()), sConvertedValue->capacity(), format, binValue );
+	// AUDIT: Using string->size() for the snprintf length is safe.
+	snprintf ( const_cast<char*>(sConvertedValue->c_str()), sConvertedValue->size(), format, binValue );
 	
 	*strValue = sConvertedValue->c_str();
 	*strSize  = strlen ( *strValue );	// ! Don't use sConvertedValue->size()!
@@ -944,14 +944,14 @@ XMPUtils::ConvertFromInt64 ( XMP_Int64	     binValue,
 {
 	XMP_Assert ( (format != 0) && (strValue != 0) && (strSize != 0) );	// Enforced by wrapper.
 
-	if ( *format == 0 ) format = "%d";
+	if ( *format == 0 ) format = "%lld";
 	
 	sConvertedValue->erase();
 	sConvertedValue->reserve ( 100 );		// More than enough for any reasonable format and value.
 	sConvertedValue->append ( 100, ' ' );
 	
-	// AUDIT: Using string->capacity() for the snprintf length is safe.
-	snprintf ( const_cast<char*>(sConvertedValue->c_str()), sConvertedValue->capacity(), format, binValue );
+	// AUDIT: Using string->size() for the snprintf length is safe.
+	snprintf ( const_cast<char*>(sConvertedValue->c_str()), sConvertedValue->size(), format, binValue );
 	
 	*strValue = sConvertedValue->c_str();
 	*strSize  = strlen ( *strValue );	// ! Don't use sConvertedValue->size()!
@@ -979,8 +979,8 @@ XMPUtils::ConvertFromFloat ( double			 binValue,
 	sConvertedValue->reserve ( 1000 );		// More than enough for any reasonable format and value.
 	sConvertedValue->append ( 1000, ' ' );
 	
-	// AUDIT: Using string->capacity() for the snprintf length is safe.
-	snprintf ( const_cast<char*>(sConvertedValue->c_str()), sConvertedValue->capacity(), format, binValue );
+	// AUDIT: Using string->size() for the snprintf length is safe.
+	snprintf ( const_cast<char*>(sConvertedValue->c_str()), sConvertedValue->size(), format, binValue );
 	
 	*strValue = sConvertedValue->c_str();
 	*strSize  = strlen ( *strValue );	// ! Don't use sConvertedValue->size()!
@@ -1167,17 +1167,17 @@ XMPUtils::ConvertToInt ( XMP_StringPtr strValue )
 {
 	if ( (strValue == 0) || (*strValue == 0) ) XMP_Throw ( "Empty convert-from string", kXMPErr_BadValue );
 	
-	errno = 0;
-	char * numEnd;
+	int count;
+	char nextCh;
 	XMP_Int32 result;
 	
-	if ( strncmp ( strValue, "0x", 2 ) != 0 ) {
-		result = strtol ( strValue, &numEnd, 0 );
+	if ( ! XMP_LitNMatch ( strValue, "0x", 2 ) ) {
+		count = sscanf ( strValue, "%d%c", &result, &nextCh );
 	} else {
-		result = (XMP_Int32) strtoul ( strValue, &numEnd, 0 );	// Treat hex form as raw bits.
+		count = sscanf ( strValue, "%x%c", &result, &nextCh );
 	}
 
-	if ( (errno != 0) || (*numEnd != 0) ) XMP_Throw ( "Invalid integer string", kXMPErr_BadParam );
+	if ( count != 1 ) XMP_Throw ( "Invalid integer string", kXMPErr_BadParam );
 
 	return result;
 	
@@ -1193,17 +1193,17 @@ XMPUtils::ConvertToInt64 ( XMP_StringPtr strValue )
 {
 	if ( (strValue == 0) || (*strValue == 0) ) XMP_Throw ( "Empty convert-from string", kXMPErr_BadValue );
 	
-	errno = 0;
-	char * numEnd;
+	int count;
+	char nextCh;
 	XMP_Int64 result;
 	
-	if ( strncmp ( strValue, "0x", 2 ) != 0 ) {
-		result = strtol ( strValue, &numEnd, 0 );
+	if ( ! XMP_LitNMatch ( strValue, "0x", 2 ) ) {
+		count = sscanf ( strValue, "%lld%c", &result, &nextCh );
 	} else {
-		result = (XMP_Int64) strtoul ( strValue, &numEnd, 0 );	// Treat hex form as raw bits.
+		count = sscanf ( strValue, "%llx%c", &result, &nextCh );
 	}
 
-	if ( (errno != 0) || (*numEnd != 0) ) XMP_Throw ( "Invalid integer string", kXMPErr_BadParam );
+	if ( count != 1 ) XMP_Throw ( "Invalid integer string", kXMPErr_BadParam );
 
 	return result;
 	
@@ -1276,7 +1276,8 @@ XMPUtils::ConvertToDate ( XMP_StringPtr	 strValue,
 	size_t	 pos = 0;
 	XMP_Int32 temp;
 	
-	(void) memset ( binValue, 0, sizeof ( XMP_DateTime ) );
+	XMP_Assert ( sizeof(*binValue) == sizeof(XMP_DateTime) );
+	(void) memset ( binValue, 0, sizeof(*binValue) );	// AUDIT: Safe, using sizeof destination.
 	
 	bool timeOnly = ( (strValue[0] == 'T') ||
 					  ((strlen(strValue) >= 2) && (strValue[1] == ':')) ||

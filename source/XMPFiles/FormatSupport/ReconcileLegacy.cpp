@@ -121,12 +121,35 @@ void ExportXMPtoJTP ( XMP_FileFormat destFormat,
 {
 	XMP_Assert ( xmp != 0 );
 	XMP_Assert ( (destFormat == kXMP_JPEGFile) || (destFormat == kXMP_TIFFFile) || (destFormat == kXMP_PhotoshopFile) );
+	
+	#if XMP_UNIXBuild
+		// ! Hack until the legacy-as-local issues are resolved for generic UNIX.
+		iptc = 0;	// Strip IIM from the file.
+		if ( tiff != 0 ) tiff->DeleteTag ( kTIFF_PrimaryIFD, kTIFF_IPTC );
+		if ( psir != 0 ) {
+			psir->DeleteImgRsrc ( kPSIR_IPTC );
+			psir->DeleteImgRsrc ( kPSIR_IPTCDigest );
+		}
+	#endif
 
 	// Save the IPTC changed flag specially. SetIPTCDigest will call UpdateMemoryDataSets, which
 	// will clear the IsChanged flag. Also, UpdateMemoryDataSets can be called twice, once for the
 	// general IPTC-in-PSIR case and once for the IPTC-as-TIFF-tag case.
 	
 	bool iptcChanged = false;
+	
+	// Do not write legacy IPTC (IIM) or PSIR in DNG files (which are a variant of TIFF).
+	
+	if ( (destFormat == kXMP_TIFFFile) && (tiff != 0) &&
+		 tiff->GetTag ( kTIFF_PrimaryIFD, kTIFF_DNGVersion, 0 ) ) {
+		
+		iptc = 0;	// These prevent calls to ExportIPTC and ExportPSIR.
+		psir = 0;
+		
+		tiff->DeleteTag ( kTIFF_PrimaryIFD, kTIFF_IPTC );	// These remove any existing IPTC and PSIR.
+		tiff->DeleteTag ( kTIFF_PrimaryIFD, kTIFF_PSIR );
+	
+	}
 	
 	// Export the individual metadata items to the legacy forms. The PSIR and IPTC must be done
 	// before the TIFF and Exif. The PSIR and IPTC have side effects that can modify the XMP, and

@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -8,6 +8,8 @@
 // =================================================================================================
 
 #include "XMP_Environment.h"
+#if ! ( XMP_64 || XMP_UNIXBuild)	//	Closes at very bottom.
+
 #include "QuickTime_Support.hpp"
 
 #if XMP_MacBuild
@@ -24,10 +26,15 @@ namespace QuickTime_Support
 
 	// =============================================================================================
 
-	bool MainInitialize()
+	bool MainInitialize ( bool ignoreInit )
 	{
 		OSStatus err = noErr;
-
+		
+		if ( ignoreInit ) {
+			sMainInitOK = true;
+			return true;
+		}
+	
 		#if XMP_WinBuild
 			err = ::InitializeQTML ( 0 );
 		#endif
@@ -41,8 +48,11 @@ namespace QuickTime_Support
 	
 	// =============================================================================================
 
-	void MainTerminate()
+	void MainTerminate ( bool ignoreInit )
 	{
+
+		if ( ignoreInit ) return;
+		
 		::ExitMovies();
 
 		#if XMP_WinBuild
@@ -77,3 +87,5 @@ namespace QuickTime_Support
 	}	// ThreadTerminate
 
 } // namespace QuickTime_Support
+
+#endif

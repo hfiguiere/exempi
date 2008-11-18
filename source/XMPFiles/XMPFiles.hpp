@@ -173,6 +173,9 @@ public:
 	static bool GetFormatInfo ( XMP_FileFormat   format,
                                 XMP_OptionBits * flags = 0 );
 
+	static XMP_FileFormat CheckFileFormat    ( XMP_StringPtr filePath );
+	static XMP_FileFormat CheckPackageFormat ( XMP_StringPtr folderPath );
+
 	bool OpenFile ( XMP_StringPtr  filePath,
 			        XMP_FileFormat format = kXMP_UnknownFile,
 			        XMP_OptionBits openFlags = 0 );

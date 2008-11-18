@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -352,7 +352,7 @@ void JPEG_MetaHandler::CacheFileData()
 				if ( ! ok ) return;	// Must be a truncated file.
 				
 				this->packetInfo.offset = ioBuf.filePos + (ioBuf.ptr - &ioBuf.data[0]);
-				this->packetInfo.length = segLen;
+				this->packetInfo.length = (XMP_Int32)segLen;
 				this->packetInfo.padSize   = 0;				// Assume for now, set these properly in ProcessXMP.
 				this->packetInfo.charForm  = kXMP_CharUnknown;
 				this->packetInfo.writeable = true;
@@ -544,7 +544,7 @@ void JPEG_MetaHandler::ProcessTNail()
 		} else {
 			this->exifMgr = new TIFF_FileWriter();
 		}
-		this->exifMgr->ParseMemoryStream ( this->exifContents.c_str(), this->exifContents.size() );
+		this->exifMgr->ParseMemoryStream ( this->exifContents.c_str(), (XMP_Uns32)this->exifContents.size() );
 	}
 
 	this->containsTNail = this->exifMgr->GetTNailInfo ( &this->tnailInfo );
@@ -577,7 +577,12 @@ void JPEG_MetaHandler::ProcessXMP()
 	} else {
 		if ( this->exifMgr == 0 ) this->exifMgr = new TIFF_FileWriter();
 		this->psirMgr = new PSIR_FileWriter();
-		this->iptcMgr = new IPTC_Writer();	// ! Parse it later.
+		#if ! XMP_UNIXBuild
+			this->iptcMgr = new IPTC_Writer();	// ! Parse it later.
+		#else
+			// ! Hack until the legacy-as-local issues are resolved for generic UNIX.
+			this->iptcMgr = new IPTC_Reader();	// ! Import IPTC but don't export it.
+		#endif
 	}
 
 	// Set up everything for the legacy import, but don't do it yet. This lets us do a forced legacy
@@ -594,11 +599,11 @@ void JPEG_MetaHandler::ProcessXMP()
 	IPTC_Manager & iptc = *this->iptcMgr;
 
 	if ( haveExif ) {
-		exif.ParseMemoryStream ( this->exifContents.c_str(), this->exifContents.size() );
+		exif.ParseMemoryStream ( this->exifContents.c_str(), (XMP_Uns32)this->exifContents.size() );
 	}
 	
 	if ( ! this->psirContents.empty() ) {
-		psir.ParseMemoryResources ( this->psirContents.c_str(), this->psirContents.size() );
+		psir.ParseMemoryResources ( this->psirContents.c_str(), (XMP_Uns32)this->psirContents.size() );
 	}
 	
 	// Determine the last-legacy priority and do the reconciliation. For JPEG files, the relevant
@@ -643,7 +648,7 @@ void JPEG_MetaHandler::ProcessXMP()
 		XMP_Assert ( this->containsXMP );
 		// Common code takes care of packetInfo.charForm, .padSize, and .writeable.
 		XMP_StringPtr packetStr = this->xmpPacket.c_str();
-		XMP_StringLen packetLen = this->xmpPacket.size();
+		XMP_StringLen packetLen = (XMP_StringLen)this->xmpPacket.size();
 		try {
 			this->xmpObj.ParseFromBuffer ( packetStr, packetLen );
 		} catch ( ... ) {
@@ -677,7 +682,7 @@ void JPEG_MetaHandler::ProcessXMP()
 		if ( guidPos != this->extendedXMP.end() ) {
 			try {
 				XMP_StringPtr extStr = guidPos->second.c_str();
-				XMP_StringLen extLen = guidPos->second.size();
+				XMP_StringLen extLen = (XMP_StringLen)guidPos->second.size();
 				SXMPMeta extXMP ( extStr, extLen );
 				SXMPUtils::MergeFromJPEG ( &this->xmpObj, extXMP );
 			} catch ( ... ) {
@@ -716,18 +721,24 @@ void JPEG_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	if ( oldPacketOffset == kXMPFiles_UnknownOffset ) oldPacketOffset = 0;	// ! Simplify checks.
 	if ( oldPacketLength == kXMPFiles_UnknownLength ) oldPacketLength = 0;
 	
-	bool doInPlace = (oldPacketOffset != 0) && (oldPacketLength != 0);	// ! Has old packet and new packet fits.
+	bool doInPlace = (this->xmpPacket.size() <= (size_t)this->packetInfo.length);
 	
-	if ( doInPlace && (! this->extendedXMP.empty()) ) doInPlace = false;
+	if ( ! this->extendedXMP.empty() ) doInPlace = false;
 	
-	if ( doInPlace && (this->exifMgr != 0) && (this->exifMgr->IsLegacyChanged()) ) doInPlace = false;
-	if ( doInPlace && (this->psirMgr != 0) && (this->psirMgr->IsLegacyChanged()) ) doInPlace = false;
+	if ( (this->exifMgr != 0) && (this->exifMgr->IsLegacyChanged()) ) doInPlace = false;
+	if ( (this->psirMgr != 0) && (this->psirMgr->IsLegacyChanged()) ) doInPlace = false;
 
 	if ( doInPlace ) {
 
 		#if GatherPerformanceData
 			sAPIPerf->back().extraInfo += ", JPEG in-place update";
 		#endif
+		
+		if ( this->xmpPacket.size() < (size_t)this->packetInfo.length ) {
+			// They ought to match, cheap to be sure.
+			size_t extraSpace = (size_t)this->packetInfo.length - this->xmpPacket.size();
+			this->xmpPacket.append ( extraSpace, ' ' );
+		}
 	
 		LFA_FileRef liveFile = this->parent->fileRef;
 		std::string & newPacket = this->xmpPacket;
@@ -735,7 +746,7 @@ void JPEG_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		XMP_Assert ( newPacket.size() == (size_t)oldPacketLength );	// ! Done by common PutXMP logic.
 		
 		LFA_Seek ( liveFile, oldPacketOffset, SEEK_SET );
-		LFA_Write ( liveFile, newPacket.c_str(), newPacket.size() );
+		LFA_Write ( liveFile, newPacket.c_str(), (XMP_Int32)newPacket.size() );
 	
 	} else {
 
@@ -851,7 +862,7 @@ void JPEG_MetaHandler::WriteFile ( LFA_FileRef sourceRef, const std::string & so
 		segLen += 2;	// ! Don't do above in case machine does 16 bit "+".
 	
 		if ( ! CheckFileSpace ( sourceRef, &ioBuf, segLen ) ) XMP_Throw ( "Unexpected end to JPEG", kXMPErr_BadJPEG );
-		LFA_Write ( destRef, ioBuf.ptr, segLen );
+		LFA_Write ( destRef, ioBuf.ptr, (XMP_Int32)segLen );
 		ioBuf.ptr += segLen;
 		
 	}
@@ -880,10 +891,10 @@ void JPEG_MetaHandler::WriteFile ( LFA_FileRef sourceRef, const std::string & so
 	SXMPUtils::PackageForJPEG ( this->xmpObj, &mainXMP, &extXMP, &extDigest );
 	XMP_Assert ( (extXMP.size() == 0) || (extDigest.size() == 32) );
 	
-	first4 = MakeUns32BE ( 0xFFE10000 + 2 + kMainXMPSignatureLength + mainXMP.size() );
+	first4 = MakeUns32BE ( 0xFFE10000 + 2 + kMainXMPSignatureLength + (XMP_Uns32)mainXMP.size() );
 	LFA_Write ( destRef, &first4, 4 );
 	LFA_Write ( destRef, kMainXMPSignatureString, kMainXMPSignatureLength );
-	LFA_Write ( destRef, mainXMP.c_str(), mainXMP.size() );
+	LFA_Write ( destRef, mainXMP.c_str(), (XMP_Int32)mainXMP.size() );
 	
 	size_t extPos = 0;
 	size_t extLen = extXMP.size();
@@ -893,18 +904,18 @@ void JPEG_MetaHandler::WriteFile ( LFA_FileRef sourceRef, const std::string & so
 		size_t partLen = extLen;
 		if ( partLen > 65000 ) partLen = 65000;
 
-		first4 = MakeUns32BE ( 0xFFE10000 + 2 + kExtXMPPrefixLength + partLen );
+		first4 = MakeUns32BE ( 0xFFE10000 + 2 + kExtXMPPrefixLength + (XMP_Uns32)partLen );
 		LFA_Write ( destRef, &first4, 4 );
 		
 		LFA_Write ( destRef, kExtXMPSignatureString, kExtXMPSignatureLength );
-		LFA_Write ( destRef, extDigest.c_str(), extDigest.size() );
+		LFA_Write ( destRef, extDigest.c_str(), (XMP_Int32)extDigest.size() );
 
-		first4 = MakeUns32BE ( extXMP.size() );
+		first4 = MakeUns32BE ( (XMP_Int32)extXMP.size() );
 		LFA_Write ( destRef, &first4, 4 );
-		first4 = MakeUns32BE ( extPos );
+		first4 = MakeUns32BE ( (XMP_Int32)extPos );
 		LFA_Write ( destRef, &first4, 4 );
 		
-		LFA_Write ( destRef, &extXMP[extPos], partLen );
+		LFA_Write ( destRef, &extXMP[extPos], (XMP_Int32)partLen );
 		
 		extPos += partLen;
 		extLen -= partLen;
@@ -973,7 +984,7 @@ void JPEG_MetaHandler::WriteFile ( LFA_FileRef sourceRef, const std::string & so
 			}
 		}
 
-		if ( copySegment ) LFA_Write ( destRef, ioBuf.ptr, 2+segLen );
+		if ( copySegment ) LFA_Write ( destRef, ioBuf.ptr, (XMP_Int32)(2+segLen) );
 
 		ioBuf.ptr += 2+segLen;
 		
@@ -982,13 +993,13 @@ void JPEG_MetaHandler::WriteFile ( LFA_FileRef sourceRef, const std::string & so
 	// Copy the remainder of the source file.
 	
 	size_t bufTail = ioBuf.len - (ioBuf.ptr - &ioBuf.data[0]);
-	LFA_Write ( destRef, ioBuf.ptr, bufTail );
+	LFA_Write ( destRef, ioBuf.ptr, (XMP_Int32)bufTail );
 	ioBuf.ptr += bufTail;
 	
 	while ( true ) {
 		RefillBuffer ( sourceRef, &ioBuf );
 		if ( ioBuf.len == 0 ) break;
-		LFA_Write ( destRef, ioBuf.ptr, ioBuf.len );
+		LFA_Write ( destRef, ioBuf.ptr, (XMP_Int32)ioBuf.len );
 		ioBuf.ptr += ioBuf.len;
 	}
 	

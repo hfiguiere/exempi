@@ -84,28 +84,7 @@ WXMP_Result 		void_wResult;
 // ! times. There is a single XMP lock which is acquired in the wrapper classes. Internal calls
 // ! never go back out to the wrappers.
 
-#if XMP_MacBuild
-
-	bool XMP_InitMutex ( XMP_Mutex * mutex ) {
-		OSStatus err = MPCreateCriticalRegion ( mutex );
-		return (err == noErr );
-	}
-	
-	void XMP_TermMutex ( XMP_Mutex & mutex ) {
-		(void) MPDeleteCriticalRegion ( mutex );
-	}
-
-	void XMP_EnterCriticalRegion ( XMP_Mutex & mutex ) {
-		OSStatus err = MPEnterCriticalRegion ( mutex, kDurationForever );
-		if ( err != noErr ) XMP_Throw ( "XMP_EnterCriticalRegion - MPEnterCriticalRegion failure", kXMPErr_ExternalFailure );
-	}
-	
-	void XMP_ExitCriticalRegion ( XMP_Mutex & mutex ) {
-		OSStatus err = MPExitCriticalRegion ( mutex );
-		if ( err != noErr ) XMP_Throw ( "XMP_ExitCriticalRegion - MPExitCriticalRegion failure", kXMPErr_ExternalFailure );
-	}
-
-#elif XMP_WinBuild
+#if XMP_WinBuild
 
 	bool XMP_InitMutex ( XMP_Mutex * mutex ) {
 		InitializeCriticalSection ( mutex );
@@ -124,8 +103,9 @@ WXMP_Result 		void_wResult;
 		LeaveCriticalSection ( &mutex );
 	}
 
-#elif XMP_UNIXBuild
+#else
 
+	// Use pthread for both Mac and generic UNIX.
 	// ! Would be nice to specify PTHREAD_MUTEX_ERRORCHECK, but the POSIX documentation is useless.
 	// ! Would be OK but overkill to specify PTHREAD_MUTEX_RECURSIVE.
 
@@ -1462,30 +1442,6 @@ DetectAltText ( XMP_Node * xmpParent )
 	}
 
 }	// DetectAltText
-
-// =================================================================================================
-// IsWhitespaceNode
-// ================
-//
-// Return true if this is a character data node that contains only XML whitespace.
-
-// ! For now only recognize ASCII space, tab, CR, and LF.
-
-bool
-IsWhitespaceNode ( const XML_Node & xmlNode )
-{
-	if ( xmlNode.kind != kCDataNode ) return false;
-
-	for ( size_t i = 0; i < xmlNode.value.size(); ++i ) {
-		unsigned char ch = xmlNode.value[i];
-		if ( IsWhitespaceChar ( ch ) ) continue;
-		// *** Add checks for other whitespace characters.
-		return false;	// All the checks failed, this isn't whitespace.
-	}
-
-	return true;
-
-}	// IsWhitespaceNode
 
 // =================================================================================================
 // SortNamedNodes

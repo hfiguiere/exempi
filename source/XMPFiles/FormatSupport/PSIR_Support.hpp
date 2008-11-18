@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -187,6 +187,10 @@ public:
 	
 private:
 
+	// Memory usage notes: PSIR_MemoryReader is for memory-based read-only usage (both apply). There
+	// is no need to ever allocate separate blocks of memory, everything is used directly from the
+	// PSIR stream.
+
 	bool ownedContent;
 	
 	XMP_Uns32 psirLength;
@@ -229,33 +233,63 @@ public:
 	XMP_Uns32 UpdateFileResources   ( LFA_FileRef sourceRef, LFA_FileRef destRef,
 									  IOBuffer * ioBuf, XMP_AbortProc abortProc, void * abortArg );
 
-	PSIR_FileWriter() : changed(false), memParsed(false), fileParsed(false),
+	PSIR_FileWriter() : changed(false), legacyDeleted(false), memParsed(false), fileParsed(false),
 						ownedContent(false), memLength(0), memContent(0) {};
 
 	virtual ~PSIR_FileWriter();
 
+	// Memory usage notes: PSIR_FileWriter is for file-based OR read/write usage. For memory-based
+	// streams the dataPtr and rsrcName are initially into the stream, they become a separate
+	// allocation if changed. For file-based streams they are always a separate allocation.
+	
+	// ! The working data values are always big endian, no matter where stored. It is the client's
+	// ! responsibility to flip them as necessary.
+	
+	static const bool kIsFileBased   = true;	// For use in the InternalRsrcInfo constructor.
+	static const bool kIsMemoryBased = false;
+
 	struct InternalRsrcInfo {
+	public:
+	
 		bool      changed;
+		bool      fileBased;
 		XMP_Uns16 id;
 		XMP_Uns32 dataLen;
-		void*     dataPtr;		// ! The data is read-only! Null if the value is not captured!
+		void*     dataPtr;		// ! Null if the value is not captured!
 		XMP_Uns32 origOffset;	// The offset (at parse time) of the resource data.
-		XMP_Uns8* rsrcName;		// ! A Pascal string. Only in the map for memory-based resources.
-		InternalRsrcInfo() : changed(false), id(0), dataLen(0), dataPtr(0), origOffset(0), rsrcName(0) {};
-		InternalRsrcInfo ( XMP_Uns16 _id, XMP_Uns32 _dataLen, void* _dataPtr, XMP_Uns32 _origOffset )
-			: changed(false), id(_id), dataLen(_dataLen), dataPtr(_dataPtr), origOffset(_origOffset), rsrcName(0) {};
-		~InternalRsrcInfo()
-		{
-			if ( this->changed && (this->dataPtr != 0) ) free ( this->dataPtr );
-		};
+		XMP_Uns8* rsrcName;		// ! A Pascal string, leading length byte, no nul terminator!
+
+		inline void FreeData() {
+			if ( this->fileBased || this->changed ) {
+				if ( this->dataPtr != 0 ) { free ( this->dataPtr ); this->dataPtr = 0; }
+			}
+		}
+
+		inline void FreeName() {
+			if ( this->fileBased || this->changed ) {
+				if ( this->rsrcName != 0 ) { free ( this->rsrcName ); this->rsrcName = 0; }
+			}
+		}
+	
+		InternalRsrcInfo ( XMP_Uns16 _id, XMP_Uns32 _dataLen, bool _fileBased )
+			: changed(false), fileBased(_fileBased), id(_id), dataLen(_dataLen), dataPtr(0),
+			  origOffset(0), rsrcName(0) {};
+		~InternalRsrcInfo() { this->FreeData(); this->FreeName(); };
+
 		void operator= ( const InternalRsrcInfo & in )
-		{	// ! Hack to transfer ownership of the data block.
-			this->changed = in.changed;
-			this->id = in.id;
-			this->dataLen = in.dataLen; this->dataPtr = in.dataPtr;
-			this->origOffset = in.origOffset; this->rsrcName = in.rsrcName;
-			*((void**)&in.dataPtr) = 0;
+		{
+			// ! Gag! Transfer ownership of the dataPtr and rsrcName!
+			this->FreeData();
+			memcpy ( this, &in, sizeof(*this) );	// AUDIT: Use of sizeof(InternalRsrcInfo) is safe.
+			*((void**)&in.dataPtr) = 0;		// The pointer is now owned by "this".
+			*((void**)&in.rsrcName) = 0;	// The pointer is now owned by "this".
 		};
+
+	private:
+
+		InternalRsrcInfo()	// Hidden on purpose, fileBased must be properly set.
+			: changed(false), fileBased(false), id(0), dataLen(0), dataPtr(0), origOffset(0), rsrcName(0) {};
+	
 	};
 	
 	// The origOffset is the absolute file offset for file parses, the memory block offset for
@@ -263,7 +297,7 @@ public:
 
 private:
 
-	bool changed;
+	bool changed, legacyDeleted;
 	bool memParsed, fileParsed;
 	bool ownedContent;
 

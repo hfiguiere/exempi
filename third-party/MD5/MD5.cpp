@@ -1,5 +1,6 @@
 #include "MD5.h"
 
+#include <cassert>
 #include <cstring>
 
 using namespace std;
@@ -148,7 +149,7 @@ void MD5Update (	MD5_CTX *context, /* context */
 
 */
      if (inputLen >= partLen) {
-	 std::memcpy (&context->buffer[index], input, partLen);
+	 std::memcpy (&context->buffer[index], input, partLen);	// AUDIT: From public MD5 code, assumed safe.
      MD5Transform (context->state, context->buffer);
 
      for (i = partLen; i + 63 < inputLen; i += 64)
@@ -160,7 +161,7 @@ void MD5Update (	MD5_CTX *context, /* context */
      i = 0;
 
        /* Buffer remaining input */
-	 std::memcpy (&context->buffer[index], &input[i], inputLen-i);
+	 std::memcpy (&context->buffer[index], &input[i], inputLen-i);	// AUDIT: From public MD5 code, assumed safe.
 
 }
 
@@ -193,7 +194,8 @@ void MD5Final (	unsigned char digest[16], /* message digest */
        /* Zeroize sensitive information.
 
 */
-    memset (context, 0, sizeof (*context));
+	assert ( sizeof(*context) == sizeof(MD5_CTX) );
+    memset ( context, 0, sizeof (*context) );	// AUDIT: Safe, using sizeof destination.
 }
 
 /* MD5 basic transformation. Transforms state based on block.

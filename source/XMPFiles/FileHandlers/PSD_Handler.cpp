@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -249,7 +249,12 @@ void PSD_MetaHandler::ProcessXMP()
 		this->iptcMgr = new IPTC_Reader();
 		this->exifMgr = new TIFF_MemoryReader();
 	} else {
-		this->iptcMgr = new IPTC_Writer();
+		#if ! XMP_UNIXBuild
+			this->iptcMgr = new IPTC_Writer();	// ! Parse it later.
+		#else
+			// ! Hack until the legacy-as-local issues are resolved for generic UNIX.
+			this->iptcMgr = new IPTC_Reader();	// ! Import IPTC but don't export it.
+		#endif
 		this->exifMgr = new TIFF_FileWriter();
 	}
 
@@ -287,7 +292,7 @@ void PSD_MetaHandler::ProcessXMP()
 		XMP_Assert ( this->containsXMP );
 		// Common code takes care of packetInfo.charForm, .padSize, and .writeable.
 		XMP_StringPtr packetStr = this->xmpPacket.c_str();
-		XMP_StringLen packetLen = this->xmpPacket.size();
+		XMP_StringLen packetLen = (XMP_StringLen)this->xmpPacket.size();
 		try {
 			this->xmpObj.ParseFromBuffer ( packetStr, packetLen );
 		} catch ( ... ) {
@@ -327,14 +332,20 @@ void PSD_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	if ( oldPacketOffset == kXMPFiles_UnknownOffset ) oldPacketOffset = 0;	// ! Simplify checks.
 	if ( oldPacketLength == kXMPFiles_UnknownLength ) oldPacketLength = 0;
 	
-	bool doInPlace = (oldPacketOffset != 0) && (oldPacketLength != 0);	// ! Has old packet and new packet fits.
-	if ( doInPlace && (this->psirMgr.IsLegacyChanged()) ) doInPlace = false;
+	bool doInPlace = (this->xmpPacket.size() <= (size_t)this->packetInfo.length);
+	if ( this->psirMgr.IsLegacyChanged() ) doInPlace = false;
 
 	if ( doInPlace ) {
 
 		#if GatherPerformanceData
 			sAPIPerf->back().extraInfo += ", PSD in-place update";
 		#endif
+		
+		if ( this->xmpPacket.size() < (size_t)this->packetInfo.length ) {
+			// They ought to match, cheap to be sure.
+			size_t extraSpace = (size_t)this->packetInfo.length - this->xmpPacket.size();
+			this->xmpPacket.append ( extraSpace, ' ' );
+		}
 
 		LFA_FileRef liveFile = this->parent->fileRef;
 	
@@ -343,7 +354,7 @@ void PSD_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		// printf ( "PSD_MetaHandler::UpdateFile - XMP in-place packet offset %lld (0x%llX), size %d\n",
 		//		  oldPacketOffset, oldPacketOffset, this->xmpPacket.size() );
 		LFA_Seek ( liveFile, oldPacketOffset, SEEK_SET );
-		LFA_Write ( liveFile, this->xmpPacket.c_str(), this->xmpPacket.size() );
+		LFA_Write ( liveFile, this->xmpPacket.c_str(), (XMP_StringLen)this->xmpPacket.size() );
 	
 	} else {
 
@@ -418,10 +429,10 @@ void PSD_MetaHandler::WriteFile ( LFA_FileRef sourceRef, const std::string & sou
 	
 	this->xmpObj.SerializeToBuffer ( &this->xmpPacket, kXMP_UseCompactFormat );
 	this->packetInfo.offset = kXMPFiles_UnknownOffset;
-	this->packetInfo.length = this->xmpPacket.size();
-	this->packetInfo.padSize = GetPacketPadSize ( this->xmpPacket.c_str(), this->xmpPacket.size() );
+	this->packetInfo.length = (XMP_StringLen)this->xmpPacket.size();
+	FillPacketInfo ( this->xmpPacket, &this->packetInfo );
 
-	this->psirMgr.SetImgRsrc ( kPSIR_XMP, this->xmpPacket.c_str(), this->xmpPacket.size() );
+	this->psirMgr.SetImgRsrc ( kPSIR_XMP, this->xmpPacket.c_str(), (XMP_StringLen)this->xmpPacket.size() );
 	
 	// Copy the file header and color mode section, then write the updated image resource section,
 	// and copy the tail of the source file (layer and mask section to EOF).

@@ -2,7 +2,7 @@
 #define __XMPMeta_hpp__
 
 // =================================================================================================
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002-2008 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:	Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -335,8 +335,14 @@ public:
 	void
 	SetObjectOptions ( XMP_OptionBits options );
 
-	XMPMeta *
-	Clone ( XMP_OptionBits options ) const;
+	void
+	Sort();
+
+	void
+	Erase();
+
+	void
+	Clone ( XMPMeta * clone, XMP_OptionBits options ) const;
 	
 	XMP_Index
 	CountArrayItems ( XMP_StringPtr schemaNS,

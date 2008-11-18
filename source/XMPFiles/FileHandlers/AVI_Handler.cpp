@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -20,15 +20,10 @@
 	#endif
 #endif
 
-
 using namespace std;
 
 #define kXMPUserDataType MakeFourCC ( '_', 'P', 'M', 'X' )	/* Yes, backwards! */
 
-
-/*******************************************************
-** Premiere Pro specific info for reconciliation
-*******************************************************/
 // FourCC codes for the RIFF chunks
 #define	aviTimeChunk	MakeFourCC('I','S','M','T')
 #define	avihdrlChunk	MakeFourCC('h','d','r','l')
@@ -56,10 +51,6 @@ using namespace std;
 #define kTapeName "tapeName"
 #define kAltTapeName "altTapeName"
 #define kLogComment "logComment"
-
-/*******************************************************
-*******************************************************/
-
 
 // =================================================================================================
 /// \file AVI_Handler.cpp
@@ -144,14 +135,14 @@ void AVI_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	if ( doSafeUpdate ) XMP_Throw ( "AVI_MetaHandler::UpdateFile: Safe update not supported", kXMPErr_Unavailable );
 	
 	XMP_StringPtr packetStr = xmpPacket.c_str();
-	XMP_StringLen packetLen = xmpPacket.size();
+	XMP_StringLen packetLen = (XMP_StringLen)xmpPacket.size();
 	if ( packetLen == 0 ) return;
 
 	// Make sure we're writing an even number of bytes as required by the RIFF specification.
 	if ( (xmpPacket.size() & 1) == 1 ) xmpPacket.push_back ( ' ' );
 	XMP_Assert ( (xmpPacket.size() & 1) == 0 );
 	packetStr = xmpPacket.c_str();	// ! Make sure they are current.
-	packetLen = xmpPacket.size();
+	packetLen = (XMP_StringLen)xmpPacket.size();
 	
 	LFA_FileRef fileRef(this->parent->fileRef);
 	if ( fileRef == 0 ) return;
@@ -161,7 +152,10 @@ void AVI_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	if ( numTags == 0 ) return;
 
 	ok = RIFF_Support::PutChunk ( fileRef, riffState, formtypeAVI, kXMPUserDataType, (char*)packetStr, packetLen );
-	if ( ! ok )return;	// If there's an error writing the chunk, bail.
+	if ( ! ok ) return;	// If there's an error writing the chunk, bail.
+
+	ok = CreatorAtom::Update ( this->xmpObj, fileRef, formtypeAVI, riffState );
+	if ( ! ok ) return;
 
 	// Update legacy metadata
 
@@ -185,7 +179,7 @@ void AVI_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 		ok = FindChunk ( riffState, myCommentChunk, myCommentList, 0, 0, 0, 0 );
 
-		if ( ! ok ) {
+		if ( ok ) {
 
 			// Always rewrite the comment string, even if empty, so the user can erase it.
 			RIFF_Support::RewriteChunk ( fileRef, riffState, myCommentChunk, myCommentList, logCommentString.c_str() );
@@ -225,19 +219,29 @@ void AVI_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 	} else {
 	
-		ok = MakeChunk ( fileRef, riffState, formtypeAVI, PR_AVI_TIMELEN );
-		if ( ! ok ) return; // If there's an error making a chunk, bail
-
-		RIFF_Support::ltag listtag;
-		listtag.id = MakeUns32LE ( FOURCC_LIST );
-		listtag.len = MakeUns32LE ( PR_AVI_TIMELEN - 8 );
-		listtag.subid = MakeUns32LE ( myTimeList );
-		LFA_Write(fileRef, &listtag, 12);
-
-		RIFF_Support::WriteChunk ( fileRef, myOrgTimeChunk, startTimecodeString.c_str(), TIMELEN );
-		RIFF_Support::WriteChunk ( fileRef, myAltTimeChunk, altTimecodeString.c_str(), TIMELEN );
-		RIFF_Support::WriteChunk ( fileRef, myOrgReelChunk, orgReelString.c_str(), REELLEN );
-		RIFF_Support::WriteChunk ( fileRef, myAltReelChunk, altReelString.c_str(), REELLEN );
+		// We don't have the legacy part yet. If none of the XMP items exist then don't do anything.
+		// Otherwise, add all 4 even if empty. This is the original logic from way back.
+		
+		bool haveAnyXMP = ( (! startTimecodeString.empty()) || (! altTimecodeString.empty()) ||
+							(! orgReelString.empty()) || (! altReelString.empty()) );
+		
+		if ( haveAnyXMP ) {
+		
+			ok = MakeChunk ( fileRef, riffState, formtypeAVI, PR_AVI_TIMELEN );
+			if ( ! ok ) return; // If there's an error making a chunk, bail
+	
+			RIFF_Support::ltag listtag;
+			listtag.id = MakeUns32LE ( FOURCC_LIST );
+			listtag.len = MakeUns32LE ( PR_AVI_TIMELEN - 8 );
+			listtag.subid = MakeUns32LE ( myTimeList );
+			LFA_Write(fileRef, &listtag, 12);
+	
+			RIFF_Support::WriteChunk ( fileRef, myOrgTimeChunk, startTimecodeString.c_str(), TIMELEN );
+			RIFF_Support::WriteChunk ( fileRef, myAltTimeChunk, altTimecodeString.c_str(), TIMELEN );
+			RIFF_Support::WriteChunk ( fileRef, myOrgReelChunk, orgReelString.c_str(), REELLEN );
+			RIFF_Support::WriteChunk ( fileRef, myAltReelChunk, altReelString.c_str(), REELLEN );
+		
+		}
 
 	}
 
@@ -259,6 +263,24 @@ void AVI_MetaHandler::WriteFile ( LFA_FileRef         sourceRef,
 }	// AVI_MetaHandler::WriteFile
 
 // =================================================================================================
+
+static void StripSimpleEmpty ( SXMPMeta * xmp, XMP_StringPtr ns, XMP_StringPtr prop )
+{
+	// Small hack to clean up bad data. There are cases of code writing xmpDM:startTimecode and
+	// xmpDM:altTimecode as simple properties with empty values. They are supposed to be structs.
+	
+	std::string value;
+	XMP_OptionBits flags;
+
+	bool found = xmp->GetProperty ( ns, prop, &value, &flags );
+	
+	if ( found && XMP_PropIsSimple(flags) && value.empty() ) {
+		xmp->DeleteProperty ( ns, prop );
+	}
+
+}
+
+// =================================================================================================
 // AVI_MetaHandler::CacheFileData
 // ==============================
 
@@ -268,16 +290,48 @@ void AVI_MetaHandler::CacheFileData()
 	
 	this->containsXMP = false;
 	
-	LFA_FileRef fileRef ( this->parent->fileRef );
+	LFA_FileRef fileRef ( this->parent->fileRef ); //*** simplify to assignment
 	if ( fileRef == 0 ) return;
 
+	bool updateFile = XMP_OptionIsSet ( this->parent->openFlags, kXMPFiles_OpenForUpdate );
+	if ( updateFile ) {
+		
+		// Workaround for bad files in the field that have a bad size in the outermost RIFF chunk.
+		// Repair the cases where the length is too long (beyond EOF). Don't repair a length that is
+		// less than EOF, we don't know if there actually are multiple top level chunks. There is
+		// also a check and "runtime repair" inside ReadTag, needed for read-only file access.
+	
+		XMP_Int64 fileLen = LFA_Measure ( fileRef );
+		XMP_Uns32 riffLen;
+		
+		LFA_Seek ( fileRef, 4, SEEK_SET );
+		LFA_Read ( fileRef, &riffLen, 4 );
+		riffLen = GetUns32LE ( &riffLen );
+		
+		if ( (fileLen >= 8) && ((XMP_Int64)riffLen > (fileLen - 8)) ) {	// Is the initial chunk too long?
+
+			bool repairFile = XMP_OptionIsSet ( this->parent->openFlags, kXMPFiles_OpenRepairFile );
+			if ( ! repairFile ) {
+				XMP_Throw ( "Initial RIFF tag exceeds file length", kXMPErr_BadValue );
+			} else {
+				riffLen = MakeUns32LE ( (XMP_Uns32)fileLen - 8 );
+				LFA_Seek ( fileRef, 4, SEEK_SET );
+				LFA_Write ( fileRef, &riffLen, 4 );
+			}
+
+		}
+	
+	}
+
+	// Contnue with normal processing.
+	
 	RIFF_Support::RiffState riffState;
 	long numTags = RIFF_Support::OpenRIFF ( fileRef, riffState );
-	if ( numTags == 0 ) return;
+	if ( numTags == 0 ) return; //*** shouldn't we throw ? XMP_Throw("invalid file format") or such?
 
 	// Determine the size of the metadata
 	unsigned long bufferSize(0);
-	ok = RIFF_Support::GetRIFFChunk ( fileRef, riffState, kXMPUserDataType, 0, 0, 0, &bufferSize );
+	ok = RIFF_Support::GetRIFFChunk ( fileRef, riffState, kXMPUserDataType /* _PMX, the xmp packet */, 0, 0, 0, &bufferSize);
 
 	if ( ! ok ) {
 
@@ -290,22 +344,26 @@ void AVI_MetaHandler::CacheFileData()
 		this->xmpPacket.assign ( bufferSize, ' ' );
 
 		// Get the metadata
-		ok = RIFF_Support::GetRIFFChunk ( fileRef, riffState, kXMPUserDataType, 0, 0, (char*)this->xmpPacket.c_str(), &bufferSize );
+		XMP_Uns64 xmpPacketPosition;
+		ok = RIFF_Support::GetRIFFChunk ( fileRef, riffState, kXMPUserDataType /* _PMX, the xmp packet */, 0, 0,
+					(char*)this->xmpPacket.c_str(), &bufferSize, &xmpPacketPosition );
 		if ( ok ) {
-			this->packetInfo.offset = kXMPFiles_UnknownOffset;
+			this->packetInfo.offset = xmpPacketPosition;
 			this->packetInfo.length = bufferSize;
-			this->xmpObj.ParseFromBuffer ( this->xmpPacket.c_str(), this->xmpPacket.size() );
+			this->xmpObj.ParseFromBuffer ( this->xmpPacket.c_str(), (XMP_StringLen)this->xmpPacket.size() );
 			this->containsXMP = true;
 		}
 
 	}
 
-
 	// Reconcile legacy metadata.
-	
-	std::string aviTimeString, orgTimeString, altTimeString;
+
+	std::string aviTimeString, orgTimeString, altTimeString, projectPathString;
 	unsigned long aviTimeSize, orgTimeSize, altTimeSize;
 	
+	StripSimpleEmpty ( &this->xmpObj, kXMP_NS_DM, kStartTimecode );
+	StripSimpleEmpty ( &this->xmpObj, kXMP_NS_DM, kAltTimecode );
+
 	ok = RIFF_Support::GetRIFFChunk ( fileRef, riffState, aviTimeChunk, avihdrlChunk, 0, 0, &aviTimeSize );
 	if ( ok ) {
 		aviTimeString.reserve ( aviTimeSize );
@@ -422,11 +480,19 @@ void AVI_MetaHandler::CacheFileData()
 
 	}
 
-	// Update the xmpPacket, as the xmpObj might have been updated with legacy info.
-	this->xmpObj.SerializeToBuffer ( &this->xmpPacket, kXMP_UseCompactFormat );
-	this->packetInfo.offset = kXMPFiles_UnknownOffset;
-	this->packetInfo.length = this->xmpPacket.size();
+	CreatorAtom::Import ( this->xmpObj, fileRef, riffState );
 
+	//// Update the xmpPacket, as the xmpObj might have been updated with legacy info.
+	//// Produce packet of same size [1781657]
+	//try {
+	//	this->xmpObj.SerializeToBuffer ( &this->xmpPacket,
+	//		(kXMP_UseCompactFormat | kXMP_ExactPacketLength) , packetInfo.length );
+	//} catch ( XMP_Error ) {
+	//	this->xmpObj.SerializeToBuffer ( &this->xmpPacket, (kXMP_UseCompactFormat ) );
+	//}
+
+	//	removed for [1781657] this->packetInfo.offset = kXMPFiles_UnknownOffset;   
+	//	removed for [1781657] this->packetInfo.length = (XMP_StringLen)this->xmpPacket.size();
 	this->processedXMP = this->containsXMP;
-	
+
 }	// AVI_MetaHandler::CacheFileData

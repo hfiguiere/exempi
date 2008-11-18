@@ -23,7 +23,7 @@ using namespace std;
 // =================================================================================================
 
 static const char * kPSFileTag    = "%!PS-Adobe-";
-static const int    kPSFileTagLen = strlen ( kPSFileTag );
+static const size_t kPSFileTagLen = strlen ( kPSFileTag );
 
 // =================================================================================================
 // PostScript_MetaHandlerCTor
@@ -193,10 +193,10 @@ PostScript_MetaHandler::~PostScript_MetaHandler()
 // the XMP marker is found, look for the MainFirst/MainLast/NoMain options.
 	
 static const char * kPSContainsXMPString = "%ADO_ContainsXMP:";
-static const int    kPSContainsXMPLength = strlen ( kPSContainsXMPString );
+static const size_t kPSContainsXMPLength = strlen ( kPSContainsXMPString );
 	
 static const char * kPSEndCommentString  = "%%EndComments";	// ! Assumed shorter than kPSContainsXMPString.
-static const int    kPSEndCommentLength  = strlen ( kPSEndCommentString );
+static const size_t kPSEndCommentLength  = strlen ( kPSEndCommentString );
 
 int PostScript_MetaHandler::FindPostScriptHint()
 {
@@ -430,7 +430,7 @@ bool PostScript_MetaHandler::FindLastPacket()
 	
 	LFA_Seek ( fileRef, 0, SEEK_SET );	// Seek back to the beginning of the file.
 	
-	for ( bufPos = 0; bufPos < fileLen; bufPos += bufLen ) {
+	for ( bufPos = 0; bufPos < (size_t)fileLen; bufPos += bufLen ) {
 		if ( checkAbort && abortProc(abortArg) ) {
 			XMP_Throw ( "PostScript_MetaHandler::FindLastPacket - User abort", kXMPErr_UserAbort );
 		}

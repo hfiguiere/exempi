@@ -1121,6 +1121,16 @@ public interface XMPMeta extends Cloneable
 	 */
 	void setObjectName(String name);
 
+	
+	/**
+	 * @return Returns the unparsed content of the &lt;?xpacket&gt; processing instruction.
+	 * 		This contains normally the attribute-like elements 'begin="&lt;BOM&gt;"
+	 *		id="W5M0MpCehiHzreSzNTczkc9d"' and possibly the deprecated elements 'bytes="1234"' or
+	 * 		'encoding="XXX"'. If the parsed packet has not been wrapped into an xpacket,
+	 * 		<code>null</code> is returned.   
+	 */
+	String getPacketHeader();
+	
 
 	/**
 	 * Clones the complete metadata tree.

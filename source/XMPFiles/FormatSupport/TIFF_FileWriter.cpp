@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -28,8 +28,8 @@
 // Parsing will reset them to the proper endianness for the stream. Big endian is a good default
 // since JPEG and PSD files are big endian overall.
 
-TIFF_FileWriter::TIFF_FileWriter()
-	: changed(false), memParsed(false), fileParsed(false), ownedStream(false), memStream(0), tiffLength(0)
+TIFF_FileWriter::TIFF_FileWriter() : changed(false), legacyDeleted(false), memParsed(false),
+									 fileParsed(false), ownedStream(false), memStream(0), tiffLength(0)
 {
 
 	XMP_Uns8 bogusTIFF [kEmptyTIFFLength];
@@ -47,10 +47,6 @@ TIFF_FileWriter::TIFF_FileWriter()
 // =================================================================================================
 // TIFF_FileWriter::~TIFF_FileWriter
 // =================================
-//
-// The InternalTagInfo destructor will deallocate the data for changed tags. It does not know
-// whether they are memory-based or file-based though, so it won't deallocate captured but unchanged
-// file-based tags. Mark those as changed here to make the destructor deallocate them.
 
 TIFF_FileWriter::~TIFF_FileWriter()
 {
@@ -60,17 +56,6 @@ TIFF_FileWriter::~TIFF_FileWriter()
 	if ( this->ownedStream ) {
 		XMP_Assert ( this->memStream != 0 );
 		free ( this->memStream );
-	}
-
-	if ( this->fileParsed ) {
-		for ( int ifd = 0; ifd < kTIFF_KnownIFDCount; ++ifd ) {
-			InternalTagMap& currTagMap ( this->containedIFDs[ifd].tagMap );
-			InternalTagMap::iterator tagPos = currTagMap.begin();
-			InternalTagMap::iterator tagEnd = currTagMap.end();
-			for ( ; tagPos != tagEnd; ++tagPos ) {
-				if ( tagPos->second.dataPtr != 0 ) tagPos->second.changed = true;
-			}
-		}
 	}
 
 }	// TIFF_FileWriter::~TIFF_FileWriter
@@ -90,6 +75,7 @@ void TIFF_FileWriter::DeleteExistingInfo()
 	for ( int ifd = 0; ifd < kTIFF_KnownIFDCount; ++ifd ) this->containedIFDs[ifd].clear();
 
 	this->changed = false;
+	this->legacyDeleted = false;
 	this->memParsed = false;
 	this->fileParsed = false;
 	this->ownedStream = false;
@@ -161,9 +147,9 @@ bool TIFF_FileWriter::GetIFD ( XMP_Uns8 ifd, TagInfoMap* ifdMap ) const
 XMP_Uns32 TIFF_FileWriter::GetValueOffset ( XMP_Uns8 ifd, XMP_Uns16 id ) const
 {
 	const InternalTagInfo* thisTag = this->FindTagInIFD ( ifd, id );
-	if ( (thisTag == 0) || (thisTag->origLen == 0) ) return 0;
+	if ( (thisTag == 0) || (thisTag->origDataLen == 0) ) return 0;
 	
-	return thisTag->origOffset;
+	return thisTag->origDataOffset;
 	
 }	// TIFF_FileWriter::GetValueOffset
 
@@ -180,7 +166,7 @@ bool TIFF_FileWriter::GetTag ( XMP_Uns8 ifd, XMP_Uns16 id, TagInfo* info ) const
 
 		info->id = thisTag->id;
 		info->type = thisTag->type;
-		info->count = thisTag->dataLen / kTIFF_TypeSizes[thisTag->type];
+		info->count = thisTag->dataLen / (XMP_Uns32)kTIFF_TypeSizes[thisTag->type];
 		info->dataLen = thisTag->dataLen;
 		info->dataPtr = (const void*)(thisTag->dataPtr);
 
@@ -203,35 +189,57 @@ void TIFF_FileWriter::SetTag ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns16 type, XMP_U
 	ifd = PickIFD ( ifd, id );
 	InternalTagMap& currIFD = this->containedIFDs[ifd].tagMap;
 
+	InternalTagInfo* tagPtr = 0;
 	InternalTagMap::iterator tagPos = currIFD.find ( id );
-	if ( (tagPos != currIFD.end()) &&
-		 (type == tagPos->second.type) &&
-		 (count == tagPos->second.count) &&
-		 (memcmp ( clientPtr, tagPos->second.dataPtr, tagPos->second.dataLen ) == 0) ) {
-		return;	// ! The value is unchanged, exit.
-	}
-
-	InternalTagInfo newTag ( id, type, count );
-	newTag.changed = true;
-	newTag.dataLen = count * typeSize;
-	
-	if ( newTag.dataLen <= 4 ) {
-		// The data is less than 4 bytes, store it in the dataOrOffset field. Numbers are already flipped.
-		XMP_Assert ( sizeof ( newTag.dataOrOffset ) == 4 );
-		memcpy ( &newTag.dataOrOffset, clientPtr, newTag.dataLen );	// AUDIT: Safe, the length is <= 4.
-	} else {
-		// The data is more than 4 bytes, make a copy.
-		newTag.dataPtr = (XMP_Uns8*) malloc ( newTag.dataLen );
-		if ( newTag.dataPtr == 0 ) XMP_Throw ( "Out of memory", kXMPErr_NoMemory );
-		memcpy ( newTag.dataPtr, clientPtr, newTag.dataLen );	// AUDIT: Safe, malloc'ed newTag.dataLen bytes above.
-	}
 
 	if ( tagPos == currIFD.end() ) {
-		currIFD[id] = newTag;
+
+		// The tag does not yet exist, add it.
+		InternalTagMap::value_type mapValue ( id, InternalTagInfo ( id, type, count, this->fileParsed ) );
+		tagPos = currIFD.insert ( tagPos, mapValue );
+		tagPtr = &tagPos->second;
+
 	} else {
-		newTag.origLen = tagPos->second.origLen;
-		newTag.origOffset = tagPos->second.origOffset;
-		tagPos->second = newTag;	// ! The InternalTagInfo assign operator transfers dataPtr ownership.
+
+		tagPtr = &tagPos->second;
+
+		// The tag already exists, make sure the value is actually changing.
+		if ( (type == tagPtr->type) && (count == tagPtr->count) &&
+			 (memcmp ( clientPtr, tagPtr->dataPtr, tagPtr->dataLen ) == 0) ) {
+			return;	// ! The value is unchanged, exit.
+		}
+
+		tagPtr->FreeData();	// Release any existing data allocation.
+		
+		tagPtr->type  = type;	// These might be changing also.
+		tagPtr->count = count;
+
+	}
+
+	tagPtr->changed = true;
+	tagPtr->dataLen = (XMP_Uns32)fullSize;
+	
+	if ( fullSize <= 4 ) {
+		// The data is less than 4 bytes, store it in the smallValue field using native endianness.
+		tagPtr->dataPtr = (XMP_Uns8*) &tagPtr->smallValue;
+	} else {
+		// The data is more than 4 bytes, make a copy.
+		tagPtr->dataPtr = (XMP_Uns8*) malloc ( fullSize );
+		if ( tagPtr->dataPtr == 0 ) XMP_Throw ( "Out of memory", kXMPErr_NoMemory );
+	}
+	memcpy ( tagPtr->dataPtr, clientPtr, fullSize );	// AUDIT: Safe, space guaranteed to be fullSize.
+	
+	if ( ! this->nativeEndian ) {
+		if ( typeSize == 2 ) {
+			XMP_Uns16* flipPtr = (XMP_Uns16*) tagPtr->dataPtr;
+			for ( XMP_Uns32 i = 0; i < count; ++i ) Flip2 ( flipPtr[i] );
+		} else if ( typeSize == 4 ) {
+			XMP_Uns32* flipPtr = (XMP_Uns32*) tagPtr->dataPtr;
+			for ( XMP_Uns32 i = 0; i < count; ++i ) Flip4 ( flipPtr[i] );
+		} else if ( typeSize == 8 ) {
+			XMP_Uns64* flipPtr = (XMP_Uns64*) tagPtr->dataPtr;
+			for ( XMP_Uns32 i = 0; i < count; ++i ) Flip8 ( flipPtr[i] );
+		}
 	}
 	
 	this->containedIFDs[ifd].changed = true;
@@ -254,6 +262,7 @@ void TIFF_FileWriter::DeleteTag ( XMP_Uns8 ifd, XMP_Uns16 id )
 	currIFD.erase ( tagPos );
 	this->containedIFDs[ifd].changed = true;
 	this->changed = true;
+	if ( (ifd != kTIFF_PrimaryIFD) || (id != kTIFF_XMP) ) this->legacyDeleted = true;
 
 }	// TIFF_FileWriter::DeleteTag
 
@@ -265,17 +274,17 @@ bool TIFF_FileWriter::GetTag_Integer ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns32* da
 {
 	const InternalTagInfo* thisTag = this->FindTagInIFD ( ifd, id );
 	if ( thisTag == 0 ) return false;
+	if ( thisTag->count != 1 ) return false;
 	
-	if ( data != 0 ) {
-		if ( thisTag->type == kTIFF_ShortType ) {
-			if ( thisTag->dataLen != 2 ) return false;	// Wrong count.
-			*data = this->GetUns16 ( thisTag->dataPtr );
-		} else if ( thisTag->type == kTIFF_LongType ) {
-			if ( thisTag->dataLen != 4 ) return false;	// Wrong count.
-			*data = this->GetUns32 ( thisTag->dataPtr );
-		} else {
-			return false;
-		}
+	static XMP_Uns32 voidValue;
+	if ( data == 0 ) data = &voidValue;
+	
+	if ( thisTag->type == kTIFF_ShortType ) {
+		*data = this->GetUns16 ( thisTag->dataPtr );
+	} else if ( thisTag->type == kTIFF_LongType ) {
+		*data = this->GetUns32 ( thisTag->dataPtr );
+	} else {
+		return false;
 	}
 	
 	return true;
@@ -293,7 +302,6 @@ bool TIFF_FileWriter::GetTag_Byte ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns8* data )
 	if ( (thisTag->type != kTIFF_ByteType) || (thisTag->dataLen != 1) ) return false;
 	
 	if ( data != 0 ) *data = *thisTag->dataPtr;
-	
 	return true;
 
 }	// TIFF_FileWriter::GetTag_Byte
@@ -309,7 +317,6 @@ bool TIFF_FileWriter::GetTag_SByte ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Int8* data 
 	if ( (thisTag->type != kTIFF_SByteType) || (thisTag->dataLen != 1) ) return false;
 	
 	if ( data != 0 ) *data = *thisTag->dataPtr;
-	
 	return true;
 
 }	// TIFF_FileWriter::GetTag_SByte
@@ -324,10 +331,7 @@ bool TIFF_FileWriter::GetTag_Short ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns16* data
 	if ( thisTag == 0 ) return false;
 	if ( (thisTag->type != kTIFF_ShortType) || (thisTag->dataLen != 2) ) return false;
 	
-	if ( data != 0 ) {
-		*data = this->GetUns16 ( thisTag->dataPtr );
-	}
-	
+	if ( data != 0 ) *data = this->GetUns16 ( thisTag->dataPtr );
 	return true;
 
 }	// TIFF_FileWriter::GetTag_Short
@@ -342,10 +346,7 @@ bool TIFF_FileWriter::GetTag_SShort ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Int16* dat
 	if ( thisTag == 0 ) return false;
 	if ( (thisTag->type != kTIFF_SShortType) || (thisTag->dataLen != 2) ) return false;
 	
-	if ( data != 0 ) {
-		*data = (XMP_Int16) this->GetUns16 ( thisTag->dataPtr );
-	}
-	
+	if ( data != 0 ) *data = (XMP_Int16) this->GetUns16 ( thisTag->dataPtr );
 	return true;
 
 }	// TIFF_FileWriter::GetTag_SShort
@@ -360,10 +361,7 @@ bool TIFF_FileWriter::GetTag_Long ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns32* data 
 	if ( thisTag == 0 ) return false;
 	if ( (thisTag->type != kTIFF_LongType) || (thisTag->dataLen != 4) ) return false;
 	
-	if ( data != 0 ) {
-		*data = this->GetUns32 ( thisTag->dataPtr );
-	}
-	
+	if ( data != 0 ) *data = this->GetUns32 ( thisTag->dataPtr );
 	return true;
 
 }	// TIFF_FileWriter::GetTag_Long
@@ -378,10 +376,7 @@ bool TIFF_FileWriter::GetTag_SLong ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Int32* data
 	if ( thisTag == 0 ) return false;
 	if ( (thisTag->type != kTIFF_SLongType) || (thisTag->dataLen != 4) ) return false;
 	
-	if ( data != 0 ) {
-		*data = (XMP_Int32) this->GetUns32 ( thisTag->dataPtr );
-	}
-	
+	if ( data != 0 ) *data = (XMP_Int32) this->GetUns32 ( thisTag->dataPtr );
 	return true;
 
 }	// TIFF_FileWriter::GetTag_SLong
@@ -398,7 +393,7 @@ bool TIFF_FileWriter::GetTag_Rational ( XMP_Uns8 ifd, XMP_Uns16 id, Rational* da
 	
 	if ( data != 0 ) {
 		XMP_Uns32* dataPtr = (XMP_Uns32*)thisTag->dataPtr;
-		data->num = this->GetUns32 ( dataPtr );
+		data->num   = this->GetUns32 ( dataPtr );
 		data->denom = this->GetUns32 ( dataPtr+1 );
 	}
 	
@@ -418,7 +413,7 @@ bool TIFF_FileWriter::GetTag_SRational ( XMP_Uns8 ifd, XMP_Uns16 id, SRational* 
 	
 	if ( data != 0 ) {
 		XMP_Uns32* dataPtr = (XMP_Uns32*)thisTag->dataPtr;
-		data->num = (XMP_Int32) this->GetUns32 ( dataPtr );
+		data->num   = (XMP_Int32) this->GetUns32 ( dataPtr );
 		data->denom = (XMP_Int32) this->GetUns32 ( dataPtr+1 );
 	}
 	
@@ -436,10 +431,7 @@ bool TIFF_FileWriter::GetTag_Float ( XMP_Uns8 ifd, XMP_Uns16 id, float* data ) c
 	if ( thisTag == 0 ) return false;
 	if ( (thisTag->type != kTIFF_FloatType) || (thisTag->dataLen != 4) ) return false;
 	
-	if ( data != 0 ) {
-		*data = this->GetFloat ( thisTag->dataPtr );
-	}
-	
+	if ( data != 0 ) *data = this->GetFloat ( thisTag->dataPtr );	
 	return true;
 
 }	// TIFF_FileWriter::GetTag_Float
@@ -454,11 +446,7 @@ bool TIFF_FileWriter::GetTag_Double ( XMP_Uns8 ifd, XMP_Uns16 id, double* data )
 	if ( (thisTag == 0) || (thisTag->dataPtr == 0) ) return false;
 	if ( (thisTag->type != kTIFF_DoubleType) || (thisTag->dataLen != 8) ) return false;
 	
-	if ( data != 0 ) {
-		double* dataPtr = (double*)thisTag->dataPtr;
-		*data = this->GetDouble ( dataPtr );
-	}
-	
+	if ( data != 0 ) *data = this->GetDouble ( thisTag->dataPtr );	
 	return true;
 
 }	// TIFF_FileWriter::GetTag_Double
@@ -517,6 +505,7 @@ bool TIFF_FileWriter::IsLegacyChanged()
 {
 
 	if ( ! this->changed ) return false;
+	if ( this->legacyDeleted ) return true;
 	
 	for ( int ifd = 0; ifd < kTIFF_KnownIFDCount; ++ifd ) {
 
@@ -557,6 +546,7 @@ void TIFF_FileWriter::ParseMemoryStream ( const void* data, XMP_Uns32 length, bo
 		this->memStream = (XMP_Uns8*) malloc(length);
 		if ( this->memStream == 0 ) XMP_Throw ( "Out of memory", kXMPErr_NoMemory );
 		memcpy ( this->memStream, data, length );	// AUDIT: Safe, malloc'ed length bytes above.
+		this->ownedStream = true;
 	}
 	this->tiffLength = length;
 
@@ -569,19 +559,19 @@ void TIFF_FileWriter::ParseMemoryStream ( const void* data, XMP_Uns32 length, bo
 
 	const InternalTagInfo* exifIFDTag = this->FindTagInIFD ( kTIFF_PrimaryIFD, kTIFF_ExifIFDPointer );
 	if ( (exifIFDTag != 0) && (exifIFDTag->type == kTIFF_LongType) && (exifIFDTag->dataLen == 4) ) {
-		XMP_Uns32 exifOffset = this->GetUns32 ( &exifIFDTag->dataOrOffset );
+		XMP_Uns32 exifOffset = this->GetUns32 ( exifIFDTag->dataPtr );
 		(void) this->ProcessMemoryIFD ( exifOffset, kTIFF_ExifIFD );
 	}
 
 	const InternalTagInfo* gpsIFDTag = this->FindTagInIFD ( kTIFF_PrimaryIFD, kTIFF_GPSInfoIFDPointer );
 	if ( (gpsIFDTag != 0) && (gpsIFDTag->type == kTIFF_LongType) && (gpsIFDTag->dataLen == 4) ) {
-		XMP_Uns32 gpsOffset = this->GetUns32 ( &gpsIFDTag->dataOrOffset );
+		XMP_Uns32 gpsOffset = this->GetUns32 ( gpsIFDTag->dataPtr );
 		(void) this->ProcessMemoryIFD ( gpsOffset, kTIFF_GPSInfoIFD );
 	}
 
 	const InternalTagInfo* interopIFDTag = this->FindTagInIFD ( kTIFF_ExifIFD, kTIFF_InteroperabilityIFDPointer );
 	if ( (interopIFDTag != 0) && (interopIFDTag->type == kTIFF_LongType) && (interopIFDTag->dataLen == 4) ) {
-		XMP_Uns32 interopOffset = this->GetUns32 ( &interopIFDTag->dataOrOffset );
+		XMP_Uns32 interopOffset = this->GetUns32 ( interopIFDTag->dataPtr );
 		(void) this->ProcessMemoryIFD ( interopOffset, kTIFF_InteropIFD );
 	}
 	
@@ -592,7 +582,7 @@ void TIFF_FileWriter::ParseMemoryStream ( const void* data, XMP_Uns32 length, bo
 		(void) this->ProcessMemoryIFD ( tnailIFDOffset, kTIFF_TNailIFD );
 		const InternalTagInfo* jpegInfo = FindTagInIFD ( kTIFF_TNailIFD, kTIFF_JPEGInterchangeFormat );
 		if ( jpegInfo != 0 ) {
-			XMP_Uns32 tnailImageOffset = this->GetUns32 ( &jpegInfo->dataOrOffset );
+			XMP_Uns32 tnailImageOffset = this->GetUns32 ( jpegInfo->dataPtr );
 			this->jpegTNailPtr = (XMP_Uns8*)this->memStream + tnailImageOffset;
 		}
 	}
@@ -604,13 +594,13 @@ void TIFF_FileWriter::ParseMemoryStream ( const void* data, XMP_Uns32 length, bo
 			InternalIFDInfo & thisIFD = this->containedIFDs[ifd];
 			printf ( "\n   IFD %d, count %d, mapped %d, offset %d (0x%X), next IFD %d (0x%X)\n",
 					 ifd, thisIFD.origCount, thisIFD.tagMap.size(),
-					 thisIFD.origOffset, thisIFD.origOffset, thisIFD.origNextIFD, thisIFD.origNextIFD );
+					 thisIFD.origDataOffset, thisIFD.origDataOffset, thisIFD.origNextIFD, thisIFD.origNextIFD );
 			InternalTagMap::iterator tagPos;
 			InternalTagMap::iterator tagEnd = thisIFD.tagMap.end();
 			for ( tagPos = thisIFD.tagMap.begin(); tagPos != tagEnd; ++tagPos ) {
 				InternalTagInfo & thisTag = tagPos->second;
-				printf ( "      Tag %d, dataOrOffset 0x%X, origLen %d, origOffset %d (0x%X)\n",
-						 thisTag.id, thisTag.dataOrOffset, thisTag.origLen, thisTag.origOffset, thisTag.origOffset );
+				printf ( "      Tag %d, smallValue 0x%X, origDataLen %d, origDataOffset %d (0x%X)\n",
+						 thisTag.id, thisTag.smallValue, thisTag.origDataLen, thisTag.origDataOffset, thisTag.origDataOffset );
 			}
 		}
 		printf ( "\n" );
@@ -638,27 +628,32 @@ XMP_Uns32 TIFF_FileWriter::ProcessMemoryIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd 
 	if ( tagCount >= 0x8000 ) XMP_Throw ( "Outrageous IFD count", kXMPErr_BadTIFF );
 	if ( (ifdOffset + 2 + tagCount*12 + 4) > this->tiffLength ) XMP_Throw ( "Out of bounds IFD", kXMPErr_BadTIFF );
 	
-	ifdInfo.origOffset = ifdOffset;
+	ifdInfo.origIFDOffset = ifdOffset;
 	ifdInfo.origCount  = tagCount;
 	
 	for ( size_t i = 0; i < tagCount; ++i ) {
 	
-		RawIFDEntry*    rawTag = &ifdEntries[i];
-		InternalTagInfo mapTag ( this->GetUns16(&rawTag->id), this->GetUns16(&rawTag->type), this->GetUns32(&rawTag->count) );
-		if ( (mapTag.type < kTIFF_ByteType) || (mapTag.type > kTIFF_LastType) ) continue;	// Bad type, skip this tag.
+		RawIFDEntry* rawTag  = &ifdEntries[i];
+		XMP_Uns16    tagType = this->GetUns16 ( &rawTag->type );
+		if ( (tagType < kTIFF_ByteType) || (tagType > kTIFF_LastType) ) continue;	// Bad type, skip this tag.
+		
+		XMP_Uns16 tagID    = this->GetUns16 ( &rawTag->id );
+		XMP_Uns32 tagCount = this->GetUns32 ( &rawTag->count );
 
-		mapTag.dataLen = mapTag.origLen = mapTag.count * kTIFF_TypeSizes[mapTag.type];
-		mapTag.dataOrOffset = rawTag->dataOrOffset;	// Keep the value or offset in stream byte ordering.
+		InternalTagMap::value_type mapValue ( tagID, InternalTagInfo ( tagID, tagType, tagCount, kIsMemoryBased ) );
+		InternalTagMap::iterator newPos = ifdInfo.tagMap.insert ( ifdInfo.tagMap.end(), mapValue );
+		InternalTagInfo& mapTag = newPos->second;
+
+		mapTag.dataLen = mapTag.origDataLen = mapTag.count * (XMP_Uns32)kTIFF_TypeSizes[mapTag.type];
+		mapTag.smallValue = rawTag->dataOrOffset;	// Keep the value or offset in stream byte ordering.
 
 		if ( mapTag.dataLen <= 4 ) {
-			mapTag.dataPtr = (XMP_Uns8*) &mapTag.dataOrOffset;
-			mapTag.origOffset = ifdOffset + 2 + (12 * i);	// Compute the data offset.
+			mapTag.origDataOffset = ifdOffset + 2 + (12 * (XMP_Uns32)i) + 8;	// Compute the data offset.
 		} else {
-			mapTag.origOffset = this->GetUns32 ( &rawTag->dataOrOffset );	// Extract the data offset.
-			mapTag.dataPtr = this->memStream + mapTag.origOffset;
+			mapTag.origDataOffset = this->GetUns32 ( &rawTag->dataOrOffset );	// Extract the data offset.
 			// printf ( "FW_ProcessMemoryIFD tag %d large value @ %.8X\n", mapTag.id, mapTag.dataPtr );
 		}
-		ifdInfo.tagMap[mapTag.id] = mapTag;
+		mapTag.dataPtr = this->memStream + mapTag.origDataOffset;
 	
 	}
 	
@@ -748,19 +743,19 @@ void TIFF_FileWriter::ParseFileStream ( LFA_FileRef fileRef )
 
 	const InternalTagInfo* exifIFDTag = this->FindTagInIFD ( kTIFF_PrimaryIFD, kTIFF_ExifIFDPointer );
 	if ( (exifIFDTag != 0) && (exifIFDTag->type == kTIFF_LongType) && (exifIFDTag->count == 1) ) {
-		XMP_Uns32 exifOffset = this->GetUns32 ( &exifIFDTag->dataOrOffset );
+		XMP_Uns32 exifOffset = this->GetUns32 ( exifIFDTag->dataPtr );
 		(void) this->ProcessFileIFD ( kTIFF_ExifIFD, exifOffset, fileRef, &ioBuf );
 	}
 
 	const InternalTagInfo* gpsIFDTag = this->FindTagInIFD ( kTIFF_PrimaryIFD, kTIFF_GPSInfoIFDPointer );
 	if ( (gpsIFDTag != 0) && (gpsIFDTag->type == kTIFF_LongType) && (gpsIFDTag->count == 1) ) {
-		XMP_Uns32 gpsOffset = this->GetUns32 ( &gpsIFDTag->dataOrOffset );
+		XMP_Uns32 gpsOffset = this->GetUns32 ( gpsIFDTag->dataPtr );
 		(void) this->ProcessFileIFD ( kTIFF_GPSInfoIFD, gpsOffset, fileRef, &ioBuf );
 	}
 
 	const InternalTagInfo* interopIFDTag = this->FindTagInIFD ( kTIFF_ExifIFD, kTIFF_InteroperabilityIFDPointer );
 	if ( (interopIFDTag != 0) && (interopIFDTag->type == kTIFF_LongType) && (interopIFDTag->dataLen == 4) ) {
-		XMP_Uns32 interopOffset = this->GetUns32 ( &interopIFDTag->dataOrOffset );
+		XMP_Uns32 interopOffset = this->GetUns32 ( interopIFDTag->dataPtr );
 		(void) this->ProcessFileIFD ( kTIFF_InteropIFD, interopOffset, fileRef, &ioBuf );
 	}
 	
@@ -779,13 +774,13 @@ void TIFF_FileWriter::ParseFileStream ( LFA_FileRef fileRef )
 			InternalIFDInfo & thisIFD = this->containedIFDs[ifd];
 			printf ( "\n   IFD %d, count %d, mapped %d, offset %d (0x%X), next IFD %d (0x%X)\n",
 					 ifd, thisIFD.origCount, thisIFD.tagMap.size(),
-					 thisIFD.origOffset, thisIFD.origOffset, thisIFD.origNextIFD, thisIFD.origNextIFD );
+					 thisIFD.origDataOffset, thisIFD.origDataOffset, thisIFD.origNextIFD, thisIFD.origNextIFD );
 			InternalTagMap::iterator tagPos;
 			InternalTagMap::iterator tagEnd = thisIFD.tagMap.end();
 			for ( tagPos = thisIFD.tagMap.begin(); tagPos != tagEnd; ++tagPos ) {
 				InternalTagInfo & thisTag = tagPos->second;
-				printf ( "      Tag %d, dataOrOffset 0x%X, origLen %d, origOffset %d (0x%X)\n",
-						 thisTag.id, thisTag.dataOrOffset, thisTag.origLen, thisTag.origOffset, thisTag.origOffset );
+				printf ( "      Tag %d, smallValue 0x%X, origDataLen %d, origDataOffset %d (0x%X)\n",
+						 thisTag.id, thisTag.smallValue, thisTag.origDataLen, thisTag.origDataOffset, thisTag.origDataOffset );
 			}
 		}
 		printf ( "\n" );
@@ -811,7 +806,7 @@ XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, L
 	if ( tagCount >= 0x8000 ) XMP_Throw ( "Outrageous IFD count", kXMPErr_BadTIFF );
 	if ( (ifdOffset + 2 + tagCount*12 + 4) > this->tiffLength ) XMP_Throw ( "Out of bounds IFD", kXMPErr_BadTIFF );
 	
-	ifdInfo.origOffset = ifdOffset;
+	ifdInfo.origIFDOffset = ifdOffset;
 	ifdInfo.origCount  = tagCount;
 	
 	// ---------------------------------------------------------------------------------------------
@@ -826,20 +821,26 @@ XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, L
 	
 		if ( ! CheckFileSpace ( fileRef, ioBuf, 12 ) ) XMP_Throw ( "EOF within IFD", kXMPErr_BadTIFF );
 		
-		RawIFDEntry*    rawTag = (RawIFDEntry*)ioBuf->ptr;
-		InternalTagInfo mapTag ( this->GetUns16(&rawTag->id), this->GetUns16(&rawTag->type), this->GetUns32(&rawTag->count) );
-		if ( (mapTag.type < kTIFF_ByteType) || (mapTag.type > kTIFF_LastType) ) continue;	// Bad type, skip this tag.
+		RawIFDEntry* rawTag = (RawIFDEntry*)ioBuf->ptr;
+		XMP_Uns16    tagType = this->GetUns16 ( &rawTag->type );
+		if ( (tagType < kTIFF_ByteType) || (tagType > kTIFF_LastType) ) continue;	// Bad type, skip this tag.
+		
+		XMP_Uns16 tagID    = this->GetUns16 ( &rawTag->id );
+		XMP_Uns32 tagCount = this->GetUns32 ( &rawTag->count );
 
-		mapTag.dataLen = mapTag.origLen = mapTag.count * kTIFF_TypeSizes[mapTag.type];
-		mapTag.dataOrOffset = rawTag->dataOrOffset;	// Keep the value or offset in stream byte ordering.
+		InternalTagMap::value_type mapValue ( tagID, InternalTagInfo ( tagID, tagType, tagCount, kIsFileBased ) );
+		InternalTagMap::iterator newPos = ifdInfo.tagMap.insert ( ifdInfo.tagMap.end(), mapValue );
+		InternalTagInfo& mapTag = newPos->second;
+
+		mapTag.dataLen = mapTag.origDataLen = mapTag.count * (XMP_Uns32)kTIFF_TypeSizes[mapTag.type];
+		mapTag.smallValue = rawTag->dataOrOffset;	// Keep the value or offset in stream byte ordering.
 
 		if ( mapTag.dataLen <= 4 ) {
-			mapTag.dataPtr = (XMP_Uns8*) &mapTag.dataOrOffset;
-			mapTag.origOffset = ifdOffset + 2 + (12 * i);	// Compute the data offset.
+			mapTag.dataPtr = (XMP_Uns8*) &mapTag.smallValue;
+			mapTag.origDataOffset = ifdOffset + 2 + (12 * i) + 8;	// Compute the data offset.
 		} else {
-			mapTag.origOffset = this->GetUns32 ( &rawTag->dataOrOffset );	// Extract the data offset.
+			mapTag.origDataOffset = this->GetUns32 ( &rawTag->dataOrOffset );	// Extract the data offset.
 		}
-		ifdInfo.tagMap[mapTag.id] = mapTag;
 	
 	}
 	
@@ -860,20 +861,20 @@ XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, L
 	const XMP_Uns16* knownTagPtr = sKnownTags[ifd];	// Points into the ordered recognized tag list.
 	
 	XMP_Uns32 bufBegin = (XMP_Uns32)ioBuf->filePos;	// TIFF stream bounds for the current buffer.
-	XMP_Uns32 bufEnd   = bufBegin + ioBuf->len;
+	XMP_Uns32 bufEnd   = bufBegin + (XMP_Uns32)ioBuf->len;
 	
 	for ( ; tagPos != tagEnd; ++tagPos ) {
 	
 		InternalTagInfo* currTag = &tagPos->second;
 
-		if ( currTag->dataLen <= 4 ) continue;	// Short values are already in the dataOrOffset field.
+		if ( currTag->dataLen <= 4 ) continue;	// Short values are already in the smallValue field.
 		while ( *knownTagPtr < currTag->id ) ++knownTagPtr;
 		if ( *knownTagPtr != currTag->id ) continue;	// Skip unrecognized tags.
 		if ( currTag->dataLen > 1024*1024 ) XMP_Throw ( "Outrageous data length", kXMPErr_BadTIFF );
 		
-		if ( (bufBegin <= currTag->origOffset) && ((currTag->origOffset + currTag->dataLen) <= bufEnd) ) {
+		if ( (bufBegin <= currTag->origDataOffset) && ((currTag->origDataOffset + currTag->dataLen) <= bufEnd) ) {
 			// This value is already fully within the current I/O buffer, copy it.
-			MoveToOffset ( fileRef, currTag->origOffset, ioBuf );
+			MoveToOffset ( fileRef, currTag->origDataOffset, ioBuf );
 			currTag->dataPtr = (XMP_Uns8*) malloc ( currTag->dataLen );
 			if ( currTag->dataPtr == 0 ) XMP_Throw ( "No data block", kXMPErr_NoMemory );
 			memcpy ( currTag->dataPtr, ioBuf->ptr, currTag->dataLen );	// AUDIT: Safe, malloc'ed currTag->dataLen bytes above.
@@ -899,15 +900,15 @@ XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, L
 
 		currTag->dataPtr = (XMP_Uns8*) malloc ( currTag->dataLen );
 		if ( currTag->dataPtr == 0 ) XMP_Throw ( "No data block", kXMPErr_NoMemory );
-		
+
 		if ( currTag->dataLen > kIOBufferSize ) {
 			// This value is bigger than the I/O buffer, read it directly and restore the file position.
-			LFA_Seek ( fileRef, currTag->origOffset, SEEK_SET );
+			LFA_Seek ( fileRef, currTag->origDataOffset, SEEK_SET );
 			LFA_Read ( fileRef, currTag->dataPtr, currTag->dataLen, kLFA_RequireAll );
 			LFA_Seek ( fileRef, (ioBuf->filePos + ioBuf->len), SEEK_SET );
 		} else {
 			// This value can fit in the I/O buffer, so use that.
-			MoveToOffset ( fileRef, currTag->origOffset, ioBuf );
+			MoveToOffset ( fileRef, currTag->origDataOffset, ioBuf );
 			ok = CheckFileSpace ( fileRef, ioBuf, currTag->dataLen );
 			if ( ! ok ) XMP_Throw ( "EOF in data block", kXMPErr_BadTIFF );
 			memcpy ( currTag->dataPtr, ioBuf->ptr, currTag->dataLen );	// AUDIT: Safe, malloc'ed currTag->dataLen bytes above.
@@ -930,7 +931,7 @@ XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, L
 void TIFF_FileWriter::IntegrateFromPShop6 ( const void * buriedPtr, size_t buriedLen ) 
 {
 	TIFF_MemoryReader buriedExif;
-	buriedExif.ParseMemoryStream ( buriedPtr, buriedLen );
+	buriedExif.ParseMemoryStream ( buriedPtr, (XMP_Uns32) buriedLen );
 	
 	this->ProcessPShop6IFD ( buriedExif, kTIFF_PrimaryIFD );
 	this->ProcessPShop6IFD ( buriedExif, kTIFF_TNailIFD );
@@ -949,27 +950,27 @@ void TIFF_FileWriter::IntegrateFromPShop6 ( const void * buriedPtr, size_t burie
 
 void* TIFF_FileWriter::CopyTagToMasterIFD ( const TagInfo & ps6Tag, InternalIFDInfo * masterIFD )
 {
-	InternalTagInfo newTag ( ps6Tag.id, ps6Tag.type, ps6Tag.count );
+	InternalTagMap::value_type mapValue ( ps6Tag.id, InternalTagInfo ( ps6Tag.id, ps6Tag.type, ps6Tag.count, this->fileParsed ) );
+	InternalTagMap::iterator newPos = masterIFD->tagMap.insert ( masterIFD->tagMap.end(), mapValue );
+	InternalTagInfo& newTag = newPos->second;
 
 	newTag.dataLen = ps6Tag.dataLen;
 	
 	if ( newTag.dataLen <= 4 ) {
-		newTag.dataPtr = (XMP_Uns8*) &newTag.dataOrOffset;
-		newTag.dataOrOffset = *((XMP_Uns32*)ps6Tag.dataPtr);
+		newTag.dataPtr = (XMP_Uns8*) &newTag.smallValue;
+		newTag.smallValue = *((XMP_Uns32*)ps6Tag.dataPtr);
 	} else {
-		XMP_Assert ( newTag.dataOrOffset == 0 );
 		newTag.dataPtr = (XMP_Uns8*) malloc ( newTag.dataLen );
 		if ( newTag.dataPtr == 0 ) XMP_Throw ( "Out of memory", kXMPErr_NoMemory );
 		memcpy ( newTag.dataPtr, ps6Tag.dataPtr, newTag.dataLen );	// AUDIT: Safe, malloc'ed dataLen bytes above.
 	}
 
 	newTag.changed = true;	// ! See comments with ProcessPShop6IFD.
-	XMP_Assert ( (newTag.origLen == 0) && (newTag.origOffset == 0) );
+	XMP_Assert ( (newTag.origDataLen == 0) && (newTag.origDataOffset == 0) );
 	
-	masterIFD->tagMap[newTag.id] = newTag;
 	masterIFD->changed = true;
 	
-	return masterIFD->tagMap[newTag.id].dataPtr;	// ! Return the address within the map entry for small values.
+	return newPos->second.dataPtr;	// ! Return the address within the map entry for small values.
 
 }	// TIFF_FileWriter::CopyTagToMasterIFD
 
@@ -1098,7 +1099,7 @@ void TIFF_FileWriter::ProcessPShop6IFD ( const TIFF_MemoryReader& buriedExif, XM
 			 (ps6Tag.id == kTIFF_JPEGInterchangeFormat) ||
 			 (ps6Tag.id == kTIFF_InteroperabilityIFDPointer) ) continue;
 		
-		void* voidPtr = CopyTagToMasterIFD ( ps6Tag, masterIFD );
+		void* voidPtr = this->CopyTagToMasterIFD ( ps6Tag, masterIFD );
 		
 		if ( needsFlipping ) {
 			switch ( ps6Tag.type ) {
@@ -1187,9 +1188,9 @@ XMP_Uns32 TIFF_FileWriter::DetermineAppendInfo ( XMP_Uns32 appendedOrigin,
 		printf ( "\nEntering TIFF_FileWriter::DetermineAppendInfo%s\n", (appendAll ? ", append all" : "") );
 		for ( int ifd = 0; ifd < kTIFF_KnownIFDCount; ++ifd ) {
 			InternalIFDInfo & thisIFD = this->containedIFDs[ifd];
-			printf ( "\n   IFD %d, origCount %d, map.size %d, origOffset %d (0x%X), origNextIFD %d (0x%X)",
+			printf ( "\n   IFD %d, origCount %d, map.size %d, origIFDOffset %d (0x%X), origNextIFD %d (0x%X)",
 					 ifd, thisIFD.origCount, thisIFD.tagMap.size(),
-					 thisIFD.origOffset, thisIFD.origOffset, thisIFD.origNextIFD, thisIFD.origNextIFD );
+					 thisIFD.origIFDOffset, thisIFD.origIFDOffset, thisIFD.origNextIFD, thisIFD.origNextIFD );
 			if ( thisIFD.changed ) printf ( ", changed" );
 			if ( thisIFD.origCount < thisIFD.tagMap.size() ) printf ( ", should get appended" );
 			printf ( "\n" );
@@ -1197,10 +1198,10 @@ XMP_Uns32 TIFF_FileWriter::DetermineAppendInfo ( XMP_Uns32 appendedOrigin,
 			InternalTagMap::iterator tagEnd = thisIFD.tagMap.end();
 			for ( tagPos = thisIFD.tagMap.begin(); tagPos != tagEnd; ++tagPos ) {
 				InternalTagInfo & thisTag = tagPos->second;
-				printf ( "      Tag %d, dataOrOffset 0x%X, origLen %d, origOffset %d (0x%X)",
-						 thisTag.id, thisTag.dataOrOffset, thisTag.origLen, thisTag.origOffset, thisTag.origOffset );
+				printf ( "      Tag %d, smallValue 0x%X, origDataLen %d, origDataOffset %d (0x%X)",
+						 thisTag.id, thisTag.smallValue, thisTag.origDataLen, thisTag.origDataOffset, thisTag.origDataOffset );
 				if ( thisTag.changed ) printf ( ", changed" );
-				if ( (thisTag.dataLen > thisTag.origLen) && (thisTag.dataLen > 4) ) printf ( ", should get appended" );
+				if ( (thisTag.dataLen > thisTag.origDataLen) && (thisTag.dataLen > 4) ) printf ( ", should get appended" );
 				printf ( "\n" );
 			}
 		}
@@ -1254,10 +1255,10 @@ XMP_Uns32 TIFF_FileWriter::DetermineAppendInfo ( XMP_Uns32 appendedOrigin,
 		if ( ! (appendAll | ifdInfo.changed) ) continue;
 		if ( tagCount == 0 ) continue;
 		
-		newIFDOffsets[ifd] = ifdInfo.origOffset;
+		newIFDOffsets[ifd] = ifdInfo.origIFDOffset;
 		if ( appendedIFDs[ifd] ) {
 			newIFDOffsets[ifd] = appendedOrigin + appendedLength;
-			appendedLength += 6 + (12 * tagCount);
+			appendedLength += (XMP_Uns32)( 6 + (12 * tagCount) );
 		}
 		
 		InternalTagMap::iterator tagPos = ifdInfo.tagMap.begin();
@@ -1268,10 +1269,10 @@ XMP_Uns32 TIFF_FileWriter::DetermineAppendInfo ( XMP_Uns32 appendedOrigin,
 			InternalTagInfo & currTag ( tagPos->second );
 			if ( (! (appendAll | currTag.changed)) || (currTag.dataLen <= 4) ) continue;
 
-			if ( (currTag.dataLen <= currTag.origLen) && (! appendAll) ) {
-				this->PutUns32 ( currTag.origOffset, &currTag.dataOrOffset );	// Reuse the old space.
+			if ( (currTag.dataLen <= currTag.origDataLen) && (! appendAll) ) {
+				this->PutUns32 ( currTag.origDataOffset, &currTag.smallValue );	// Reuse the old space.
 			} else {
-				this->PutUns32 ( (appendedOrigin + appendedLength), &currTag.dataOrOffset );	// Set the appended offset.
+				this->PutUns32 ( (appendedOrigin + appendedLength), &currTag.smallValue );	// Set the appended offset.
 				appendedLength += ((currTag.dataLen + 1) & 0xFFFFFFFEUL);	// Round to an even size.
 			}
 
@@ -1296,9 +1297,9 @@ XMP_Uns32 TIFF_FileWriter::DetermineAppendInfo ( XMP_Uns32 appendedOrigin,
 		printf ( "Exiting TIFF_FileWriter::DetermineAppendInfo\n" );
 		for ( int ifd = 0; ifd < kTIFF_KnownIFDCount; ++ifd ) {
 			InternalIFDInfo & thisIFD = this->containedIFDs[ifd];
-			printf ( "\n   IFD %d, origCount %d, map.size %d, origOffset %d (0x%X), origNextIFD %d (0x%X)",
+			printf ( "\n   IFD %d, origCount %d, map.size %d, origIFDOffset %d (0x%X), origNextIFD %d (0x%X)",
 					 ifd, thisIFD.origCount, thisIFD.tagMap.size(),
-					 thisIFD.origOffset, thisIFD.origOffset, thisIFD.origNextIFD, thisIFD.origNextIFD );
+					 thisIFD.origIFDOffset, thisIFD.origIFDOffset, thisIFD.origNextIFD, thisIFD.origNextIFD );
 			if ( thisIFD.changed ) printf ( ", changed" );
 			if ( appendedIFDs[ifd] ) printf ( ", will be appended at %d (0x%X)", newIFDOffsets[ifd], newIFDOffsets[ifd] );
 			printf ( "\n" );
@@ -1306,11 +1307,11 @@ XMP_Uns32 TIFF_FileWriter::DetermineAppendInfo ( XMP_Uns32 appendedOrigin,
 			InternalTagMap::iterator tagEnd = thisIFD.tagMap.end();
 			for ( tagPos = thisIFD.tagMap.begin(); tagPos != tagEnd; ++tagPos ) {
 				InternalTagInfo & thisTag = tagPos->second;
-				printf ( "      Tag %d, dataOrOffset 0x%X, origLen %d, origOffset %d (0x%X)",
-						 thisTag.id, thisTag.dataOrOffset, thisTag.origLen, thisTag.origOffset, thisTag.origOffset );
+				printf ( "      Tag %d, smallValue 0x%X, origDataLen %d, origDataOffset %d (0x%X)",
+						 thisTag.id, thisTag.smallValue, thisTag.origDataLen, thisTag.origDataOffset, thisTag.origDataOffset );
 				if ( thisTag.changed ) printf ( ", changed" );
-				if ( (thisTag.dataLen > thisTag.origLen) && (thisTag.dataLen > 4) ) {
-					XMP_Uns32 newOffset = this->GetUns32 ( &thisTag.dataOrOffset );
+				if ( (thisTag.dataLen > thisTag.origDataLen) && (thisTag.dataLen > 4) ) {
+					XMP_Uns32 newOffset = this->GetUns32 ( &thisTag.smallValue );
 					printf ( ", will be appended at %d (0x%X)", newOffset, newOffset );
 				}
 				printf ( "\n" );
@@ -1383,7 +1384,7 @@ void TIFF_FileWriter::UpdateMemByAppend ( XMP_Uns8** newStream_out, XMP_Uns32* n
 			
 			if ( appendedIFDs[ifd] ) {
 				XMP_Assert ( newIFDOffsets[ifd] == appendedOffset );
-				appendedOffset += 6 + (12 * tagCount);
+				appendedOffset += (XMP_Uns32)( 6 + (12 * tagCount) );
 			}
 			
 			this->PutUns16 ( (XMP_Uns16)tagCount, ifdPtr );
@@ -1403,14 +1404,14 @@ void TIFF_FileWriter::UpdateMemByAppend ( XMP_Uns8** newStream_out, XMP_Uns32* n
 				this->PutUns32 ( currTag.count, ifdPtr );
 				ifdPtr += 4;
 
-				*((XMP_Uns32*)ifdPtr) = currTag.dataOrOffset;
+				*((XMP_Uns32*)ifdPtr) = currTag.smallValue;
 
 				if ( (appendAll | currTag.changed) && (currTag.dataLen > 4) ) {
 
-					XMP_Uns32 valueOffset = this->GetUns32 ( &currTag.dataOrOffset );
+					XMP_Uns32 valueOffset = this->GetUns32 ( &currTag.smallValue );
 
-					if ( (currTag.dataLen <= currTag.origLen) && (! appendAll) ) {
-						XMP_Assert ( valueOffset == currTag.origOffset );
+					if ( (currTag.dataLen <= currTag.origDataLen) && (! appendAll) ) {
+						XMP_Assert ( valueOffset == currTag.origDataOffset );
 					} else {
 						XMP_Assert ( valueOffset == appendedOffset );
 						appendedOffset += ((currTag.dataLen + 1) & 0xFFFFFFFEUL);
@@ -1441,7 +1442,7 @@ void TIFF_FileWriter::UpdateMemByAppend ( XMP_Uns8** newStream_out, XMP_Uns32* n
 		
 		if ( appendedIFDs[kTIFF_TNailIFD] ) {
 			size_t primaryIFDCount = this->containedIFDs[kTIFF_PrimaryIFD].tagMap.size();
-			XMP_Uns32 tnailRefOffset = newIFDOffsets[kTIFF_PrimaryIFD] + 2 + (12 * primaryIFDCount);
+			XMP_Uns32 tnailRefOffset = newIFDOffsets[kTIFF_PrimaryIFD] + 2 + (12 * (XMP_Uns32)primaryIFDCount);
 			this->PutUns32 ( newIFDOffsets[kTIFF_TNailIFD], (newStream + tnailRefOffset) );
 		}
 	
@@ -1471,7 +1472,7 @@ XMP_Uns32 TIFF_FileWriter::DetermineVisibleLength()
 		size_t tagCount = ifdInfo.tagMap.size();
 		if ( tagCount == 0 ) continue;
 
-		visibleLength += 6 + (12 * tagCount);
+		visibleLength += (XMP_Uns32)( 6 + (12 * tagCount) );
 
 		InternalTagMap::iterator tagPos = ifdInfo.tagMap.begin();
 		InternalTagMap::iterator tagEnd = ifdInfo.tagMap.end();
@@ -1734,10 +1735,11 @@ XMP_Uns32 TIFF_FileWriter::UpdateMemoryStream ( void** dataPtr, bool condenseStr
 	// Parse the revised stream. This is the cleanest way to rebuild the tag map.
 	
 	this->ParseMemoryStream ( newStream, newLength, kDoNotCopyData );
-	this->ownedStream = true;	// ! We really do own the stream.
+	XMP_Assert ( this->tiffLength == newLength );
+	this->ownedStream = (newLength > 0);	// ! We really do own the new stream, if not empty.
 	
 	if ( dataPtr != 0 ) *dataPtr = this->memStream;
-	return this->tiffLength;
+	return newLength;
 	
 }	// TIFF_FileWriter::UpdateMemoryStream
 
@@ -1772,8 +1774,8 @@ void TIFF_FileWriter::UpdateFileStream ( LFA_FileRef fileRef )
 	if ( this->memParsed ) XMP_Throw ( "Not file based", kXMPErr_EnforceFailure );
 	if ( ! this->changed ) return;
 	
-	XMP_Int64 origLength = LFA_Measure ( fileRef );
-	if ( (origLength >> 32) != 0 ) XMP_Throw ( "TIFF files can't exceed 4GB", kXMPErr_BadTIFF );
+	XMP_Int64 origDataLength = LFA_Measure ( fileRef );
+	if ( (origDataLength >> 32) != 0 ) XMP_Throw ( "TIFF files can't exceed 4GB", kXMPErr_BadTIFF );
 	
 	bool appendedIFDs[kTIFF_KnownIFDCount];
 	XMP_Uns32 newIFDOffsets[kTIFF_KnownIFDCount];
@@ -1782,7 +1784,7 @@ void TIFF_FileWriter::UpdateFileStream ( LFA_FileRef fileRef )
 		printf ( "\nStarting update of TIFF file stream\n" );
 	#endif
 
-	XMP_Uns32 appendedOrigin = (XMP_Uns32)origLength;
+	XMP_Uns32 appendedOrigin = (XMP_Uns32)origDataLength;
 	if ( (appendedOrigin & 1) != 0 ) {
 		++appendedOrigin;	// Start at an even offset.
 		LFA_Seek ( fileRef, 0, SEEK_END );
@@ -1808,9 +1810,9 @@ void TIFF_FileWriter::UpdateFileStream ( LFA_FileRef fileRef )
 		
 		if ( ! appendedIFDs[ifd] ) {
 			#if Trace_UpdateFileStream
-				printf ( "  Updating IFD %d in-place at offset %d (0x%X)\n", ifd, thisIFD.origOffset, thisIFD.origOffset );
+				printf ( "  Updating IFD %d in-place at offset %d (0x%X)\n", ifd, thisIFD.origIFDOffset, thisIFD.origIFDOffset );
 			#endif
-			LFA_Seek ( fileRef, thisIFD.origOffset, SEEK_SET );
+			LFA_Seek ( fileRef, thisIFD.origIFDOffset, SEEK_SET );
 			this->WriteFileIFD ( fileRef, thisIFD );
 		}
 			
@@ -1819,11 +1821,11 @@ void TIFF_FileWriter::UpdateFileStream ( LFA_FileRef fileRef )
 		
 		for ( tagPos = thisIFD.tagMap.begin(); tagPos != tagEnd; ++tagPos ) {
 			InternalTagInfo & thisTag = tagPos->second;
-			if ( (! thisTag.changed) || (thisTag.dataLen <= 4) || (thisTag.dataLen > thisTag.origLen) ) continue;
+			if ( (! thisTag.changed) || (thisTag.dataLen <= 4) || (thisTag.dataLen > thisTag.origDataLen) ) continue;
 			#if Trace_UpdateFileStream
-				printf ( "    Updating tag %d in IFD %d in-place at offset %d (0x%X)\n", thisTag.id, ifd, thisTag.origOffset, thisTag.origOffset );
+				printf ( "    Updating tag %d in IFD %d in-place at offset %d (0x%X)\n", thisTag.id, ifd, thisTag.origDataOffset, thisTag.origDataOffset );
 			#endif
-			LFA_Seek ( fileRef, thisTag.origOffset, SEEK_SET );
+			LFA_Seek ( fileRef, thisTag.origDataOffset, SEEK_SET );
 			LFA_Write ( fileRef, thisTag.dataPtr, thisTag.dataLen );
 		}
 
@@ -1852,12 +1854,12 @@ void TIFF_FileWriter::UpdateFileStream ( LFA_FileRef fileRef )
 		
 		for ( tagPos = thisIFD.tagMap.begin(); tagPos != tagEnd; ++tagPos ) {
 			InternalTagInfo & thisTag = tagPos->second;
-			if ( (! thisTag.changed) || (thisTag.dataLen <= 4) || (thisTag.dataLen <= thisTag.origLen) ) continue;
+			if ( (! thisTag.changed) || (thisTag.dataLen <= 4) || (thisTag.dataLen <= thisTag.origDataLen) ) continue;
 			#if Trace_UpdateFileStream
-				XMP_Uns32 newOffset = this->GetUns32(&thisTag.dataOrOffset);
+				XMP_Uns32 newOffset = this->GetUns32(&thisTag.origDataOffset);
 				printf ( "    Updating tag %d in IFD %d by append at offset %d (0x%X)\n", thisTag.id, ifd, newOffset, newOffset );
 			#endif
-			XMP_Assert ( this->GetUns32(&thisTag.dataOrOffset) == LFA_Measure(fileRef) );
+			XMP_Assert ( this->GetUns32(&thisTag.smallValue) == LFA_Measure(fileRef) );
 			LFA_Write ( fileRef, thisTag.dataPtr, thisTag.dataLen );
 			if ( (thisTag.dataLen & 1) != 0 ) LFA_Write ( fileRef, "\0", 1 );
 		}
@@ -1880,10 +1882,10 @@ void TIFF_FileWriter::UpdateFileStream ( LFA_FileRef fileRef )
 	InternalIFDInfo & primaryIFD = this->containedIFDs[kTIFF_PrimaryIFD];
 	InternalIFDInfo & tnailIFD   = this->containedIFDs[kTIFF_TNailIFD];
 	
-	if ( appendedIFDs[kTIFF_TNailIFD] && (primaryIFD.origNextIFD == tnailIFD.origOffset) ) {
+	if ( appendedIFDs[kTIFF_TNailIFD] && (primaryIFD.origNextIFD == tnailIFD.origIFDOffset) ) {
 
 		size_t primaryIFDCount = primaryIFD.tagMap.size();
-		XMP_Uns32 tnailRefOffset = newIFDOffsets[kTIFF_PrimaryIFD] + 2 + (12 * primaryIFDCount);
+		XMP_Uns32 tnailRefOffset = newIFDOffsets[kTIFF_PrimaryIFD] + 2 + (12 * (XMP_Uns32)primaryIFDCount);
 
 		this->PutUns32 ( newIFDOffsets[kTIFF_TNailIFD], &newOffset );
 		#if TraceUpdateFileStream
@@ -1906,8 +1908,8 @@ void TIFF_FileWriter::UpdateFileStream ( LFA_FileRef fileRef )
 		if ( ! thisIFD.changed ) continue;
 
 		thisIFD.changed = false;
-		thisIFD.origCount  = thisIFD.tagMap.size();
-		thisIFD.origOffset = newIFDOffsets[ifd];
+		thisIFD.origCount  = (XMP_Uns16)( thisIFD.tagMap.size() );
+		thisIFD.origIFDOffset = newIFDOffsets[ifd];
 			
 		InternalTagMap::iterator tagPos;
 		InternalTagMap::iterator tagEnd = thisIFD.tagMap.end();
@@ -1916,8 +1918,8 @@ void TIFF_FileWriter::UpdateFileStream ( LFA_FileRef fileRef )
 			InternalTagInfo & thisTag = tagPos->second;
 			if ( ! thisTag.changed ) continue;
 			thisTag.changed = false;
-			thisTag.origLen = thisTag.dataLen;
-			if ( thisTag.origLen > 4 ) thisTag.origOffset = this->GetUns32 ( &thisTag.dataOrOffset );
+			thisTag.origDataLen = thisTag.dataLen;
+			if ( thisTag.origDataLen > 4 ) thisTag.origDataOffset = this->GetUns32 ( &thisTag.smallValue );
 		}
 
 	}
@@ -1938,7 +1940,7 @@ void TIFF_FileWriter::UpdateFileStream ( LFA_FileRef fileRef )
 void TIFF_FileWriter::WriteFileIFD ( LFA_FileRef fileRef, InternalIFDInfo & thisIFD )
 {
 	XMP_Uns16 tagCount;
-	this->PutUns16 ( thisIFD.tagMap.size(), &tagCount );
+	this->PutUns16 ( (XMP_Uns16)thisIFD.tagMap.size(), &tagCount );
 	LFA_Write ( fileRef, &tagCount, 2 );
 	
 	InternalTagMap::iterator tagPos;
@@ -1952,7 +1954,7 @@ void TIFF_FileWriter::WriteFileIFD ( LFA_FileRef fileRef, InternalIFDInfo & this
 		this->PutUns16 ( thisTag.id, &ifdEntry.id );
 		this->PutUns16 ( thisTag.type, &ifdEntry.type );
 		this->PutUns32 ( thisTag.count, &ifdEntry.count );
-		ifdEntry.dataOrOffset = thisTag.dataOrOffset;	// ! Already in stream endianness.
+		ifdEntry.dataOrOffset = thisTag.smallValue;	// ! Already in stream endianness.
 
 		LFA_Write ( fileRef, &ifdEntry, sizeof(ifdEntry) );
 		XMP_Assert ( sizeof(ifdEntry) == 12 );

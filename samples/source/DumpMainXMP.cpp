@@ -1,13 +1,15 @@
-// XMP Toolkit sample application to dump the main XMP packet in a file using the XMP File Handler
-// component of the XMP Toolkit. This is preferred over "dumb" packet scanning.
-
 // =================================================================================================
-// Copyright 2002-2005 Adobe Systems Incorporated
+// Copyright 2002-2008 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
+
+/**
+* Uses the XMPFiles component API to find the main XMP Packet for a data file, serializes the XMP, and writes 
+* it to a human-readable log file. This is preferred over "dumb" packet scanning.
+*/
 
 #include <string>
 #include <time.h>
@@ -98,7 +100,7 @@ ProcessFile ( const char * fileName  )
 
 // =================================================================================================
 
-extern "C" int
+int
 main ( int argc, const char * argv [] )
 {
 
@@ -108,51 +110,20 @@ main ( int argc, const char * argv [] )
 	}	
 
 	if ( ! SXMPFiles::Initialize() ) {
-		fprintf ( sLogFile, "## SXMPFiles::Initialize failed!\n" );
+		printf ( "## SXMPFiles::Initialize failed!\n" );
 		return -1;
 	}
 
-	if ( argc > 1 ) {
-	
-		printf ( "\n" );
-		for ( int i = 1; i < argc; i++ ) ProcessFile ( argv[i] );
-	
-	} else {
-
-		char fileNameBuffer[1025];
-
-		while ( true ) {
-		
-			printf ( "\nFile: " );
-			fgets( fileNameBuffer, sizeof(fileNameBuffer), stdin );
-			string	fileName ( fileNameBuffer );
-
-			if ( fileName.empty() ) break;
-
-			if ( (fileName[fileName.size()-1] == '\n') || (fileName[fileName.size()-1] == '\r') ) {
-				fileName.erase ( fileName.size()-1, 1 );	// Remove eol, allowing for CRLF.
-				if ( (fileName[fileName.size()-1] == '\n') || (fileName[fileName.size()-1] == '\r') ) {
-					fileName.erase ( fileName.size()-1, 1 );
-				}
-			}
-
-			if ( fileName == "." ) break;
-			
-			// Dragging an icon on Windows pastes a quoted path.
-			if ( fileName[fileName.size()-1] == '"' ) fileName.erase ( fileName.size()-1, 1 );
-			if ( fileName[0] == '"' ) fileName.erase ( 0, 1 );
-
-			if ( ! fileName.empty() ) {
-				printf ( "\n" );
-				ProcessFile ( fileName.c_str() );
-			}
-		
-		}
-
+	if ( argc != 2 ) // 2 := command and 1 parameter
+	{
+		printf( "usage: DumpMainXMP (filename)\n");
+		return 0;
 	}
+
+	ProcessFile ( argv[1] );
 		
 	SXMPFiles::Terminate();
 	SXMPMeta::Terminate();
+	
 	return 0;
-
 }

@@ -1,13 +1,16 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
 
-#if WIN_ENV
+#include "XMP_Environment.h"	// ! This must be the first include.
+#if ! XMP_UNIXBuild				//	Closes at very bottom. Disabled on UNIX until legacy-as-local is fixed.
+
+#if XMP_WinBuild
 	#pragma warning ( disable : 4996 )	// '...' was declared deprecated
 #endif
 
@@ -103,7 +106,7 @@ using namespace std;
 
 static inline int GetStringRiffSize ( const std::string & str )
 {
-	int l = strlen ( const_cast<char *> (str.data()) );
+	int l = (int)strlen ( const_cast<char *> (str.data()) );
 	if ( l & 1 ) ++l;
 	return l;
 }
@@ -194,7 +197,7 @@ void WAV_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 	std::string strTitle, strArtist, strComment, strCopyright, strCreateDate,
 				strEngineer, strGenre, strAlbum, strSoftware;
-	
+
 	if ( fReconciliate ) {
 	
 		// Get the legacy item values, create the new digest, and add the digest to the XMP. The
@@ -227,7 +230,7 @@ void WAV_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		PrepareLegacyExport ( kXMP_NS_DM, kGenre, wavInfoGenreChunk, &strGenre, &digestStr, &md5Ctx );
 		PrepareLegacyExport ( kXMP_NS_DM, kAlbum, wavInfoAlbumChunk, &strAlbum, &digestStr, &md5Ctx );
 		PrepareLegacyExport ( kXMP_NS_XMP, kSoftware, wavInfoSoftwareChunk, &strSoftware, &digestStr, &md5Ctx );
-		
+
 		// Finish the digest and add it to the XMP.
 		
 		MD5Final ( md5Val, &md5Ctx );
@@ -239,10 +242,11 @@ void WAV_MetaHandler::UpdateFile ( bool doSafeUpdate )
 			digestStr += hexDigits [byte & 0xF];
 		}
 
-		XMP_StringLen oldLen = this->xmpPacket.size();
+		XMP_StringLen oldLen = (XMP_StringLen)this->xmpPacket.size();
 		this->xmpObj.SetProperty ( kXMP_NS_WAV, "NativeDigest", digestStr.c_str() );
 		try {
-			this->xmpObj.SerializeToBuffer ( &this->xmpPacket, kXMP_ExactPacketLength, oldLen );
+			this->xmpObj.SerializeToBuffer ( &this->xmpPacket, (kXMP_UseCompactFormat | kXMP_ExactPacketLength),
+							oldLen );
 		} catch ( ... ) {
 			this->xmpObj.SerializeToBuffer ( &this->xmpPacket, kXMP_UseCompactFormat );
 		}
@@ -250,29 +254,33 @@ void WAV_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	}
 	
 	XMP_StringPtr packetStr = this->xmpPacket.c_str();
-	XMP_StringLen packetLen = this->xmpPacket.size();
+	XMP_StringLen packetLen = (XMP_StringLen)this->xmpPacket.size();
 	if ( packetLen == 0 ) return;
 
 	// Make sure we're writing an even number of bytes as required by the RIFF specification
-	if ( (this->xmpPacket.size() & 1) == 1 ) this->xmpPacket.push_back (' ');
+	if ( (this->xmpPacket.size() & 1) == 1 )
+		this->xmpPacket.push_back (' ');
 	XMP_Assert ( (this->xmpPacket.size() & 1) == 0 );
 	packetStr = this->xmpPacket.c_str();	// ! Make sure they are current.
-	packetLen = this->xmpPacket.size();
+	packetLen = (XMP_StringLen)this->xmpPacket.size();
 	
 	LFA_FileRef fileRef ( this->parent->fileRef );
 	if ( fileRef == 0 ) return;
 
 	RIFF_Support::RiffState riffState;
-	long numTags = RIFF_Support::OpenRIFF(fileRef, riffState);
+	long numTags = RIFF_Support::OpenRIFF ( fileRef, riffState );
 	if ( numTags == 0 ) return;
 
 	ok = RIFF_Support::PutChunk ( fileRef, riffState, formtypeWAVE, kXMPUserDataType, (char*)packetStr, packetLen );
 	if ( ! ok ) return;
 
+	ok = CreatorAtom::Update ( this->xmpObj, fileRef, formtypeWAVE, riffState );
+	if ( ! ok ) return;
+
 	// If needed, reconciliate the XMP data back into the native metadata.
 	if ( fReconciliate ) {
 
-		PutChunk ( fileRef, riffState, wavWaveTag, wavWaveTitleChunk, strTitle.c_str(), strTitle.size() );
+		PutChunk ( fileRef, riffState, wavWaveTag, wavWaveTitleChunk, strTitle.c_str(), (XMP_Int32)strTitle.size() );
 
 		// Pad the old tags
 		RIFF_Support::MarkChunkAsPadding ( fileRef, riffState, 0, wavInfoCreateDateChunk, 0 );
@@ -360,14 +368,14 @@ static void AddDigestItem ( XMP_Uns32 legacyID, std::string & legacyStr, std::st
 {
 	
 	XMP_Uns32 leID  = MakeUns32LE ( legacyID );
-	XMP_Uns32 leLen = MakeUns32LE (legacyStr.size());
+	XMP_Uns32 leLen = MakeUns32LE ( (XMP_Uns32)legacyStr.size());
 	
 	digestStr->append ( (char*)(&leID), 4 );
 	digestStr->append ( "," );
 	
 	MD5Update ( md5, (XMP_Uns8*)&leID, 4 );
 	MD5Update ( md5, (XMP_Uns8*)&leLen, 4 );
-	MD5Update ( md5, (XMP_Uns8*)legacyStr.c_str(), legacyStr.size() );
+	MD5Update ( md5, (XMP_Uns8*)legacyStr.c_str(), (XMP_Int32)legacyStr.size() );
 
 }	// AddDigestItem
 
@@ -409,7 +417,7 @@ static void CreateCurrentDigest ( LFA_FileRef fileRef, RIFF_Support::RiffState r
 	AddCurrentDigestItem ( fileRef, riffState, wavInfoGenreChunk, wavInfoTag, digestStr, &md5Ctx );
 	AddCurrentDigestItem ( fileRef, riffState, wavInfoAlbumChunk, wavInfoTag, digestStr, &md5Ctx );
 	AddCurrentDigestItem ( fileRef, riffState, wavInfoSoftwareChunk, wavInfoTag, digestStr, &md5Ctx );
-		
+
 	MD5Final ( md5Val, &md5Ctx );
 	
 	(*digestStr)[digestStr->size()-1] = ';';
@@ -434,15 +442,47 @@ void WAV_MetaHandler::CacheFileData()
 	bool keepExistingXMP = false;	// By default an import will replace existing XMP.
 	bool haveLegacyItem, haveXMPItem;
 
-	LFA_FileRef fileRef ( this->parent->fileRef );
+	LFA_FileRef fileRef ( this->parent->fileRef );	//*** simplify to assignment
+
+	bool updateFile = XMP_OptionIsSet ( this->parent->openFlags, kXMPFiles_OpenForUpdate );
+	if ( updateFile ) {
+		
+		// Workaround for bad files in the field that have a bad size in the outermost RIFF chunk.
+		// Repair the cases where the length is too long (beyond EOF). Don't repair a length that is
+		// less than EOF, we don't know if there actually are multiple top level chunks. There is
+		// also a check and "runtime repair" inside ReadTag, needed for read-only file access.
+	
+		XMP_Int64 fileLen = LFA_Measure ( fileRef );
+		XMP_Uns32 riffLen;
+		
+		LFA_Seek ( fileRef, 4, SEEK_SET );
+		LFA_Read ( fileRef, &riffLen, 4 );
+		riffLen = GetUns32LE ( &riffLen );
+		
+		if ( (fileLen >= 8) && ((XMP_Int64)riffLen > (fileLen - 8)) ) {	// Is the initial chunk too long?
+
+			bool repairFile = XMP_OptionIsSet ( this->parent->openFlags, kXMPFiles_OpenRepairFile );
+			if ( ! repairFile ) {
+				XMP_Throw ( "Initial RIFF tag exceeds file length", kXMPErr_BadValue );
+			} else {
+				riffLen = MakeUns32LE ( (XMP_Uns32)fileLen - 8 );
+				LFA_Seek ( fileRef, 4, SEEK_SET );
+				LFA_Write ( fileRef, &riffLen, 4 );
+			}
+
+		}
+	
+	}
+
+	// Contnue with normal processing.
 
 	RIFF_Support::RiffState riffState;
 	long numTags = RIFF_Support::OpenRIFF ( fileRef, riffState );
-	if ( numTags == 0 ) return;
+	if ( numTags == 0 ) return; //*** shouldn't we throw ? XMP_Throw("invalid file format") or such?
 
 	// Determine the size of the metadata
 	unsigned long bufferSize(0);
-	haveLegacyItem = RIFF_Support::GetRIFFChunk ( fileRef, riffState, kXMPUserDataType, 0, 0, 0, &bufferSize );
+	haveLegacyItem = RIFF_Support::GetRIFFChunk ( fileRef, riffState, kXMPUserDataType /* _PMX, the xmp packet */, 0, 0, 0, &bufferSize );
 
 	if ( ! haveLegacyItem ) {
 
@@ -455,12 +495,13 @@ void WAV_MetaHandler::CacheFileData()
 		this->xmpPacket.assign(bufferSize, ' ');
 
 		// Get the metadata
-		haveLegacyItem = RIFF_Support::GetRIFFChunk ( fileRef, riffState, kXMPUserDataType, 0, 0,
-													  const_cast<char *>(this->xmpPacket.data()), &bufferSize );
+		XMP_Uns64 xmpPacketPosition;
+		haveLegacyItem = RIFF_Support::GetRIFFChunk ( fileRef, riffState, kXMPUserDataType /* _PMX, the xmp packet */, 0, 0,
+													  const_cast<char *>(this->xmpPacket.data()), &bufferSize, &xmpPacketPosition );
 		if ( haveLegacyItem ) {
-			this->packetInfo.offset = kXMPFiles_UnknownOffset;
+			this->packetInfo.offset = xmpPacketPosition;
 			this->packetInfo.length = bufferSize;
-			this->xmpObj.ParseFromBuffer ( this->xmpPacket.c_str(), this->xmpPacket.size() );
+			this->xmpObj.ParseFromBuffer ( this->xmpPacket.c_str(), (XMP_StringLen)this->xmpPacket.size() );
 			this->containsXMP = true;
 		}
 
@@ -502,10 +543,24 @@ void WAV_MetaHandler::CacheFileData()
 
 	}
 
+	CreatorAtom::Import ( this->xmpObj, fileRef, riffState );
+
 	// Update the xmpPacket, as the xmpObj might have been updated with legacy info
-	this->xmpObj.SerializeToBuffer ( &this->xmpPacket, kXMP_UseCompactFormat );
-	this->packetInfo.offset = kXMPFiles_UnknownOffset;
-	this->packetInfo.length = this->xmpPacket.size();
+	if ( this->packetInfo.length == kXMPFiles_UnknownLength )
+	{
+		// kXMPFiles_UnknownLength <=> no prior packet, thus do not attempt
+		// to put in place (creates several seconds of delay
+		this->xmpObj.SerializeToBuffer ( &this->xmpPacket, (kXMP_UseCompactFormat ) );
+	}
+	else
+	{
+		try {
+			this->xmpObj.SerializeToBuffer ( &this->xmpPacket,
+				(kXMP_UseCompactFormat | kXMP_ExactPacketLength) , this->packetInfo.length );
+		} catch ( XMP_Error ) {
+			this->xmpObj.SerializeToBuffer ( &this->xmpPacket, (kXMP_UseCompactFormat ) );
+		}
+	}
 
 	this->processedXMP = this->containsXMP;
 	
@@ -646,3 +701,7 @@ void WAV_MetaHandler::ImportLegacyItem ( RIFF_Support::RiffState & inOutRiffStat
 	}
 
 } // WAV_MetaHandler::LoadPropertyFromRIFF
+
+// =================================================================================================
+
+#endif	// XMP_UNIXBuild

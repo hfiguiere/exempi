@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -13,6 +13,8 @@
 #include "XMP_Environment.h"	// ! This must be the first include.
 
 #include <map>
+#include <stdlib.h>
+#include <string.h>
 
 #include "XMP_Const.h"
 #include "XMPFiles_Impl.hpp"
@@ -139,6 +141,8 @@ enum {
 	kTIFF_PSIR = 34377,
 	kTIFF_ExifIFDPointer = 34665,
 	kTIFF_GPSInfoIFDPointer = 34853,
+	kTIFF_DNGVersion = 50706,
+	kTIFF_DNGBackwardVersion = 50707,
 	
 	// Additional thumbnail IFD tags. We also care about 256, 257, and 259 in thumbnails.
 	kTIFF_JPEGInterchangeFormat = 513,
@@ -288,6 +292,8 @@ static const XMP_Uns16 sKnownPrimaryIFDTags[] =
 	kTIFF_PSIR,							// 34377
 	kTIFF_ExifIFDPointer,				// 34665
 	kTIFF_GPSInfoIFDPointer,			// 34853
+	kTIFF_DNGVersion,					// 50706
+	kTIFF_DNGBackwardVersion,			// 50707
 	0xFFFF	// Must be last as a sentinel.
 };
 
@@ -704,12 +710,17 @@ private:
 	XMP_Uns8* tiffStream;
 	XMP_Uns32 tiffLength;
 
-	struct TweakedIFDEntry {
+	// Memory usage notes: TIFF_MemoryReader is for memory-based read-only usage (both apply). There
+	// is no need to ever allocate separate blocks of memory, everything is used directly from the
+	// TIFF stream. Data pointers are computed on the fly, the offset field is 4 bytes and pointers
+	// will be 8 bytes for 64-bit platforms.
+
+	struct TweakedIFDEntry {	// ! Most fields are in native byte order, dataOrPos is for offsets only.
 		XMP_Uns16 id;
 		XMP_Uns16 type;
 		XMP_Uns32 bytes;
-		XMP_Uns32 dataOrPtr;
-		TweakedIFDEntry() : id(0), type(0), bytes(0), dataOrPtr(0) {};
+		XMP_Uns32 dataOrPos;
+		TweakedIFDEntry() : id(0), type(0), bytes(0), dataOrPos(0) {};
 	};
 	
 	struct TweakedIFDInfo {
@@ -725,6 +736,9 @@ private:
 	XMP_Uns32 ProcessOneIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd );
 	
 	const TweakedIFDEntry* FindTagInIFD ( XMP_Uns8 ifd, XMP_Uns16 id ) const;
+	
+	const inline void* GetDataPtr ( const TweakedIFDEntry* tifdEntry ) const
+		{ if ( tifdEntry->bytes <= 4 ) return &tifdEntry->dataOrPos; else return (this->tiffStream + tifdEntry->dataOrPos); };
 
 	static inline void NotAppropriate() { XMP_Throw ( "Not appropriate for TIFF_Reader", kXMPErr_InternalFailure ); };
 	
@@ -797,57 +811,85 @@ public:
 
 private:
 
-	bool changed;
+	bool changed, legacyDeleted;
 	bool memParsed, fileParsed;
 	bool ownedStream;
 
 	XMP_Uns8* memStream;
 	XMP_Uns32 tiffLength;
 
-	struct InternalTagInfo {
+	// Memory usage notes: TIFF_FileWriter is for file-based OR read/write usage. For memory-based
+	// streams the dataPtr is initially into the stream, regardless of size. For file-based streams
+	// the dataPtr is initially a separate allocation for large values (over 4 bytes), and points to
+	// the smallValue field for small values. This is also the usage when a tag is changed (for both
+	// memory and file cases), the dataPtr is a separate allocation for large values (over 4 bytes),
+	// and points to the smallValue field for small values.
+	
+	// ! The working data values are always stream endian, no matter where stored. They are flipped
+	// ! as necessary by GetTag and SetTag.
+	
+	static const bool kIsFileBased   = true;	// For use in the InternalTagInfo constructor.
+	static const bool kIsMemoryBased = false;
+	
+	class InternalTagInfo {
+	public:
+
 		XMP_Uns16 id;
 		XMP_Uns16 type;
 		XMP_Uns32 count;
 		XMP_Uns32 dataLen;
-		XMP_Uns32 dataOrOffset;	// Small value or large offset in stream endianness.
-		XMP_Uns8* dataPtr;		// Always set, even for small values.
-		XMP_Uns32 origLen;		// The original data length in bytes.
-		XMP_Uns32 origOffset;	// The original data offset, regardless of length.
+		XMP_Uns32 smallValue;		// Small value in stream endianness, but "left" justified.
+		XMP_Uns8* dataPtr;			// Parsing captures all small values, only large ones that we care about.
+		XMP_Uns32 origDataLen;		// The original (parse time) data length in bytes.
+		XMP_Uns32 origDataOffset;	// The original data offset, regardless of length.
 		bool      changed;
-		InternalTagInfo() : id(0), type(0), count(0), dataLen(0), dataOrOffset(0), dataPtr(0), origLen(0), origOffset(0), changed(false) {};
-		InternalTagInfo ( XMP_Uns16 _id, XMP_Uns16 _type, XMP_Uns32 _count )
-			: id(_id), type(_type), count(_count), dataLen(0), dataOrOffset(0), dataPtr(0), origLen(0), origOffset(0), changed(false) {};
-		~InternalTagInfo()
-		{
-			if ( this->changed && (this->dataLen > 4) && (this->dataPtr != 0) ) free ( this->dataPtr );
-		};
+		bool      fileBased;
+
+		inline void FreeData() {
+			if ( this->fileBased || this->changed ) {
+				if ( (this->dataLen > 4) && (this->dataPtr != 0) ) { free ( this->dataPtr ); this->dataPtr = 0; }
+			}
+		}
+
+		InternalTagInfo ( XMP_Uns16 _id, XMP_Uns16 _type, XMP_Uns32 _count, bool _fileBased )
+			: id(_id), type(_type), count(_count), dataLen(0), smallValue(0), dataPtr(0),
+			  origDataLen(0), origDataOffset(0), changed(false), fileBased(_fileBased) {};
+		~InternalTagInfo() { this->FreeData(); };
+
 		void operator=  ( const InternalTagInfo & in )
 		{
 			// ! Gag! Transfer ownership of the dataPtr!
-			if ( this->changed && (this->dataLen > 4) && (this->dataPtr != 0) ) free ( this->dataPtr );
-			memcpy ( this, &in, sizeof ( InternalTagInfo ) );	// AUDIT: Use of sizeof(InternalTagInfo) is safe.
+			this->FreeData();
+			memcpy ( this, &in, sizeof(*this) );	// AUDIT: Use of sizeof(InternalTagInfo) is safe.
 			if ( this->dataLen <= 4 ) {
-				this->dataPtr = (XMP_Uns8*) &this->dataOrOffset;
+				this->dataPtr = (XMP_Uns8*) &this->smallValue;	// Don't use the copied pointer.
 			} else {
-				*((XMP_Uns8**)&in.dataPtr) = 0;	// ! Avoid double calls to free from the destructor!
+				*((XMP_Uns8**)&in.dataPtr) = 0;	// The pointer is now owned by "this".
 			}
 		};
+
+	private:
+
+		InternalTagInfo()	// Hidden on purpose, fileBased must be properly set.
+			: id(0), type(0), count(0), dataLen(0), smallValue(0), dataPtr(0),
+			  origDataLen(0), origDataOffset(0), changed(false), fileBased(false) {};
+
 	};
 	
 	typedef std::map<XMP_Uns16,InternalTagInfo> InternalTagMap;
 	
 	struct InternalIFDInfo {
 		bool changed;
-		XMP_Uns16 origCount;	// Original number of IFD entries.
-		XMP_Uns32 origOffset;	// Original stream offset of the IFD.
-		XMP_Uns32 origNextIFD;	// Original stream offset of the following IFD.
+		XMP_Uns16 origCount;		// Original number of IFD entries.
+		XMP_Uns32 origIFDOffset;	// Original stream offset of the IFD.
+		XMP_Uns32 origNextIFD;		// Original stream offset of the following IFD.
 		InternalTagMap tagMap;
-		InternalIFDInfo() : changed(false), origCount(0), origOffset(0), origNextIFD(0) {};
-		void clear()
+		InternalIFDInfo() : changed(false), origCount(0), origIFDOffset(0), origNextIFD(0) {};
+		inline void clear()
 		{
 			this->changed = false;
 			this->origCount = 0;
-			this->origOffset = this->origNextIFD = 0;
+			this->origIFDOffset = this->origNextIFD = 0;
 			this->tagMap.clear();
 		};
 	};
@@ -864,7 +906,7 @@ private:
 
 	void ProcessPShop6IFD ( const TIFF_MemoryReader& buriedExif, XMP_Uns8 ifd );
 
-	static void* CopyTagToMasterIFD ( const TagInfo& ps6Tag, InternalIFDInfo* masterIFD );
+	void* CopyTagToMasterIFD ( const TagInfo& ps6Tag, InternalIFDInfo* masterIFD );
 	
 	void UpdateMemByAppend  ( XMP_Uns8** newStream_out, XMP_Uns32* newLength_out,
 							  bool appendAll = false, XMP_Uns32 extraSpace = 0 );

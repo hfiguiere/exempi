@@ -7,6 +7,9 @@
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
 
+#include "XMP_Environment.h"	// ! This must be the first include.
+#if ! XMP_UNIXBuild				//	Closes at very bottom. Disabled on UNIX until legacy-as-local is fixed.
+
 #include "MP3_Handler.hpp"
 #include "ID3_Support.hpp"
 
@@ -136,7 +139,7 @@ void MP3_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	bool fReconciliate = !(this->parent->openFlags & kXMPFiles_OpenOnlyXMP);
 	
 	XMP_StringPtr packetStr = xmpPacket.c_str();
-	XMP_StringLen packetLen = xmpPacket.size();
+	XMP_StringLen packetLen = (XMP_StringLen)xmpPacket.size();
 	if ( packetLen == 0 ) return;
 	
 	LFA_FileRef fileRef ( this->parent->fileRef );
@@ -159,42 +162,42 @@ void MP3_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		std::string strTitle;
 		this->xmpObj.GetLocalizedText ( kXMP_NS_DC, kTitle, "", "x-default", 0, &strTitle, 0 );
 		ID3_Support::AddXMPTagToID3Buffer ( buffer, &dwCurOffset, bufferSize, bVersion,
-											mp3TitleChunk, strTitle.c_str(), strTitle.size() );
+											mp3TitleChunk, strTitle.c_str(), (unsigned long)strTitle.size() );
 
 		std::string strDate;
 		this->xmpObj.GetProperty ( kXMP_NS_XMP, kCreateDate, &strDate, 0 );
 		if ( bVersion == 4 ) {
 			ID3_Support::AddXMPTagToID3Buffer ( buffer, &dwCurOffset, bufferSize, bVersion,
-												mp3CreateDateChunk4, strDate.c_str(), strDate.size() );
+												mp3CreateDateChunk4, strDate.c_str(), (unsigned long)strDate.size() );
 		} else {
 			ID3_Support::AddXMPTagToID3Buffer ( buffer, &dwCurOffset, bufferSize, bVersion,
-												mp3CreateDateChunk3, strDate.c_str(), strDate.size() );			
+												mp3CreateDateChunk3, strDate.c_str(), (unsigned long)strDate.size() );			
 		}
 		
 		std::string strArtist;
 		this->xmpObj.GetProperty ( kXMP_NS_DM, kArtist, &strArtist, 0 );
 		ID3_Support::AddXMPTagToID3Buffer ( buffer, &dwCurOffset, bufferSize, bVersion, mp3ArtistChunk,
-											strArtist.c_str(), strArtist.size() );
+											strArtist.c_str(), (unsigned long)strArtist.size() );
 
 		std::string strAlbum;
 		this->xmpObj.GetProperty ( kXMP_NS_DM, kAlbum, &strAlbum, 0 );
 		ID3_Support::AddXMPTagToID3Buffer ( buffer, &dwCurOffset, bufferSize, bVersion,
-											mp3AlbumChunk, strAlbum.c_str(), strAlbum.size() );
+											mp3AlbumChunk, strAlbum.c_str(), (unsigned long)strAlbum.size() );
 
 		std::string strGenre;
 		this->xmpObj.GetProperty ( kXMP_NS_DM, kGenre, &strGenre, 0 );
 		ID3_Support::AddXMPTagToID3Buffer ( buffer, &dwCurOffset, bufferSize, bVersion,
-											mp3GenreChunk, strGenre.c_str(), strGenre.size() );
+											mp3GenreChunk, strGenre.c_str(), (unsigned long)strGenre.size() );
 
 		std::string strComment;
 		this->xmpObj.GetProperty ( kXMP_NS_DM, kLogComment, &strComment, 0 );
 		ID3_Support::AddXMPTagToID3Buffer ( buffer, &dwCurOffset, bufferSize, bVersion,
-											mp3CommentChunk, strComment.c_str(), strComment.size() );
+											mp3CommentChunk, strComment.c_str(), (unsigned long)strComment.size() );
 
 		std::string strTrack;
 		this->xmpObj.GetProperty ( kXMP_NS_DM, kTrack, &strTrack, 0 );
 		ID3_Support::AddXMPTagToID3Buffer ( buffer, &dwCurOffset, bufferSize, bVersion,
-											mp3TrackChunk, strTrack.c_str(), strTrack.size() );
+											mp3TrackChunk, strTrack.c_str(), (unsigned long)strTrack.size() );
 
 	}
 
@@ -257,7 +260,7 @@ void MP3_MetaHandler::CacheFileData()
 			this->packetInfo.offset = xmpOffset;
 			this->packetInfo.length = bufferSize;
 			this->xmpPacket.assign(buffer.data(), bufferSize);
-			this->xmpObj.ParseFromBuffer ( this->xmpPacket.c_str(), this->xmpPacket.size() );
+			this->xmpObj.ParseFromBuffer ( this->xmpPacket.c_str(), (XMP_StringLen)this->xmpPacket.size() );
 			this->containsXMP = true;
 		}
 
@@ -337,3 +340,7 @@ bool MP3_MetaHandler::LoadPropertyFromID3 ( LFA_FileRef inFileRef, char * strFra
 	return false;
 
 } // WAV_MetaHandler::LoadPropertyFromID3
+
+// =================================================================================================
+
+#endif	// XMP_UNIXBuild

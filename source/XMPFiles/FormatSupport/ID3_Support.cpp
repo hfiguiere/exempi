@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002-2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -8,12 +8,16 @@
 // =================================================================================================
 
 #include "XMP_Environment.h"	// ! This must be the first include.
+#if ! XMP_UNIXBuild				//	Closes at very bottom. Disabled on UNIX until legacy-as-local is fixed.
+
 #include "XMP_Const.h"
 
 #include "ID3_Support.hpp"
 
 #include "UnicodeConversions.hpp"
 #include "Reconcile_Impl.hpp"
+
+#include <stdio.h>
 
 #if XMP_WinBuild
 	#pragma warning ( disable : 4996 )	// '...' was declared deprecated
@@ -164,7 +168,7 @@ namespace ID3_Support {
 	static bool GetFrameInfo(LFA_FileRef inFileRef, XMP_Uns8 bVersion, char *strFrameID, XMP_Uns8 &cflag1, XMP_Uns8 &cflag2, unsigned long &dwSize);
 	static bool ReadSize(LFA_FileRef inFileRef, XMP_Uns8 bVersion, unsigned long &dwSize);
 	static unsigned long CalculateSize(XMP_Uns8 bVersion, unsigned long dwSizeIn);
-	static bool LoadTagHeaderAndUnknownFrames(LFA_FileRef inFileRef, char *strBuffer, bool fRecon, unsigned long &posPad);
+	static bool LoadTagHeaderAndUnknownFrames(LFA_FileRef inFileRef, char *strBuffer, size_t strBufferLen, bool fRecon, unsigned long &posPad);
 	
 	#define GetFilePosition(file)	LFA_Seek ( file, 0, SEEK_CUR )
 
@@ -293,6 +297,8 @@ bool FindFrame ( LFA_FileRef inFileRef, char* strFrame, XMP_Int64 & posFrame, un
 
 	while ( posCur < posEnd ) {
 
+		if ( (posEnd - posCur) < k_dwTagHeaderSize ) break;	// Not enough room for a header, must be padding.
+
 		char szFrameID[5] = {"xxxx"};
 		unsigned long dwFrameSize = 0;
 		XMP_Uns8 cflag1 = 0, cflag2 = 0;
@@ -380,7 +386,7 @@ bool GetFrameData ( LFA_FileRef inFileRef, char* strFrame, char* buffer, unsigne
 			unsigned long dwOffset = 3;	// Skip the 3 byte language code.
 
 			if ( (bEncoding == 0) || (bEncoding == 3) ) {
-				dwOffset += (strlen ( &strData[3] ) + 1);	// Skip the descriptor and nul.
+				dwOffset += (unsigned long)(strlen ( &strData[3] ) + 1);	// Skip the descriptor and nul.
 			} else {
 				UTF16Unit* u16Ptr = (UTF16Unit*) (&strData[3]);
 				for ( ; *u16Ptr != 0; ++u16Ptr ) dwOffset += 2;	// Skip the descriptor.
@@ -518,7 +524,7 @@ bool AddXMPTagToID3Buffer ( char * strCur, unsigned long * pdwCurOffset, unsigne
 
 		snprintf ( strGenre, sizeof(strGenre), "(%d)", iFound );	// AUDIT: Using sizeof(strGenre) is safe.
 		strXMPTag = strGenre;
-		dwXMPLength = strlen(strXMPTag);
+		dwXMPLength = (long)strlen(strXMPTag);
 
 	}
 
@@ -535,13 +541,13 @@ bool AddXMPTagToID3Buffer ( char * strCur, unsigned long * pdwCurOffset, unsigne
 		bEncoding = 1;	// Will convert to UTF-16 later.
 	} else {
 		strXMPTag   = tempLatin1.c_str();	// Use the Latin-1 encoding for output.
-		dwXMPLength = tempLatin1.size();
+		dwXMPLength = (long)tempLatin1.size();
 	}
 
 	std::string strUTF16;
 	if ( bEncoding == 1 ) {
 		ToUTF16 ( (UTF8Unit*)strXMPTag, dwXMPLength, &strUTF16, false /* little endian */ );
-		dwXMPLength = strUTF16.size() + 2;	// ! Include the (to be inserted) BOM in the count.
+		dwXMPLength = (long)strUTF16.size() + 2;	// ! Include the (to be inserted) BOM in the count.
 	}
 
 	//		Frame Structure
@@ -737,7 +743,7 @@ bool SetMetaData ( LFA_FileRef inFileRef, char* strXMPPacket, unsigned long dwXM
 			return false;
 		}
 
-		LoadTagHeaderAndUnknownFrames ( inFileRef, szID3Buffer, fRecon, id3BufferLen );
+		LoadTagHeaderAndUnknownFrames ( inFileRef, szID3Buffer, sizeof(szID3Buffer), fRecon, id3BufferLen );
 		
 		unsigned long spareLen = (k_dwFrameHeaderSize + dwOldID3ContentSize) - id3BufferLen;
 		
@@ -812,7 +818,7 @@ bool SetMetaData ( LFA_FileRef inFileRef, char* strXMPPacket, unsigned long dwXM
 
 // =================================================================================================
 
-bool LoadTagHeaderAndUnknownFrames ( LFA_FileRef inFileRef, char * strBuffer, bool fRecon, unsigned long & posPad )
+bool LoadTagHeaderAndUnknownFrames ( LFA_FileRef inFileRef, char * strBuffer, size_t strBufferLen, bool fRecon, unsigned long & posPad )
 {
 
 	LFA_Seek ( inFileRef, 3ULL, SEEK_SET );	// Point after the "ID3"
@@ -826,6 +832,7 @@ bool LoadTagHeaderAndUnknownFrames ( LFA_FileRef inFileRef, char * strBuffer, bo
 	unsigned long dwExtendedTag = SkipExtendedHeader ( inFileRef, v1, flags );
 
 	LFA_Seek ( inFileRef, 0ULL, SEEK_SET );
+	XMP_Assert ( strBufferLen >= k_dwTagHeaderSize );
 	LFA_Read ( inFileRef, strBuffer, k_dwTagHeaderSize );
 	dwOffset += k_dwTagHeaderSize;
 
@@ -841,6 +848,9 @@ bool LoadTagHeaderAndUnknownFrames ( LFA_FileRef inFileRef, char * strBuffer, bo
 	XMP_Int64 posEnd = posCur + dwTagSize;
 
 	while ( posCur < posEnd ) {
+	
+		XMP_Assert ( k_dwTagHeaderSize == 10 );
+		if ( (posEnd - posCur) < k_dwTagHeaderSize ) break;	// Not enough room for a header, must be padding.
 
 		char szFrameID[5] = {"xxxx"};
 		unsigned long dwFrameSize = 0;
@@ -890,7 +900,10 @@ bool LoadTagHeaderAndUnknownFrames ( LFA_FileRef inFileRef, char * strBuffer, bo
 		} else {
 			// Unknown frame, let's copy it
 			LFA_Seek ( inFileRef, -(long)k_dwFrameHeaderSize, SEEK_CUR );
-			LFA_Read ( inFileRef, strBuffer+dwOffset, dwFrameSize+k_dwFrameHeaderSize );
+			if ( (dwOffset > strBufferLen) || ((dwFrameSize + k_dwFrameHeaderSize) > (strBufferLen - dwOffset)) ) {
+				XMP_Throw ( "Avoiding I/O buffer overflow", kXMPErr_InternalFailure );
+			}
+			LFA_Read ( inFileRef, (strBuffer + dwOffset), (dwFrameSize + k_dwFrameHeaderSize) );
 			dwOffset += dwFrameSize+k_dwFrameHeaderSize;
 		}
 
@@ -983,6 +996,8 @@ static bool FindXMPFrame ( LFA_FileRef inFileRef, XMP_Int64 & posXMP, XMP_Int64 
 	XMP_Int64 posEnd = posCur + dwTagSize;
 
 	while ( posCur < posEnd ) {
+
+		if ( (posEnd - posCur) < k_dwTagHeaderSize ) break;	// Not enough room for a header, must be padding.
 
 		char szFrameID[5] = {"xxxx"};
 		unsigned long dwFrameSize = 0;
@@ -1135,3 +1150,7 @@ static unsigned long CalculateSize ( XMP_Uns8 bVersion, unsigned long dwSizeIn )
 }
 
 } // namespace ID3_Support
+
+// =================================================================================================
+
+#endif	// XMP_UNIXBuild

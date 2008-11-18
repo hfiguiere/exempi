@@ -11,6 +11,8 @@
 
 #include "Reconcile_Impl.hpp"
 
+#include <stdio.h>
+
 #if XMP_WinBuild
 	#pragma warning ( disable : 4800 )	// forcing value to bool 'true' or 'false' (performance warning)
 	#pragma warning ( disable : 4996 )	// '...' was declared deprecated
@@ -474,9 +476,17 @@ void ReconcileUtils::ImportPSIR ( const PSIR_Manager & psir, SXMPMeta * xmp, int
 		import = psir.GetImgRsrc ( kPSIR_CopyrightURL, &rsrcInfo );
 		if ( import ) import = (! xmp->DoesPropertyExist ( kXMP_NS_XMP_Rights, "WebStatement" ));
 		if ( import ) {
-			std::string utf8;
-			ReconcileUtils::LocalToUTF8 ( rsrcInfo.dataPtr, rsrcInfo.dataLen, &utf8 );
-			xmp->SetProperty ( kXMP_NS_XMP_Rights, "WebStatement", utf8.c_str() );
+			#if ! XMP_UNIXBuild
+				std::string utf8;
+				ReconcileUtils::LocalToUTF8 ( rsrcInfo.dataPtr, rsrcInfo.dataLen, &utf8 );
+				xmp->SetProperty ( kXMP_NS_XMP_Rights, "WebStatement", utf8.c_str() );
+			#else
+				// ! Hack until legacy-as-local issues are resolved for generic UNIX.
+				if ( ReconcileUtils::IsUTF8 ( rsrcInfo.dataPtr, rsrcInfo.dataLen ) ) {
+					std::string utf8 ( (char*)rsrcInfo.dataPtr, rsrcInfo.dataLen );
+					xmp->SetProperty ( kXMP_NS_XMP_Rights, "WebStatement", utf8.c_str() );
+				}
+			#endif
 		}
 	} catch ( ... ) {
 		// Do nothing, let other imports proceed.
@@ -511,7 +521,7 @@ static void ExportIPTC_Simple ( SXMPMeta * xmp, IPTC_Manager * iptc,
 	size_t iptcCount = iptc->GetDataSet ( id, 0 );
 	if ( iptcCount > 1 ) iptc->DeleteDataSet ( id );
 
-	iptc->SetDataSet_UTF8 ( id, value.c_str(), value.size(), 0 );	// ! Don't append a 2nd DataSet!
+	iptc->SetDataSet_UTF8 ( id, value.c_str(), (XMP_Uns32)value.size(), 0 );	// ! Don't append a 2nd DataSet!
 
 }	// ExportIPTC_Simple
 
@@ -544,7 +554,7 @@ static void ExportIPTC_LangAlt ( SXMPMeta * xmp, IPTC_Manager * iptc,
 	size_t iptcCount = iptc->GetDataSet ( id, 0 );
 	if ( iptcCount > 1 ) iptc->DeleteDataSet ( id );
 
-	iptc->SetDataSet_UTF8 ( id, value.c_str(), value.size(), 0 );	// ! Don't append a 2nd DataSet!
+	iptc->SetDataSet_UTF8 ( id, value.c_str(), (XMP_Uns32)value.size(), 0 );	// ! Don't append a 2nd DataSet!
 
 }	// ExportIPTC_LangAlt
 
@@ -570,19 +580,19 @@ static void ExportIPTC_Array ( SXMPMeta * xmp, IPTC_Manager * iptc,
 
 	if ( ! XMP_PropIsArray ( xmpFlags ) ) return;	// ? Complain? Delete the DataSet?
 
-	size_t xmpCount  = xmp->CountArrayItems ( xmpNS, xmpProp );
-	size_t iptcCount = iptc->GetDataSet ( id, 0 );
+	XMP_Index xmpCount  = xmp->CountArrayItems ( xmpNS, xmpProp );
+	XMP_Index iptcCount = (XMP_Index) iptc->GetDataSet ( id, 0 );
 	
 	if ( xmpCount != iptcCount ) iptc->DeleteDataSet ( id );
 
-	for ( size_t ds = 0; ds < xmpCount; ++ds ) {	// ! XMP arrays are indexed from 1, IPTC from 0.
+	for ( XMP_Index ds = 0; ds < xmpCount; ++ds ) {	// ! XMP arrays are indexed from 1, IPTC from 0.
 
 		(void) xmp->GetArrayItem ( xmpNS, xmpProp, ds+1, &value, &xmpFlags );
 		if ( ! XMP_PropIsSimple ( xmpFlags ) ) continue;	// ? Complain?
 
 		NormalizeToCR ( &value );
 
-		iptc->SetDataSet_UTF8 ( id, value.c_str(), value.size(), ds );	// ! Appends if necessary.
+		iptc->SetDataSet_UTF8 ( id, value.c_str(), (XMP_Uns32)value.size(), ds );	// ! Appends if necessary.
 
 	}
 
@@ -627,7 +637,7 @@ static void ExportIPTC_IntellectualGenre ( SXMPMeta * xmp, IPTC_Manager * iptc,
 	size_t iptcCount = iptc->GetDataSet ( kIPTC_IntellectualGenre, 0 );
 	if ( iptcCount > 1 ) iptc->DeleteDataSet ( kIPTC_IntellectualGenre );
 
-	iptc->SetDataSet_UTF8 ( kIPTC_IntellectualGenre, iimValue.c_str(), iimValue.size(), 0 );	// ! Don't append a 2nd DataSet!
+	iptc->SetDataSet_UTF8 ( kIPTC_IntellectualGenre, iimValue.c_str(), (XMP_Uns32)iimValue.size(), 0 );	// ! Don't append a 2nd DataSet!
 
 }	// ExportIPTC_IntellectualGenre
 
@@ -654,12 +664,12 @@ static void ExportIPTC_SubjectCode ( SXMPMeta * xmp, IPTC_Manager * iptc,
 
 	if ( ! XMP_PropIsArray ( xmpFlags ) ) return;	// ? Complain? Delete the DataSet?
 
-	size_t xmpCount  = xmp->CountArrayItems ( xmpNS, xmpProp );
-	size_t iptcCount = iptc->GetDataSet ( kIPTC_SubjectCode, 0 );
+	XMP_Index xmpCount  = xmp->CountArrayItems ( xmpNS, xmpProp );
+	XMP_Index iptcCount = (XMP_Index) iptc->GetDataSet ( kIPTC_SubjectCode, 0 );
 	
 	if ( xmpCount != iptcCount ) iptc->DeleteDataSet ( kIPTC_SubjectCode );
 
-	for ( size_t ds = 0; ds < xmpCount; ++ds ) {	// ! XMP arrays are indexed from 1, IPTC from 0.
+	for ( XMP_Index ds = 0; ds < xmpCount; ++ds ) {	// ! XMP arrays are indexed from 1, IPTC from 0.
 
 		(void) xmp->GetArrayItem ( xmpNS, xmpProp, ds+1, &xmpValue, &xmpFlags );
 		if ( ! XMP_PropIsSimple ( xmpFlags ) ) continue;	// ? Complain?
@@ -669,7 +679,7 @@ static void ExportIPTC_SubjectCode ( SXMPMeta * xmp, IPTC_Manager * iptc,
 		iimValue += xmpValue;
 		iimValue += ":::";	// Add the separating colons for the empty name portions.
 
-		iptc->SetDataSet_UTF8 ( kIPTC_SubjectCode, iimValue.c_str(), iimValue.size(), ds );	// ! Appends if necessary.
+		iptc->SetDataSet_UTF8 ( kIPTC_SubjectCode, iimValue.c_str(), (XMP_Uns32)iimValue.size(), ds );	// ! Appends if necessary.
 
 	}
 
@@ -739,6 +749,10 @@ static void ExportIPTC_DateCreated ( SXMPMeta * xmp, IPTC_Manager * iptc,
 
 void ReconcileUtils::ExportIPTC ( SXMPMeta * xmp, IPTC_Manager * iptc )
 {
+
+	#if XMP_UNIXBuild
+		return;	// ! Hack until the legacy-as-local issues are resolved for generic UNIX.
+	#endif
 	
 	for ( size_t i = 0; kKnownDataSets[i].id != 255; ++i ) {
 	
@@ -817,9 +831,14 @@ void ReconcileUtils::ExportPSIR ( const SXMPMeta & xmp, PSIR_Manager * psir )
 		if ( ! found ) {
 			psir->DeleteImgRsrc ( kPSIR_CopyrightURL );
 		} else {
-			std::string localValue;
-			ReconcileUtils::UTF8ToLocal ( utf8Value.c_str(), utf8Value.size(), &localValue );
-			psir->SetImgRsrc ( kPSIR_CopyrightURL, localValue.c_str(), localValue.size() );
+			#if ! XMP_UNIXBuild
+				std::string localValue;
+				ReconcileUtils::UTF8ToLocal ( utf8Value.c_str(), utf8Value.size(), &localValue );
+				psir->SetImgRsrc ( kPSIR_CopyrightURL, localValue.c_str(), (XMP_Uns32)localValue.size() );
+			#else
+				// ! Hack until legacy-as-local issues are resolved for generic UNIX.
+				psir->DeleteImgRsrc ( kPSIR_CopyrightURL );
+			#endif
 		}
 	} catch ( ... ) {
 		// Do nothing, let other exports proceed.

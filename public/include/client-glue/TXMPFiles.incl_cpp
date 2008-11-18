@@ -11,7 +11,7 @@
 /// \file TXMPFiles.incl_cpp
 /// \brief The implementation of the TXMPFiles template class.
 
-#if WIN_ENV
+#if XMP_WinBuild
 	#pragma warning ( disable : 4003 )	// not enough actual parameters for macro
 	#pragma warning ( disable : 4800 )	// forcing value to bool 'true' or 'false' (performance warning)
 #endif
@@ -203,6 +203,24 @@ GetInternalRef()
 
 // -------------------------------------------------------------------------------------------------
 
+XMP_MethodIntro(TXMPFiles,XMP_FileFormat)::
+CheckFileFormat ( XMP_StringPtr filePath )
+{
+	WrapCheckFormat ( format, zXMPFiles_CheckFileFormat_1 ( filePath ) );
+	return format;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPFiles,XMP_FileFormat)::
+CheckPackageFormat ( XMP_StringPtr folderPath )
+{
+	WrapCheckFormat ( format, zXMPFiles_CheckPackageFormat_1 ( folderPath ) );
+	return format;
+}
+
+// -------------------------------------------------------------------------------------------------
+
 XMP_MethodIntro(TXMPFiles,bool)::
 OpenFile ( XMP_StringPtr  filePath,
 		   XMP_FileFormat format /* = kXMP_UnknownFile */,
@@ -314,7 +332,7 @@ PutXMP ( XMP_StringPtr xmpPacket,
 XMP_MethodIntro(TXMPFiles,void)::
 PutXMP ( const tStringObj & xmpPacket )
 {
-	this->PutXMP ( xmpPacket.c_str(), xmpPacket.size() );
+	this->PutXMP ( xmpPacket.c_str(), (XMP_StringLen)xmpPacket.size() );
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -341,7 +359,7 @@ CanPutXMP ( XMP_StringPtr xmpPacket,
 XMP_MethodIntro(TXMPFiles,bool)::
 CanPutXMP ( const tStringObj & xmpPacket )
 {
-	return this->CanPutXMP ( xmpPacket.c_str(), xmpPacket.size() );
+	return this->CanPutXMP ( xmpPacket.c_str(), (XMP_StringLen)xmpPacket.size() );
 }
 
 // =================================================================================================

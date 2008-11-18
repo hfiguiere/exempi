@@ -10,6 +10,7 @@
 package com.adobe.xmp;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
@@ -24,6 +25,11 @@ import com.adobe.xmp.impl.XMPDateTimeImpl;
  */
 public final class XMPDateTimeFactory
 {
+	/** The UTC TimeZone */
+	private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+
+	
+
 	/** Private constructor */
 	private XMPDateTimeFactory()
 	{
@@ -46,7 +52,8 @@ public final class XMPDateTimeFactory
 	/**
 	 * Creates an <code>XMPDateTime</code>-object from initial values.
 	 * @param year years
-	 * @param month months
+	 * @param month months from 1 to 12<br>
+	 * <em>Note:</em> Remember that the month in {@link Calendar} is defined from 0 to 11.
 	 * @param day days
 	 * @param hour hours
 	 * @param minute minutes
@@ -120,8 +127,10 @@ public final class XMPDateTimeFactory
 	 */
 	public static XMPDateTime convertToUTCTime(XMPDateTime dateTime)
 	{
-		Calendar cal = dateTime.getCalendar();
-		cal.setTimeZone(TimeZone.getTimeZone("UTC"));
+		long timeInMillis = dateTime.getCalendar().getTimeInMillis();
+		GregorianCalendar cal = new GregorianCalendar(UTC);
+		cal.setGregorianChange(new Date(Long.MIN_VALUE));		
+		cal.setTimeInMillis(timeInMillis);
 		return new XMPDateTimeImpl(cal);
 	}
 
@@ -135,8 +144,10 @@ public final class XMPDateTimeFactory
 	 */
 	public static XMPDateTime convertToLocalTime(XMPDateTime dateTime)
 	{
-		Calendar cal = dateTime.getCalendar();
-		cal.setTimeZone(TimeZone.getDefault());
+		long timeInMillis = dateTime.getCalendar().getTimeInMillis();
+		// has automatically local timezone
+		GregorianCalendar cal = new GregorianCalendar(); 
+		cal.setTimeInMillis(timeInMillis);
 		return new XMPDateTimeImpl(cal);
 	}
 }

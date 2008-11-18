@@ -88,7 +88,11 @@ public interface XMPDateTime extends Comparable
 	/** @param tz a time zone to set */
 	void setTimeZone(TimeZone tz);
 	
-	/** @return Returns a calendar (only with milli second precision). */
+	/** 
+	 * @return Returns a <code>Calendar</code> (only with milli second precision). <br>
+	 *  		<em>Note:</em> the dates before Oct 15th 1585 (which normally fall into validity of 
+	 *  		the Julian calendar) are also rendered internally as Gregorian dates. 
+	 */
 	Calendar getCalendar();
 	
 	/**
