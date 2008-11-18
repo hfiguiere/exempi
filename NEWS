@@ -5,6 +5,7 @@
 - New: API xmp_prefix_namespace_uri() and xmp_namespace_prefix(). Feat #14962.
 - Bug: fix a typo in a CHECK_PTR call causing warnings on gcc < 4.
 - Bug: no longer define UNIX_ENV in exempi.cpp and let CPPFLAGS do it.
+- Bug #16139: the list of exported symbols was too large.
 
 2.0.2
 
