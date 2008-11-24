@@ -13,6 +13,7 @@ install-sh
 ltmain.sh
 missing
 autom4te.cache
+stamp-h1
 *.o
 *.lo
 *.la
@@ -30,3 +31,7 @@ samples/source/dumpmainxmp
 samples/source/dumpxmp
 samples/source/xmpcoverage
 samples/source/xmpfilescoverage
+samples/source/customschema
+samples/source/modifyingxmp
+samples/source/readingxmp
+samples/source/xmpcoverageLog.txt
