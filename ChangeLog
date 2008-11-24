@@ -1,3 +1,12 @@
+2008-11-24  Hubert Figuiere  <hub@figuiere.net>
+
+	* source/XMPFiles/FormatSupport/ReconcileTIFF.cpp (ImportSingleTIFF_ASCII): 
+	* exempi/tests/Makefile.am:
+	* exempi/tests/fdo18635.jpg:
+	* exempi/tests/test-bgo.cpp
+	Don't crash on not so valid Exif. (Closes #18635)
+	And test case.
+
 2008-11-18  Hubert Figuiere  <hub@figuiere.net>
 
 	* samples/testfiles/BlueSquare.gif,
