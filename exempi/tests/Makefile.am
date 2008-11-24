@@ -37,13 +37,13 @@
 
 INCLUDES = -I$(srcdir)/.. -I$(top_srcdir)/public/include
 if WITH_UNIT_TEST
-check_PROGRAMS = test1 test2 test3 testinit
-TESTS = testcore.sh testinit test1 test2 test3
+check_PROGRAMS = test1 test2 test3 testinit testfdo18635
+TESTS = testcore.sh testinit test1 test2 test3 testfdo18635
 TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) @VALGRIND@
 endif
 check_SCRIPTS = testcore.sh
 
-check_DATA = test1.xmp
+check_DATA = test1.xmp fdo18635.jpg
 
 noinst_HEADERS = utils.h
 
@@ -66,3 +66,7 @@ test2_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
 test3_SOURCES = test3.cpp utils.cpp
 test3_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
 test3_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
+
+testfdo18635_SOURCES = test-bgo.cpp utils.cpp
+testfdo18635_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+testfdo18635_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@

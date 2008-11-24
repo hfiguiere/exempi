@@ -481,7 +481,7 @@ ImportSingleTIFF_ASCII ( const TIFF_Manager::TagInfo & tagInfo,
 	try {	// Don't let errors with one stop the others.
 
 		const char * chPtr  = (const char *)tagInfo.dataPtr;
-		const bool   hasNul = (chPtr[tagInfo.dataLen-1] == 0);
+		const bool   hasNul = !tagInfo.dataLen || !chPtr || (chPtr[tagInfo.dataLen-1] == 0);
 		const bool   isUTF8 = ReconcileUtils::IsUTF8 ( chPtr, tagInfo.dataLen );
 	
 		if ( isUTF8 && hasNul ) {
