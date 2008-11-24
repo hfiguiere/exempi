@@ -61,6 +61,8 @@ extern const char NS_TPG[];
 extern const char NS_DIMENSIONS_TYPE[];
 /** Creative Commons namespace */
 extern const char NS_CC[];
+/* Added in Exempi 2.1 */
+extern const char NS_PDF[];
 
 
 

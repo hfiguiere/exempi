@@ -164,6 +164,7 @@ const char NS_IPTC4XMP[] = kXMP_NS_IPTCCore;
 const char NS_TPG[] = kXMP_NS_XMP_PagedFile;
 const char NS_DIMENSIONS_TYPE[] = kXMP_NS_XMP_Dimensions;
 const char NS_CC[] = "http://creativecommons.org/ns#";
+const char NS_PDF[] = kXMP_NS_PDF;
 
 #define STRING(x) reinterpret_cast<std::string*>(x)
 

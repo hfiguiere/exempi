@@ -1,7 +1,11 @@
 2.1.0
 
 - Upgrade XMPCore to Adobe XMP 4.4.2
-  - Lots of new formats
+  - Handlers for additional file formats, including ASF (WMA, WMV), FLV; 
+    MPEG4; SWF; folder-based video formats AVCHD, P2, SonyHDV, and XDCAM; UCF
+  - Additional schemas to support document histories, composed documents, 
+    and temporal metadata
+- New: NS_PDF namespace for PDF.
 - New: API xmp_prefix_namespace_uri() and xmp_namespace_prefix(). Feat #14962.
 - Bug: fix a typo in a CHECK_PTR call causing warnings on gcc < 4.
 - Bug: no longer define UNIX_ENV in exempi.cpp and let CPPFLAGS do it.
@@ -9,7 +13,7 @@
 
 2.0.2
 
-- Bug #16598: address the lack of TLS for sone platforms.
+- Bug #16598: address the lack of TLS for some platforms.
 
 2.0.1
 
