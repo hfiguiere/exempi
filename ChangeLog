@@ -1,6 +1,8 @@
 2008-11-24  Hubert Figuiere  <hub@figuiere.net>
 
 	* source/XMPFiles/FormatSupport/ReconcileTIFF.cpp (ImportSingleTIFF_ASCII): 
+	Re-enable the conversion for UNIX. Disabled in the original SDK.
+
 	* exempi/tests/Makefile.am:
 	* exempi/tests/fdo18635.jpg:
 	* exempi/tests/test-bgo.cpp

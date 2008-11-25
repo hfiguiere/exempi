@@ -491,11 +491,7 @@ ImportSingleTIFF_ASCII ( const TIFF_Manager::TagInfo & tagInfo,
 			if ( isUTF8 ) {
 				strValue.assign ( chPtr, tagInfo.dataLen );
 			} else {
-				#if ! XMP_UNIXBuild
-					ReconcileUtils::LocalToUTF8 ( chPtr, tagInfo.dataLen, &strValue );
-				#else
-					return;	// ! Hack until legacy-as-local issues are resolved for generic UNIX.
-				#endif
+                ReconcileUtils::LocalToUTF8 ( chPtr, tagInfo.dataLen, &strValue );
 			}
 			xmp->SetProperty ( xmpNS, xmpProp, strValue.c_str() );
 		}
@@ -869,11 +865,7 @@ ImportArrayTIFF_ASCII ( const TIFF_Manager::TagInfo & tagInfo,
 			if ( isUTF8 ) {
 				strValue.assign ( chPtr, tagInfo.dataLen );
 			} else {
-				#if ! XMP_UNIXBuild
-					ReconcileUtils::LocalToUTF8 ( chPtr, tagInfo.dataLen, &strValue );
-				#else
-					return;	// ! Hack until legacy-as-local issues are resolved for generic UNIX.
-				#endif
+                ReconcileUtils::LocalToUTF8 ( chPtr, tagInfo.dataLen, &strValue );
 			}
 			chPtr = strValue.c_str();
 			chEnd = chPtr + strValue.size();
@@ -1341,11 +1333,7 @@ ImportTIFF_LocTextASCII ( const TIFF_Manager & tiff, XMP_Uns8 ifd, XMP_Uns16 tag
 			if ( isUTF8 ) {
 				strValue.assign ( chPtr, tagInfo.dataLen );
 			} else {
-				#if ! XMP_UNIXBuild
-					ReconcileUtils::LocalToUTF8 ( chPtr, tagInfo.dataLen, &strValue );
-				#else
-					return;	// ! Hack until legacy-as-local issues are resolved for generic UNIX.
-				#endif
+                ReconcileUtils::LocalToUTF8 ( chPtr, tagInfo.dataLen, &strValue );
 			}
 			xmp->SetLocalizedText ( xmpNS, xmpProp, "", "x-default", strValue.c_str() );
 		}
