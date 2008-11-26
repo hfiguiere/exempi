@@ -39,7 +39,7 @@ INCLUDES = -I$(srcdir)/.. -I$(top_srcdir)/public/include
 if WITH_UNIT_TEST
 check_PROGRAMS = test1 test2 test3 testinit testfdo18635
 TESTS = testcore.sh testinit test1 test2 test3 testfdo18635
-TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) @VALGRIND@
+TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) BOOST_TEST_CATCH_SYSTEM_ERRORS=no @VALGRIND@
 endif
 check_SCRIPTS = testcore.sh
 

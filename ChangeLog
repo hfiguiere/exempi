@@ -1,3 +1,11 @@
+2008-11-26  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/tests/Makefile.am (TESTS_ENVIRONMENT): 
+	BOOST_TEST_CATCH_SYSTEM_ERRORS=no is set before running
+	the test. This avoid a failure because of system() on 
+	boost 1.35 and later.
+	See https://svn.boost.org/trac/boost/ticket/1723
+
 2008-11-24  Hubert Figuiere  <hub@figuiere.net>
 
 	* source/XMPFiles/FormatSupport/ReconcileTIFF.cpp (ImportSingleTIFF_ASCII): 
