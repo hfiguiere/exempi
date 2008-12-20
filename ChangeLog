@@ -1,3 +1,7 @@
+2008-12-19  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/Makefile.am (EXTRA_DIST): Added libexempi.sym
+
 2008-11-26  Hubert Figuiere  <hub@figuiere.net>
 
 	* exempi/tests/Makefile.am (TESTS_ENVIRONMENT): 

@@ -1,7 +1,7 @@
 #
 # exempi - Makefile.am
 #
-# Copyright (C) 2007 Hubert Figuiere
+# Copyright (C) 2007-2008 Hubert Figuiere
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -56,3 +56,6 @@ libexempi_la_LIBADD = $(top_builddir)/source/common/libxmpcommon.la \
 	-lexpat -lz
 libexempi_la_LDFLAGS = -version-info @EXEMPI_VERSION_INFO@ \
 	-Wl,--retain-symbols-file=$(srcdir)/libexempi.sym
+
+EXTRA_DIST = libexempi.sym
+
