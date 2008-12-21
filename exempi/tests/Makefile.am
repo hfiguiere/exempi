@@ -1,7 +1,7 @@
 #
 # exempi - Makefile.am
 #
-# Copyright (C) 2007 Hubert Figuiere
+# Copyright (C) 2007-2008 Hubert Figuiere
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,8 +37,12 @@
 
 INCLUDES = -I$(srcdir)/.. -I$(top_srcdir)/public/include
 if WITH_UNIT_TEST
-check_PROGRAMS = test1 test2 test3 testinit testfdo18635
-TESTS = testcore.sh testinit test1 test2 test3 testfdo18635
+check_PROGRAMS = testexempicore testserialise testwritenewprop \
+	testtiffleak testxmpfiles testxmpfileswrite \
+	test3 testinit testfdo18635
+TESTS = testcore.sh testinit testexempicore testserialise testwritenewprop \
+	testtiffleak testxmpfiles testxmpfileswrite \
+	test3 testfdo18635
 TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) BOOST_TEST_CATCH_SYSTEM_ERRORS=no @VALGRIND@
 endif
 check_SCRIPTS = testcore.sh
@@ -55,13 +59,29 @@ testinit_SOURCES = testinit.cpp utils.cpp
 testinit_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
 testinit_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
 
-test1_SOURCES = test1.cpp utils.cpp
-test1_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
-test1_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
+testexempicore_SOURCES = test-exempi-core.cpp utils.cpp
+testexempicore_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+testexempicore_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
 
-test2_SOURCES = test2.cpp utils.cpp
-test2_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
-test2_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
+testserialise_SOURCES = test-serialise.cpp utils.cpp
+testserialise_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+testserialise_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
+
+testwritenewprop_SOURCES = test-write-new-prop.cpp utils.cpp
+testwritenewprop_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+testwritenewprop_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
+
+testtiffleak_SOURCES = test-tiff-leak.cpp utils.cpp
+testtiffleak_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+testtiffleak_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
+
+testxmpfiles_SOURCES = test-xmpfiles.cpp utils.cpp
+testxmpfiles_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+testxmpfiles_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
+
+testxmpfileswrite_SOURCES = test-xmpfiles-write.cpp utils.cpp
+testxmpfileswrite_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+testxmpfileswrite_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
 
 test3_SOURCES = test3.cpp utils.cpp
 test3_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@

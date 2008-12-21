@@ -22,10 +22,16 @@ stamp-h1
 libtool
 exempi/exempi-2.0.pc
 exempi/tests/test.jpg
-exempi/tests/test1
+exempi/tests/testexempicore
+exempi/tests/testserialise
+exempi/tests/testwritenewprop
+exempi/tests/testtiffleak
+exempi/tests/testxmpfiles
+exempi/tests/testxmpfileswrite
 exempi/tests/test2
 exempi/tests/test3
 exempi/tests/testinit
+exempi/tests/testfdo18635
 exempi/doc/Doxyfile
 samples/source/dumpmainxmp
 samples/source/dumpxmp

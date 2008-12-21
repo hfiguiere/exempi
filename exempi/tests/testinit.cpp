@@ -40,17 +40,17 @@
 
 #include <string>
 
-#include <boost/static_assert.hpp>
-#include <boost/test/auto_unit_test.hpp>
+#include <boost/test/minimal.hpp>
 
 #include "utils.h"
 #include "xmpconsts.h"
 #include "xmp.h"
 
-using boost::unit_test::test_suite;
-
-void test_exempi_init()
+//void test_exempi_init()
+int test_main(int argc, char * argv[])
 {
+	prepare_test(argc, argv, "test1.xmp");
+ 
 	size_t len;
 	char * buffer;
 	
@@ -90,19 +90,6 @@ void test_exempi_init()
 	free(buffer);
 	BOOST_CHECK(!g_lt->check_leaks());
 	BOOST_CHECK(!g_lt->check_errors());
-}
-
-
-
-test_suite*
-init_unit_test_suite( int argc, char * argv[] ) 
-{
-    test_suite* test = BOOST_TEST_SUITE("test exempi");
-	
-	prepare_test(argc, argv, "test1.xmp");
-	
-	test->add(BOOST_TEST_CASE(&test_exempi_init));
-
-    return test;
+	return 0;
 }
 

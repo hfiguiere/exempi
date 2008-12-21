@@ -1,5 +1,5 @@
 /*
- * exempi - test3.cpp
+ * exempi - test-serialise.cpp
  *
  * Copyright (C) 2007-2008 Hubert Figuiere
  * All rights reserved.
@@ -39,31 +39,26 @@
 #include <string.h>
 
 #include <string>
-#include <iostream>
 
 #include <boost/test/minimal.hpp>
-#include <boost/format.hpp>
 
 #include "utils.h"
-#include "xmp.h"
 #include "xmpconsts.h"
+#include "xmp.h"
 
 using boost::unit_test::test_suite;
 
-//void test_exempi_iterate()
+
+
+//void test_serialize()
 int test_main(int argc, char *argv[])
 {
-	prepare_test(argc, argv, "test1.xmp"); 
+	prepare_test(argc, argv, "test1.xmp");
 
 	size_t len;
 	char * buffer;
-	
 	FILE * f = fopen(g_testfile.c_str(), "rb");
-
-	BOOST_CHECK(f != NULL);
-	if (f == NULL) {
-		exit(128);
-	}
+	
  	fseek(f, 0, SEEK_END);
 	len = ftell(f);
  	fseek(f, 0, SEEK_SET);
@@ -73,46 +68,40 @@ int test_main(int argc, char *argv[])
 
 	BOOST_CHECK(rlen == len);
 	BOOST_CHECK(len != 0);
+	buffer[rlen] = 0;
+
 	BOOST_CHECK(xmp_init());
+	BOOST_CHECK(xmp_get_error() == 0);
 
 	XmpPtr xmp = xmp_new_empty();
+	BOOST_CHECK(xmp_get_error() == 0);
 
 	BOOST_CHECK(xmp_parse(xmp, buffer, len));
+	BOOST_CHECK(xmp_get_error() == 0);
 
-	BOOST_CHECK(xmp != NULL);
+	std::string b1(buffer);
+	std::string b2;
+	XmpStringPtr output = xmp_string_new();
 
-
-	XmpIteratorPtr iter = xmp_iterator_new(xmp, NULL, NULL, XMP_ITER_JUSTLEAFNODES);
-
-	XmpStringPtr the_schema = xmp_string_new();
-	XmpStringPtr the_path = xmp_string_new();
-	XmpStringPtr the_prop = xmp_string_new();
-	uint32_t options;
-
-	while( xmp_iterator_next(iter, the_schema, the_path, the_prop, &options) )
-	{
-		std::cout << xmp_string_cstr(the_schema) << " / "
-							<< xmp_string_cstr(the_path) << " = "
-							<< xmp_string_cstr(the_prop) ;
-		if(options) {
-			std::cout << boost::format(" options = 0x%1$x") % options;
-		}
-		std::cout << std::endl;
-	}
-
-
-
-	xmp_string_free(the_prop);
-	xmp_string_free(the_path);
-	xmp_string_free(the_schema);
-	BOOST_CHECK(xmp_iterator_free(iter));
+	BOOST_CHECK(xmp_serialize_and_format(xmp, output, 
+										 XMP_SERIAL_OMITPACKETWRAPPER, 
+										 0, "\n", " ", 0));
+	BOOST_CHECK(xmp_get_error() == 0);
+	b2 = xmp_string_cstr(output);
+	// find a way to compare that.
+//	BOOST_CHECK_EQUAL(b1, b2);
+	
+	xmp_string_free(output);
 	BOOST_CHECK(xmp_free(xmp));
 
 	free(buffer);
 	fclose(f);
+
 	xmp_terminate();
 
 	BOOST_CHECK(!g_lt->check_leaks());
 	BOOST_CHECK(!g_lt->check_errors());
+	return 0;
 }
+
 

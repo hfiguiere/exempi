@@ -1,7 +1,7 @@
 /*
- * exempi - test2.cpp
+ * exempi - test-xmpfile-write.cpp
  *
- * Copyright (C) 2007 Hubert Figuiere
+ * Copyright (C) 2007-2008 Hubert Figuiere
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,8 +41,7 @@
 
 #include <string>
 
-#include <boost/static_assert.hpp>
-#include <boost/test/auto_unit_test.hpp>
+#include <boost/test/minimal.hpp>
 
 #include "utils.h"
 #include "xmp.h"
@@ -51,15 +50,18 @@
 using boost::unit_test::test_suite;
 
 
-void test_xmpfiles_write()
+//void test_xmpfiles_write()
+int test_main(int argc, char *argv[])
 {
+	prepare_test(argc, argv, "../../samples/testfiles/BlueSquare.jpg");
+
 	BOOST_CHECK(xmp_init());
 
 	XmpFilePtr f = xmp_files_open_new(g_testfile.c_str(), XMP_OPEN_READ);
 
 	BOOST_CHECK(f != NULL);
 	if (f == NULL) {
-		return;
+		return 1;
 	}
 
 	XmpPtr xmp = xmp_files_get_new_xmp(f);
@@ -75,7 +77,7 @@ void test_xmpfiles_write()
 
 	BOOST_CHECK(f != NULL);
 	if (f == NULL) {
-		return;
+		return 2;
 	}
 
 	BOOST_CHECK(xmp_set_property(xmp, NS_PHOTOSHOP, "ICCProfile", "foo", 0));
@@ -91,14 +93,14 @@ void test_xmpfiles_write()
 
 	BOOST_CHECK(f != NULL);
 	if (f == NULL) {
-		return;
+		return 3;
 	}
 	xmp = xmp_files_get_new_xmp(f);
 	BOOST_CHECK(xmp != NULL);
 
 	XmpStringPtr the_prop = xmp_string_new();
 	BOOST_CHECK(xmp_get_property(xmp, NS_PHOTOSHOP, "ICCProfile", the_prop, NULL));
-	BOOST_CHECK_EQUAL(strcmp("foo", xmp_string_cstr(the_prop)),	0); 
+	BOOST_CHECK(strcmp("foo", xmp_string_cstr(the_prop)) == 0); 
 
 	xmp_string_free(the_prop);
 
@@ -111,91 +113,7 @@ void test_xmpfiles_write()
 
 	BOOST_CHECK(!g_lt->check_leaks());
 	BOOST_CHECK(!g_lt->check_errors());
-}
 
-
-void test_xmpfiles()
-{
-	BOOST_CHECK(xmp_init());
-
-	XmpFilePtr f = xmp_files_open_new(g_testfile.c_str(), XMP_OPEN_READ);
-
-	BOOST_CHECK(f != NULL);
-	if (f == NULL) {
-		exit(128);
-	}
-
-	XmpPtr xmp = xmp_new_empty();
-
-	BOOST_CHECK(xmp != NULL);
-	
-	BOOST_CHECK(xmp_files_get_xmp(f, xmp));
-
-	XmpStringPtr the_prop = xmp_string_new();
-
-	BOOST_CHECK(xmp_get_property(xmp, NS_PHOTOSHOP, "ICCProfile", the_prop, NULL));
-	BOOST_CHECK_EQUAL(strcmp("sRGB IEC61966-2.1", xmp_string_cstr(the_prop)),	0); 
-
-	xmp_string_free(the_prop);
-	BOOST_CHECK(xmp_free(xmp));
-
-	BOOST_CHECK(xmp_files_free(f));
-	xmp_terminate();
-
-	BOOST_CHECK(!g_lt->check_leaks());
-	BOOST_CHECK(!g_lt->check_errors());
-}
-
-
-/**  See http://www.adobeforums.com/webx/.3bc42b73 for the orignal
- *   test case */
-void 
-test_tiff_leak()
-{
-	std::string orig_tiff_file = g_src_testdir 
-		+ "../../samples/testfiles/BlueSquare.tif";
-	std::string command = "cp ";
-	command += orig_tiff_file + " test.tif";
-	BOOST_CHECK(system(command.c_str()) >= 0);
-	BOOST_CHECK(chmod("test.tif", S_IRUSR|S_IWUSR) == 0);
-	BOOST_CHECK(xmp_init());
-
-	XmpFilePtr f = xmp_files_open_new("test.tif", XMP_OPEN_FORUPDATE);
-
-	BOOST_CHECK(f != NULL);
-	if (f == NULL) {
-		return;
-	}
-
-	XmpPtr xmp;
-	
-	BOOST_CHECK(xmp = xmp_files_get_new_xmp(f));
-	BOOST_CHECK(xmp != NULL);
-
-	xmp_set_localized_text(xmp, NS_DC, "description", "en", "en-US", "foo", 0);
-	BOOST_CHECK(xmp_files_put_xmp(f, xmp));
-	BOOST_CHECK(xmp_files_close(f, XMP_CLOSE_NOOPTION));
-	BOOST_CHECK(xmp_free(xmp));
-	BOOST_CHECK(xmp_files_free(f));
-	xmp_terminate();
-
-	BOOST_CHECK(unlink("test.tif") == 0);
-	BOOST_CHECK(!g_lt->check_leaks());
-	BOOST_CHECK(!g_lt->check_errors());	
-}
-
-
-test_suite*
-init_unit_test_suite( int argc, char * argv[] ) 
-{
-    test_suite* test = BOOST_TEST_SUITE("test xmpfiles");
-	
-	prepare_test(argc, argv, "../../samples/testfiles/BlueSquare.jpg");
-	
-	test->add(BOOST_TEST_CASE(&test_xmpfiles));
-	test->add(BOOST_TEST_CASE(&test_xmpfiles_write));
-	test->add(BOOST_TEST_CASE(&test_tiff_leak));
-	
-    return test;
+	return 0;
 }
 

@@ -1,5 +1,5 @@
 /*
- * exempi - test3.cpp
+ * exempi - test1.cpp
  *
  * Copyright (C) 2007-2008 Hubert Figuiere
  * All rights reserved.
@@ -39,21 +39,20 @@
 #include <string.h>
 
 #include <string>
-#include <iostream>
 
 #include <boost/test/minimal.hpp>
-#include <boost/format.hpp>
 
 #include "utils.h"
-#include "xmp.h"
 #include "xmpconsts.h"
+#include "xmp.h"
 
 using boost::unit_test::test_suite;
 
-//void test_exempi_iterate()
+
+//void test_write_new_property()
 int test_main(int argc, char *argv[])
 {
-	prepare_test(argc, argv, "test1.xmp"); 
+	prepare_test(argc, argv, "test1.xmp");
 
 	size_t len;
 	char * buffer;
@@ -73,46 +72,83 @@ int test_main(int argc, char *argv[])
 
 	BOOST_CHECK(rlen == len);
 	BOOST_CHECK(len != 0);
+
 	BOOST_CHECK(xmp_init());
+	BOOST_CHECK(xmp_get_error() == 0);
 
 	XmpPtr xmp = xmp_new_empty();
+	BOOST_CHECK(xmp_get_error() == 0);
 
 	BOOST_CHECK(xmp_parse(xmp, buffer, len));
+	BOOST_CHECK(xmp_get_error() == 0);
 
 	BOOST_CHECK(xmp != NULL);
 
+	XmpStringPtr reg_prefix = xmp_string_new();
+	BOOST_CHECK(xmp_register_namespace(NS_CC, "cc", reg_prefix));
+	BOOST_CHECK(xmp_get_error() == 0);
+	BOOST_CHECK(strcmp("cc:", xmp_string_cstr(reg_prefix)) == 0); 
 
-	XmpIteratorPtr iter = xmp_iterator_new(xmp, NULL, NULL, XMP_ITER_JUSTLEAFNODES);
+	BOOST_CHECK(xmp_prefix_namespace_uri("cc", reg_prefix));
+	BOOST_CHECK(xmp_get_error() == 0);
+	BOOST_CHECK(strcmp(NS_CC, xmp_string_cstr(reg_prefix)) == 0); 	
 
-	XmpStringPtr the_schema = xmp_string_new();
-	XmpStringPtr the_path = xmp_string_new();
+	BOOST_CHECK(xmp_namespace_prefix(NS_CC, reg_prefix));
+	BOOST_CHECK(xmp_get_error() == 0);
+	BOOST_CHECK(strcmp("cc:", xmp_string_cstr(reg_prefix)) == 0); 	
+
+	xmp_string_free(reg_prefix);
+
+	BOOST_CHECK(xmp_set_property(xmp, NS_CC, "License", "Foo", 0));
+	BOOST_CHECK(xmp_get_error() == 0);
+
 	XmpStringPtr the_prop = xmp_string_new();
-	uint32_t options;
+	BOOST_CHECK(xmp_get_property(xmp, NS_CC, "License", the_prop, NULL));
+	BOOST_CHECK(xmp_get_error() == 0);
+	BOOST_CHECK(strcmp("Foo", xmp_string_cstr(the_prop)) == 0); 
 
-	while( xmp_iterator_next(iter, the_schema, the_path, the_prop, &options) )
-	{
-		std::cout << xmp_string_cstr(the_schema) << " / "
-							<< xmp_string_cstr(the_path) << " = "
-							<< xmp_string_cstr(the_prop) ;
-		if(options) {
-			std::cout << boost::format(" options = 0x%1$x") % options;
-		}
-		std::cout << std::endl;
-	}
+	XmpDateTime the_dt;
+	the_dt.year = 2005;
+	the_dt.month = 12;
+	the_dt.day = 25;
+	the_dt.hour = 12;
+	the_dt.minute = 42;
+	the_dt.second = 42;
+	the_dt.tzSign = XMP_TZ_UTC;
+	the_dt.tzHour = 0;
+	the_dt.tzMinute = 0;
+	the_dt.nanoSecond = 0;
+	BOOST_CHECK(xmp_set_property_date(xmp, NS_EXIF, "DateTimeOriginal", 
+									  &the_dt, 0));	
+	BOOST_CHECK(xmp_get_error() == 0);
 
+	BOOST_CHECK(xmp_get_property(xmp, NS_EXIF, "DateTimeOriginal", 
+								 the_prop, NULL));
+	BOOST_CHECK(xmp_get_error() == 0);
+	BOOST_CHECK(strcmp("2005-12-25T12:42:42Z", 
+							 xmp_string_cstr(the_prop)) == 0); 	
+
+	XmpDateTime the_dt2;
+	BOOST_CHECK(xmp_get_property_date(xmp, NS_EXIF, "DateTimeOriginal", 
+									  &the_dt2, NULL));
+	BOOST_CHECK(xmp_get_error() == 0);
+
+	BOOST_CHECK(the_dt2.year == 2005);
+	BOOST_CHECK(the_dt2.minute == 42);
+	BOOST_CHECK(the_dt2.tzSign == XMP_TZ_UTC);
 
 
 	xmp_string_free(the_prop);
-	xmp_string_free(the_path);
-	xmp_string_free(the_schema);
-	BOOST_CHECK(xmp_iterator_free(iter));
+
 	BOOST_CHECK(xmp_free(xmp));
 
 	free(buffer);
 	fclose(f);
+
 	xmp_terminate();
 
 	BOOST_CHECK(!g_lt->check_leaks());
 	BOOST_CHECK(!g_lt->check_errors());
+	return 0;
 }
 

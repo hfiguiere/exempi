@@ -1,3 +1,21 @@
+2008-12-21  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/tests/Makefile.am
+        * exempi/tests/test-bgo.cpp
+	* exempi/tests/test-exempi-core.cpp
+	* exempi/tests/test-serialise.cpp
+	* exempi/tests/test-tiff-leak.cpp
+	* exempi/tests/test-write-new-prop.cpp
+	* exempi/tests/test-xmpfiles-write.cpp
+	* exempi/tests/test-xmpfiles.cpp
+	* exempi/tests/test3.cpp
+	* exempi/tests/testinit.cpp
+	Migrated to use boost/test/minimal
+	
+	* exempi/tests/test1.cpp
+	* exempi/tests/test2.cpp
+	Split out for the above change.
+
 2008-12-19  Hubert Figuiere  <hub@figuiere.net>
 
 	* exempi/Makefile.am (EXTRA_DIST): Added libexempi.sym
