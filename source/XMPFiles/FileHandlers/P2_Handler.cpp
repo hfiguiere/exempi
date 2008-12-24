@@ -679,11 +679,11 @@ void P2_MetaHandler::SetStartTimecodeFromLegacyXML ( XML_NodePtr legacyVideoCont
 
 					dmTimeFormat = "50Timecode";
 
-				} else if ( p2FrameRate == "59.94p" ) {
+				} else if ( ( p2FrameRate == "59.94p" ) && ( p2DropFrameFlag != 0 ) ) {
 
-					if ( p2DropFrameFlag == "true" ) {
+					if ( std::strcmp ( p2DropFrameFlag, "true" ) == 0 ) {
 						dmTimeFormat = "5994DropTimecode";
-					} else if ( p2DropFrameFlag == "false" ) {
+					} else if ( std::strcmp ( p2DropFrameFlag, "false") == 0 ) {
 						dmTimeFormat = "5994NonDropTimecode";
 					}
 

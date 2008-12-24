@@ -1,3 +1,8 @@
+2.1.1
+
+- Bug: source/XMPFiles/FileHandlers/P2_Handler.cpp was using an improper
+  string comparison. (made rpmlint unhappy).
+
 2.1.0
 
 - Upgrade XMPCore to Adobe XMP 4.4.2
