@@ -1,3 +1,9 @@
+2008-12-24  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/tests/test-bgo.cpp
+        * exempi/tests/test-xmpfiles.cpp
+	Remove serious warnings.
+
 2008-12-21  Hubert Figuiere  <hub@figuiere.net>
 
 	* exempi/tests/Makefile.am

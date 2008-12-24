@@ -84,4 +84,5 @@ int test_main(int argc, char * argv[])
 
 	BOOST_CHECK(!g_lt->check_leaks());
 	BOOST_CHECK(!g_lt->check_errors());
+	return 0;
 }

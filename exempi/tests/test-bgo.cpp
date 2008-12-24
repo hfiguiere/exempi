@@ -51,9 +51,6 @@ int test_main(int argc, char * argv[])
 {
     prepare_test(argc, argv, "fdo18635.jpg");
 
-	size_t len;
-	char * buffer;
-	
 	BOOST_CHECK(xmp_init());
 
 	XmpFilePtr xf = xmp_files_open_new(g_testfile.c_str(), XMP_OPEN_READ);
