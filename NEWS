@@ -8,6 +8,8 @@
 - New: NS_PDF namespace for PDF.
 - New: API xmp_prefix_namespace_uri() and xmp_namespace_prefix(). Bug #14962.
 - Bug: make sure boost >1.35 does not fail test with system().
+- Bug: unit test now use boost/test/minimal.hpp to work with more boost
+  install. (known boost.test bug)
 - Bug: fix a typo in a CHECK_PTR call causing warnings on gcc < 4.
 - Bug: no longer define UNIX_ENV in exempi.cpp and let CPPFLAGS do it.
 - Bug #16139: the list of exported symbols was too large.
