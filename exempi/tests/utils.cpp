@@ -34,6 +34,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstdio>
 
 #include <boost/test/unit_test.hpp>
 

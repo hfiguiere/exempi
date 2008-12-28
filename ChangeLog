@@ -1,3 +1,10 @@
+2008-12-28  Michael Biebl <biebl@debian.org>
+
+	* tests/utils.cpp
+	* samples/source/XMPFilesCoverage.cpp
+	* source/common/XML_Node.cpp
+	Fix build on gcc 4.4
+
 2008-12-24  Hubert Figuiere  <hub@figuiere.net>
 
 	* source/XMPFiles/FileHandlers/P2_Handler.cpp (SetStartTimecodeFromLegacyXML): 

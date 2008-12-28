@@ -11,6 +11,7 @@
 
 #include <string.h>
 #include <cstring>
+#include <cstdio>
 #include <map>
 
 // ! Can't include XMP..._Impl.hpp - used by both Core and Files.

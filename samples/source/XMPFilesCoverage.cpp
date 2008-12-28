@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <time.h>
 #include <cstring>
+#include <cstdio>
 
 #define TXMP_STRING_TYPE std::string
 #define XMP_INCLUDE_XMPFILES 1
