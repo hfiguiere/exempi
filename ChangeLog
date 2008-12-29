@@ -8,7 +8,7 @@
 2008-12-24  Hubert Figuiere  <hub@figuiere.net>
 
 	* source/XMPFiles/FileHandlers/P2_Handler.cpp (SetStartTimecodeFromLegacyXML): 
-	Don't compare string pointers.
+	Don't compare string pointers. (Closes: #19312)
 
 === 2.1.0 ===
 

@@ -1,7 +1,7 @@
 2.1.1
 
-- Bug: source/XMPFiles/FileHandlers/P2_Handler.cpp was using an improper
-  string comparison. (made rpmlint unhappy).
+- Bug: fdo#19312 source/XMPFiles/FileHandlers/P2_Handler.cpp was using 
+  an improper string comparison. (made rpmlint unhappy).
 
 2.1.0
 
