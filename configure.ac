@@ -180,9 +180,12 @@ dnl due to stupid m4 I had to double the [ and ] in the regexp
 fi
 AC_SUBST(VALGRIND)
 
+SHAVE_INIT
 
 AC_OUTPUT([
 Makefile
+shave
+shave-libtool
 third-party/Makefile
 third-party/MD5/Makefile
 source/Makefile

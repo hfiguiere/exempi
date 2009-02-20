@@ -1,3 +1,13 @@
+2009-02-20  Hubert Figuiere  <hub@figuiere.net>
+
+	* configure.in: 
+	* m4/shave.m4:
+	* shave-libtool.in:
+	* shave.in:
+	Add shave to make the build output saner.
+
+=== 2.1.1 ===
+
 2008-12-28  Michael Biebl <biebl@debian.org>
 
 	* tests/utils.cpp

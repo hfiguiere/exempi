@@ -1,3 +1,7 @@
+2.2
+
+- NEW: added shave to the build system for sane ouput.
+
 2.1.1
 
 - Bug: fdo#19312 source/XMPFiles/FileHandlers/P2_Handler.cpp was using 
