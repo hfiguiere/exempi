@@ -1,3 +1,10 @@
+2009-02-24  Hubert Figuiere  <hub@figuiere.net>
+
+	* exempi/exempi.cpp (xmp_set_property): 
+	If the value is struct or array, if the property value
+	is the empty string pass NULL.
+	(Closes bug #16030)
+
 2009-02-22  Hubert Figuiere  <hub@figuiere.net>
 
 	* source/common/XMLParserAdapter.hpp: 
@@ -10,8 +17,6 @@
 	* shave-libtool.in:
 	* shave.in:
 	Add shave to make the build output saner.
-
-=== 2.1.1 ===
 
 2008-12-28  Michael Biebl <biebl@debian.org>
 

@@ -646,6 +646,13 @@ bool xmp_set_property(XmpPtr xmp, const char *schema,
 
 	bool ret = false;
 	SXMPMeta *txmp = (SXMPMeta *)xmp;
+	// see bug #16030
+	// when it is a struct or an array, get prop return an empty string
+	// but it fail if passed an empty string
+	if ((optionBits & (XMP_PROP_VALUE_IS_STRUCT | XMP_PROP_VALUE_IS_ARRAY)) 
+			&& (*value == 0)) {
+		value = NULL;
+	}
 	try {
 		txmp->SetProperty(schema, name, value, optionBits);
 		ret = true;
