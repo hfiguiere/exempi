@@ -58,7 +58,7 @@ GIF_Handler.cpp GIF_Handler.hpp\
 InDesign_Handler.cpp InDesign_Handler.hpp\
 JPEG_Handler.cpp JPEG_Handler.hpp\
 MP3_Handler.cpp MP3_Handler.hpp\
-MOV_Handler.hpp\
+MOV_Handler.cpp MOV_Handler.hpp\
 MPEG2_Handler.cpp MPEG2_Handler.hpp \
 MPEG4_Handler.cpp MPEG4_Handler.hpp \
 P2_Handler.cpp P2_Handler.hpp\

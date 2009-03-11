@@ -1,3 +1,11 @@
+2009-03-11  Lars Holm Nielsen <lnielsen@eso.org>
+
+	* source/XMPFiles/FileHandlers/Makefile.am:
+	* source/XMPFiles/FormatSupport/Makefile.am:
+	* configure.ac:
+	Some files missing when building on Mac
+	(Closes bug #20554)
+
 2009-02-24  Hubert Figuiere  <hub@figuiere.net>
 
 	* exempi/exempi.cpp (xmp_set_property): 

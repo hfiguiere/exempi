@@ -38,7 +38,6 @@ noinst_LTLIBRARIES = libformatsupport.la
 noinst_HEADERS = IPTC_Support.hpp  PSIR_Support.hpp\
 	Reconcile_Impl.hpp   RIFF_Support.hpp  XMPScanner.hpp\
 	ID3_Support.hpp  PNG_Support.hpp   QuickTime_Support.hpp\
-	QuickTime_Support.cpp\
 	ReconcileLegacy.hpp  TIFF_Support.hpp  GIF_Support.hpp
 
 
@@ -59,5 +58,6 @@ libformatsupport_la_SOURCES = ID3_Support.cpp   PSIR_FileWriter.cpp    Reconcile
 	SWF_Support.hpp SWF_Support.cpp\
 	XDCAM_Support.hpp XDCAM_Support.cpp\
 	TIFF_FileWriter.cpp  XMPScanner.cpp  GIF_Support.cpp \
+	QuickTime_Support.cpp \
 	ASF_Support.hpp ASF_Support.cpp \
 	$(NULL)
