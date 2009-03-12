@@ -1,3 +1,7 @@
+2009-03-11  Hubert Figuiere  <hub@figuiere.net>
+
+	* configure.ac: Bump to version 2.1.1
+
 2009-03-11  Lars Holm Nielsen <lnielsen@eso.org>
 
 	* source/XMPFiles/FileHandlers/Makefile.am:

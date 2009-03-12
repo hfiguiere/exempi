@@ -9,7 +9,7 @@ dnl the same distribution terms as the rest of that program.
 
 AC_PREREQ(2.50)
 AC_INIT(exempi/xmp.h)
-AM_INIT_AUTOMAKE(exempi, 2.1.0)
+AM_INIT_AUTOMAKE(exempi, 2.1.1)
 AM_MAINTAINER_MODE
 
 dnl ---------------------------------------------------------------------------
@@ -49,7 +49,8 @@ dnl 2.0.0 is the revision 4.1.2
 dnl 2.0.1 is the revision 4.1.3
 dnl 2.0.2 is the revision 4.1.4
 dnl 2.1.0 is the revision 5.2.0
-AC_SUBST([EXEMPI_REVISION], [0])
+dnl 2.1.1 is the revision 5.2.1
+AC_SUBST([EXEMPI_REVISION], [1])
 AC_SUBST([EXEMPI_AGE],      [2])
 AC_SUBST([EXEMPI_CURRENT],  [5])
 AC_SUBST([EXEMPI_CURRENT_MIN],
