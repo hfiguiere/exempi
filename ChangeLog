@@ -1,5 +1,10 @@
 2009-03-11  Hubert Figuiere  <hub@figuiere.net>
 
+	* configure.ac:
+	* exempi/Makefile.am:
+	* m4/ax_ld_check_flag.m4:
+	Detect proper ldflags. (Closes bug #20554)
+
 	* configure.ac: Bump to version 2.1.1
 
 2009-03-11  Lars Holm Nielsen <lnielsen@eso.org>

@@ -6,6 +6,7 @@
 - Bug #19312: source/XMPFiles/FileHandlers/P2_Handler.cpp was using 
   an improper string comparison. (made rpmlint unhappy).
 - Bug #20554: Missing file on MacOS X.
+- Bug #20554: Detect ldflags properly.
 
 2.1.0
 
