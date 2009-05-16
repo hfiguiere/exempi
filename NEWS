@@ -1,12 +1,18 @@
 2.1.1
 
-- NEW: added shave to the build system for sane output.
+New features:
+
+- Added shave to the build system for sane output. (build only)
+
+Bug fixes:
+
 - Bug #16030: if the property is an array or struct allow "" to be passed
   as a value.
 - Bug #19312: source/XMPFiles/FileHandlers/P2_Handler.cpp was using 
   an improper string comparison. (made rpmlint unhappy).
 - Bug #20554: Missing file on MacOS X.
 - Bug #20554: Detect ldflags properly.
+- Bug #20622: Catch unhandled exceptions in xmp_files_can_put_xmp()
 
 2.1.0
 
