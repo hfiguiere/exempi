@@ -129,7 +129,7 @@ bool UCF_CheckFormat (  XMP_FileFormat format,
 	//.airi - temporary Adobe Air Files
 	//application/vnd.adobe.air-application-intermediate-package+zip
 
-	delete mimetype;
+	delete[] mimetype;
 	return okMimetype;
 
 }	// UCF_CheckFormat

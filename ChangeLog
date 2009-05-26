@@ -1,3 +1,8 @@
+2009-05-26  Hubert Figuiere  <hub@figuiere.net>
+
+	* source/XMPFiles/FileHandlers/UCF_Handler.cpp (UCF_CheckFormat): 
+	Mismatched new [] / delete. (Closes bug #21934)
+
 2009-05-15  Hubert Figuiere  <hub@figuiere.net>
 
 	* exempi/exempi.cpp:

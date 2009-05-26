@@ -12,7 +12,8 @@ Bug fixes:
   an improper string comparison. (made rpmlint unhappy).
 - Bug #20554: Missing file on MacOS X.
 - Bug #20554: Detect ldflags properly.
-- Bug #20622: Catch unhandled exceptions in xmp_files_can_put_xmp()
+- Bug #20622: Catch unhandled exceptions in xmp_files_can_put_xmp().
+- Bug #21934: Mismatched new [] / delete.
 
 2.1.0
 
