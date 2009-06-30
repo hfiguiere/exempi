@@ -201,6 +201,9 @@ bool TIFF_MemoryReader::GetTag ( XMP_Uns8 ifd, XMP_Uns16 id, TagInfo* info ) con
 {
 	const TweakedIFDEntry* thisTag = this->FindTagInIFD ( ifd, id );
 	if ( thisTag == 0 ) return false;
+  // this type isn't valid and leads to a size of 0 causing a SIGFPE.
+  // just ignore it.
+  if ( thisTag->type == kTIFF_ShortOrLongType ) return false;
 	
 	if ( info != 0 ) {
 
