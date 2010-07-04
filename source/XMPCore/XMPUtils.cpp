@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2003 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:	Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -28,7 +28,6 @@
 	#pragma warning ( disable : 4996 )	// '...' was declared deprecated
 #endif
 
-
 // =================================================================================================
 // Local Types and Constants
 // ========================= 
@@ -36,30 +35,17 @@
 static const char * sBase64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 // =================================================================================================
-// Static Variables
-// ================
-
-XMP_VarString * sComposedPath = 0;		// *** Only really need 1 string. Shrink periodically?
-XMP_VarString * sConvertedValue = 0;
-XMP_VarString * sBase64Str = 0;
-XMP_VarString * sCatenatedItems = 0;
-XMP_VarString * sStandardXMP = 0;
-XMP_VarString * sExtendedXMP = 0;
-XMP_VarString * sExtendedDigest = 0;
-
-// =================================================================================================
 // Local Utilities
 // ===============
-
 
 // -------------------------------------------------------------------------------------------------
 // ANSI Time Functions
 // -------------------
 //
 // A bit of hackery to use the best available time functions. Mac and UNIX have thread safe versions
-// of gmtime and localtime. On Mac the CodeWarrior functions are buggy, use Apple's.
+// of gmtime and localtime.
 
-#if XMP_UNIXBuild
+#if XMP_MacBuild | XMP_UNIXBuild
 
 	typedef time_t			ansi_tt;
 	typedef struct tm		ansi_tm;
@@ -101,69 +87,22 @@ XMP_VarString * sExtendedDigest = 0;
 		}
 	#endif
 
-#elif XMP_MacBuild
-
-	#if ! __MWERKS__
-
-		typedef time_t			ansi_tt;
-		typedef struct tm		ansi_tm;
-	
-		#define ansi_time		time
-		#define ansi_mktime		mktime
-		#define ansi_difftime	difftime
-
-		#define ansi_gmtime		gmtime_r
-		#define ansi_localtime	localtime_r
-	
-	#else
-
-		// ! The CW versions are buggy. Use Apple's code, time_t, and "struct tm".
-		
-		#include <mach-o/dyld.h>
-
-		typedef _BSD_TIME_T_	ansi_tt;
-
-		typedef struct apple_tm {
-			int tm_sec;		/* seconds after the minute [0-60] */
-			int tm_min;		/* minutes after the hour [0-59] */
-			int tm_hour;	/* hours since midnight [0-23] */
-			int tm_mday;	/* day of the month [1-31] */
-			int tm_mon;		/* months since January [0-11] */
-			int tm_year;	/* years since 1900 */
-			int tm_wday;	/* days since Sunday [0-6] */
-			int tm_yday;	/* days since January 1 [0-365] */
-			int tm_isdst;	/* Daylight Savings Time flag */
-			long	tm_gmtoff;	/* offset from CUT in seconds */
-			char	*tm_zone;	/* timezone abbreviation */
-		} ansi_tm;
-
-		
-		typedef ansi_tt (* GetTimeProc)	 ( ansi_tt * ttTime );
-		typedef ansi_tt (* MakeTimeProc) ( ansi_tm * tmTime );
-		typedef double	(* DiffTimeProc) ( ansi_tt t1, ansi_tt t0 );
-
-		typedef void (* ConvertTimeProc) ( const ansi_tt * ttTime, ansi_tm * tmTime );
-
-		static GetTimeProc ansi_time = 0;
-		static MakeTimeProc ansi_mktime = 0;
-		static DiffTimeProc ansi_difftime = 0;
-
-		static ConvertTimeProc ansi_gmtime = 0;
-		static ConvertTimeProc ansi_localtime = 0;
-		
-		static void LookupTimeProcs()
-		{
-			_dyld_lookup_and_bind_with_hint ( "_time", "libSystem", (XMP_Uns32*)&ansi_time, 0 );
-			_dyld_lookup_and_bind_with_hint ( "_mktime", "libSystem", (XMP_Uns32*)&ansi_mktime, 0 );
-			_dyld_lookup_and_bind_with_hint ( "_difftime", "libSystem", (XMP_Uns32*)&ansi_difftime, 0 );
-			_dyld_lookup_and_bind_with_hint ( "_gmtime_r", "libSystem", (XMP_Uns32*)&ansi_gmtime, 0 );
-			_dyld_lookup_and_bind_with_hint ( "_localtime_r", "libSystem", (XMP_Uns32*)&ansi_localtime, 0 );
-		}
-	
-	#endif
-
 #endif
 
+// -------------------------------------------------------------------------------------------------
+// VerifyDateTimeFlags
+// -------------------
+
+static void
+VerifyDateTimeFlags ( XMP_DateTime * dt )
+{
+
+	if ( (dt->year != 0) || (dt->month != 0) || (dt->day != 0) ) dt->hasDate = true;
+	if ( (dt->hour != 0) || (dt->minute != 0) || (dt->second != 0) || (dt->nanoSecond != 0) ) dt->hasTime = true;
+	if ( (dt->tzSign != 0) || (dt->tzHour != 0) || (dt->tzMinute != 0) ) dt->hasTimeZone = true;
+	if ( dt->hasTimeZone ) dt->hasTime = true;	// ! Don't combine with above line, UTC has zero values.
+
+}	// VerifyDateTimeFlags
 
 // -------------------------------------------------------------------------------------------------
 // IsLeapYear
@@ -183,7 +122,6 @@ IsLeapYear ( long year )
 
 }	// IsLeapYear
 
-
 // -------------------------------------------------------------------------------------------------
 // DaysInMonth
 // -----------
@@ -201,7 +139,6 @@ DaysInMonth ( XMP_Int32 year, XMP_Int32 month )
 	return days;
 
 }	// DaysInMonth
-
 
 // -------------------------------------------------------------------------------------------------
 // AdjustTimeOverflow
@@ -356,7 +293,6 @@ AdjustTimeOverflow ( XMP_DateTime * time )
 
 }	// AdjustTimeOverflow
 
-
 // -------------------------------------------------------------------------------------------------
 // GatherInt
 // ---------
@@ -369,6 +305,7 @@ GatherInt ( XMP_StringPtr strValue, size_t * _pos, const char * errMsg )
 	
 	for ( char ch = strValue[pos]; ('0' <= ch) && (ch <= '9'); ++pos, ch = strValue[pos] ) {
 		value = (value * 10) + (ch - '0');
+		if ( value < 0 ) XMP_Throw ( errMsg, kXMPErr_BadValue );
 	}
 	
 	if ( pos == *_pos ) XMP_Throw ( errMsg, kXMPErr_BadParam );
@@ -376,7 +313,6 @@ GatherInt ( XMP_StringPtr strValue, size_t * _pos, const char * errMsg )
 	return value;
 	
 }	// GatherInt
-
 
 // -------------------------------------------------------------------------------------------------
 
@@ -409,7 +345,6 @@ static void FormatFullDateTime ( XMP_DateTime & tempDate, char * buffer, size_t 
 	}
 
 }	// FormatFullDateTime
-
 
 // -------------------------------------------------------------------------------------------------
 // DecodeBase64Char
@@ -449,7 +384,6 @@ DecodeBase64Char ( XMP_Uns8 ch )
 	return ch;
 	
 }	// DecodeBase64Char ();
-
 
 // -------------------------------------------------------------------------------------------------
 // EstimateSizeForJPEG
@@ -497,7 +431,6 @@ EstimateSizeForJPEG ( const XMP_Node * xmpNode )
 
 }	// EstimateSizeForJPEG
 
-
 // -------------------------------------------------------------------------------------------------
 // MoveOneProperty
 // ---------------
@@ -528,7 +461,6 @@ static bool MoveOneProperty ( XMPMeta & stdXMP, XMPMeta * extXMP,
 	return true;
 	
 }	// MoveOneProperty
-
 
 // -------------------------------------------------------------------------------------------------
 // CreateEstimatedSizeMap
@@ -572,7 +504,6 @@ static void CreateEstimatedSizeMap ( XMPMeta & stdXMP, PropSizeMap * propSizes )
 		
 }	// CreateEstimatedSizeMap
 
-
 // -------------------------------------------------------------------------------------------------
 // MoveLargestProperty
 // -------------------
@@ -608,11 +539,9 @@ static size_t MoveLargestProperty ( XMPMeta & stdXMP, XMPMeta * extXMP, PropSize
 
 }	// MoveLargestProperty
 
-
 // =================================================================================================
 // Class Static Functions
 // ======================
-
 
 // -------------------------------------------------------------------------------------------------
 // Initialize
@@ -621,57 +550,24 @@ static size_t MoveLargestProperty ( XMPMeta & stdXMP, XMPMeta * extXMP, PropSize
 /* class static */ bool
 XMPUtils::Initialize()
 {
-	sComposedPath	= new XMP_VarString();
-	sConvertedValue = new XMP_VarString();
-	sBase64Str		= new XMP_VarString();
-	sCatenatedItems = new XMP_VarString();
-	sStandardXMP    = new XMP_VarString();
-	sExtendedXMP    = new XMP_VarString();
-	sExtendedDigest = new XMP_VarString();
 
-	#if XMP_MacBuild && __MWERKS__
-		LookupTimeProcs();
-	#endif
-
+	// Nothing at present.
 	return true;
 	
 }	// Initialize
-
 
 // -------------------------------------------------------------------------------------------------
 // Terminate
 // ---------
 
-#define EliminateGlobal(g) delete ( g ); g = 0
-
 /* class static */ void
 XMPUtils::Terminate() RELEASE_NO_THROW
 {
-	EliminateGlobal ( sComposedPath );
-	EliminateGlobal ( sConvertedValue );
-	EliminateGlobal ( sBase64Str );
-	EliminateGlobal ( sCatenatedItems );
-	EliminateGlobal ( sStandardXMP );
-	EliminateGlobal ( sExtendedXMP );
-	EliminateGlobal ( sExtendedDigest );
 
+	// Nothing at present.
 	return;
 	
 }	// Terminate
-
-
-// -------------------------------------------------------------------------------------------------
-// Unlock
-// ------
-
-/* class static */ void
-XMPUtils::Unlock ( XMP_OptionBits options )
-{
-	options = options;	// Avoid unused parameter warning.
-
-	XMPMeta::Unlock ( 0 );
-
-}	// Unlock
 
 // -------------------------------------------------------------------------------------------------
 // ComposeArrayItemPath
@@ -683,12 +579,11 @@ XMPUtils::Unlock ( XMP_OptionBits options )
 XMPUtils::ComposeArrayItemPath ( XMP_StringPtr	 schemaNS,
 								 XMP_StringPtr	 arrayName,
 								 XMP_Index		 itemIndex,
-								 XMP_StringPtr * fullPath,
-								 XMP_StringLen * pathSize )
+								 XMP_VarString * _fullPath )
 {
 	XMP_Assert ( schemaNS != 0 );	// Enforced by wrapper.
-	XMP_Assert ( *arrayName != 0 ); // Enforced by wrapper.
-	XMP_Assert ( (fullPath != 0) && (pathSize != 0) );	// Enforced by wrapper.
+	XMP_Assert ( (arrayName != 0) && (*arrayName != 0) ); // Enforced by wrapper.
+	XMP_Assert ( _fullPath != 0 );	// Enforced by wrapper.
 
 	XMP_ExpandedXPath expPath;	// Just for side effects to check namespace and basic path.
 	ExpandXPath ( schemaNS, arrayName, &expPath );
@@ -697,26 +592,22 @@ XMPUtils::ComposeArrayItemPath ( XMP_StringPtr	 schemaNS,
 
 	XMP_StringLen reserveLen = strlen(arrayName) + 2 + 32;	// Room plus padding.
 	
-	sComposedPath->erase();
-	sComposedPath->reserve ( reserveLen );
-	sComposedPath->append ( reserveLen, ' ' );
+	XMP_VarString fullPath;	// ! Allow for arrayName to be the incoming _fullPath.c_str().
+	fullPath.reserve ( reserveLen );
+		fullPath = arrayName;
 	
-	if ( itemIndex != kXMP_ArrayLastItem ) {
-		// AUDIT: Using string->size() for the snprintf length is safe.
-		snprintf ( const_cast<char*>(sComposedPath->c_str()), sComposedPath->size(), "%s[%d]", arrayName, itemIndex );
+	if ( itemIndex == kXMP_ArrayLastItem ) {
+		fullPath += "[last()]";
 	} else {
-		*sComposedPath = arrayName;
-		*sComposedPath += "[last()] ";
-		(*sComposedPath)[sComposedPath->size()-1] = 0;	// ! Final null is for the strlen at exit.
+		// AUDIT: Using sizeof(buffer) for the snprintf length is safe.
+		char buffer [32];	// A 32 byte buffer is plenty, even for a 64-bit integer.
+		snprintf ( buffer, sizeof(buffer), "[%d]", itemIndex );
+		fullPath += buffer;
 	}
 
-	*fullPath = sComposedPath->c_str();
-	*pathSize = strlen ( *fullPath );	// ! Don't use sComposedPath->size()!
-
-	XMP_Enforce ( *pathSize < sComposedPath->size() );	// Rather late, but complain about buffer overflow.
+	*_fullPath = fullPath;
 	
 }	// ComposeArrayItemPath
-
 
 // -------------------------------------------------------------------------------------------------
 // ComposeStructFieldPath
@@ -729,12 +620,12 @@ XMPUtils::ComposeStructFieldPath ( XMP_StringPtr   schemaNS,
 								   XMP_StringPtr   structName,
 								   XMP_StringPtr   fieldNS,
 								   XMP_StringPtr   fieldName,
-								   XMP_StringPtr * fullPath,
-								   XMP_StringLen * pathSize )
+								   XMP_VarString * _fullPath )
 {
 	XMP_Assert ( (schemaNS != 0) && (fieldNS != 0) );		// Enforced by wrapper.
-	XMP_Assert ( (*structName != 0) && (*fieldName != 0) ); // Enforced by wrapper.
-	XMP_Assert ( (fullPath != 0) && (pathSize != 0) );		// Enforced by wrapper.
+	XMP_Assert ( (structName != 0) && (*structName != 0) ); // Enforced by wrapper.
+	XMP_Assert ( (fieldName != 0) && (*fieldName != 0) );	// Enforced by wrapper.
+	XMP_Assert ( _fullPath != 0 );	// Enforced by wrapper.
 
 	XMP_ExpandedXPath expPath;	// Just for side effects to check namespace and basic path.
 	ExpandXPath ( schemaNS, structName, &expPath );
@@ -745,17 +636,15 @@ XMPUtils::ComposeStructFieldPath ( XMP_StringPtr   schemaNS,
 
 	XMP_StringLen reserveLen = strlen(structName) + fieldPath[kRootPropStep].step.size() + 1;
 
-	sComposedPath->erase();
-	sComposedPath->reserve ( reserveLen );
-	*sComposedPath = structName;
-	*sComposedPath += '/';
-	*sComposedPath += fieldPath[kRootPropStep].step;
+	XMP_VarString fullPath;	// ! Allow for arrayName to be the incoming _fullPath.c_str().
+	fullPath.reserve ( reserveLen );
+	fullPath = structName;
+	fullPath += '/';
+	fullPath += fieldPath[kRootPropStep].step;
 	
-	*fullPath = sComposedPath->c_str();
-	*pathSize = sComposedPath->size();
+	*_fullPath = fullPath;
 	
 }	// ComposeStructFieldPath
-
 
 // -------------------------------------------------------------------------------------------------
 // ComposeQualifierPath
@@ -768,12 +657,12 @@ XMPUtils::ComposeQualifierPath ( XMP_StringPtr	 schemaNS,
 								 XMP_StringPtr	 propName,
 								 XMP_StringPtr	 qualNS,
 								 XMP_StringPtr	 qualName,
-								 XMP_StringPtr * fullPath,
-								 XMP_StringLen * pathSize )
+								 XMP_VarString * _fullPath )
 {
-	XMP_Assert ( (schemaNS != 0) && (qualNS != 0) );		// Enforced by wrapper.
-	XMP_Assert ( (*propName != 0) && (*qualName != 0) );	// Enforced by wrapper.
-	XMP_Assert ( (fullPath != 0) && (pathSize != 0) );		// Enforced by wrapper.
+	XMP_Assert ( (schemaNS != 0) && (qualNS != 0) );	// Enforced by wrapper.
+	XMP_Assert ( (propName != 0) && (*propName != 0) );	// Enforced by wrapper.
+	XMP_Assert ( (qualName != 0) && (*qualName != 0) );	// Enforced by wrapper.
+	XMP_Assert ( _fullPath != 0 );	// Enforced by wrapper.
 
 	XMP_ExpandedXPath expPath;	// Just for side effects to check namespace and basic path.
 	ExpandXPath ( schemaNS, propName, &expPath );
@@ -784,17 +673,15 @@ XMPUtils::ComposeQualifierPath ( XMP_StringPtr	 schemaNS,
 
 	XMP_StringLen reserveLen = strlen(propName) + qualPath[kRootPropStep].step.size() + 2;
 
-	sComposedPath->erase();
-	sComposedPath->reserve ( reserveLen );
-	*sComposedPath = propName;
-	*sComposedPath += "/?";
-	*sComposedPath += qualPath[kRootPropStep].step;
+	XMP_VarString fullPath;	// ! Allow for arrayName to be the incoming _fullPath.c_str().
+	fullPath.reserve ( reserveLen );
+	fullPath = propName;
+	fullPath += "/?";
+	fullPath += qualPath[kRootPropStep].step;
 	
-	*fullPath = sComposedPath->c_str();
-	*pathSize = sComposedPath->size();
+	*_fullPath = fullPath;
 	
 }	// ComposeQualifierPath
-
 
 // -------------------------------------------------------------------------------------------------
 // ComposeLangSelector
@@ -808,12 +695,12 @@ XMPUtils::ComposeQualifierPath ( XMP_StringPtr	 schemaNS,
 XMPUtils::ComposeLangSelector ( XMP_StringPtr	schemaNS,
 								XMP_StringPtr	arrayName,
 								XMP_StringPtr	_langName,
-								XMP_StringPtr * fullPath,
-								XMP_StringLen * pathSize )
+								XMP_VarString * _fullPath )
 {
 	XMP_Assert ( schemaNS != 0 );	// Enforced by wrapper.
-	XMP_Assert ( (*arrayName != 0) && (*_langName != 0) );	// Enforced by wrapper.
-	XMP_Assert ( (fullPath != 0) && (pathSize != 0) );		// Enforced by wrapper.
+	XMP_Assert ( (arrayName != 0) && (*arrayName != 0) );	// Enforced by wrapper.
+	XMP_Assert ( (_langName != 0) && (*_langName != 0) );	// Enforced by wrapper.
+	XMP_Assert ( _fullPath != 0 );	// Enforced by wrapper.
 
 	XMP_ExpandedXPath expPath;	// Just for side effects to check namespace and basic path.
 	ExpandXPath ( schemaNS, arrayName, &expPath );
@@ -823,18 +710,16 @@ XMPUtils::ComposeLangSelector ( XMP_StringPtr	schemaNS,
 
 	XMP_StringLen reserveLen = strlen(arrayName) + langName.size() + 14;
 	
-	sComposedPath->erase();
-	sComposedPath->reserve ( reserveLen );
-	*sComposedPath = arrayName;
-	*sComposedPath += "[?xml:lang=\"";
-	*sComposedPath += langName;
-	*sComposedPath += "\"]";
+	XMP_VarString fullPath;	// ! Allow for arrayName to be the incoming _fullPath.c_str().
+	fullPath.reserve ( reserveLen );
+	fullPath = arrayName;
+	fullPath += "[?xml:lang=\"";
+	fullPath += langName;
+	fullPath += "\"]";
 	
-	*fullPath = sComposedPath->c_str();
-	*pathSize = sComposedPath->size();
+	*_fullPath = fullPath;
 	
 }	// ComposeLangSelector
-
 
 // -------------------------------------------------------------------------------------------------
 // ComposeFieldSelector
@@ -850,12 +735,11 @@ XMPUtils::ComposeFieldSelector ( XMP_StringPtr	 schemaNS,
 								 XMP_StringPtr	 fieldNS,
 								 XMP_StringPtr	 fieldName,
 								 XMP_StringPtr	 fieldValue,
-								 XMP_StringPtr * fullPath,
-								 XMP_StringLen * pathSize )
+								 XMP_VarString * _fullPath )
 {
 	XMP_Assert ( (schemaNS != 0) && (fieldNS != 0) && (fieldValue != 0) );	// Enforced by wrapper.
 	XMP_Assert ( (*arrayName != 0) && (*fieldName != 0) );	// Enforced by wrapper.
-	XMP_Assert ( (fullPath != 0) && (pathSize != 0) );		// Enforced by wrapper.
+	XMP_Assert ( _fullPath != 0 );		// Enforced by wrapper.
 
 	XMP_ExpandedXPath expPath;	// Just for side effects to check namespace and basic path.
 	ExpandXPath ( schemaNS, arrayName, &expPath );
@@ -866,20 +750,18 @@ XMPUtils::ComposeFieldSelector ( XMP_StringPtr	 schemaNS,
 
 	XMP_StringLen reserveLen = strlen(arrayName) + fieldPath[kRootPropStep].step.size() + strlen(fieldValue) + 5;
 
-	sComposedPath->erase();
-	sComposedPath->reserve ( reserveLen );
-	*sComposedPath = arrayName;
-	*sComposedPath += '[';
-	*sComposedPath += fieldPath[kRootPropStep].step;
-	*sComposedPath += "=\"";
-	*sComposedPath += fieldValue;
-	*sComposedPath += "\"]";
+	XMP_VarString fullPath;	// ! Allow for arrayName to be the incoming _fullPath.c_str().
+	fullPath.reserve ( reserveLen );
+	fullPath = arrayName;
+	fullPath += '[';
+	fullPath += fieldPath[kRootPropStep].step;
+	fullPath += "=\"";
+	fullPath += fieldValue;
+	fullPath += "\"]";
 	
-	*fullPath = sComposedPath->c_str();
-	*pathSize = sComposedPath->size();
+	*_fullPath = fullPath;
 	
 }	// ComposeFieldSelector
-
 
 // -------------------------------------------------------------------------------------------------
 // ConvertFromBool
@@ -887,21 +769,17 @@ XMPUtils::ComposeFieldSelector ( XMP_StringPtr	 schemaNS,
 
 /* class static */ void
 XMPUtils::ConvertFromBool ( bool			binValue,
-							XMP_StringPtr * strValue,
-							XMP_StringLen * strSize )
+							XMP_VarString * strValue )
 {
-	XMP_Assert ( (strValue != 0) && (strSize != 0) );	// Enforced by wrapper.
+	XMP_Assert ( strValue != 0 );	// Enforced by wrapper.
 
 	if ( binValue ) {
 		*strValue = kXMP_TrueStr;
-		*strSize  = strlen ( kXMP_TrueStr );
 	} else {
 		*strValue = kXMP_FalseStr;
-		*strSize  = strlen ( kXMP_FalseStr );
 	}
 	
 }	// ConvertFromBool
-
 
 // -------------------------------------------------------------------------------------------------
 // ConvertFromInt
@@ -910,27 +788,20 @@ XMPUtils::ConvertFromBool ( bool			binValue,
 /* class static */ void
 XMPUtils::ConvertFromInt ( XMP_Int32	   binValue,
 						   XMP_StringPtr   format,
-						   XMP_StringPtr * strValue,
-						   XMP_StringLen * strSize )
+						   XMP_VarString * strValue )
 {
-	XMP_Assert ( (format != 0) && (strValue != 0) && (strSize != 0) );	// Enforced by wrapper.
+	XMP_Assert ( (format != 0) && (strValue != 0) );	// Enforced by wrapper.
 
+	strValue->erase();
 	if ( *format == 0 ) format = "%d";
 	
-	sConvertedValue->erase();
-	sConvertedValue->reserve ( 100 );		// More than enough for any reasonable format and value.
-	sConvertedValue->append ( 100, ' ' );
+	// AUDIT: Using sizeof(buffer) for the snprintf length is safe.
+	char buffer [32];	// Big enough for a 64-bit integer;
+	snprintf ( buffer, sizeof(buffer), format, binValue );
 	
-	// AUDIT: Using string->size() for the snprintf length is safe.
-	snprintf ( const_cast<char*>(sConvertedValue->c_str()), sConvertedValue->size(), format, binValue );
-	
-	*strValue = sConvertedValue->c_str();
-	*strSize  = strlen ( *strValue );	// ! Don't use sConvertedValue->size()!
-
-	XMP_Enforce ( *strSize < sConvertedValue->size() ); // Rather late, but complain about buffer overflow.
+	*strValue = buffer;
 
 }	// ConvertFromInt
-
 
 // -------------------------------------------------------------------------------------------------
 // ConvertFromInt64
@@ -939,27 +810,20 @@ XMPUtils::ConvertFromInt ( XMP_Int32	   binValue,
 /* class static */ void
 XMPUtils::ConvertFromInt64 ( XMP_Int64	     binValue,
 						     XMP_StringPtr   format,
-						     XMP_StringPtr * strValue,
-						     XMP_StringLen * strSize )
+						     XMP_VarString * strValue )
 {
-	XMP_Assert ( (format != 0) && (strValue != 0) && (strSize != 0) );	// Enforced by wrapper.
+	XMP_Assert ( (format != 0) && (strValue != 0) );	// Enforced by wrapper.
 
+	strValue->erase();
 	if ( *format == 0 ) format = "%lld";
 	
-	sConvertedValue->erase();
-	sConvertedValue->reserve ( 100 );		// More than enough for any reasonable format and value.
-	sConvertedValue->append ( 100, ' ' );
+	// AUDIT: Using sizeof(buffer) for the snprintf length is safe.
+	char buffer [32];	// Big enough for a 64-bit integer;
+	snprintf ( buffer, sizeof(buffer), format, binValue );
 	
-	// AUDIT: Using string->size() for the snprintf length is safe.
-	snprintf ( const_cast<char*>(sConvertedValue->c_str()), sConvertedValue->size(), format, binValue );
-	
-	*strValue = sConvertedValue->c_str();
-	*strSize  = strlen ( *strValue );	// ! Don't use sConvertedValue->size()!
-
-	XMP_Enforce ( *strSize < sConvertedValue->size() ); // Rather late, but complain about buffer overflow.
+	*strValue = buffer;
 
 }	// ConvertFromInt64
-
 
 // -------------------------------------------------------------------------------------------------
 // ConvertFromFloat
@@ -968,33 +832,26 @@ XMPUtils::ConvertFromInt64 ( XMP_Int64	     binValue,
 /* class static */ void
 XMPUtils::ConvertFromFloat ( double			 binValue,
 							 XMP_StringPtr	 format,
-							 XMP_StringPtr * strValue,
-							 XMP_StringLen * strSize )
+							 XMP_VarString * strValue )
 {
-	XMP_Assert ( (format != 0) && (strValue != 0) && (strSize != 0) );	// Enforced by wrapper.
+	XMP_Assert ( (format != 0) && (strValue != 0) );	// Enforced by wrapper.
 
+	strValue->erase();
 	if ( *format == 0 ) format = "%f";
 	
-	sConvertedValue->erase();
-	sConvertedValue->reserve ( 1000 );		// More than enough for any reasonable format and value.
-	sConvertedValue->append ( 1000, ' ' );
+	// AUDIT: Using sizeof(buffer) for the snprintf length is safe.
+	char buffer [64];	// Ought to be plenty big enough.
+	snprintf ( buffer, sizeof(buffer), format, binValue );
 	
-	// AUDIT: Using string->size() for the snprintf length is safe.
-	snprintf ( const_cast<char*>(sConvertedValue->c_str()), sConvertedValue->size(), format, binValue );
-	
-	*strValue = sConvertedValue->c_str();
-	*strSize  = strlen ( *strValue );	// ! Don't use sConvertedValue->size()!
-
-	XMP_Enforce ( *strSize < sConvertedValue->size() ); // Rather late, but complain about buffer overflow.
+	*strValue = buffer;
 
 }	// ConvertFromFloat
-
 
 // -------------------------------------------------------------------------------------------------
 // ConvertFromDate
 // ---------------
 //
-// Format a date according to ISO 8601 and http://www.w3.org/TR/NOTE-datetime:
+// Format a date-time string according to ISO 8601 and http://www.w3.org/TR/NOTE-datetime:
 //	YYYY
 //	YYYY-MM
 //	YYYY-MM-DD
@@ -1012,18 +869,16 @@ XMPUtils::ConvertFromFloat ( double			 binValue,
 //	TZD	 = time zone designator (Z or +hh:mm or -hh:mm)
 //
 // Note that ISO 8601 does not seem to allow years less than 1000 or greater than 9999. We allow
-// any year, even negative ones. The year is formatted as "%.4d".
-
-// *** Need to check backward compatibility for partial forms!
+// any year, even negative ones. The year is formatted as "%.4d". The TZD is also optional in XMP,
+// even though required in the W3C profile. Finally, Photoshop 8 (CS) sometimes created time-only
+// values so we tolerate that.
 
 /* class static */ void
-XMPUtils::ConvertFromDate ( const XMP_DateTime & binValue,
-							XMP_StringPtr *		 strValue,
-							XMP_StringLen *		 strSize )
+XMPUtils::ConvertFromDate ( const XMP_DateTime & _inValue,
+							XMP_VarString *      strValue )
 {	
-	XMP_Assert ( (strValue != 0) && (strSize != 0) );	// Enforced by wrapper.
+	XMP_Assert ( strValue != 0 );	// Enforced by wrapper.
 
-	bool addTimeZone = false;
 	char buffer [100];	// Plenty long enough.
 	
 	// Pick the format, use snprintf to format into a local buffer, assign to static output string.
@@ -1031,100 +886,81 @@ XMPUtils::ConvertFromDate ( const XMP_DateTime & binValue,
 	
 	// ! Photoshop 8 creates "time only" values with zeros for year, month, and day.
 	
-	XMP_DateTime tempDate = binValue;
+	XMP_DateTime binValue = _inValue;
+	VerifyDateTimeFlags ( &binValue );
 	
 	// Temporary fix for bug 1269463, silently fix out of range month or day.
 
-	bool haveDay  = (tempDate.day != 0);
-	bool haveTime = ( (tempDate.hour != 0)   || (tempDate.minute != 0) ||
-			          (tempDate.second != 0) || (tempDate.nanoSecond != 0) ||
-			          (tempDate.tzSign != 0) || (tempDate.tzHour != 0) || (tempDate.tzMinute != 0) );
-
-	if ( tempDate.month == 0 ) {
-		if ( haveDay || haveTime ) tempDate.month = 1;
+	if ( binValue.month == 0 ) {
+		if ( (binValue.day != 0) || binValue.hasTime ) binValue.month = 1;
 	} else {
-		if ( tempDate.month < 1 ) tempDate.month = 1;
-		if ( tempDate.month > 12 ) tempDate.month = 12;
+		if ( binValue.month < 1 ) binValue.month = 1;
+		if ( binValue.month > 12 ) binValue.month = 12;
 	}
 
-	if ( tempDate.day == 0 ) {
-		if ( haveTime ) tempDate.day = 1;
+	if ( binValue.day == 0 ) {
+		if ( binValue.hasTime ) binValue.day = 1;
 	} else {
-		if ( tempDate.day < 1 ) tempDate.day = 1;
-		if ( tempDate.day > 31 ) tempDate.day = 31;
+		if ( binValue.day < 1 ) binValue.day = 1;
+		if ( binValue.day > 31 ) binValue.day = 31;
 	}
 	
 	// Now carry on with the original logic.
 	
-	if ( tempDate.month == 0 ) {
+	if ( binValue.month == 0 ) {
 
 		// Output YYYY if all else is zero, otherwise output a full string for the quasi-bogus
 		// "time only" values from Photoshop CS.
-		if ( (tempDate.day == 0) && (tempDate.hour == 0) && (tempDate.minute == 0) &&
-			 (tempDate.second == 0) && (tempDate.nanoSecond == 0) &&
-			 (tempDate.tzSign == 0) && (tempDate.tzHour == 0) && (tempDate.tzMinute == 0) ) {
-			snprintf ( buffer, sizeof(buffer), "%.4d", tempDate.year ); // AUDIT: Using sizeof for snprintf length is safe.
-		} else if ( (tempDate.year == 0) && (tempDate.day == 0) ) {
-			FormatFullDateTime ( tempDate, buffer, sizeof(buffer) );
-			addTimeZone = true;
+		if ( (binValue.day == 0) && (! binValue.hasTime) ) {
+			snprintf ( buffer, sizeof(buffer), "%.4d", binValue.year ); // AUDIT: Using sizeof for snprintf length is safe.
+		} else if ( (binValue.year == 0) && (binValue.day == 0) ) {
+			FormatFullDateTime ( binValue, buffer, sizeof(buffer) );
 		} else {
 			XMP_Throw ( "Invalid partial date", kXMPErr_BadParam);
 		}
 
-	} else if ( tempDate.day == 0 ) {
+	} else if ( binValue.day == 0 ) {
 
 		// Output YYYY-MM.
-		if ( (tempDate.month < 1) || (tempDate.month > 12) ) XMP_Throw ( "Month is out of range", kXMPErr_BadParam);
-		if ( (tempDate.hour != 0) || (tempDate.minute != 0) ||
-			 (tempDate.second != 0) || (tempDate.nanoSecond != 0) ||
-			 (tempDate.tzSign != 0) || (tempDate.tzHour != 0) || (tempDate.tzMinute != 0) ) {
-			XMP_Throw ( "Invalid partial date, non-zeros after zero month and day", kXMPErr_BadParam);
-		}
-		snprintf ( buffer, sizeof(buffer), "%.4d-%02d", tempDate.year, tempDate.month );	// AUDIT: Using sizeof for snprintf length is safe.
+		if ( (binValue.month < 1) || (binValue.month > 12) ) XMP_Throw ( "Month is out of range", kXMPErr_BadParam);
+		if ( binValue.hasTime ) XMP_Throw ( "Invalid partial date, non-zeros after zero month and day", kXMPErr_BadParam);
+		snprintf ( buffer, sizeof(buffer), "%.4d-%02d", binValue.year, binValue.month );	// AUDIT: Using sizeof for snprintf length is safe.
 		
-	} else if ( (tempDate.hour == 0) && (tempDate.minute == 0) &&
-				(tempDate.second == 0) && (tempDate.nanoSecond == 0) &&
-				(tempDate.tzSign == 0) && (tempDate.tzHour == 0) && (tempDate.tzMinute == 0) ) {
+	} else if ( ! binValue.hasTime ) {
 
 		// Output YYYY-MM-DD.
-		if ( (tempDate.month < 1) || (tempDate.month > 12) ) XMP_Throw ( "Month is out of range", kXMPErr_BadParam);
-		if ( (tempDate.day < 1) || (tempDate.day > 31) ) XMP_Throw ( "Day is out of range", kXMPErr_BadParam);
-		snprintf ( buffer, sizeof(buffer), "%.4d-%02d-%02d", tempDate.year, tempDate.month, tempDate.day ); // AUDIT: Using sizeof for snprintf length is safe.
+		if ( (binValue.month < 1) || (binValue.month > 12) ) XMP_Throw ( "Month is out of range", kXMPErr_BadParam);
+		if ( (binValue.day < 1) || (binValue.day > 31) ) XMP_Throw ( "Day is out of range", kXMPErr_BadParam);
+		snprintf ( buffer, sizeof(buffer), "%.4d-%02d-%02d", binValue.year, binValue.month, binValue.day ); // AUDIT: Using sizeof for snprintf length is safe.
 
 	} else {
 	
-		FormatFullDateTime ( tempDate, buffer, sizeof(buffer) );
-		addTimeZone = true;
+		FormatFullDateTime ( binValue, buffer, sizeof(buffer) );
 	
 	}
 	
-	sConvertedValue->assign ( buffer );
+	strValue->assign ( buffer );
 	
-	if ( addTimeZone ) {
+	if ( binValue.hasTimeZone ) {
 
-		if ( (tempDate.tzHour < 0) || (tempDate.tzHour > 23) ||
-			 (tempDate.tzMinute < 0 ) || (tempDate.tzMinute > 59) ||
-			 (tempDate.tzSign < -1) || (tempDate.tzSign > +1) ||
-			 ((tempDate.tzSign != 0) && (tempDate.tzHour == 0) && (tempDate.tzMinute == 0)) ||
-			 ((tempDate.tzSign == 0) && ((tempDate.tzHour != 0) || (tempDate.tzMinute != 0))) ) {
+		if ( (binValue.tzHour < 0) || (binValue.tzHour > 23) ||
+			 (binValue.tzMinute < 0 ) || (binValue.tzMinute > 59) ||
+			 (binValue.tzSign < -1) || (binValue.tzSign > +1) ||
+			 ((binValue.tzSign == 0) && ((binValue.tzHour != 0) || (binValue.tzMinute != 0))) ) {
 			XMP_Throw ( "Invalid time zone values", kXMPErr_BadParam );
 		}
 
-		if ( tempDate.tzSign == 0 ) {
-			*sConvertedValue += 'Z';
+		if ( binValue.tzSign == 0 ) {
+			*strValue += 'Z';
 		} else {
-			snprintf ( buffer, sizeof(buffer), "+%02d:%02d", tempDate.tzHour, tempDate.tzMinute );	// AUDIT: Using sizeof for snprintf length is safe.
-			if ( tempDate.tzSign < 0 ) buffer[0] = '-';
-			*sConvertedValue += buffer;
+			snprintf ( buffer, sizeof(buffer), "+%02d:%02d", binValue.tzHour, binValue.tzMinute );	// AUDIT: Using sizeof for snprintf length is safe.
+			if ( binValue.tzSign < 0 ) buffer[0] = '-';
+			*strValue += buffer;
 		}
 
 	}
 	
-	*strValue = sConvertedValue->c_str();
-	*strSize  = sConvertedValue->size();
-	
 }	// ConvertFromDate
-
 
 // -------------------------------------------------------------------------------------------------
 // ConvertToBool
@@ -1157,7 +993,6 @@ XMPUtils::ConvertToBool ( XMP_StringPtr strValue )
 
 }	// ConvertToBool
 
-
 // -------------------------------------------------------------------------------------------------
 // ConvertToInt
 // ------------
@@ -1183,7 +1018,6 @@ XMPUtils::ConvertToInt ( XMP_StringPtr strValue )
 	
 }	// ConvertToInt
 
-
 // -------------------------------------------------------------------------------------------------
 // ConvertToInt64
 // --------------
@@ -1208,7 +1042,6 @@ XMPUtils::ConvertToInt64 ( XMP_StringPtr strValue )
 	return result;
 	
 }	// ConvertToInt64
-
 
 // -------------------------------------------------------------------------------------------------
 // ConvertToFloat
@@ -1237,12 +1070,11 @@ XMPUtils::ConvertToFloat ( XMP_StringPtr strValue )
 	
 }	// ConvertToFloat
 
-
 // -------------------------------------------------------------------------------------------------
 // ConvertToDate
 // -------------
 //
-// Parse a date according to ISO 8601 and http://www.w3.org/TR/NOTE-datetime:
+// Parse a date-time string according to ISO 8601 and http://www.w3.org/TR/NOTE-datetime:
 //	YYYY
 //	YYYY-MM
 //	YYYY-MM-DD
@@ -1260,10 +1092,9 @@ XMPUtils::ConvertToFloat ( XMP_StringPtr strValue )
 //	TZD	 = time zone designator (Z or +hh:mm or -hh:mm)
 //
 // Note that ISO 8601 does not seem to allow years less than 1000 or greater than 9999. We allow
-// any year, even negative ones. The year is formatted as "%.4d".
-
-// ! Tolerate missing TZD, assume is UTC. Photoshop 8 writes dates like this for exif:GPSTimeStamp.
-// ! Tolerate missing date portion, in case someone foolishly writes a time-only value that way.
+// any year, even negative ones. The year is formatted as "%.4d". The TZD is also optional in XMP,
+// even though required in the W3C profile. Finally, Photoshop 8 (CS) sometimes created time-only
+// values so we tolerate that.
 
 // *** Put the ISO format comments in the header documentation.
 
@@ -1273,18 +1104,21 @@ XMPUtils::ConvertToDate ( XMP_StringPtr	 strValue,
 {
 	if ( (strValue == 0) || (*strValue == 0) ) XMP_Throw ( "Empty convert-from string", kXMPErr_BadValue);
 	
-	size_t	 pos = 0;
+	size_t pos = 0;
 	XMP_Int32 temp;
 	
 	XMP_Assert ( sizeof(*binValue) == sizeof(XMP_DateTime) );
 	(void) memset ( binValue, 0, sizeof(*binValue) );	// AUDIT: Safe, using sizeof destination.
 	
+	size_t strSize = strlen ( strValue );
 	bool timeOnly = ( (strValue[0] == 'T') ||
-					  ((strlen(strValue) >= 2) && (strValue[1] == ':')) ||
-					  ((strlen(strValue) >= 3) && (strValue[2] == ':')) );
+					  ((strSize >= 2) && (strValue[1] == ':')) ||
+					  ((strSize >= 3) && (strValue[2] == ':')) );
 	
 	if ( ! timeOnly ) {
-	
+		
+		binValue->hasDate = true;
+		
 		if ( strValue[0] == '-' ) pos = 1;
 		
 		temp = GatherInt ( strValue, &pos, "Invalid year in date string" ); // Extract the year.
@@ -1318,11 +1152,15 @@ XMPUtils::ConvertToDate ( XMP_StringPtr	 strValue,
 	
 	}
 
+	// If we get here there is more of the string, otherwise we would have returned above.
+	
 	if ( strValue[pos] == 'T' ) {
 		++pos;
 	} else if ( ! timeOnly ) {
 		XMP_Throw ( "Invalid date string, missing 'T' after date", kXMPErr_BadParam );
 	}
+	
+	binValue->hasTime = true;
 	
 	temp = GatherInt ( strValue, &pos, "Invalid hour in date string" ); // Extract the hour.
 	if ( strValue[pos] != ':' ) XMP_Throw ( "Invalid date string, after hour", kXMPErr_BadParam );
@@ -1372,11 +1210,15 @@ XMPUtils::ConvertToDate ( XMP_StringPtr	 strValue,
 	
 	}
 	
+	if ( strValue[pos] == 0 ) return;
+	
+	binValue->hasTimeZone = true;
+	
 	if ( strValue[pos] == 'Z' ) {
 	
 		++pos;
 	
-	} else if ( strValue[pos] != 0 ) {
+	} else {
 	
 		if ( strValue[pos] == '+' ) {
 			binValue->tzSign = kXMP_TimeEastOfUTC;
@@ -1403,7 +1245,6 @@ XMPUtils::ConvertToDate ( XMP_StringPtr	 strValue,
 	
 }	// ConvertToDate
 
-
 // -------------------------------------------------------------------------------------------------
 // EncodeToBase64
 // --------------
@@ -1415,15 +1256,13 @@ XMPUtils::ConvertToDate ( XMP_StringPtr	 strValue,
 /* class static */ void
 XMPUtils::EncodeToBase64 ( XMP_StringPtr   rawStr,
 						   XMP_StringLen   rawLen,
-						   XMP_StringPtr * encodedStr,
-						   XMP_StringLen * encodedLen )
+						   XMP_VarString * encodedStr )
 {
 	if ( (rawStr == 0) && (rawLen != 0) ) XMP_Throw ( "Null raw data buffer", kXMPErr_BadParam );
-	if ( rawLen == 0 ) {
-		*encodedStr = 0;
-		*encodedLen = 0;
-		return;
-	}
+	XMP_Assert ( encodedStr != 0 );	// Enforced by wrapper.
+
+	encodedStr->erase();
+	if ( rawLen == 0 ) return;
 	
 	char	encChunk[4];
 
@@ -1433,8 +1272,7 @@ XMPUtils::EncodeToBase64 ( XMP_StringPtr   rawStr,
 	
 	const size_t	outputSize	= (rawLen / 3) * 4; // Approximate, might be  small.
 	
-	sBase64Str->erase();
-	sBase64Str->reserve ( outputSize );
+	encodedStr->reserve ( outputSize );
 	
 	// ----------------------------------------------------------------------------------------
 	// Each 6 bits of input produces 8 bits of output, so 3 input bytes become 4 output bytes.
@@ -1455,10 +1293,10 @@ XMPUtils::EncodeToBase64 ( XMP_StringPtr   rawStr,
 		encChunk[3] = sBase64Chars [ merge & 0x3F ];
 		
 		if ( out >= 76 ) {
-			sBase64Str->append ( 1, kLF );
+			encodedStr->append ( 1, kLF );
 			out = 0;
 		}
-		sBase64Str->append ( encChunk, 4 );
+		encodedStr->append ( encChunk, 4 );
 
 	}
 	
@@ -1481,8 +1319,8 @@ XMPUtils::EncodeToBase64 ( XMP_StringPtr   rawStr,
 			encChunk[1] = sBase64Chars [ (merge >> 12) & 0x3F ];
 			encChunk[2] = encChunk[3] = '=';
 
-			if ( out >= 76 ) sBase64Str->append ( 1, kLF );
-			sBase64Str->append ( encChunk, 4 );
+			if ( out >= 76 ) encodedStr->append ( 1, kLF );
+			encodedStr->append ( encChunk, 4 );
 			break;
 		
 		case 2:		// Two input bytes remain.
@@ -1496,20 +1334,13 @@ XMPUtils::EncodeToBase64 ( XMP_StringPtr   rawStr,
 			encChunk[2] = sBase64Chars [ (merge >> 6) & 0x3F ];
 			encChunk[3] = '=';
 
-			if ( out >= 76 ) sBase64Str->append ( 1, kLF );
-			sBase64Str->append ( encChunk, 4 );
+			if ( out >= 76 ) encodedStr->append ( 1, kLF );
+			encodedStr->append ( encChunk, 4 );
 			break;
 	
 	}
-	
-	// -------------------------
-	// Assign the output values.
-	
-	*encodedStr = sBase64Str->c_str();
-	*encodedLen = sBase64Str->size();
 
 }	// EncodeToBase64
-
 
 // -------------------------------------------------------------------------------------------------
 // DecodeFromBase64
@@ -1523,23 +1354,20 @@ XMPUtils::EncodeToBase64 ( XMP_StringPtr   rawStr,
 /* class static */ void
 XMPUtils::DecodeFromBase64 ( XMP_StringPtr	 encodedStr,
 							 XMP_StringLen	 encodedLen,
-							 XMP_StringPtr * rawStr,
-							 XMP_StringLen * rawLen )
+							 XMP_VarString * rawStr )
 {
 	if ( (encodedStr == 0) && (encodedLen != 0) ) XMP_Throw ( "Null encoded data buffer", kXMPErr_BadParam );
-	if ( encodedLen == 0 ) {
-		*rawStr = 0;
-		*rawLen = 0;
-		return;
-	}
+	XMP_Assert ( rawStr != 0 );	// Enforced by wrapper.
+
+	rawStr->erase();
+	if ( encodedLen == 0 ) return;
 
 	unsigned char	ch, rawChunk[3];
 	unsigned long	inStr, inChunk, inLimit, merge, padding;
 	
 	XMP_StringLen	outputSize	= (encodedLen / 4) * 3; // Only a close approximation.
 
-	sBase64Str->erase();
-	sBase64Str->reserve ( outputSize );
+	rawStr->reserve ( outputSize );
 
 	
 	// ----------------------------------------------------------------------------------------
@@ -1589,7 +1417,7 @@ XMPUtils::DecodeFromBase64 ( XMP_StringPtr	 encodedStr,
 		rawChunk[1] = (unsigned char) ((merge >> 8) & 0xFF);
 		rawChunk[2] = (unsigned char) (merge & 0xFF);
 		
-		sBase64Str->append ( (char*)rawChunk, 3 );
+		rawStr->append ( (char*)rawChunk, 3 );
 
 	}
 	
@@ -1611,31 +1439,24 @@ XMPUtils::DecodeFromBase64 ( XMP_StringPtr	 encodedStr,
 	if ( padding == 2 ) {
 		
 		rawChunk[0] = (unsigned char) (merge >> 4);
-		sBase64Str->append ( (char*)rawChunk, 1 );
+		rawStr->append ( (char*)rawChunk, 1 );
 	
 	} else if ( padding == 1 ) {
 		
 		rawChunk[0] = (unsigned char) (merge >> 10);
 		rawChunk[1] = (unsigned char) ((merge >> 2) & 0xFF);
-		sBase64Str->append ( (char*)rawChunk, 2 );
+		rawStr->append ( (char*)rawChunk, 2 );
 	
 	} else {
 		
 		rawChunk[0] = (unsigned char) (merge >> 16);
 		rawChunk[1] = (unsigned char) ((merge >> 8) & 0xFF);
 		rawChunk[2] = (unsigned char) (merge & 0xFF);
-		sBase64Str->append ( (char*)rawChunk, 3 );
+		rawStr->append ( (char*)rawChunk, 3 );
 	
 	}
-	
-	// -------------------------
-	// Assign the output values.
-	
-	*rawStr = sBase64Str->c_str();
-	*rawLen = sBase64Str->size();
 
 }	// DecodeFromBase64
-
 
 // -------------------------------------------------------------------------------------------------
 // PackageForJPEG
@@ -1643,37 +1464,33 @@ XMPUtils::DecodeFromBase64 ( XMP_StringPtr	 encodedStr,
 
 /* class static */ void
 XMPUtils::PackageForJPEG ( const XMPMeta & origXMP,
-						   XMP_StringPtr * stdStr,
-						   XMP_StringLen * stdLen,
-						   XMP_StringPtr * extStr,
-						   XMP_StringLen * extLen,
-						   XMP_StringPtr * digestStr,
-						   XMP_StringLen * digestLen )
+						   XMP_VarString * stdStr,
+						   XMP_VarString * extStr,
+						   XMP_VarString * digestStr )
 {
+	XMP_Assert ( (stdStr != 0) && (extStr != 0) && (digestStr != 0) );	// ! Enforced by wrapper.
+	
 	enum { kStdXMPLimit = 65000 };
 	static const char * kPacketTrailer = "<?xpacket end=\"w\"?>";
 	static size_t kTrailerLen = strlen ( kPacketTrailer );
 	
-	XMP_StringPtr tempStr;
-	XMP_StringLen tempLen;
-	
+	XMP_VarString tempStr;
 	XMPMeta stdXMP, extXMP;
-
-	sStandardXMP->clear();	// Clear the static strings that get returned to the client.
-	sExtendedXMP->clear();
-	sExtendedDigest->clear();
-	
 	XMP_OptionBits keepItSmall = kXMP_UseCompactFormat | kXMP_OmitAllFormatting;
+	
+	stdStr->erase();
+	extStr->erase();
+	digestStr->erase();
 	
 	// Try to serialize everything. Note that we're making internal calls to SerializeToBuffer, so
 	// we'll be getting back the pointer and length for its internal string.
 	
-	origXMP.SerializeToBuffer ( &tempStr, &tempLen, keepItSmall, 1, "", "", 0 );
+	origXMP.SerializeToBuffer ( &tempStr, keepItSmall, 1, "", "", 0 );
 	#if Trace_PackageForJPEG
-		printf ( "\nXMPUtils::PackageForJPEG - Full serialize %d bytes\n", tempLen );
+		printf ( "\nXMPUtils::PackageForJPEG - Full serialize %d bytes\n", tempStr.size() );
 	#endif
 	
-	if ( tempLen > kStdXMPLimit ) {
+	if ( tempStr.size() > kStdXMPLimit ) {
 
 		// Couldn't fit everything, make a copy of the input XMP and make sure there is no xmp:Thumbnails property.
 		
@@ -1684,15 +1501,15 @@ XMPUtils::PackageForJPEG ( const XMPMeta & origXMP,
 		
 		if ( stdXMP.DoesPropertyExist ( kXMP_NS_XMP, "Thumbnails" ) ) {
 			stdXMP.DeleteProperty ( kXMP_NS_XMP, "Thumbnails" );
-			stdXMP.SerializeToBuffer ( &tempStr, &tempLen, keepItSmall, 1, "", "", 0 );
+			stdXMP.SerializeToBuffer ( &tempStr, keepItSmall, 1, "", "", 0 );
 			#if Trace_PackageForJPEG
-				printf ( "  Delete xmp:Thumbnails, %d bytes left\n", tempLen );
+				printf ( "  Delete xmp:Thumbnails, %d bytes left\n", tempStr.size() );
 			#endif
 		}
 		
 	}
 	
-	if ( tempLen > kStdXMPLimit ) {
+	if ( tempStr.size() > kStdXMPLimit ) {
 	
 		// Still doesn't fit, move all of the Camera Raw namespace. Add a dummy value for xmpNote:HasExtendedXMP.
 
@@ -1705,30 +1522,30 @@ XMPUtils::PackageForJPEG ( const XMPMeta & origXMP,
 			crSchema->parent = &extXMP.tree;
 			extXMP.tree.children.push_back ( crSchema );
 			stdXMP.tree.children.erase ( crSchemaPos );
-			stdXMP.SerializeToBuffer ( &tempStr, &tempLen, keepItSmall, 1, "", "", 0 );
+			stdXMP.SerializeToBuffer ( &tempStr, keepItSmall, 1, "", "", 0 );
 			#if Trace_PackageForJPEG
-				printf ( "  Move Camera Raw schema, %d bytes left\n", tempLen );
+				printf ( "  Move Camera Raw schema, %d bytes left\n", tempStr.size() );
 			#endif
 		}
 	
 	}
 	
-	if ( tempLen > kStdXMPLimit ) {
+	if ( tempStr.size() > kStdXMPLimit ) {
 	
 		// Still doesn't fit, move photoshop:History.
 		
 		bool moved = MoveOneProperty ( stdXMP, &extXMP, kXMP_NS_Photoshop, "photoshop:History" ); 
 		
 		if ( moved ) {
-			stdXMP.SerializeToBuffer ( &tempStr, &tempLen, keepItSmall, 1, "", "", 0 );
+			stdXMP.SerializeToBuffer ( &tempStr, keepItSmall, 1, "", "", 0 );
 			#if Trace_PackageForJPEG
-				printf ( "  Move photoshop:History, %d bytes left\n", tempLen );
+				printf ( "  Move photoshop:History, %d bytes left\n", tempStr.size() );
 			#endif
 		}
 	
 	}
 	
-	if ( tempLen > kStdXMPLimit ) {
+	if ( tempStr.size() > kStdXMPLimit ) {
 	
 		// Still doesn't fit, move top level properties in order of estimated size. This is done by
 		// creating a multi-map that maps the serialized size to the string pair for the schema URI
@@ -1770,10 +1587,11 @@ XMPUtils::PackageForJPEG ( const XMPMeta & origXMP,
 		
 		// Outer loop to make sure enough is actually moved.
 		
-		while ( (tempLen > kStdXMPLimit) && (! propSizes.empty()) ) {
+		while ( (tempStr.size() > kStdXMPLimit) && (! propSizes.empty()) ) {
 		
 			// Inner loop, move what seems to be enough according to the estimates.
 
+			size_t tempLen = tempStr.size();
 			while ( (tempLen > kStdXMPLimit) && (! propSizes.empty()) ) {
 			
 				size_t propSize = MoveLargestProperty ( stdXMP, &extXMP, propSizes );
@@ -1786,13 +1604,13 @@ XMPUtils::PackageForJPEG ( const XMPMeta & origXMP,
 			
 			// Reserialize the remaining standard XMP.
 			
-			stdXMP.SerializeToBuffer ( &tempStr, &tempLen, keepItSmall, 1, "", "", 0 );
+			stdXMP.SerializeToBuffer ( &tempStr, keepItSmall, 1, "", "", 0 );
 		
 		}
 	
 	}
 	
-	if ( tempLen > kStdXMPLimit ) {
+	if ( tempStr.size() > kStdXMPLimit ) {
 		// Still doesn't fit, throw an exception and let the client decide what to do.
 		// ! This should never happen with the policy of moving any and all top level properties.
 		XMP_Throw ( "Can't reduce XMP enough for JPEG file", kXMPErr_TooLargeForJPEG );
@@ -1803,58 +1621,48 @@ XMPUtils::PackageForJPEG ( const XMPMeta & origXMP,
 	if ( extXMP.tree.children.empty() ) {
 	
 		// Just have the standard XMP.
-		sStandardXMP->assign ( tempStr, tempLen );
+		*stdStr = tempStr;
 	
 	} else {
 	
 		// Have extended XMP. Serialize it, compute the digest, reset xmpNote:HasExtendedXMP, and
 		// reserialize the standard XMP.
 
-		extXMP.SerializeToBuffer ( &tempStr, &tempLen, (keepItSmall | kXMP_OmitPacketWrapper), 0, "", "", 0 );
-		sExtendedXMP->assign ( tempStr, tempLen );
+		extXMP.SerializeToBuffer ( &tempStr, (keepItSmall | kXMP_OmitPacketWrapper), 0, "", "", 0 );
+		*extStr = tempStr;
 		
 		MD5_CTX  context;
 		XMP_Uns8 digest [16];
 		MD5Init ( &context );
-		MD5Update ( &context, (XMP_Uns8*)tempStr, tempLen );
+		MD5Update ( &context, (XMP_Uns8*)tempStr.c_str(), (XMP_Uns32)tempStr.size() );
 		MD5Final ( digest, &context );
 		
-		sExtendedDigest->reserve ( 32 );
+		digestStr->reserve ( 32 );
 		for ( size_t i = 0; i < 16; ++i ) {
 			XMP_Uns8 byte = digest[i];
-			sExtendedDigest->push_back ( kHexDigits [ byte>>4 ] );
-			sExtendedDigest->push_back ( kHexDigits [ byte&0xF ] );
+			digestStr->push_back ( kHexDigits [ byte>>4 ] );
+			digestStr->push_back ( kHexDigits [ byte&0xF ] );
 		}
 	
-		stdXMP.SetProperty ( kXMP_NS_XMP_Note, "HasExtendedXMP", sExtendedDigest->c_str(), 0 );
-		stdXMP.SerializeToBuffer ( &tempStr, &tempLen, keepItSmall, 1, "", "", 0 );
-		sStandardXMP->assign ( tempStr, tempLen );
+		stdXMP.SetProperty ( kXMP_NS_XMP_Note, "HasExtendedXMP", digestStr->c_str(), 0 );
+		stdXMP.SerializeToBuffer ( &tempStr, keepItSmall, 1, "", "", 0 );
+		*stdStr = tempStr;
 
 	}
 		
 	// Adjust the standard XMP padding to be up to 2KB.
 
-	XMP_Assert ( (sStandardXMP->size() > kTrailerLen) && (sStandardXMP->size() <= kStdXMPLimit) );
-	const char * packetEnd = sStandardXMP->c_str() + sStandardXMP->size() - kTrailerLen;
+	XMP_Assert ( (stdStr->size() > kTrailerLen) && (stdStr->size() <= kStdXMPLimit) );
+	const char * packetEnd = stdStr->c_str() + stdStr->size() - kTrailerLen;
 	XMP_Assert ( XMP_LitMatch ( packetEnd, kPacketTrailer ) );
 
-	size_t extraPadding = kStdXMPLimit - sStandardXMP->size();	// ! Do this before erasing the trailer.
+	size_t extraPadding = kStdXMPLimit - stdStr->size();	// ! Do this before erasing the trailer.
 	if ( extraPadding > 2047 ) extraPadding = 2047;
-	sStandardXMP->erase ( sStandardXMP->size() - kTrailerLen );
-	sStandardXMP->append ( extraPadding, ' ' );
-	sStandardXMP->append ( kPacketTrailer );
-	
-	// Assign the output pointer and sizes.
-	
-	*stdStr = sStandardXMP->c_str();
-	*stdLen = sStandardXMP->size();
-	*extStr = sExtendedXMP->c_str();
-	*extLen = sExtendedXMP->size();
-	*digestStr = sExtendedDigest->c_str();
-	*digestLen = sExtendedDigest->size();
+	stdStr->erase ( stdStr->size() - kTrailerLen );
+	stdStr->append ( extraPadding, ' ' );
+	stdStr->append ( kPacketTrailer );
 
 }	// PackageForJPEG
-
 
 // -------------------------------------------------------------------------------------------------
 // MergeFromJPEG
@@ -1868,11 +1676,11 @@ XMPUtils::MergeFromJPEG ( XMPMeta *       fullXMP,
                           const XMPMeta & extendedXMP )
 {
 
-	XMPUtils::AppendProperties ( extendedXMP, fullXMP, kXMPUtil_DoAllProperties );
+	XMP_OptionBits apFlags = (kXMPTemplate_ReplaceExistingProperties | kXMPTemplate_IncludeInternalProperties);
+	XMPUtils::ApplyTemplate ( fullXMP, extendedXMP, apFlags );
 	fullXMP->DeleteProperty ( kXMP_NS_XMP_Note, "HasExtendedXMP" );
 	
 }	// MergeFromJPEG
-
 
 // -------------------------------------------------------------------------------------------------
 // CurrentDateTime
@@ -1891,19 +1699,21 @@ XMPUtils::CurrentDateTime ( XMP_DateTime * xmpTime )
 	xmpTime->year = currTime.tm_year + 1900;
 	xmpTime->month = currTime.tm_mon + 1;
 	xmpTime->day = currTime.tm_mday;
+	xmpTime->hasDate = true;
+
 	xmpTime->hour = currTime.tm_hour;
 	xmpTime->minute = currTime.tm_min;
 	xmpTime->second = currTime.tm_sec;
-
 	xmpTime->nanoSecond = 0;
+	xmpTime->hasTime = true;
+
 	xmpTime->tzSign = 0;
 	xmpTime->tzHour = 0;
 	xmpTime->tzMinute = 0;
-	
+	xmpTime->hasTimeZone = false;	// ! Needed for SetTimeZone.
 	XMPUtils::SetTimeZone ( xmpTime );
 	
 }	// CurrentDateTime
-
 
 // -------------------------------------------------------------------------------------------------
 // SetTimeZone
@@ -1918,8 +1728,10 @@ XMPUtils::SetTimeZone ( XMP_DateTime * xmpTime )
 {
 	XMP_Assert ( xmpTime != 0 );	// ! Enforced by wrapper.
 	
-	if ( (xmpTime->tzSign != 0) || (xmpTime->tzHour != 0) || (xmpTime->tzMinute != 0) ) {
-		XMP_Throw ( "SetTimeZone can only be used on \"zoneless\" times", kXMPErr_BadParam );
+	VerifyDateTimeFlags ( xmpTime );
+	
+	if ( xmpTime->hasTimeZone ) {
+		XMP_Throw ( "SetTimeZone can only be used on zone-less times", kXMPErr_BadParam );
 	}
 
 	// Create ansi_tt form of the input time. Need the ansi_tm form to make the ansi_tt form.
@@ -1991,6 +1803,8 @@ XMPUtils::SetTimeZone ( XMP_DateTime * xmpTime )
 	}
 	xmpTime->tzHour = XMP_Int32 ( diffSecs / 3600.0 );
 	xmpTime->tzMinute = XMP_Int32 ( (diffSecs / 60.0) - (xmpTime->tzHour * 60.0) );
+	
+	xmpTime->hasTimeZone = xmpTime->hasTime = true;
 
 	// *** Save the tm_isdst flag in a qualifier?
 	
@@ -2002,7 +1816,6 @@ XMPUtils::SetTimeZone ( XMP_DateTime * xmpTime )
 
 }	// SetTimeZone
 
-
 // -------------------------------------------------------------------------------------------------
 // ConvertToUTCTime
 // ----------------
@@ -2012,12 +1825,16 @@ XMPUtils::ConvertToUTCTime ( XMP_DateTime * time )
 {
 	XMP_Assert ( time != 0 );	// ! Enforced by wrapper.
 	
+	VerifyDateTimeFlags ( time );
+	
+	if ( ! time->hasTimeZone ) return;	// Do nothing if there is no current time zone.
+	
 	XMP_Assert ( (0 <= time->tzHour) && (time->tzHour <= 23) );
 	XMP_Assert ( (0 <= time->tzMinute) && (time->tzMinute <= 59) );
 	XMP_Assert ( (-1 <= time->tzSign) && (time->tzSign <= +1) );
 	XMP_Assert ( (time->tzSign == 0) ? ((time->tzHour == 0) && (time->tzMinute == 0)) :
 									   ((time->tzHour != 0) || (time->tzMinute != 0)) );
-
+	
 	if ( time->tzSign == kXMP_TimeEastOfUTC ) {
 		// We are before (east of) GMT, subtract the offset from the time.
 		time->hour -= time->tzHour;
@@ -2033,7 +1850,6 @@ XMPUtils::ConvertToUTCTime ( XMP_DateTime * time )
 
 }	// ConvertToUTCTime
 
-
 // -------------------------------------------------------------------------------------------------
 // ConvertToLocalTime
 // ------------------
@@ -2043,6 +1859,10 @@ XMPUtils::ConvertToLocalTime ( XMP_DateTime * time )
 {
 	XMP_Assert ( time != 0 );	// ! Enforced by wrapper.
 	
+	VerifyDateTimeFlags ( time );
+	
+	if ( ! time->hasTimeZone ) return;	// Do nothing if there is no current time zone.
+	
 	XMP_Assert ( (0 <= time->tzHour) && (time->tzHour <= 23) );
 	XMP_Assert ( (0 <= time->tzMinute) && (time->tzMinute <= 59) );
 	XMP_Assert ( (-1 <= time->tzSign) && (time->tzSign <= +1) );
@@ -2050,6 +1870,7 @@ XMPUtils::ConvertToLocalTime ( XMP_DateTime * time )
 									   ((time->tzHour != 0) || (time->tzMinute != 0)) );
 
 	ConvertToUTCTime ( time );	// The existing time zone might not be the local one.
+	time->hasTimeZone = false;	// ! Needed for SetTimeZone.
 	SetTimeZone ( time );		// Fill in the local timezone offset, then adjust the time.
 	
 	if ( time->tzSign > 0 ) {
@@ -2066,7 +1887,6 @@ XMPUtils::ConvertToLocalTime ( XMP_DateTime * time )
 
 }	// ConvertToLocalTime
 
-
 // -------------------------------------------------------------------------------------------------
 // CompareDateTime
 // ---------------
@@ -2075,46 +1895,69 @@ XMPUtils::ConvertToLocalTime ( XMP_DateTime * time )
 XMPUtils::CompareDateTime ( const XMP_DateTime & _in_left,
 							const XMP_DateTime & _in_right )
 {
-	int result;
+	int result = 0;
 	
 	XMP_DateTime left  = _in_left;
 	XMP_DateTime right = _in_right;
+	
+	VerifyDateTimeFlags ( &left );
+	VerifyDateTimeFlags ( &right );
+	
+	// Can't compare if one has a date and the other does not.
+	if ( left.hasDate != right.hasDate ) return 0;	// Throw?
+	
+	if ( left.hasTimeZone & right.hasTimeZone ) {
+		// If both times have zones then convert them to UTC, otherwise assume the same zone.
+		ConvertToUTCTime ( &left );
+		ConvertToUTCTime ( &right );
+	}
+	
+	if ( left.hasDate ) {
 
-	ConvertToUTCTime ( &left );
-	ConvertToUTCTime ( &right );
+		XMP_Assert ( right.hasDate );
+
+		if ( left.year < right.year ) {
+			result = -1;
+		} else if ( left.year > right.year ) {
+			result = +1;
+		} else if ( left.month < right.month ) {
+			result = -1;
+		} else if ( left.month > right.month ) {
+			result = +1;
+		} else if ( left.day < right.day ) {
+			result = -1;
+		} else if ( left.day > right.day ) {
+			result = +1;
+		}
+		
+		if ( result != 0 ) return result;
+
+	}
 	
-	// *** We could use memcmp if the XMP_DateTime stuct has no holes.
+	if ( left.hasTime & right.hasTime ) {
 	
-	if ( left.year < right.year ) {
-		result = -1;
-	} else if ( left.year > right.year ) {
-		result = +1;
-	} else if ( left.month < right.month ) {
-		result = -1;
-	} else if ( left.month > right.month ) {
-		result = +1;
-	} else if ( left.day < right.day ) {
-		result = -1;
-	} else if ( left.day > right.day ) {
-		result = +1;
-	} else if ( left.hour < right.hour ) {
-		result = -1;
-	} else if ( left.hour > right.hour ) {
-		result = +1;
-	} else if ( left.minute < right.minute ) {
-		result = -1;
-	} else if ( left.minute > right.minute ) {
-		result = +1;
-	} else if ( left.second < right.second ) {
-		result = -1;
-	} else if ( left.second > right.second ) {
-		result = +1;
-	} else if ( left.nanoSecond < right.nanoSecond ) {
-		result = -1;
-	} else if ( left.nanoSecond > right.nanoSecond ) {
-		result = +1;
-	} else {
-		result = 0;
+		// Ignore the time parts if either value is date-only.
+	
+		if ( left.hour < right.hour ) {
+			result = -1;
+		} else if ( left.hour > right.hour ) {
+			result = +1;
+		} else if ( left.minute < right.minute ) {
+			result = -1;
+		} else if ( left.minute > right.minute ) {
+			result = +1;
+		} else if ( left.second < right.second ) {
+			result = -1;
+		} else if ( left.second > right.second ) {
+			result = +1;
+		} else if ( left.nanoSecond < right.nanoSecond ) {
+			result = -1;
+		} else if ( left.nanoSecond > right.nanoSecond ) {
+			result = +1;
+		} else {
+			result = 0;
+		}
+
 	}
 	
 	return result;

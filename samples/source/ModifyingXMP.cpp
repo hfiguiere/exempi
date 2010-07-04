@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2008 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -165,9 +165,14 @@ int main ( int argc, const char * argv[] )
 		cout << "Could not initialize toolkit!";
 		return -1;
 	}
-
+	
+	XMP_OptionBits options = 0;
+	#if UNIX_ENV
+		options |= kXMPFiles_ServerMode;
+	#endif
+		
 	// Must initialize SXMPFiles before we use it
-	if(SXMPFiles::Initialize())
+	if(SXMPFiles::Initialize(options))
 	{
 		try
 		{
@@ -240,7 +245,7 @@ int main ( int argc, const char * argv[] )
 				// This will:
 				// a) Add ANY new TOP LEVEL properties in the source (rdfMeta) to the destination (meta)
 				// b) Replace any top level properties in the source with the matching properties from the destination
-				SXMPUtils::AppendProperties(rdfMeta, &meta, (kXMPUtil_DoAllProperties | kXMPUtil_ReplaceOldValues ));
+				SXMPUtils::ApplyTemplate(&meta, rdfMeta, kXMPTemplate_AddNewProperties | kXMPTemplate_ReplaceExistingProperties | kXMPTemplate_IncludeInternalProperties);
 
 				// Display the properties again to show changes
 				cout << "After Appending Properties:" << endl;

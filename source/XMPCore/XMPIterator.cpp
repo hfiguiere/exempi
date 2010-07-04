@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2003 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -61,47 +61,6 @@ AddSchemaProps ( IterInfo & info, IterNode & iterSchema, const XMP_Node * xmpSch
 }	// AddSchemaProps
 
 // -------------------------------------------------------------------------------------------------
-// AddSchemaAliases
-// ----------------
-//
-// Add the aliases to the IterNode for a schema, if the corresponding actual exists.
-
-static void
-AddSchemaAliases ( IterInfo & info, IterNode & iterSchema, XMP_StringPtr schemaURI )
-{
-	
-	// We're showing the aliases also. Look them up by their namespace prefix. Yes, the alias map is
-	// sorted so we could process just that portion. But that takes more code and the extra speed
-	// isn't worth it. (Plus this way we avoid a dependence on the map implementation.) Lookup the
-	// XMP node from the alias, to make sure the actual exists.
-	
-	#if TraceIterators
-		printf ( "    Adding aliases\n", schemaURI );
-	#endif
-
-	XMP_StringPtr nsPrefix;
-	XMP_StringLen nsLen;
-	bool found = XMPMeta::GetNamespacePrefix ( schemaURI, &nsPrefix, &nsLen );
-	if ( ! found ) XMP_Throw ( "Unknown iteration namespace", kXMPErr_BadSchema );
-	
-	XMP_AliasMapPos currAlias = sRegisteredAliasMap->begin();
-	XMP_AliasMapPos endAlias  = sRegisteredAliasMap->end();
-	
-	for ( ; currAlias != endAlias; ++currAlias ) {
-		if ( XMP_LitNMatch ( currAlias->first.c_str(), nsPrefix, nsLen ) ) {
-			const XMP_Node * actualProp = FindConstNode ( &info.xmpObj->tree, currAlias->second );
-			if ( actualProp != 0 ) {
-				iterSchema.children.push_back ( IterNode ( (actualProp->options | kXMP_PropIsAlias), currAlias->first, 0 ) );
-				#if TraceIterators
-					printf ( "        %s  =>  %s\n", currAlias->first.c_str(), actualProp->name.c_str() );
-				#endif
-			}
-		}
-	}
-
-}	// AddSchemaAliases
-
-// -------------------------------------------------------------------------------------------------
 // AddNodeOffspring
 // ----------------
 //
@@ -156,7 +115,7 @@ AddNodeOffspring ( IterInfo & info, IterNode & iterParent, const XMP_Node * xmpP
 				currPath += xmpChild->name;
 			} else {
 				char buffer [32];	// AUDIT: Using sizeof(buffer) below for snprintf length is safe.
-				snprintf ( buffer, sizeof(buffer), "[%d]", childNum+1 );	// ! XPath indices are one-based.
+				snprintf ( buffer, sizeof(buffer), "[%lu]", childNum+1 );	// ! XPath indices are one-based.
 				currPath += buffer;
 			}
 			iterParent.children.push_back ( IterNode ( xmpChild->options, currPath, leafOffset ) );
@@ -390,19 +349,6 @@ XMPIterator::Terminate() RELEASE_NO_THROW
 	
 }	// Terminate
 
-// -------------------------------------------------------------------------------------------------
-// Unlock
-// ------
-
-void
-XMPIterator::Unlock	( XMP_OptionBits options )
-{
-	options = options;	// Avoid unused parameter warning.
-
-	XMPMeta::Unlock ( 0 );
-	
-}	// Unlock
-
 // =================================================================================================
 // Constructors
 // =================================================================================================
@@ -480,8 +426,6 @@ XMPIterator::XMPIterator ( const XMPMeta & xmpObj,
 		XMP_Node * xmpSchema = FindConstSchema ( &xmpObj.tree, schemaNS );
 		if ( xmpSchema != 0 ) AddSchemaProps ( info, iterSchema, xmpSchema );
 		
-		if ( info.options & kXMP_IterIncludeAliases ) AddSchemaAliases ( info, iterSchema, schemaNS );
-		
 		if ( iterSchema.children.empty() ) {
 			info.tree.children.pop_back();	// No properties, remove the schema node.
 		} else {
@@ -509,37 +453,7 @@ XMPIterator::XMPIterator ( const XMPMeta & xmpObj,
 
 			if ( ! (info.options & kXMP_IterJustChildren) ) {
 				AddSchemaProps ( info, iterSchema, xmpSchema );
-				if ( info.options & kXMP_IterIncludeAliases ) AddSchemaAliases ( info, iterSchema, xmpSchema->name.c_str() );
 				if ( iterSchema.children.empty() ) info.tree.children.pop_back();	// No properties, remove the schema node.
-			}
-
-		}
-		
-		if ( info.options & kXMP_IterIncludeAliases ) {
-
-			// Add the schema that only have aliases. The most convenient, and safest way, is to go
-			// through the registered namespaces, see if it exists, and let AddSchemaAliases do its
-			// thing if not. Don't combine with the above loop, it is nicer to have the "real" stuff
-			// be in storage order (not subject to the namespace map order).
-			
-			// ! We don't do the kXMP_IterJustChildren handing in the same way here as above. The
-			// ! existing schema (presumably) have actual children. We need to call AddSchemaAliases
-			// ! here to determine if the namespace has any aliases to existing properties. We then
-			// ! strip the children if necessary.
-
-			XMP_cStringMapPos currNS = sNamespaceURIToPrefixMap->begin();
-			XMP_cStringMapPos endNS  = sNamespaceURIToPrefixMap->end();
-			for ( ; currNS != endNS; ++currNS ) {
-				XMP_StringPtr schemaName = currNS->first.c_str();
-				if ( FindConstSchema ( &xmpObj.tree, schemaName ) != 0 ) continue;
-				info.tree.children.push_back ( IterNode ( kXMP_SchemaNode, schemaName, 0 ) );
-				IterNode & iterSchema = info.tree.children.back();
-				AddSchemaAliases ( info, iterSchema, schemaName );
-				if ( iterSchema.children.empty() ) {
-					info.tree.children.pop_back();	// No aliases, remove the schema node.
-				} else if ( info.options & kXMP_IterJustChildren ) {
-					iterSchema.children.clear();	// Get rid of the children.
-				}
 			}
 
 		}
@@ -718,18 +632,5 @@ XMPIterator::Skip ( XMP_OptionBits iterOptions )
 	
 
 }	// Skip
-
-// -------------------------------------------------------------------------------------------------
-// UnlockIter
-// ----------
-
-void
-XMPIterator::UnlockIter	( XMP_OptionBits options )
-{
-	options = options;	// Avoid unused parameter warning.
-
-	XMPMeta::Unlock ( 0 );
-	
-}	// UnlockIter
 
 // =================================================================================================

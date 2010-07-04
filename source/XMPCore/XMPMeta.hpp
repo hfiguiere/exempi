@@ -2,7 +2,7 @@
 #define __XMPMeta_hpp__
 
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2003 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:	Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -20,7 +20,7 @@
 	#define DumpXMLParseTree 0
 #endif
 
-extern XMP_VarString * xdefaultName;
+extern XMP_VarString * xdefaultName;	// Needed in XMPMeta-Parse.cpp, MoveExplicitAliases.
 
 class XMPIterator;
 class XMPUtils;
@@ -37,9 +37,6 @@ public:
 	Initialize();
 	static void
 	Terminate() RELEASE_NO_THROW;
-	
-	static void
-	Unlock ( XMP_OptionBits options );
 
 	// ---------------------------------------------------------------------------------------------
 
@@ -60,10 +57,6 @@ public:
 	static XMP_Status
 	DumpNamespaces ( XMP_TextOutputProc outProc,
 					 void *				refCon );
-	
-	static XMP_Status
-	DumpAliases ( XMP_TextOutputProc outProc,
-				  void *			 refCon );
 	
 	// ---------------------------------------------------------------------------------------------
 	
@@ -86,36 +79,6 @@ public:
 	static void
 	DeleteNamespace ( XMP_StringPtr namespaceURI );
 
-	// ---------------------------------------------------------------------------------------------
-	
-	static void
-	RegisterAlias ( XMP_StringPtr  aliasNS,
-					XMP_StringPtr  aliasProp,
-					XMP_StringPtr  actualNS,
-					XMP_StringPtr  actualProp,
-					XMP_OptionBits arrayForm );
-	
-	static bool
-	ResolveAlias ( XMP_StringPtr	aliasNS,
-				   XMP_StringPtr	aliasProp,
-				   XMP_StringPtr *	actualNS,
-				   XMP_StringLen *	nsSize,
-				   XMP_StringPtr *	actualProp,
-				   XMP_StringLen *	propSize,
-				   XMP_OptionBits * arrayForm );
-	
-	static void
-	DeleteAlias ( XMP_StringPtr aliasNS,
-				  XMP_StringPtr aliasProp );
-	
-	static void
-	RegisterStandardAliases ( XMP_StringPtr schemaNS );
-
-	// ---------------------------------------------------------------------------------------------
-	
-	void
-	UnlockObject ( XMP_OptionBits options ) const;
-	
 	// ---------------------------------------------------------------------------------------------
 	
 	bool
@@ -256,6 +219,12 @@ public:
 					   XMP_StringPtr  itemValue,
 					   XMP_OptionBits options );
 	
+	void
+	DeleteLocalizedText (	XMP_StringPtr	schemaNS,
+							XMP_StringPtr	altTextName,
+							XMP_StringPtr	genericLang,
+							XMP_StringPtr	specificLang);
+
 	// ---------------------------------------------------------------------------------------------
 	
 	bool
@@ -348,7 +317,7 @@ public:
 	CountArrayItems ( XMP_StringPtr schemaNS,
 					  XMP_StringPtr arrayName ) const;
 	
-	XMP_Status
+	void
 	DumpObject ( XMP_TextOutputProc outProc,
 				 void *				refCon ) const;
 	
@@ -360,8 +329,7 @@ public:
 					  XMP_OptionBits options );
 	
 	void
-	SerializeToBuffer ( XMP_StringPtr * rdfString,
-						XMP_StringLen * rdfSize,
+	SerializeToBuffer ( XMP_VarString * rdfString,
 						XMP_OptionBits	options,
 						XMP_StringLen	padding,
 						XMP_StringPtr	newline,
@@ -396,6 +364,10 @@ public:
 	// ! Expose the implementation so that file static functions can see the data.
 
 	XMP_Int32 clientRefs;	// ! Must be signed to allow decrement from 0.
+	XMP_ReadWriteLock lock;
+
+	// ! Any data member changes must be propagted to the Clone function!
+
 	XMP_Int32 prevTkVer;	// Previous toolkit version as MMmmuubbb (major, minor, micro, build).
 	XMP_Node  tree;
 

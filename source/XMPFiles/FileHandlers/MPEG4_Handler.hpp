@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -11,6 +11,9 @@
 // =================================================================================================
 
 #include "XMPFiles_Impl.hpp"
+
+#include "MOOV_Support.hpp"
+#include "QuickTime_Support.hpp"
 
 //  ================================================================================================
 /// \file MPEG4_Handler.hpp
@@ -23,9 +26,9 @@
 extern XMPFileHandler * MPEG4_MetaHandlerCTor ( XMPFiles * parent );
 
 extern bool MPEG4_CheckFormat ( XMP_FileFormat format,
-								 XMP_StringPtr  filePath,
-								 LFA_FileRef    fileRef,
-								 XMPFiles *     parent );
+								XMP_StringPtr  filePath,
+								LFA_FileRef    fileRef,
+								XMPFiles *     parent );
 
 static const XMP_OptionBits kMPEG4_HandlerFlags = ( kXMPFiles_CanInjectXMP |
 													kXMPFiles_CanExpand |
@@ -43,24 +46,46 @@ public:
 
 	void CacheFileData();
 	void ProcessXMP();
-	
+
 	void UpdateFile ( bool doSafeUpdate );
     void WriteFile  ( LFA_FileRef sourceRef, const std::string & sourcePath );
 
 	MPEG4_MetaHandler ( XMPFiles * _parent );
 	virtual ~MPEG4_MetaHandler();
 
+	struct TimecodeTrackInfo {	// Info about a QuickTime timecode track.
+		bool stsdBoxFound, isDropFrame;
+		XMP_Uns32 timeScale;
+		XMP_Uns32 frameDuration;
+		XMP_Uns32 timecodeSample;
+		XMP_Uns64 sampleOffset;	// Absolute file offset of the timecode sample, 0 if none.
+		XMP_Uns32 nameOffset;	// The offset of the 'name' box relative to the 'stsd' box content.
+		XMP_Uns16   macLang;	// The Mac language code of the trailing 'name' box.
+		std::string macName;	// The text part of the trailing 'name' box, in macLang encoding.
+		TimecodeTrackInfo()
+			: stsdBoxFound(false), isDropFrame(false), timeScale(0), frameDuration(0),
+			  timecodeSample(0), sampleOffset(0), nameOffset(0), macLang(0) {};
+	};
+
 private:
 
-	MPEG4_MetaHandler() : xmpBoxPos(0) {};	// Hidden on purpose.
+	MPEG4_MetaHandler() : fileMode(0), havePreferredXMP(false),
+						  xmpBoxPos(0), moovBoxPos(0), xmpBoxSize(0), moovBoxSize(0) {};	// Hidden on purpose.
 
-	void MakeLegacyDigest ( std::string * digestStr );
-	void PickNewLocation();
+	bool ParseTimecodeTrack();
+
+	void UpdateTopLevelBox ( XMP_Uns64 oldOffset, XMP_Uns32 oldSize, const XMP_Uns8 * newBox, XMP_Uns32 newSize );
 	
+	XMP_Uns8 fileMode;
+	bool havePreferredXMP;
 	XMP_Uns64 xmpBoxPos;	// The file offset of the XMP box (the size field, not the content).
+	XMP_Uns64 moovBoxPos;	// The file offset of the 'moov' box (the size field, not the content).
+	XMP_Uns32 xmpBoxSize, moovBoxSize;	// The full size of the boxes, not just the content.
+
+	MOOV_Manager moovMgr;
+	TradQT_Manager tradQTMgr;
 	
-	std::string mvhdBox;	// ! Both contain binary data, but std::string is handy.
-	std::vector<std::string> cprtBoxes;
+	TimecodeTrackInfo tmcdInfo;
 
 };	// MPEG4_MetaHandler
 

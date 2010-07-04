@@ -2,7 +2,7 @@
 #define __XMP_Const_h__ 1
 
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2002 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -13,9 +13,13 @@
 
    #include <stddef.h>
 
-#if XMP_MacBuild	// ! No stdint.h on Windows and some UNIXes.
+#if XMP_MacBuild		// ! No stdint.h on Windows and some UNIXes.
     #include <stdint.h>
 #endif
+#if XMP_UNIXBuild		// hopefully an inttypes.h on all UNIXes...
+		#include <inttypes.h>
+#endif
+
 
 #if __cplusplus
 extern "C" {
@@ -46,7 +50,7 @@ extern "C" {
     typedef uint32_t XMP_Uns32;
     typedef uint64_t XMP_Uns64;
 
-#else
+#elif XMP_WinBuild 
 
     typedef signed char XMP_Int8;
     typedef signed short XMP_Int16;
@@ -57,6 +61,33 @@ extern "C" {
     typedef unsigned short XMP_Uns16;
     typedef unsigned long XMP_Uns32;
     typedef unsigned long long XMP_Uns64;
+
+#elif XMP_UNIXBuild
+	#if ! XMP_64
+		typedef signed char XMP_Int8;
+		typedef signed short XMP_Int16;
+		typedef signed long XMP_Int32;
+		typedef signed long long XMP_Int64;
+
+		typedef unsigned char XMP_Uns8;
+		typedef unsigned short XMP_Uns16;
+		typedef unsigned long XMP_Uns32;
+		typedef unsigned long long XMP_Uns64;
+	#else
+		typedef signed char XMP_Int8;
+		typedef signed short XMP_Int16;
+		typedef signed int XMP_Int32;
+		typedef signed long long XMP_Int64;
+
+		typedef unsigned char XMP_Uns8;
+		typedef unsigned short XMP_Uns16;
+		typedef unsigned int XMP_Uns32;
+		typedef unsigned long long XMP_Uns64;
+	#endif
+
+#else
+
+	#error "XMP environment error - must define one of XMP_MacBuild, XMP_WinBuild, or XMP_UNIXBuild"
 
 #endif
 
@@ -175,11 +206,20 @@ struct XMP_DateTime {
 
 	/// The second in the range 0..59.
     XMP_Int32 second;
+    
+    /// Is the date portion meaningful?
+    XMP_Bool hasDate;
+    
+    /// Is the time portion meaningful?
+    XMP_Bool hasTime;
+    
+    /// Is the time zone meaningful?
+    XMP_Bool hasTimeZone;
 
 	/// The "sign" of the time zone, \c #kXMP_TimeIsUTC (0) means UTC, \c #kXMP_TimeWestOfUTC (-1)
 	/// is west, \c #kXMP_TimeEastOfUTC (+1) is east.
-    XMP_Int32 tzSign;
-
+    XMP_Int8 tzSign;
+    
 	/// The time zone hour in the range 0..23.
     XMP_Int32 tzHour;
 
@@ -188,6 +228,11 @@ struct XMP_DateTime {
 
 	/// Nanoseconds within a second, often left as zero.
     XMP_Int32 nanoSecond;
+
+	#if __cplusplus
+		XMP_DateTime() : year(0), month(0), day(0), hour(0), minute(0), second(0), nanoSecond(0),
+		                 tzSign(0), tzHour(0), tzMinute(0), hasDate(false), hasTime(false), hasTimeZone(false) {};
+	#endif
 
 };
 
@@ -200,6 +245,11 @@ enum {
 	/// Time zone is east of UTC.
     kXMP_TimeEastOfUTC = +1
 };
+
+#define XMPDateTime_IsDateOnly(dt) ((dt).hasDate & (! (dt).hasTime))
+#define XMPDateTime_IsTimeOnly(dt) ((dt).hasTime & (! (dt).hasDate))
+
+#define XMPDateTime_ClearTimeZone(dt) { (dt).hasTimeZone = (dt).tzSign = (dt).tzHour = (dt).tzMinute = 0; }
 
 // =================================================================================================
 // Standard namespace URI constants
@@ -258,8 +308,10 @@ enum {
 #define kXMP_NS_JP2K       "http://ns.adobe.com/jp2k/1.0/"
 #define kXMP_NS_CameraRaw  "http://ns.adobe.com/camera-raw-settings/1.0/"
 #define kXMP_NS_DM         "http://ns.adobe.com/xmp/1.0/DynamicMedia/"
+#define kXMP_NS_Script     "http://ns.adobe.com/xmp/1.0/Script/"
 #define kXMP_NS_ASF        "http://ns.adobe.com/asf/1.0/"
 #define kXMP_NS_WAV        "http://ns.adobe.com/xmp/wav/1.0/"
+#define kXMP_NS_BWF        "http://ns.adobe.com/bwf/bext/1.0/"
 
 #define kXMP_NS_XMP_Note   "http://ns.adobe.com/xmp/note/"
 
@@ -634,9 +686,6 @@ enum {
 	/// The padding parameter is the overall packet length.
     kXMP_ExactPacketLength   = 0x0200UL,
 
-	/// Show aliases as XML comments.
-    kXMP_WriteAliasComments  = 0x0400UL,
-
 	/// Omit all formatting whitespace.
     kXMP_OmitAllFormatting   = 0x0800UL,
     
@@ -693,9 +742,6 @@ enum {
 	/// Return just the leaf part of the path, default is the full path.
     kXMP_IterJustLeafName   = 0x0400UL,
 
-	 /// Include aliases, default is just actual properties.
-    kXMP_IterIncludeAliases = 0x0800UL,
-
 	 /// Omit all qualifiers.
     kXMP_IterOmitQualifiers = 0x1000UL
 
@@ -713,6 +759,7 @@ enum {
 };
 
 // -------------------------------------------------------------------------------------------------
+
 /// Option bit flags for \c TXMPUtils::CatenateArrayItems() and \c TXMPUtils::SeparateArrayItems().
 /// These option bits are shared with the accessor functions:
 ///   \li \c #kXMP_PropValueIsArray,
@@ -723,6 +770,26 @@ enum {
 
 	/// Allow commas in item values, default is separator.
     kXMPUtil_AllowCommas      = 0x10000000UL
+
+};
+
+/// Option bit flags for \c TXMPUtils::ApplyTemplate().
+enum {
+
+	 /// Do all properties, default is just external properties.
+    kXMPTemplate_IncludeInternalProperties = 0x0001UL,
+
+	/// Perform a Replace operation, add new properties and modify existing ones.
+    kXMPTemplate_ReplaceExistingProperties = 0x0002UL,
+
+	/// Similar to Replace, also delete if the template has an empty value.
+    kXMPTemplate_ReplaceWithDeleteEmpty = 0x0004UL,
+
+	/// Perform an Add operation, add properties if they don't already exist.
+    kXMPTemplate_AddNewProperties = 0x0008UL,
+
+    /// Perform a Clear operation, keep named properties and delete everything else.
+    kXMPTemplate_ClearUnnamedProperties = 0x0010UL
 
 };
 
@@ -969,59 +1036,12 @@ enum {
 
 // -------------------------------------------------------------------------------------------------
 
-/// Values for \c XMP_ThumbnailInfo::tnailFormat.
-enum {
-	/// The thumbnail data has an unknown format.
-    kXMP_UnknownTNail = 0,
-	/// The thumbnail data is a JPEG stream, presumably compressed.
-    kXMP_JPEGTNail    = 1,
-	/// The thumbnail data is a TIFF stream, presumably uncompressed.
-    kXMP_TIFFTNail    = 2,
-	/// The thumbnail data is in the format of Photoshop Image Resource 1036.
-    kXMP_PShopTNail   = 3
-};
-
-/// Thumbnail descriptor
-struct XMP_ThumbnailInfo {
-
-	/// The format of the containing file.
-    XMP_FileFormat   fileFormat;
-	/// Full image size in pixels.
-    XMP_Uns32        fullWidth, fullHeight;
-	/// Thumbnail image size in pixels.
-    XMP_Uns32        tnailWidth, tnailHeight;
-	/// Orientation of full image and thumbnail, as defined by Exif for tag 274.
-
-    XMP_Uns16        fullOrientation, tnailOrientation;
-	/// Raw image data from the host file, valid for life of the owning \c XMPFiles object. Do not modify!
-    const XMP_Uns8 * tnailImage;
-	/// The size in bytes of the thumbnail image data.
-    XMP_Uns32        tnailSize;
-	/// The format of the thumbnail image data.
-    XMP_Uns8         tnailFormat;
-
-	/// Padding to make the struct's size be a multiple 4.
-    XMP_Uns8         pad1, pad2, pad3;
-
-	/// Default constructor.
-	XMP_ThumbnailInfo() : fileFormat(kXMP_UnknownFile), fullWidth(0), fullHeight(0),
-						  tnailWidth(0), tnailHeight(0), fullOrientation(0), tnailOrientation(0),
-						  tnailImage(0), tnailSize(0), tnailFormat(kXMP_UnknownTNail) {};
-
-};
-
-/// Version of the XMP_ThumbnailInfo type
-enum {
-	/// Version of the XMP_ThumbnailInfo type
-	kXMP_ThumbnailInfoVersion = 1
-};
-
-// -------------------------------------------------------------------------------------------------
-
 /// Option bit flags for \c TXMPFiles::Initialize().
 enum {
-	/// Do not initialize QuickTime, the client will.
-    kXMPFiles_NoQuickTimeInit = 0x0001
+    /// Ignore non-XMP text that uses an undefined "local" encoding.
+    kXMPFiles_IgnoreLocalText = 0x0002,
+    /// Combination of flags necessary for server products using XMPFiles.
+    kXMPFiles_ServerMode      = kXMPFiles_IgnoreLocalText
 };
 
 /// Option bit flags for \c TXMPFiles::GetFormatInfo().
@@ -1047,9 +1067,6 @@ enum {
 
 	/// File handler returns raw XMP packet information.
     kXMPFiles_ReturnsRawPacket    = 0x00000040,
-
-	 /// File handler returns native thumbnail.
-    kXMPFiles_ReturnsTNail        = 0x00000080,
 
 	/// The file handler does the file open and close.
     kXMPFiles_HandlerOwnsFile     = 0x00000100,
@@ -1080,10 +1097,7 @@ enum {
 	/// Only the XMP is wanted, allows space/time optimizations.
     kXMPFiles_OpenOnlyXMP           = 0x00000004,
 
-	/// Cache thumbnail if possible, \c TXMPFiles::GetThumbnail() will be called.
-    kXMPFiles_OpenCacheTNail        = 0x00000008,
-
-	/// Be strict about locating XMP and reconciling with other forms.
+	/// Be strict about only attempting to use the designated file handler, no fallback to other handlers.
     kXMPFiles_OpenStrictly          = 0x00000010,
 
 	/// Require the use of a smart handler.
@@ -1096,16 +1110,9 @@ enum {
     kXMPFiles_OpenLimitedScanning   = 0x00000080,
     
     /// Attempt to repair a file opened for update, default is to not open (throw an exception).
-    kXMPFiles_OpenRepairFile        = 0x00000100,
-
-	 /// Set if calling from background thread.
-    kXMPFiles_OpenInBackground      = 0x10000000
-
+    kXMPFiles_OpenRepairFile        = 0x00000100
+   
 };
-
-// A note about kXMPFiles_OpenInBackground. The XMPFiles handler for .mov files currently uses
-// QuickTime. On Macintosh, calls to Enter/ExitMovies versus Enter/ExitMoviesOnThread must be made.
-// This option is used to signal background use so that the .mov handler can behave appropriately.
 
 /// Option bit flags for \c TXMPFiles::CloseFile().
 enum {

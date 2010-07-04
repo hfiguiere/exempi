@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -16,6 +16,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -47,8 +48,7 @@ public class XMPMetaParser
 	private static final Object XMP_RDF = new Object();
 	/** the DOM Parser Factory, options are set */ 
 	private static DocumentBuilderFactory factory = createDocumentBuilderFactory();
-	
-	
+
 	/**
 	 * Hidden constructor, initialises the SAX parser handler.
 	 */
@@ -84,7 +84,16 @@ public class XMPMetaParser
 		{
 			XMPMetaImpl xmp = ParseRDF.parse((Node) result[0]);
 			xmp.setPacketHeader((String) result[2]);
-			return XMPNormalizer.process(xmp, options);
+			
+			// Check if the XMP object shall be normalized
+			if (!options.getOmitNormalization())
+			{
+				return XMPNormalizer.process(xmp, options);
+			}
+			else
+			{
+				return xmp;
+			}
 		}
 		else
 		{
@@ -181,7 +190,8 @@ public class XMPMetaParser
 		}
 		catch (XMPException e)
 		{
-			if (e.getErrorCode() == XMPError.BADXML)
+			if (e.getErrorCode() == XMPError.BADXML  ||
+				e.getErrorCode() == XMPError.BADSTREAM)
 			{
 				if (options.getAcceptLatin1())
 				{
@@ -384,7 +394,18 @@ public class XMPMetaParser
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		factory.setNamespaceAware(true);
 		factory.setIgnoringComments(true);
-		factory.setExpandEntityReferences(true);
+		
+		try
+		{
+			// honor System parsing limits, e.g.
+			// System.setProperty("entityExpansionLimit", "10");
+			factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+		}
+		catch (Exception e)
+		{
+			// Ignore IllegalArgumentException and ParserConfigurationException
+			// in case the configured XML-Parser does not implement the feature.
+		}		
 		return factory;
 	}
 }

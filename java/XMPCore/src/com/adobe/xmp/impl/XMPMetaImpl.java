@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -23,6 +23,7 @@ import com.adobe.xmp.XMPUtils;
 import com.adobe.xmp.impl.xpath.XMPPath;
 import com.adobe.xmp.impl.xpath.XMPPathParser;
 import com.adobe.xmp.options.IteratorOptions;
+import com.adobe.xmp.options.ParseOptions;
 import com.adobe.xmp.options.PropertyOptions;
 import com.adobe.xmp.properties.XMPProperty;
 
@@ -1257,6 +1258,19 @@ public class XMPMetaImpl implements XMPMeta, XMPConst
 	}
 
 
+	/**
+	 * @see XMPMeta#normalize(ParseOptions)
+	 */
+	public void normalize(ParseOptions options) throws XMPException
+	{
+		if (options == null)
+		{
+			options = new ParseOptions();
+		}
+		XMPNormalizer.process(this, options);		
+	}
+
+	
 	/**
 	 * @return Returns the root node of the XMP tree.
 	 */

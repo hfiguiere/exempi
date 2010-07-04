@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2007 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -10,6 +10,7 @@
 #include "P2_Handler.hpp"
 
 #include "MD5.h"
+#include <cmath>
 
 using namespace std;
 
@@ -184,9 +185,9 @@ bool P2_CheckFormat ( XMP_FileFormat format,
 	tempPath += clipName;
 
 	size_t pathLen = tempPath.size() + 1;	// Include a terminating nul.
-	parent->handlerTemp = malloc ( pathLen );
-	if ( parent->handlerTemp == 0 ) XMP_Throw ( "No memory for P2 clip path", kXMPErr_NoMemory );
-	memcpy ( parent->handlerTemp, tempPath.c_str(), pathLen );	// AUDIT: Safe, allocated above.
+	parent->tempPtr = malloc ( pathLen );
+	if ( parent->tempPtr == 0 ) XMP_Throw ( "No memory for P2 clip path", kXMPErr_NoMemory );
+	memcpy ( parent->tempPtr, tempPath.c_str(), pathLen );	// AUDIT: Safe, allocated above.
 	
 	return true;
 	
@@ -213,12 +214,12 @@ P2_MetaHandler::P2_MetaHandler ( XMPFiles * _parent ) : expat(0), clipMetadata(0
 	this->handlerFlags = kP2_HandlerFlags;
 	this->stdCharForm  = kXMP_Char8Bit;
 	
-	// Extract the root path and clip name from handlerTemp.
+	// Extract the root path and clip name from tempPtr.
 	
-	XMP_Assert ( this->parent->handlerTemp != 0 );
-	this->rootPath = (char*)this->parent->handlerTemp;
-	free ( this->parent->handlerTemp );
-	this->parent->handlerTemp = 0;
+	XMP_Assert ( this->parent->tempPtr != 0 );
+	this->rootPath = (char*)this->parent->tempPtr;
+	free ( this->parent->tempPtr );
+	this->parent->tempPtr = 0;
 
 	SplitLeafName ( &this->rootPath, &this->clipName );
 	
@@ -232,9 +233,9 @@ P2_MetaHandler::~P2_MetaHandler()
 {
 
 	this->CleanupLegacyXML();
-	if ( this->parent->handlerTemp != 0 ) {
-		free ( this->parent->handlerTemp );
-		this->parent->handlerTemp = 0;
+	if ( this->parent->tempPtr != 0 ) {
+		free ( this->parent->tempPtr );
+		this->parent->tempPtr = 0;
 	}
 
 }	// P2_MetaHandler::~P2_MetaHandler
@@ -256,11 +257,6 @@ void P2_MetaHandler::MakeClipFilePath ( std::string * path, XMP_StringPtr suffix
 
 void P2_MetaHandler::CleanupLegacyXML()
 {
-
-	if ( ! this->defaultNS.empty() ) {
-		SXMPMeta::DeleteNamespace ( this->defaultNS.c_str() );
-		this->defaultNS.erase();
-	}
 	
 	if ( this->expat != 0 ) { delete ( this->expat ); this->expat = 0; }
 	
@@ -568,16 +564,42 @@ void P2_MetaHandler::SetVideoFrameInfoFromLegacyXML ( XML_NodePtr legacyVideoCon
 				dmHeight = "720";
 				dmWidth = "960";
 				dmPixelAspectRatio = "1920/1440";
-			} else if ( ( p2Codec == "AVC-I_1080/59.94i" ) ||
-						( p2Codec == "AVC-I_1080/50i" ) ||
-						( p2Codec == "AVC-I_1080/29.97p" ) ||
-						( p2Codec == "AVC-I_1080/25p" ) ||
-						( p2Codec == "AVC-I_720/59.94p" ) ||
-						( p2Codec == "AVC-I_720/50p" ) ) {
-				//	There are two "flavors" of the AVC-Intra codec that compress to different widths (and, therefore
-				//	different pixel aspect ratios), but no way I can find to distinguish between them in the
-				//	legacy XML. Until this is resolved we'll just report the codec name.
-				dmVideoCompressor = "AVC-Intra";
+			} else if ( ( p2Codec.compare ( 0, 6, "AVC-I_" ) == 0 ) ) {
+				
+				// This is AVC-Intra footage. The framerate and PAR depend on the "class" attribute in the P2 XML.
+				const XMP_StringPtr codecClass = legacyProp->GetAttrValue( "Class" );
+				
+				if ( XMP_LitMatch ( codecClass, "100" ) ) {
+					
+						dmVideoCompressor = "AVC-Intra 100";
+						dmPixelAspectRatio = "1/1";
+				
+					   if ( p2Codec.compare ( 6, 4, "1080" ) == 0 ) {
+						   dmHeight = "1080";
+						   dmWidth = "1920";
+					   } else if ( p2Codec.compare ( 6, 3, "720" ) == 0 ) {
+						   dmHeight = "720";
+						   dmWidth = "1280";
+					   }
+					
+				} else if ( XMP_LitMatch ( codecClass, "50" ) ) {
+					
+					dmVideoCompressor = "AVC-Intra 50";
+					dmPixelAspectRatio = "1920/1440";
+					
+					if ( p2Codec.compare ( 6, 4, "1080" ) == 0 ) {
+						dmHeight = "1080";
+						dmWidth = "1440";
+					} else if ( p2Codec.compare ( 6, 3, "720" ) == 0 ) {
+						dmHeight = "720";
+						dmWidth = "960";
+					}
+					
+				} else {
+					//	Unknown codec class -- we don't have enough info to determine the
+					//	codec, PAR, or aspect ratio
+					dmVideoCompressor = "AVC-Intra";
+				}
 			}
 			
 			if ( dmWidth == "720" ) {
@@ -662,7 +684,8 @@ void P2_MetaHandler::SetStartTimecodeFromLegacyXML ( XML_NodePtr legacyVideoCont
 			if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() ) {
 
 				const std::string p2FrameRate = legacyProp->GetLeafContentValue();
-				const XMP_StringPtr p2DropFrameFlag = legacyProp->GetAttrValue ( "DropFrameFlag" );
+				XMP_StringPtr p2DropFrameFlag = legacyProp->GetAttrValue ( "DropFrameFlag" );
+				if ( p2DropFrameFlag == 0 ) p2DropFrameFlag = "";	// Make tests easier.
 				std::string dmTimeFormat;
 				
 				if ( ( p2FrameRate == "50i" ) || ( p2FrameRate == "25p" ) ) {
@@ -679,21 +702,21 @@ void P2_MetaHandler::SetStartTimecodeFromLegacyXML ( XML_NodePtr legacyVideoCont
 
 				} else if ( p2FrameRate == "59.94p" ) {
 
-					if ( p2DropFrameFlag == "true" ) {
+					if ( XMP_LitMatch ( p2DropFrameFlag, "true" ) ) {
 						dmTimeFormat = "5994DropTimecode";
-					} else if ( p2DropFrameFlag == "false" ) {
+					} else if ( XMP_LitMatch ( p2DropFrameFlag, "false" ) ) {
 						dmTimeFormat = "5994NonDropTimecode";
 					}
 
-				} else if ( ( p2FrameRate == "59.94i" ) || ( p2FrameRate == "29.97p" ) ) {
+				} else if ( (p2FrameRate == "59.94i") || (p2FrameRate == "29.97p") ) {
 
 					if ( p2DropFrameFlag != 0 ) {
 
-						if ( std::strcmp ( p2DropFrameFlag, "false" ) == 0 ) {
+						if ( XMP_LitMatch ( p2DropFrameFlag, "false" ) ) {
 
 							dmTimeFormat = "2997NonDropTimecode";
 
-						} else if ( std::strcmp ( p2DropFrameFlag, "true" ) == 0 ) {
+						} else if ( XMP_LitMatch ( p2DropFrameFlag, "true" ) ) {
 
 							//	Drop frame NTSC timecode uses semicolons instead of colons as separators.
 							std::string::iterator currCharIt = p2StartTimecode.begin();
@@ -724,6 +747,101 @@ void P2_MetaHandler::SetStartTimecodeFromLegacyXML ( XML_NodePtr legacyVideoCont
 	}
 
 }	// P2_MetaHandler::SetStartTimecodeFromLegacyXML
+
+
+// =================================================================================================
+// P2_MetaHandler::SetGPSPropertyFromLegacyXML
+// ===========================================
+
+void P2_MetaHandler::SetGPSPropertyFromLegacyXML  ( XML_NodePtr legacyLocationContext, bool digestFound, XMP_StringPtr propName, XMP_StringPtr legacyPropName )
+{
+	
+	if ( digestFound || (! this->xmpObj.DoesPropertyExist ( kXMP_NS_EXIF, propName )) ) {
+		
+		XMP_StringPtr p2NS = this->p2NS.c_str();
+		XML_NodePtr legacyGPSProp = legacyLocationContext->GetNamedElement ( p2NS, legacyPropName );
+		
+		if ( ( legacyGPSProp != 0 ) && legacyGPSProp->IsLeafContentNode() ) {
+			
+			this->xmpObj.DeleteProperty ( kXMP_NS_EXIF, propName );
+			
+			const std::string legacyGPSValue = legacyGPSProp->GetLeafContentValue();
+
+			if ( ! legacyGPSValue.empty() ) {
+				
+				//	Convert from decimal to sexagesimal GPS coordinates
+				char direction = '\0';
+				double degrees = 0.0;
+				const int numFieldsRead = sscanf ( legacyGPSValue.c_str(), "%c%lf", &direction, &degrees );
+				
+				if ( numFieldsRead == 2 ) {
+					double wholeDegrees = 0.0;
+					const double fractionalDegrees = modf ( degrees, &wholeDegrees );
+					const double minutes = fractionalDegrees * 60.0;
+					char xmpValue [128];
+					
+					sprintf ( xmpValue, "%d,%.5lf%c", static_cast<int>(wholeDegrees), minutes, direction );
+					this->xmpObj.SetProperty ( kXMP_NS_EXIF, propName, xmpValue );
+					this->containsXMP = true;
+					
+				}
+				
+			}
+			
+		}
+		
+	}
+	
+}	// P2_MetaHandler::SetGPSPropertyFromLegacyXML
+
+// =================================================================================================
+// P2_MetaHandler::SetAltitudeFromLegacyXML
+// ========================================
+
+void P2_MetaHandler::SetAltitudeFromLegacyXML  ( XML_NodePtr legacyLocationContext, bool digestFound )
+{
+	
+	if ( digestFound || (! this->xmpObj.DoesPropertyExist ( kXMP_NS_EXIF, "GPSAltitude" )) ) {
+		
+		XMP_StringPtr p2NS = this->p2NS.c_str();
+		XML_NodePtr legacyAltitudeProp = legacyLocationContext->GetNamedElement ( p2NS, "Altitude" );
+		
+		if ( ( legacyAltitudeProp != 0 ) && legacyAltitudeProp->IsLeafContentNode() ) {
+			
+			this->xmpObj.DeleteProperty ( kXMP_NS_EXIF, "GPSAltitude" );
+			
+			const std::string legacyGPSValue = legacyAltitudeProp->GetLeafContentValue();
+			
+			if ( ! legacyGPSValue.empty() ) {
+				
+				int altitude = 0;
+				
+				if ( sscanf ( legacyGPSValue.c_str(), "%d", &altitude ) == 1) {
+					
+					if ( altitude >= 0 ) {
+						// At or above sea level.
+						this->xmpObj.SetProperty ( kXMP_NS_EXIF, "GPSAltitudeRef", "0" );
+					} else {
+						// Below sea level.
+						altitude = -altitude;
+						this->xmpObj.SetProperty ( kXMP_NS_EXIF, "GPSAltitudeRef", "1" );
+					}
+					
+					char xmpValue [128];
+					
+					sprintf ( xmpValue, "%d/1", altitude );
+					this->xmpObj.SetProperty ( kXMP_NS_EXIF, "GPSAltitude", xmpValue );
+					this->containsXMP = true;
+				
+				}
+			
+			}
+			
+		}
+		
+	}
+	
+}	// P2_MetaHandler::SetAltitudeFromLegacyXML
 
 // =================================================================================================
 // P2_MetaHandler::ForceChildElement
@@ -813,11 +931,43 @@ void P2_MetaHandler::MakeLegacyDigest ( std::string * digestStr )
 	this->DigestLegacyItem ( md5Context, legacyContext, "ShotMark" );
 
 	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Access" );
+	/* Rather return than create the digest because the "Access" element is listed as "required" in the P2 spec.
+	So a P2 file without an "Access" element does not follow the spec and might be corrupt.*/
 	if ( legacyContext == 0 ) return;
 
 	this->DigestLegacyItem ( md5Context, legacyContext, "Creator" );
 	this->DigestLegacyItem ( md5Context, legacyContext, "CreationDate" );
 	this->DigestLegacyItem ( md5Context, legacyContext, "LastUpdateDate" );
+	
+	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Shoot" );
+	
+	if ( legacyContext != 0 ) {
+		this->DigestLegacyItem ( md5Context, legacyContext, "Shooter" );	
+		
+		legacyContext = legacyContext->GetNamedElement ( p2NS, "Location" );
+		
+		if ( legacyContext != 0 ) {
+			this->DigestLegacyItem ( md5Context, legacyContext, "PlaceName" );
+			this->DigestLegacyItem ( md5Context, legacyContext, "Longitude" );
+			this->DigestLegacyItem ( md5Context, legacyContext, "Latitude" );
+			this->DigestLegacyItem ( md5Context, legacyContext, "Altitude" );
+		}
+	}
+	
+	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Scenario" );
+	
+	if ( legacyContext != 0 ) {
+		this->DigestLegacyItem ( md5Context, legacyContext, "SceneNo." );		
+		this->DigestLegacyItem ( md5Context, legacyContext, "TakeNo." );		
+	}
+	
+	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Device" );
+	
+	if ( legacyContext != 0 ) {
+		this->DigestLegacyItem ( md5Context, legacyContext, "Manufacturer" );		
+		this->DigestLegacyItem ( md5Context, legacyContext, "SerialNo." );		
+		this->DigestLegacyItem ( md5Context, legacyContext, "ModelName" );		
+	}
 	
 	MD5Final ( digestBin, &md5Context );
 
@@ -838,7 +988,7 @@ void P2_MetaHandler::MakeLegacyDigest ( std::string * digestStr )
 
 void P2_MetaHandler::CacheFileData()
 {
-	XMP_Assert ( (! this->containsXMP) && (! this->containsTNail) );
+	XMP_Assert ( ! this->containsXMP );
 	
 	// Make sure the clip's .XMP file exists.
 	
@@ -906,12 +1056,6 @@ void P2_MetaHandler::ProcessXMP()
 		this->xmpObj.ParseFromBuffer ( this->xmpPacket.c_str(), (XMP_StringLen)this->xmpPacket.size() );
 	}
 	
-	// --------------------------------------------------------------
-	// *** This is a minimal Q&D example of legacy metadata handling.
-	// *** Hack: Special case trickery to detect and clean up default XML namespace usage.
-	
-	bool haveDefaultNS = SXMPMeta::GetNamespaceURI ( "_dflt_", 0 );	// Is there already a default namespace?
-	
 	std::string xmlPath;
 	this->MakeClipFilePath ( &xmlPath, ".XML" );
 	
@@ -919,7 +1063,7 @@ void P2_MetaHandler::ProcessXMP()
 	xmlFile.fileRef = LFA_Open ( xmlPath.c_str(), 'r' );
 	if ( xmlFile.fileRef == 0 ) return;	// The open failed.
 	
-	this->expat = XMP_NewExpatAdapter();
+	this->expat = XMP_NewExpatAdapter ( ExpatAdapter::kUseLocalNamespaces );
 	if ( this->expat == 0 ) XMP_Throw ( "P2_MetaHandler: Can't create Expat adapter", kXMPErr_NoMemory );
 	
 	XMP_Uns8 buffer [64*1024];
@@ -932,12 +1076,6 @@ void P2_MetaHandler::ProcessXMP()
 	
 	LFA_Close ( xmlFile.fileRef );
 	xmlFile.fileRef = 0;
-	
-	if ( ! haveDefaultNS ) {
-		// No prior default XML namespace. If there is one now, remember it and delete it when done.
-		haveDefaultNS = SXMPMeta::GetNamespaceURI ( "_dflt_", &this->defaultNS );
-		XMP_Assert ( haveDefaultNS == (! this->defaultNS.empty()) );
-	}
 	
 	// The root element should be P2Main in some namespace. At least 2 different namespaces are in
 	// use (ending in "v3.0" and "v3.1"). Take whatever this file uses.
@@ -997,7 +1135,7 @@ void P2_MetaHandler::ProcessXMP()
 		legacyProp = legacyContext->GetNamedElement ( p2NS, "Creator" );
 		if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() ) {
 			this->xmpObj.DeleteProperty ( kXMP_NS_DC, "creator" );
-			this->xmpObj.AppendArrayItem ( kXMP_NS_DC, "creator", kXMP_PropArrayIsUnordered,
+			this->xmpObj.AppendArrayItem ( kXMP_NS_DC, "creator", kXMP_PropArrayIsOrdered,
 										   legacyProp->GetLeafContentValue() );
 			this->containsXMP = true;
 		}
@@ -1006,26 +1144,48 @@ void P2_MetaHandler::ProcessXMP()
 	this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_XMP, "CreateDate", "CreationDate", false );
 	this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_XMP, "ModifyDate", "LastUpdateDate", false );
 
-	if ( digestFound || (! this->xmpObj.DoesPropertyExist ( kXMP_NS_XMP, "Rating" )) ) {
-		legacyProp = legacyContext->GetNamedElement ( p2NS, "ShotMark" );
-		if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() ) {
+	if ( digestFound || (! this->xmpObj.DoesPropertyExist ( kXMP_NS_DM, "good" )) ) {
+		legacyProp = this->clipMetadata->GetNamedElement ( p2NS, "ShotMark" );
+		if ( (legacyProp == 0) || (! legacyProp->IsLeafContentNode()) ) {
+			this->xmpObj.DeleteProperty ( kXMP_NS_DM, "good" );
+		} else {
 			XMP_StringPtr markValue = legacyProp->GetLeafContentValue();
-			
-			// Translate "marked" clips as having a rating of 1 and "unmarked" clips as having a rating of 0
-			if ((markValue == 0) || (strcmp(markValue, "false") == 0) || (strcmp(markValue, "0") == 0)) {
-				this->xmpObj.SetProperty ( kXMP_NS_XMP, "Rating", "0", kXMP_DeleteExisting );
+			if ( markValue == 0 ) {
+				this->xmpObj.DeleteProperty ( kXMP_NS_DM, "good" );
+			} else if ( XMP_LitMatch ( markValue, "true" ) || XMP_LitMatch ( markValue, "1" ) ) {
+				this->xmpObj.SetProperty_Bool ( kXMP_NS_DM, "good", true, kXMP_DeleteExisting );
 				this->containsXMP = true;
-			} else if ((strcmp(markValue, "true") == 0) || (strcmp(markValue, "1") == 0)) {
-				this->xmpObj.SetProperty ( kXMP_NS_XMP, "Rating", "1", kXMP_DeleteExisting );
+			} else if ( XMP_LitMatch ( markValue, "false" ) || XMP_LitMatch ( markValue, "0" ) ) {
+				this->xmpObj.SetProperty_Bool ( kXMP_NS_DM, "good", false, kXMP_DeleteExisting );
 				this->containsXMP = true;
 			}
 		}
 	}
 	
-	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Location" );
+	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Shoot" );
+	if ( legacyContext != 0 ) {
+		this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_TIFF, "Artist", "Shooter", false );	
+		legacyContext = legacyContext->GetNamedElement ( p2NS, "Location" );
+	}
 	
 	if ( legacyContext != 0 ) {
 		this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_DM, "shotLocation", "PlaceName", false );
+		this->SetGPSPropertyFromLegacyXML ( legacyContext, digestFound, "GPSLongitude", "Longitude" );
+		this->SetGPSPropertyFromLegacyXML ( legacyContext, digestFound, "GPSLatitude", "Latitude" );
+		this->SetAltitudeFromLegacyXML ( legacyContext, digestFound );
+	}
+	
+	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Device" );
+	if ( legacyContext != 0 ) {
+		this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_TIFF, "Make", "Manufacturer", false );		
+		this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_EXIF_Aux, "SerialNumber", "SerialNo.", false );		
+		this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_TIFF, "Model", "ModelName", false );		
+	}
+	
+	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Scenario" );
+	if ( legacyContext != 0 ) {
+		this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_DM, "scene", "SceneNo.", false );		
+		this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_DM, "takeNumber", "TakeNo.", false );		
 	}
 	
 	CleanupAndExit

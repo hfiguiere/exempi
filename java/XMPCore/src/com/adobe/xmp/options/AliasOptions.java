@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -10,12 +10,10 @@
 package com.adobe.xmp.options;
 
 import com.adobe.xmp.XMPException;
-import com.adobe.xmp.XMPSchemaRegistry;
 
 
 /**
- * Options for {@link XMPSchemaRegistry#registerAlias( String, String, String, String,
- * AliasOptions)}.
+ * Options for XMPSchemaRegistryImpl#registerAlias.
  * 
  * @since 20.02.2006
  */

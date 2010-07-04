@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -18,31 +18,16 @@
 
 // =================================================================================================
 /// \file ReconcileLegacy.hpp
-/// \brief Utilities to reconcile between XMP and legacy metadata forms such as TIFF/Exif and IPTC.
+/// \brief Utilities to reconcile between XMP and photo metadata forms such as TIFF/Exif and IPTC.
 ///
 // =================================================================================================
 
-// ImportJTPtoXMP imports legacy metadata for JPEG, TIFF, and Photoshop files into XMP. The caller
-// must have already done the file specific processing to select the appropriate sources of the TIFF
-// stream, the Photoshop image resources, and the IPTC.
+// ImportPhotoData imports TIFF/Exif and IPTC metadata from JPEG, TIFF, and Photoshop files into
+// XMP. The caller must have already done the file specific processing to select the appropriate
+// sources of the TIFF stream, the Photoshop image resources, and the IPTC.
 //
-// The reconciliation logic used here is not identical to that used in Photoshop CS2, but should be
-// similar enough. The details of both approaches are documented in LegacyReconcile.pdf. The logic
-// used by Photoshop is more processor and memory intensive. That overhead is acceptable when
-// opening a file in Photoshop. Client's like Bridge need a lighter weight approach for quick
-// read-only access to the reconciled metadata.
-
-enum {	// JTP "last-seen" legacy priorities from Photoshop. Higher numbers are more important.
-	kLegacyJTP_None            = 0, // No legacy metadata.
-	kLegacyJTP_JPEG_TIFF_Tags  = 1,	// A JPEG file with TIFF tags 270, 315, or 33432.
-	kLegacyJTP_PSIR_IPTC       = 2, // IPTC from Photoshop image resource 1028.
-	kLegacyJTP_PSIR_OldCaption = 3, // Old caption from Photoshop image resource 1008 or 1020.
-	kLegacyJTP_TIFF_TIFF_Tags  = 4,	// A TIFF file with TIFF tags 270, 315, or 33432.
-	kLegacyJTP_TIFF_IPTC       = 5, // A TIFF file with TIFF tag 33723.
-	kLegacyJTP_Mac_pnot        = 6, // KeyW and Desc items from Macintosh pnot 0 resource.
-	kLegacyJTP_ANPA_IPTC       = 7  // IPTC from Macintosh ANPA 10000 resource.
-};
-typedef XMP_Uns8 RecJTP_LegacyPriority;
+// The reconciliation logic used here is based on the Metadata Working Group guidelines. This is a
+// simpler approach than used previously - which was modeled after historical Photoshop behavior.
 
 enum {	// Bits for the options to ImportJTPtoXMP.
 	k2XMP_FileHadXMP  = 0x0001,	// Set if the file had an XMP packet.
@@ -50,77 +35,66 @@ enum {	// Bits for the options to ImportJTPtoXMP.
 	k2XMP_FileHadExif = 0x0004	// Set if the file had legacy Exif.
 };
 
-extern void ImportJTPtoXMP ( XMP_FileFormat		   srcFormat,
-							 RecJTP_LegacyPriority lastLegacy,
-							 TIFF_Manager *        tiff,	// ! Need to modify for UserComment and RelatedSoundFile hack.
-							 const PSIR_Manager &  psir,
-						 	 IPTC_Manager *        iptc,	// ! Need to modify for UpdateDataSets.
-							 SXMPMeta *			   xmp,
-							 XMP_OptionBits		   options = 0 );
+extern void ImportPhotoData ( const TIFF_Manager & exif,
+						 	  const IPTC_Manager & iptc,
+							  const PSIR_Manager & psir,
+							  int                  iptcDigestState,
+							  SXMPMeta *		   xmp,
+							  XMP_OptionBits	   options = 0 );
 
-#if 0	// Activate if we want to support the Mac pnot resource.
-extern void ImportJTPtoXMP ( XMP_FileFormat		   srcFormat,
-							 RecJTP_LegacyPriority lastLegacy,
-							 const TIFF_Manager &  tiff,
-							 const PSIR_Manager &  psir,
-						 	 IPTC_Manager *        iptc,
-							 const void *          macKeyW, // The STR# for pnot 0 KeyW item.
-							 const std::string &   macDesc, // The TEXT for pnot 0 Desc item.
-							 SXMPMeta * xmp,
-							 XMP_OptionBits options = 0 );
-#endif
+// ExportPhotoData exports XMP into TIFF/Exif and IPTC metadata for JPEG, TIFF, and Photoshop files.
 
-// ExportXMPtoJTP exports XMP into legacy metadata for JPEG, TIFF, and Photoshop files.
+extern void ExportPhotoData ( XMP_FileFormat destFormat,
+							  SXMPMeta *     xmp,
+							  TIFF_Manager * exif, // Pass 0 if not wanted.
+							  IPTC_Manager * iptc, // Pass 0 if not wanted.
+							  PSIR_Manager * psir, // Pass 0 if not wanted.
+							  XMP_OptionBits options = 0 );
 
-extern void ExportXMPtoJTP ( XMP_FileFormat destFormat,
-							 SXMPMeta *     xmp,
-							 TIFF_Manager * tiff, // Pass 0 if not wanted.
-							 PSIR_Manager * psir, // Pass 0 if not wanted.
-							 IPTC_Manager * iptc, // Pass 0 if not wanted.
-							 XMP_OptionBits options = 0 );
+// *** Mapping notes need revision for MWG related changes.
 
 // =================================================================================================
 // Summary of TIFF/Exif mappings to XMP
 // ====================================
-// 
+//
 // The mapping for each tag is driven mainly by the tag ID, and secondarily by the type. E.g. there
 // is no blanket rule that all ASCII tags are mapped to simple strings in XMP. Some, such as
 // SubSecTime or GPSLatitudeRef, are combined with other tags; others, like Flash, are reformated.
 // However, most tags are in fact mapped in an obvious manner based on their type and count.
-// 
+//
 // Photoshop practice has been to truncate ASCII tags at the first NUL, not supporting the TIFF
 // specification's notion of multi-part ASCII values.
-// 
+//
 // Rational values are mapped to XMP as "num/denom".
-// 
+//
 // The tags of UNDEFINED type that are mapped to XMP text are either special cases like ExifVersion
 // or the strings with an explicit encoding like UserComment.
-// 
+//
 // Latitude and logitude are mapped to XMP as "DDD,MM,SSk" or "DDD,MM.mmk"; k is N, S, E, or W.
-// 
+//
 // Flash struct in XMP separates the Fired, Return, Mode, Function, and RedEyeMode portions of the
 // Exif value. Fired, Function, and RedEyeMode are Boolean; Return and Mode are integers.
-// 
+//
 // The OECF/SFR, CFA, and DeviceSettings tables are described in the XMP spec.
-// 
+//
 // Instead of iterating through all tags in the various IFDs, it is probably more efficient to have
 // explicit processing for the tags that get special treatment, and a static table listing those
 // that get mapped by type and count. The type and count processing will verify that the actual
 // type and count are as expected, if not the tag is ignored.
-// 
+//
 // Here are the primary (0th) IFD tags that get special treatment:
-// 
+//
 // 270, 33432 - ASCII mapped to alt-text['x-default']
 // 306 - DateTime master
 // 315 - ASCII mapped to text seq[1]
-// 
+//
 // Here are the primary (0th) IFD tags that get mapped by type and count:
-// 
+//
 // 256, 257, 258, 259, 262, 271, 272, 274, 277, 282, 283, 284, 296, 301, 305, 318, 319,
 // 529, 530, 531, 532
-// 
+//
 // Here are the Exif IFD tags that get special treatment:
-// 
+//
 // 34856, 41484 - OECF/SFR table
 // 36864, 40960 - 4 ASCII chars to text
 // 36867, 36868 - DateTime master
@@ -130,22 +104,22 @@ extern void ExportXMPtoJTP ( XMP_FileFormat destFormat,
 // 41728, 41729 - UInt8 to integer
 // 41730 - CFA table
 // 41995 - DeviceSettings table
-// 
+//
 // Here are the Exif IFD tags that get mapped by type and count:
-// 
+//
 // 33434, 33437, 34850, 34852, 34855, 37122, 37377, 37378, 37379, 37380, 37381, 37382, 37383, 37384,
 // 37386, 37396, 40961, 40962, 40963, 40964, 41483, 41486, 41487, 41488, 41492, 41493, 41495, 41985,
 // 41986, 41987, 41988, 41989, 41990, 41991, 41992, 41993, 41994, 41996, 42016
-// 
+//
 // Here are the GPS IFD tags that get special treatment:
-// 
+//
 // 0 - 4 UInt8 to text "n.n.n.n"
 // 2, 4, 20, 22 - Latitude or longitude master
 // 7 - special DateTime master, the time part
 // 27, 28 - explicitly encoded text
-// 
+//
 // Here are the GPS IFD tags that get mapped by type and count:
-// 
+//
 // 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 23, 24, 25, 26, 30
 // =================================================================================================
 
@@ -170,7 +144,7 @@ extern void ExportXMPtoJTP ( XMP_FileFormat destFormat,
 //
 // General (primary and thumbnail, 0th and 1st) IFD tags
 //   tag  TIFF type    count  Name                       XMP mapping
-// 
+//
 //   256  SHORTorLONG      1  ImageWidth                 integer
 //   257  SHORTorLONG      1  ImageLength                integer
 //   258  SHORT            3  BitsPerSample              integer seq
@@ -196,10 +170,10 @@ extern void ExportXMPtoJTP ( XMP_FileFormat destFormat,
 //   531  SHORT            1  YCbCrPositioning           integer
 //   532  RATIONAL         6  ReferenceBlackWhite        rational seq
 // 33432  ASCII          Any  Copyright                  text, dc:rights['x-default']
-// 
+//
 // Exif IFD tags
 //   tag  TIFF type    count  Name                       XMP mapping
-// 
+//
 // 33434  RATIONAL         1  ExposureTime               rational
 // 33437  RATIONAL         1  FNumber                    rational
 // 34850  SHORT            1  ExposureProgram            integer
@@ -255,10 +229,10 @@ extern void ExportXMPtoJTP ( XMP_FileFormat destFormat,
 // 41995  UNDEFINED      Any  DeviceSettingDescription   DeviceSettings table
 // 41996  SHORT            1  SubjectDistanceRange       integer
 // 42016  ASCII           33  ImageUniqueID              text
-// 
+//
 // GPS IFD tags
 //   tag  TIFF type    count  Name                       XMP mapping
-// 
+//
 //     0  BYTE             4  GPSVersionID               text, "n.n.n.n", Exif has 4 UInt8
 //     1  ASCII            2  GPSLatitudeRef             latitude, with 2
 //     2  RATIONAL         3  GPSLatitude                latitude, master of 2

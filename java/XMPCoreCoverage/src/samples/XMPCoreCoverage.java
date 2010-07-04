@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 200 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -30,7 +30,6 @@ import com.adobe.xmp.XMPMeta;
 import com.adobe.xmp.XMPMetaFactory;
 import com.adobe.xmp.XMPPathFactory;
 import com.adobe.xmp.XMPSchemaRegistry;
-import com.adobe.xmp.options.AliasOptions;
 import com.adobe.xmp.options.IteratorOptions;
 import com.adobe.xmp.options.ParseOptions;
 import com.adobe.xmp.options.PropertyOptions;
@@ -196,22 +195,6 @@ public class XMPCoreCoverage implements XMPCoreCoverageConst
 		// Register new aliases
 		writeMinorLabel ("Add ns2: to ns1: aliases");
 		
-		registry.registerAlias (NS2, "SimpleAlias", NS1, "SimpleActual", null);
-
-		registry.registerAlias (NS2, "BagAlias", NS1, "BagActual", null);
-		registry.registerAlias (NS2, "SeqAlias", NS1, "SeqActual", null);
-		registry.registerAlias (NS2, "AltAlias", NS1, "AltActual", null);
-		registry.registerAlias (NS2, "AltTextAlias", NS1, "AltTextActual", null);
-
-		registry.registerAlias (NS2, "BagItemAlias", NS1, "BagActual", 
-			new AliasOptions().setArray(true));
-		registry.registerAlias (NS2, "SeqItemAlias", NS1, "SeqActual", 
-			new AliasOptions().setArrayOrdered(true));
-		registry.registerAlias (NS2, "AltItemAlias", NS1, "AltActual", 
-			new AliasOptions().setArrayAlternate(true));
-		registry.registerAlias (NS2, "AltTextItemAlias", NS1, "AltTextActual",
-			new AliasOptions().setArrayAltText(true));
-
 		dumpAliases();
 
 
@@ -268,12 +251,6 @@ public class XMPCoreCoverage implements XMPCoreCoverageConst
 		
 		// delete aliases
 		writeMinorLabel ("Delete some ns2: to ns1: aliases");
-
-		registry.deleteAlias (NS2, "ns2:SimpleAlias");
-		registry.deleteAlias (NS2, "SeqAlias");
-		registry.deleteAlias (NS2, "AltAlias");
-		registry.deleteAlias (NS2, "SeqItemAlias");
-		registry.deleteAlias (NS2, "AltItemAlias");
 
 		dumpAliases();
 	}

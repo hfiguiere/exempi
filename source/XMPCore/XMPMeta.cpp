@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2003 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -52,7 +52,7 @@ using namespace std;
 // Static Variables
 // ================
 
-XMP_VarString * xdefaultName = 0;
+XMP_VarString * xdefaultName = 0;	// Needed in XMPMeta-Parse.cpp, MoveExplicitAliases.
 
 // These are embedded version strings.
 
@@ -63,134 +63,16 @@ const char * kXMPCore_EmbeddedCopyright = kXMPCoreName " " kXMP_CopyrightStr;
 // Local Utilities
 // ===============
 
-#define IsHexDigit(ch)		( (('0' <= (ch)) && ((ch) <= '9')) || (('A' <= (ch)) && ((ch) <= 'F')) )
-#define HexDigitValue(ch)	( (((ch) - '0') < 10) ? ((ch) - '0') : ((ch) - 'A' + 10) )
-
-static const char * kTenSpaces = "          ";
-#define OutProcPadding(pad)	{ size_t padLen = (pad); 												\
-							  for ( ; padLen >= 10; padLen -= 10 ) OutProcNChars ( kTenSpaces, 10 );	\
-							  for ( ; padLen > 0; padLen -= 1 ) OutProcNChars ( " ", 1 ); }
-
-
-#define OutProcNewline()	{ status = (*outProc) ( refCon, "\n", 1 );  if ( status != 0 ) goto EXIT; }
-
-#define OutProcNChars(p,n)	{ status = (*outProc) ( refCon, (p), (n) );  if ( status != 0 ) goto EXIT; }
-
-#define OutProcLiteral(lit)	{ status = (*outProc) ( refCon, (lit), strlen(lit) );  if ( status != 0 ) goto EXIT; }
-
-#define OutProcString(str)	{ status = (*outProc) ( refCon, (str).c_str(), (str).size() );  if ( status != 0 ) goto EXIT; }
-
-#define OutProcDecInt(num)	{ snprintf ( buffer, sizeof(buffer), "%d", (num) ); /* AUDIT: Using sizeof for snprintf length is safe */	\
-							  status = (*outProc) ( refCon, buffer, strlen(buffer) );  if ( status != 0 ) goto EXIT; }
-
-#define OutProcHexInt(num)	{ snprintf ( buffer, sizeof(buffer), "%X", (num) ); /* AUDIT: Using sizeof for snprintf length is safe */	\
-							  status = (*outProc) ( refCon, buffer, strlen(buffer) );  if ( status != 0 ) goto EXIT; }
-
-#define OutProcHexByte(num)	{ snprintf ( buffer, sizeof(buffer), "%.2X", (num) ); /* AUDIT: Using sizeof for snprintf length is safe */	\
-							  status = (*outProc) ( refCon, buffer, strlen(buffer) );  if ( status != 0 ) goto EXIT; }
-
-static const char * kIndent = "   ";
-#define OutProcIndent(lev)	{ for ( size_t i = 0; i < (lev); ++i ) OutProcNChars ( kIndent, 3 ); }
-
-
-// -------------------------------------------------------------------------------------------------
-// DumpClearString
-// ---------------
-
-static XMP_Status
-DumpClearString ( const XMP_VarString & value, XMP_TextOutputProc outProc, void * refCon )
-{
-
-	char buffer [20];
-	bool prevNormal;
-	XMP_Status status = 0;
-	
-	XMP_StringPtr spanStart, spanEnd;
-	XMP_StringPtr valueEnd = &value[0] + value.size();
-	
-	spanStart = &value[0];
-	while ( spanStart < valueEnd ) {
-	
-		// Output the next span of regular characters.
-		for ( spanEnd = spanStart; spanEnd < valueEnd; ++spanEnd ) {
-			if ( *spanEnd > 0x7F ) break;
-			if ( (*spanEnd < 0x20) && (*spanEnd != kTab) && (*spanEnd != kLF) ) break;
-		}
-		if ( spanStart != spanEnd ) status = (*outProc) ( refCon,  spanStart, (spanEnd-spanStart) );
-		if ( status != 0 ) break;
-		spanStart = spanEnd;
-		
-		// Output the next span of irregular characters.
-		prevNormal = true;
-		for ( spanEnd = spanStart; spanEnd < valueEnd; ++spanEnd ) {
-			if ( ((0x20 <= *spanEnd) && (*spanEnd <= 0x7F)) || (*spanEnd == kTab) || (*spanEnd == kLF) ) break;
-			char space = ' ';
-			if ( prevNormal ) space = '<';
-			status = (*outProc) ( refCon, &space, 1 );
-			if ( status != 0 ) break;
-			OutProcHexByte ( *spanEnd );
-			prevNormal = false;
-		}
-		if ( ! prevNormal ) {
-			status = (*outProc) ( refCon, ">", 1 );
-			if ( status != 0 ) return status;
-		}
-		spanStart = spanEnd;
-
-	}
-
-EXIT:	
-	return status;
-	
-}	// DumpClearString
-
-
-// -------------------------------------------------------------------------------------------------
-// DumpStringMap
-// -------------
-
-static XMP_Status
-DumpStringMap ( const XMP_StringMap & map, XMP_StringPtr label, XMP_TextOutputProc outProc, void * refCon )
-{
-	XMP_Status			status;
-	XMP_cStringMapPos	currPos;
-	XMP_cStringMapPos	endPos = map.end();
-	
-	size_t maxLen = 0;
-	for ( currPos = map.begin(); currPos != endPos; ++currPos ) {
-		size_t currLen = currPos->first.size();
-		if ( currLen > maxLen ) maxLen = currLen;
-	}
-	
-	OutProcNewline();
-	OutProcLiteral ( label );
-	OutProcNewline();
-	
-	for ( currPos = map.begin(); currPos != endPos; ++currPos ) {
-		OutProcNChars ( "  ", 2 );
-		DumpClearString ( currPos->first, outProc, refCon );
-		OutProcPadding ( maxLen - currPos->first.size() );
-		OutProcNChars ( " => ", 4 );
-		DumpClearString ( currPos->second, outProc, refCon );
-		OutProcNewline();
-	}
-	
-EXIT:
-	return status;
-	
-}	// DumpStringMap
-
 
 // -------------------------------------------------------------------------------------------------
 // DumpNodeOptions
 // ---------------
 
-static XMP_Status
+static void
 DumpNodeOptions	( XMP_OptionBits	 options,
 				  XMP_TextOutputProc outProc,
 				  void *			 refCon )
 {
-	XMP_Status	status;
 	char		buffer [32];	// Decimal of a 64 bit int is at most about 20 digits.
 
 	static const char * optNames[] = { " schema",		// 0x8000_0000
@@ -244,9 +126,6 @@ DumpNodeOptions	( XMP_OptionBits	 options,
 		OutProcNChars ( ")", 1 );
 	
 	}
-	
-EXIT:
-	return status;
 
 }	// DumpNodeOptions
 
@@ -257,15 +136,14 @@ EXIT:
 
 // *** Extract the validation code into a separate routine to call on exit in debug builds.
 
-static XMP_Status
+static void
 DumpPropertyTree ( const XMP_Node *	  currNode,
 				   int				  indent,
 				   size_t			  itemIndex,
 				   XMP_TextOutputProc outProc,
 				   void *			  refCon )
 {
-	XMP_Status	status;
-	char		buffer [32];	// Decimal of a 64 bit int is at most about 20 digits.
+	char buffer [32];	// Decimal of a 64 bit int is at most about 20 digits.
 
 	OutProcIndent ( (size_t)indent );
 	if ( itemIndex == 0 ) {
@@ -285,8 +163,7 @@ DumpPropertyTree ( const XMP_Node *	  currNode,
 
 	if ( currNode->options != 0 ) {
 		OutProcNChars ( "  ", 2 );
-		status = DumpNodeOptions ( currNode->options, outProc, refCon );
-		if ( status != 0 ) goto EXIT;
+		DumpNodeOptions ( currNode->options, outProc, refCon );
 	}
 	
 	if ( currNode->options & kXMP_PropHasLang ) {
@@ -322,8 +199,7 @@ DumpPropertyTree ( const XMP_Node *	  currNode,
 			if ( (qualNum != 0) || (! (currNode->options & kXMP_PropHasLang)) ) OutProcLiteral ( "** bad lang qual => " );
 		}
 
-		status = DumpPropertyTree ( currQual, indent+2, 0, outProc, refCon );
-		if ( status != 0 ) goto EXIT;
+		DumpPropertyTree ( currQual, indent+2, 0, outProc, refCon );
 
 	}
 
@@ -342,13 +218,9 @@ DumpPropertyTree ( const XMP_Node *	  currNode,
 			if ( currChild->name == kXMP_ArrayItemName ) OutProcLiteral ( "** bad field name => " );
 		}
 
-		status = DumpPropertyTree ( currChild, indent+1, itemIndex, outProc, refCon );
-		if ( status != 0 ) goto EXIT;
+		DumpPropertyTree ( currChild, indent+1, itemIndex, outProc, refCon );
 
 	}
-	
-EXIT:
-	return status;
 
 }	// DumpPropertyTree
 
@@ -575,604 +447,6 @@ SortWithinOffspring ( XMP_NodeOffspring & nodeVec )
 }	// SortWithinOffspring
 
 
-// =================================================================================================
-// Constructors
-// ============
-
-
-XMPMeta::XMPMeta() : tree(XMP_Node(0,"",0)), clientRefs(0), prevTkVer(0), xmlParser(0)
-{
-	// Nothing more to do, clientRefs is incremented in wrapper.
-	#if XMP_TraceCTorDTor
-		printf ( "Default construct XMPMeta @ %.8X\n", this );
-	#endif
-}	// XMPMeta
-
-// -------------------------------------------------------------------------------------------------
-
-XMPMeta::~XMPMeta() RELEASE_NO_THROW
-{
-	#if XMP_TraceCTorDTor
-		printf ( "Destruct XMPMeta @ %.8X\n", this );
-	#endif
-
-	XMP_Assert ( this->clientRefs <= 0 );
-	if ( xmlParser != 0 ) delete ( xmlParser );
-	xmlParser = 0;
-
-}	// ~XMPMeta
-
-
-// =================================================================================================
-// Class Static Functions
-// ======================
-//
-//
-// =================================================================================================
-
-// -------------------------------------------------------------------------------------------------
-// GetVersionInfo
-// --------------
-
-/* class-static */ void
-XMPMeta::GetVersionInfo ( XMP_VersionInfo * info )
-{
-
-	memset ( info, 0, sizeof(*info) );	// AUDIT: Safe, using sizeof the destination.
-	XMP_Assert ( sizeof(*info) == sizeof(XMP_VersionInfo) );
-	
-	info->major   = XMP_API_VERSION_MAJOR;
-	info->minor   = XMP_API_VERSION_MINOR;
-	info->micro   = XMP_API_VERSION_MICRO;
-	info->isDebug = kXMPCore_DebugFlag;
-	info->flags   = 0;	// ! None defined yet.
-	info->message = kXMPCore_VersionMessage;
-	
-}	// GetVersionInfo
-
-// -------------------------------------------------------------------------------------------------
-// Initialize
-// ----------
-
-/* class-static */ bool
-XMPMeta::Initialize()
-{
-	// Allocate and initialize static objects.
-	
-	++sXMP_InitCount;
-	if ( sXMP_InitCount > 1 ) return true;
-	
-	#if TraceXMPCalls
-		// xmpOut = fopen ( "xmp.out", "w" );	// Coordinate with client glue in WXMP_Common.hpp
-		fprintf ( xmpOut, "XMP initializing\n" ); fflush ( xmpOut );
-	#endif
-	
-	sExceptionMessage = new XMP_VarString();
-	XMP_InitMutex ( &sXMPCoreLock );
-    sOutputNS  = new XMP_VarString;
-    sOutputStr = new XMP_VarString;
-
-	xdefaultName = new XMP_VarString ( "x-default" );
-	
-	sNamespaceURIToPrefixMap	= new XMP_StringMap;
-	sNamespacePrefixToURIMap	= new XMP_StringMap;
-	sRegisteredAliasMap			= new XMP_AliasMap;
-	
-	InitializeUnicodeConversions();
-	
-	// Register standard namespaces and aliases.
-	
-	XMP_StringPtr	voidPtr;
-	XMP_StringLen	voidLen;
-	
-	(void) RegisterNamespace ( kXMP_NS_XML, "xml", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_RDF, "rdf", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_DC, "dc", &voidPtr, &voidLen );
-
-	(void) RegisterNamespace ( kXMP_NS_XMP, "xmp", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_PDF, "pdf", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_Photoshop, "photoshop", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_PSAlbum, "album", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_EXIF, "exif", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_EXIF_Aux, "aux", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_TIFF, "tiff", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_PNG, "png", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_JPEG, "jpeg", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_JP2K, "jp2k", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_CameraRaw, "crs", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_ASF, "asf", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_WAV, "wav", &voidPtr, &voidLen );
-
-	(void) RegisterNamespace ( kXMP_NS_AdobeStockPhoto, "bmsp", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_CreatorAtom, "creatorAtom", &voidPtr, &voidLen );
-
-	(void) RegisterNamespace ( kXMP_NS_XMP_Rights, "xmpRights", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_XMP_MM, "xmpMM", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_XMP_BJ, "xmpBJ", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_XMP_Note, "xmpNote", &voidPtr, &voidLen );
-
-	(void) RegisterNamespace ( kXMP_NS_DM, "xmpDM", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_XMP_Text, "xmpT", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_XMP_PagedFile, "xmpTPg", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_XMP_Graphics, "xmpG", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_XMP_Image, "xmpGImg", &voidPtr, &voidLen );
-
-	(void) RegisterNamespace ( kXMP_NS_XMP_Font, "stFnt", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_XMP_Dimensions, "stDim", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_XMP_ResourceEvent, "stEvt", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_XMP_ResourceRef, "stRef", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_XMP_ST_Version, "stVer", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_XMP_ST_Job, "stJob", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_XMP_ManifestItem, "stMfs", &voidPtr, &voidLen );
-
-	(void) RegisterNamespace ( kXMP_NS_XMP_IdentifierQual, "xmpidq", &voidPtr, &voidLen );
-
-	(void) RegisterNamespace ( kXMP_NS_IPTCCore, "Iptc4xmpCore", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_DICOM, "DICOM", &voidPtr, &voidLen );
-
-	(void) RegisterNamespace ( kXMP_NS_PDFA_Schema, "pdfaSchema", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_PDFA_Property, "pdfaProperty", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_PDFA_Type, "pdfaType", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_PDFA_Field, "pdfaField", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_PDFA_ID, "pdfaid", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_PDFA_Extension, "pdfaExtension", &voidPtr, &voidLen );
-
-	(void) RegisterNamespace ( kXMP_NS_PDFX, "pdfx", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( kXMP_NS_PDFX_ID, "pdfxid", &voidPtr, &voidLen );
-	
-	(void) RegisterNamespace ( "adobe:ns:meta/", "x", &voidPtr, &voidLen );
-	(void) RegisterNamespace ( "http://ns.adobe.com/iX/1.0/", "iX", &voidPtr, &voidLen );
-	
-	XMPMeta::RegisterStandardAliases ( "" );
-	
-	// Initialize the other core classes.
-	
-	if ( ! XMPIterator::Initialize() ) XMP_Throw ( "Failure from XMPIterator::Initialize", kXMPErr_InternalFailure );
-	if ( ! XMPUtils::Initialize() ) XMP_Throw ( "Failure from XMPUtils::Initialize", kXMPErr_InternalFailure );
-	// Do miscelaneous semantic checks of types and arithmetic.
-
-	XMP_Assert ( sizeof(XMP_Int8) == 1 );
-	XMP_Assert ( sizeof(XMP_Int16) == 2 );
-	XMP_Assert ( sizeof(XMP_Int32) == 4 );
-	XMP_Assert ( sizeof(XMP_Int64) == 8 );
-	XMP_Assert ( sizeof(XMP_Uns8) == 1 );
-	XMP_Assert ( sizeof(XMP_Uns16) == 2 );
-	XMP_Assert ( sizeof(XMP_Uns32) == 4 );
-	XMP_Assert ( sizeof(XMP_Uns64) == 8 );
-	
-	XMP_Assert ( sizeof(XMP_OptionBits) == 4 );	// Check that option masking work on all 32 bits.
-	XMP_OptionBits flag = ~0UL;
-	XMP_Assert ( flag == (XMP_OptionBits)(-1L) );
-	XMP_Assert ( (flag ^ kXMP_PropHasLang) == 0xFFFFFFBFUL );
-	XMP_Assert ( (flag & ~kXMP_PropHasLang) == 0xFFFFFFBFUL );
-	
-	XMP_OptionBits opt1 = 0;	// Check the general option bit macros.
-	XMP_OptionBits opt2 = ~0UL;
-	XMP_SetOption ( opt1, kXMP_PropValueIsArray );
-	XMP_ClearOption ( opt2, kXMP_PropValueIsArray );
-	XMP_Assert ( opt1 == ~opt2 );
-	XMP_Assert ( XMP_TestOption ( opt1, kXMP_PropValueIsArray ) );
-	XMP_Assert ( ! XMP_TestOption ( opt2, kXMP_PropValueIsArray ) );
-	
-	XMP_Assert ( XMP_PropIsSimple ( ~kXMP_PropCompositeMask ) );	// Check the special option bit macros.
-	XMP_Assert ( ! XMP_PropIsSimple ( kXMP_PropValueIsStruct ) );
-	XMP_Assert ( ! XMP_PropIsSimple ( kXMP_PropValueIsArray ) );
-
-	XMP_Assert ( XMP_PropIsStruct ( kXMP_PropValueIsStruct ) );
-	XMP_Assert ( XMP_PropIsArray  ( kXMP_PropValueIsArray ) );
-	XMP_Assert ( ! XMP_PropIsStruct ( ~kXMP_PropValueIsStruct ) );
-	XMP_Assert ( ! XMP_PropIsArray  ( ~kXMP_PropValueIsArray ) );
-	
-	XMP_Assert ( XMP_ArrayIsUnordered ( ~kXMP_PropArrayIsOrdered ) );
-	XMP_Assert ( XMP_ArrayIsOrdered   ( kXMP_PropArrayIsOrdered ) );
-	XMP_Assert ( XMP_ArrayIsAlternate ( kXMP_PropArrayIsAlternate ) );
-	XMP_Assert ( XMP_ArrayIsAltText   ( kXMP_PropArrayIsAltText ) );
-	XMP_Assert ( ! XMP_ArrayIsUnordered ( kXMP_PropArrayIsOrdered ) );
-	XMP_Assert ( ! XMP_ArrayIsOrdered   ( ~kXMP_PropArrayIsOrdered ) );
-	XMP_Assert ( ! XMP_ArrayIsAlternate ( ~kXMP_PropArrayIsAlternate ) );
-	XMP_Assert ( ! XMP_ArrayIsAltText   ( ~kXMP_PropArrayIsAltText ) );
-	
-	XMP_Assert ( XMP_PropHasQualifiers ( kXMP_PropHasQualifiers ) );
-	XMP_Assert ( XMP_PropIsQualifier   ( kXMP_PropIsQualifier ) );
-	XMP_Assert ( XMP_PropHasLang       ( kXMP_PropHasLang ) );
-	XMP_Assert ( ! XMP_PropHasQualifiers ( ~kXMP_PropHasQualifiers ) );
-	XMP_Assert ( ! XMP_PropIsQualifier   ( ~kXMP_PropIsQualifier ) );
-	XMP_Assert ( ! XMP_PropHasLang       ( ~kXMP_PropHasLang ) );
-	
-	XMP_Assert ( XMP_NodeIsSchema ( kXMP_SchemaNode ) );
-	XMP_Assert ( XMP_PropIsAlias  ( kXMP_PropIsAlias ) );
-	XMP_Assert ( ! XMP_NodeIsSchema ( ~kXMP_SchemaNode ) );
-	XMP_Assert ( ! XMP_PropIsAlias  ( ~kXMP_PropIsAlias ) );
-	
-	#if 0	// Generally off, enable to hand check generated code.
-		extern XMP_OptionBits opt3, opt4;
-		if ( XMP_TestOption ( opt3, kXMP_PropValueIsArray ) ) opt4 = opt3;
-		if ( ! XMP_TestOption ( opt3, kXMP_PropValueIsStruct ) ) opt4 = opt3;
-		static bool ok1 = XMP_TestOption ( opt4, kXMP_PropValueIsArray );
-		static bool ok2 = ! XMP_TestOption ( opt4, kXMP_PropValueIsStruct );
-	#endif
-	
-	// Make sure the embedded info strings are referenced and kept.
-	if ( (kXMPCore_EmbeddedVersion[0] == 0) || (kXMPCore_EmbeddedCopyright[0] == 0) ) return false;
-	return true;
-
-}	// Initialize
-
-
-// -------------------------------------------------------------------------------------------------
-// Terminate
-// ---------
-
-#define EliminateGlobal(g) delete ( g ); g = 0
-
-/* class-static */ void
-XMPMeta::Terminate() RELEASE_NO_THROW
-{
-	--sXMP_InitCount;
-	if ( sXMP_InitCount > 0 ) return;
-
-	#if TraceXMPCalls
-		fprintf ( xmpOut, "XMP terminating\n" ); fflush ( xmpOut );
-		// fclose ( xmpOut );	// Coordinate with fopen in XMPMeta::Initialize.
-	#endif
-	
-	XMPIterator::Terminate();
-	XMPUtils::Terminate();
-	EliminateGlobal ( sNamespaceURIToPrefixMap );
-	EliminateGlobal ( sNamespacePrefixToURIMap );
-	EliminateGlobal ( sRegisteredAliasMap );
-    
-    EliminateGlobal ( xdefaultName );
-    EliminateGlobal ( sOutputNS );
-    EliminateGlobal ( sOutputStr );
-	EliminateGlobal ( sExceptionMessage );
-
-	XMP_TermMutex ( sXMPCoreLock );
-	
-}	// Terminate
-
-
-// -------------------------------------------------------------------------------------------------
-// Unlock
-// ------
-
-/* class-static */ void
-XMPMeta::Unlock ( XMP_OptionBits options )
-{
-	options = options;	// Avoid unused parameter warning.	// *** Need IgnoreParam macro.
-
-    #if TraceXMPLocking
-    	fprintf ( xmpOut, "  Unlocking XMP toolkit, count = %d\n", sLockCount ); fflush ( xmpOut );
-	#endif
-    --sLockCount;
-    XMP_Assert ( sLockCount == 0 );
-	XMP_ExitCriticalRegion ( sXMPCoreLock );
-
-}	// Unlock
-
-
-// -------------------------------------------------------------------------------------------------
-// UnlockObject
-// ------------
-
-void
-XMPMeta::UnlockObject ( XMP_OptionBits options ) const
-{
-	options = options;	// Avoid unused parameter warning.
-
-	XMPMeta::Unlock ( 0 );
-
-}	// UnlockObject
-
-
-// -------------------------------------------------------------------------------------------------
-// DumpNamespaces
-// --------------
-//
-// Dump the prefix to URI map (easier to read) and verify that both are consistent and legit.
-
-// *** Should put checks in a separate routine for regular calling in debug builds.
-
-/* class-static */ XMP_Status
-XMPMeta::DumpNamespaces ( XMP_TextOutputProc outProc,
-                          void *             refCon )
-{
-	XMP_Assert ( outProc != 0 );	// ! Enforced by wrapper.
-	XMP_Status status = 0;
-	
-	XMP_StringMapPos p2uEnd = sNamespacePrefixToURIMap->end();	// ! Move up to avoid gcc complaints.
-	XMP_StringMapPos u2pEnd = sNamespaceURIToPrefixMap->end();
-	
-	status = DumpStringMap ( *sNamespacePrefixToURIMap, "Dumping namespace prefix to URI map", outProc, refCon );
-	if ( status != 0 ) goto EXIT;
-	
-	if ( sNamespacePrefixToURIMap->size() != sNamespaceURIToPrefixMap->size() ) {
-		OutProcLiteral ( "** bad namespace map sizes **" );
-		XMP_Throw ( "Fatal namespace map problem", kXMPErr_InternalFailure );
-	}
-	
-	for ( XMP_StringMapPos nsLeft = sNamespacePrefixToURIMap->begin(); nsLeft != p2uEnd; ++nsLeft ) {
-
-		XMP_StringMapPos nsOther = sNamespaceURIToPrefixMap->find ( nsLeft->second );
-		if ( (nsOther == u2pEnd) || (nsLeft != sNamespacePrefixToURIMap->find ( nsOther->second )) ) {
-			OutProcLiteral ( "  ** bad namespace URI **  " );
-			DumpClearString ( nsLeft->second, outProc, refCon );
-			goto FAILURE;
-		}
-		
-		for ( XMP_StringMapPos nsRight = nsLeft; nsRight != p2uEnd; ++nsRight ) {
-			if ( nsRight == nsLeft ) continue;	// ! Can't start at nsLeft+1, no operator+!
-			if ( nsLeft->second == nsRight->second ) {
-				OutProcLiteral ( "  ** duplicate namespace URI **  " );
-				DumpClearString ( nsLeft->second, outProc, refCon );
-				goto FAILURE;
-			}
-		}
-
-	}
-	
-	for ( XMP_StringMapPos nsLeft = sNamespaceURIToPrefixMap->begin(); nsLeft != u2pEnd; ++nsLeft ) {
-
-		XMP_StringMapPos nsOther = sNamespacePrefixToURIMap->find ( nsLeft->second );
-		if ( (nsOther == p2uEnd) || (nsLeft != sNamespaceURIToPrefixMap->find ( nsOther->second )) ) {
-			OutProcLiteral ( "  ** bad namespace prefix **  " );
-			DumpClearString ( nsLeft->second, outProc, refCon );
-			goto FAILURE;
-		}
-
-		for ( XMP_StringMapPos nsRight = nsLeft; nsRight != u2pEnd; ++nsRight ) {
-			if ( nsRight == nsLeft ) continue;	// ! Can't start at nsLeft+1, no operator+!
-			if ( nsLeft->second == nsRight->second ) {
-				OutProcLiteral ( "  ** duplicate namespace prefix **  " );
-				DumpClearString ( nsLeft->second, outProc, refCon );
-				goto FAILURE;
-			}
-		}
-
-	}
-
-EXIT:
-	return status;
-
-FAILURE:
-	OutProcNewline();
-	(void) DumpStringMap ( *sNamespaceURIToPrefixMap, "Dumping namespace URI to prefix map", outProc, refCon );
-	XMP_Throw ( "Fatal namespace map problem", kXMPErr_InternalFailure );
-	return 0;
-	
-}	// DumpNamespaces
-
-
-// -------------------------------------------------------------------------------------------------
-// DumpAliases
-// -----------
-
-/* class-static */ XMP_Status
-XMPMeta::DumpAliases ( XMP_TextOutputProc outProc,
-                       void *             refCon )
-{
-	XMP_Assert ( outProc != 0 );	// ! Enforced by wrapper.
-	XMP_Status status = 0;
-
-	XMP_Assert ( sRegisteredAliasMap != 0 );
-
-	XMP_cAliasMapPos aliasPos;
-	XMP_cAliasMapPos aliasEnd = sRegisteredAliasMap->end();
-	
-	size_t maxLen = 0;
-	for ( aliasPos = sRegisteredAliasMap->begin(); aliasPos != aliasEnd; ++aliasPos ) {
-		size_t currLen = aliasPos->first.size();
-		if ( currLen > maxLen ) maxLen = currLen;
-	}
-	
-	OutProcLiteral ( "Dumping alias name to actual path map" );
-	OutProcNewline();
-		
-	for ( aliasPos = sRegisteredAliasMap->begin(); aliasPos != aliasEnd; ++aliasPos ) {
-
-		OutProcNChars ( "   ", 3 );
-		DumpClearString ( aliasPos->first, outProc, refCon );
-		OutProcPadding ( maxLen - aliasPos->first.size() );
-		OutProcNChars ( " => ", 4 );
-
-		size_t actualPathSize = aliasPos->second.size();
-		for ( size_t stepNum = 1; stepNum < actualPathSize; ++stepNum ) OutProcString ( aliasPos->second[stepNum].step );
-
-		XMP_OptionBits arrayForm = aliasPos->second[1].options & kXMP_PropArrayFormMask;
-
-		if ( arrayForm == 0 ) {
-			if ( actualPathSize != 2 ) OutProcLiteral ( "  ** bad actual path **" );
-		} else {
-			OutProcNChars ( "  ", 2 );
-			DumpNodeOptions ( arrayForm, outProc, refCon );
-			if ( ! (arrayForm & kXMP_PropValueIsArray) ) OutProcLiteral ( "  ** bad array form **" );
-			if ( actualPathSize != 3 ) OutProcLiteral ( "  ** bad actual path **" );
-		}
-
-		if ( aliasPos->second[0].options != kXMP_SchemaNode ) OutProcLiteral ( "  ** bad schema form **" );
-
-		OutProcNewline();
-
-	}
-	
-EXIT:
-	return status;
-	
-}	// DumpAliases
-
-
-// -------------------------------------------------------------------------------------------------
-// GetGlobalOptions
-// ----------------
-
-/* class-static */ XMP_OptionBits
-XMPMeta::GetGlobalOptions()
-{
-	XMP_OptionBits	options = 0;
-	
-	return options;
-	
-}	// GetGlobalOptions
-
-
-// -------------------------------------------------------------------------------------------------
-// SetGlobalOptions
-// ----------------
-
-/* class-static */ void
-XMPMeta::SetGlobalOptions ( XMP_OptionBits options )
-{
-
-	XMP_Throw ( "Unimplemented method XMPMeta::SetGlobalOptions", kXMPErr_Unimplemented );
-		void * p; p = &options;	// Avoid unused param warnings.
-
-}	// SetGlobalOptions
-
-
-// -------------------------------------------------------------------------------------------------
-// RegisterNamespace
-// -----------------
-
-/* class-static */ bool
-XMPMeta::RegisterNamespace ( XMP_StringPtr	 namespaceURI,
-							 XMP_StringPtr	 suggestedPrefix,
-							 XMP_StringPtr * registeredPrefix,
-							 XMP_StringLen * prefixSize )
-{
-	bool	prefixMatches	= false;
-	
-	XMP_Assert ( (registeredPrefix != 0) && (prefixSize != 0) );		// ! Enforced by wrapper.
-	if ( (*namespaceURI == 0) || (*suggestedPrefix == 0) ) {
-		XMP_Throw ( "Empty namespace URI or prefix", kXMPErr_BadParam );
-	}
-	
-	XMP_VarString	nsURI ( namespaceURI );
-	XMP_VarString	suggPrefix ( suggestedPrefix );
-	if ( suggPrefix[suggPrefix.size()-1] != ':' ) suggPrefix += ':';
-	VerifySimpleXMLName ( suggestedPrefix, suggestedPrefix+suggPrefix.size()-1 );	// Exclude the colon.
-	
-	XMP_StringMapPos	uriPos	= sNamespaceURIToPrefixMap->find ( nsURI );
-	
-	if ( uriPos == sNamespaceURIToPrefixMap->end() ) {
-		
-		// The URI is not yet registered, make sure we use a unique prefix.
-		
-		XMP_VarString	uniqPrefix ( suggPrefix );
-		int		suffix = 0;
-		char	buffer [32];
-
-		while ( true ) {
-			if ( sNamespacePrefixToURIMap->find ( uniqPrefix ) == sNamespacePrefixToURIMap->end() ) break;
-			++suffix;
-			snprintf ( buffer, sizeof(buffer), "_%d_:", suffix );	// AUDIT: Using sizeof for snprintf length is safe.
-			uniqPrefix = suggPrefix;
-			uniqPrefix.erase ( uniqPrefix.size()-1 );	// ! Remove the trailing ':'.
-			uniqPrefix += buffer;
-		}
-		
-		// Add the new namespace to both maps.
-		
-		XMP_StringPair	newNS ( nsURI, uniqPrefix );
-		uriPos = sNamespaceURIToPrefixMap->insert ( sNamespaceURIToPrefixMap->end(), newNS );
-		
-		newNS.first.swap ( newNS.second );
-		(void) sNamespacePrefixToURIMap->insert ( sNamespacePrefixToURIMap->end(), newNS );
-
-	}
-	
-	// Return the actual prefix and see if it matches the suggested prefix.
-	
-	*registeredPrefix = uriPos->second.c_str();
-	*prefixSize = uriPos->second.size();
-	
-	prefixMatches = ( uriPos->second == suggPrefix );
-	return prefixMatches;
-	
-}	// RegisterNamespace
-
-
-// -------------------------------------------------------------------------------------------------
-// GetNamespacePrefix
-// ------------------
-
-/* class-static */ bool
-XMPMeta::GetNamespacePrefix	( XMP_StringPtr   namespaceURI,
-							  XMP_StringPtr * namespacePrefix,
-							  XMP_StringLen * prefixSize )
-{
-	bool	found	= false;
-	
-	XMP_Assert ( *namespaceURI != 0 ); 	// ! Enforced by wrapper.
-	XMP_Assert ( (namespacePrefix != 0) && (prefixSize != 0) );	// ! Enforced by wrapper.
-
-	XMP_VarString    nsURI ( namespaceURI );
-	XMP_StringMapPos uriPos	= sNamespaceURIToPrefixMap->find ( nsURI );
-	
-	if ( uriPos != sNamespaceURIToPrefixMap->end() ) {
-		*namespacePrefix = uriPos->second.c_str();
-		*prefixSize = uriPos->second.size();
-		found = true;
-	}
-	
-	return found;
-	
-}	// GetNamespacePrefix
-
-
-// -------------------------------------------------------------------------------------------------
-// GetNamespaceURI
-// ---------------
-
-/* class-static */ bool
-XMPMeta::GetNamespaceURI ( XMP_StringPtr   namespacePrefix,
-						   XMP_StringPtr * namespaceURI,
-						   XMP_StringLen * uriSize )
-{
-	bool	found	= false;
-	
-	XMP_Assert ( *namespacePrefix != 0 ); 	// ! Enforced by wrapper.
-	XMP_Assert ( (namespacePrefix != 0) && (namespaceURI != 0) );	// ! Enforced by wrapper.
-
-	XMP_VarString nsPrefix ( namespacePrefix );
-	if ( nsPrefix[nsPrefix.size()-1] != ':' ) nsPrefix += ':';
-	
-	XMP_StringMapPos prefixPos = sNamespacePrefixToURIMap->find ( nsPrefix );
-	
-	if ( prefixPos != sNamespacePrefixToURIMap->end() ) {
-		*namespaceURI = prefixPos->second.c_str();
-		*uriSize = prefixPos->second.size();
-		found = true;
-	}
-	
-	return found;
-	
-}	// GetNamespaceURI
-
-
-// -------------------------------------------------------------------------------------------------
-// DeleteNamespace
-// ---------------
-
-// *** Don't allow standard namespaces to be deleted.
-// *** We would be better off not having this. Instead, have local namespaces from parsing be
-// *** restricted to the object that introduced them.
-
-/* class-static */ void
-XMPMeta::DeleteNamespace ( XMP_StringPtr namespaceURI )
-{
-
-	XMP_StringMapPos uriPos = sNamespaceURIToPrefixMap->find ( namespaceURI );
-	if ( uriPos == sNamespaceURIToPrefixMap->end() ) return;
-
-	XMP_StringMapPos prefixPos = sNamespacePrefixToURIMap->find ( uriPos->second );
-	XMP_Assert ( prefixPos != sNamespacePrefixToURIMap->end() );
-	
-	sNamespaceURIToPrefixMap->erase ( uriPos );
-	sNamespacePrefixToURIMap->erase ( prefixPos );
-
-}	// DeleteNamespace
-
-
 // -------------------------------------------------------------------------------------------------
 // RegisterAlias
 // -------------
@@ -1189,12 +463,12 @@ XMPMeta::DeleteNamespace ( XMP_StringPtr namespaceURI )
 // ! The caller assumes all risk that new aliases do not invalidate existing XMPMeta objects. Any
 // ! conflicts will result in later references throwing bad XPath exceptions.
 
-/* class-static */ void
-XMPMeta::RegisterAlias ( XMP_StringPtr 	aliasNS,
-						 XMP_StringPtr	aliasProp,
-						 XMP_StringPtr	actualNS,
-						 XMP_StringPtr	actualProp,
-						 XMP_OptionBits arrayForm )
+static void
+RegisterAlias ( XMP_StringPtr  aliasNS,
+				XMP_StringPtr  aliasProp,
+				XMP_StringPtr  actualNS,
+				XMP_StringPtr  actualProp,
+				XMP_OptionBits arrayForm )
 {
 	XMP_ExpandedXPath	expAlias, expActual;
 	XMP_AliasMapPos		mapPos;
@@ -1303,147 +577,434 @@ XMPMeta::RegisterAlias ( XMP_StringPtr 	aliasNS,
 
 
 // -------------------------------------------------------------------------------------------------
-// ResolveAlias
-// ------------
-
-/* class-static */ bool
-XMPMeta::ResolveAlias ( XMP_StringPtr	 aliasNS,
-						XMP_StringPtr	 aliasProp,
-						XMP_StringPtr *	 actualNS,
-						XMP_StringLen *	 nsSize,
-						XMP_StringPtr *	 actualProp,
-						XMP_StringLen *	 propSize,
-						XMP_OptionBits * arrayForm )
-{
-	XMP_Assert ( (aliasNS != 0) && (aliasProp != 0) );	// Enforced by wrapper.
-	XMP_Assert ( (actualNS != 0) && (nsSize != 0) && (actualProp != 0) && (propSize != 0) && (arrayForm != 0) );	// Enforced by wrapper.
-	
-	// Expand the input path and look up the first component in the alias table. Return if not an alias.
-	
-	XMP_ExpandedXPath fullPath, minPath;
-	ExpandXPath ( aliasNS, aliasProp, &fullPath );
-	XMP_Assert ( fullPath.size() >= 2 );
-
-	minPath.push_back ( fullPath[kSchemaStep] );
-	minPath.push_back ( fullPath[kRootPropStep] );
-	XMP_AliasMapPos mapPos = sRegisteredAliasMap->find ( minPath[kRootPropStep].step );
-	if ( mapPos == sRegisteredAliasMap->end() ) return false;
-	
-	// Replace the alias portion of the full expanded path. Compose the output path string.
-	
-	const XMP_ExpandedXPath & actualPath = mapPos->second;
-	
-	fullPath[kSchemaStep] = actualPath[kSchemaStep];
-	fullPath[kRootPropStep] = actualPath[kRootPropStep];
-	if ( actualPath.size() > 2 ) {	// This is an alias to an array item.
-		XMP_ExpandedXPathPos insertPos = fullPath.begin() + kAliasIndexStep;
-		fullPath.insert ( insertPos, actualPath[kAliasIndexStep] );
-	}	
-	
-	*sOutputNS = fullPath[kSchemaStep].step;
-	*actualNS  = sOutputNS->c_str();
-	*nsSize    = sOutputNS->size();
-	
-	ComposeXPath ( fullPath, sOutputStr );
-	*actualProp = sOutputStr->c_str();
-	*propSize   = sOutputStr->size();
-
-	*arrayForm  = actualPath[kRootPropStep].options & kXMP_PropArrayFormMask;
-	
-	#if XMP_DebugBuild	// Test that the output string is valid and unchanged by round trip expand/compose.
-		XMP_ExpandedXPath rtPath;
-		ExpandXPath ( *actualNS, *actualProp, &rtPath );
-		std::string rtString;
-		ComposeXPath ( rtPath, &rtString );
-		XMP_Assert ( rtString == *sOutputStr );
-	#endif
-	
-	return true;
-	
-}	// ResolveAlias
-
-
-// -------------------------------------------------------------------------------------------------
-// DeleteAlias
-// -----------
-
-/* class-static */ void
-XMPMeta::DeleteAlias ( XMP_StringPtr aliasNS,
-					   XMP_StringPtr aliasProp )
-{
-
-	XMP_Assert ( (aliasNS != 0) && (aliasProp != 0) );	// Enforced by wrapper.
-	XMP_Throw ( "Unimplemented method XMPMeta::DeleteAlias", kXMPErr_Unimplemented );   // *** #error "write me"
-		void * p; p = &aliasNS; p = &aliasProp;	// Avoid unused param warnings.
-
-}	// DeleteAlias
-
-
-// -------------------------------------------------------------------------------------------------
 // RegisterStandardAliases
 // -----------------------
 
-/* class-static */ void
-XMPMeta::RegisterStandardAliases ( XMP_StringPtr schemaNS )
+static void
+RegisterStandardAliases()
 {
-	XMP_Assert ( schemaNS != 0 );	// Enforced by wrapper.
 
-	const bool doAll = (*schemaNS == 0);
-	
-	if ( doAll || XMP_LitMatch ( schemaNS, kXMP_NS_XMP ) ) {
-		// Aliases from XMP to DC.
-	    XMPMeta::RegisterAlias ( kXMP_NS_XMP, "Author",       kXMP_NS_DC, "creator", kXMP_PropArrayIsOrdered );
-	    XMPMeta::RegisterAlias ( kXMP_NS_XMP, "Authors",      kXMP_NS_DC, "creator", 0 );
-	    XMPMeta::RegisterAlias ( kXMP_NS_XMP, "Description",  kXMP_NS_DC, "description", 0 );
-	    XMPMeta::RegisterAlias ( kXMP_NS_XMP, "Format",       kXMP_NS_DC, "format", 0 );
-	    XMPMeta::RegisterAlias ( kXMP_NS_XMP, "Keywords",     kXMP_NS_DC, "subject", 0 );
-	    XMPMeta::RegisterAlias ( kXMP_NS_XMP, "Locale",       kXMP_NS_DC, "language", 0 );
-	    XMPMeta::RegisterAlias ( kXMP_NS_XMP, "Title",        kXMP_NS_DC, "title", 0 );
-	    XMPMeta::RegisterAlias ( kXMP_NS_XMP_Rights, "Copyright", kXMP_NS_DC, "rights", 0 );
-	}
+	// Aliases from XMP to DC.
+	RegisterAlias ( kXMP_NS_XMP, "Author",       kXMP_NS_DC, "creator", kXMP_PropArrayIsOrdered );
+	RegisterAlias ( kXMP_NS_XMP, "Authors",      kXMP_NS_DC, "creator", 0 );
+	RegisterAlias ( kXMP_NS_XMP, "Description",  kXMP_NS_DC, "description", 0 );
+	RegisterAlias ( kXMP_NS_XMP, "Format",       kXMP_NS_DC, "format", 0 );
+	RegisterAlias ( kXMP_NS_XMP, "Keywords",     kXMP_NS_DC, "subject", 0 );
+	RegisterAlias ( kXMP_NS_XMP, "Locale",       kXMP_NS_DC, "language", 0 );
+	RegisterAlias ( kXMP_NS_XMP, "Title",        kXMP_NS_DC, "title", 0 );
+	RegisterAlias ( kXMP_NS_XMP_Rights, "Copyright", kXMP_NS_DC, "rights", 0 );
 
-	if ( doAll || XMP_LitMatch ( schemaNS, kXMP_NS_PDF ) ) {
-		// Aliases from PDF to DC and XMP.
-	    XMPMeta::RegisterAlias ( kXMP_NS_PDF, "Author",       kXMP_NS_DC, "creator", kXMP_PropArrayIsOrdered );
-	    XMPMeta::RegisterAlias ( kXMP_NS_PDF, "BaseURL",      kXMP_NS_XMP, "BaseURL", 0 );
-	    XMPMeta::RegisterAlias ( kXMP_NS_PDF, "CreationDate", kXMP_NS_XMP, "CreateDate", 0 );
-	    XMPMeta::RegisterAlias ( kXMP_NS_PDF, "Creator",      kXMP_NS_XMP, "CreatorTool", 0 );
-	    XMPMeta::RegisterAlias ( kXMP_NS_PDF, "ModDate",      kXMP_NS_XMP, "ModifyDate", 0 );
-	    XMPMeta::RegisterAlias ( kXMP_NS_PDF, "Subject",      kXMP_NS_DC,  "description", kXMP_PropArrayIsAltText );
-	    XMPMeta::RegisterAlias ( kXMP_NS_PDF, "Title",        kXMP_NS_DC,  "title", kXMP_PropArrayIsAltText );
-    }
-    
-	if ( doAll || XMP_LitMatch ( schemaNS, kXMP_NS_Photoshop ) ) {
-	    // Aliases from PHOTOSHOP to DC and XMP.
-	    XMPMeta::RegisterAlias ( kXMP_NS_Photoshop, "Author",       kXMP_NS_DC, "creator", kXMP_PropArrayIsOrdered );
-	    XMPMeta::RegisterAlias ( kXMP_NS_Photoshop, "Caption",      kXMP_NS_DC, "description", kXMP_PropArrayIsAltText );
-	    XMPMeta::RegisterAlias ( kXMP_NS_Photoshop, "Copyright",    kXMP_NS_DC, "rights", kXMP_PropArrayIsAltText );
-	    XMPMeta::RegisterAlias ( kXMP_NS_Photoshop, "Keywords",     kXMP_NS_DC, "subject", 0 );
-	    XMPMeta::RegisterAlias ( kXMP_NS_Photoshop, "Marked",       kXMP_NS_XMP_Rights, "Marked", 0 );
-	    XMPMeta::RegisterAlias ( kXMP_NS_Photoshop, "Title",        kXMP_NS_DC, "title", kXMP_PropArrayIsAltText );
-	    XMPMeta::RegisterAlias ( kXMP_NS_Photoshop, "WebStatement", kXMP_NS_XMP_Rights, "WebStatement", 0 );
-    }
-	    
-	if ( doAll || XMP_LitMatch ( schemaNS, kXMP_NS_TIFF ) || XMP_LitMatch ( schemaNS, kXMP_NS_EXIF ) ) {
-	    // Aliases from TIFF and EXIF to DC and XMP.
-		XMPMeta::RegisterAlias ( kXMP_NS_TIFF, "Artist",           kXMP_NS_DC,  "creator", kXMP_PropArrayIsOrdered);
-	    XMPMeta::RegisterAlias ( kXMP_NS_TIFF, "Copyright",        kXMP_NS_DC,  "rights", 0 );
-	    XMPMeta::RegisterAlias ( kXMP_NS_TIFF, "DateTime",         kXMP_NS_XMP, "ModifyDate", 0 );
-	    XMPMeta::RegisterAlias ( kXMP_NS_TIFF, "ImageDescription", kXMP_NS_DC,  "description", 0 );
-	    XMPMeta::RegisterAlias ( kXMP_NS_TIFF, "Software",         kXMP_NS_XMP, "CreatorTool", 0 );
-    }
-    
-	if ( doAll || XMP_LitMatch ( schemaNS, kXMP_NS_PNG ) ) {	// ! From Acrobat ImageCapture:
-		XMPMeta::RegisterAlias ( kXMP_NS_PNG, "Author",           kXMP_NS_DC,  "creator", kXMP_PropArrayIsOrdered);
-		XMPMeta::RegisterAlias ( kXMP_NS_PNG, "Copyright",        kXMP_NS_DC,  "rights", kXMP_PropArrayIsAltText);
-		XMPMeta::RegisterAlias ( kXMP_NS_PNG, "CreationTime",     kXMP_NS_XMP, "CreateDate", 0 );
-		XMPMeta::RegisterAlias ( kXMP_NS_PNG, "Description",      kXMP_NS_DC,  "description", kXMP_PropArrayIsAltText);
-		XMPMeta::RegisterAlias ( kXMP_NS_PNG, "ModificationTime", kXMP_NS_XMP, "ModifyDate", 0 );
-		XMPMeta::RegisterAlias ( kXMP_NS_PNG, "Software",         kXMP_NS_XMP, "CreatorTool", 0 );
-		XMPMeta::RegisterAlias ( kXMP_NS_PNG, "Title",            kXMP_NS_DC,  "title", kXMP_PropArrayIsAltText);
-	}
+	// Aliases from PDF to DC and XMP.
+	RegisterAlias ( kXMP_NS_PDF, "Author",       kXMP_NS_DC, "creator", kXMP_PropArrayIsOrdered );
+	RegisterAlias ( kXMP_NS_PDF, "BaseURL",      kXMP_NS_XMP, "BaseURL", 0 );
+	RegisterAlias ( kXMP_NS_PDF, "CreationDate", kXMP_NS_XMP, "CreateDate", 0 );
+	RegisterAlias ( kXMP_NS_PDF, "Creator",      kXMP_NS_XMP, "CreatorTool", 0 );
+	RegisterAlias ( kXMP_NS_PDF, "ModDate",      kXMP_NS_XMP, "ModifyDate", 0 );
+	RegisterAlias ( kXMP_NS_PDF, "Subject",      kXMP_NS_DC,  "description", kXMP_PropArrayIsAltText );
+	RegisterAlias ( kXMP_NS_PDF, "Title",        kXMP_NS_DC,  "title", kXMP_PropArrayIsAltText );
+
+	// Aliases from Photoshop to DC and XMP.
+	RegisterAlias ( kXMP_NS_Photoshop, "Author",       kXMP_NS_DC, "creator", kXMP_PropArrayIsOrdered );
+	RegisterAlias ( kXMP_NS_Photoshop, "Caption",      kXMP_NS_DC, "description", kXMP_PropArrayIsAltText );
+	RegisterAlias ( kXMP_NS_Photoshop, "Copyright",    kXMP_NS_DC, "rights", kXMP_PropArrayIsAltText );
+	RegisterAlias ( kXMP_NS_Photoshop, "Keywords",     kXMP_NS_DC, "subject", 0 );
+	RegisterAlias ( kXMP_NS_Photoshop, "Marked",       kXMP_NS_XMP_Rights, "Marked", 0 );
+	RegisterAlias ( kXMP_NS_Photoshop, "Title",        kXMP_NS_DC, "title", kXMP_PropArrayIsAltText );
+	RegisterAlias ( kXMP_NS_Photoshop, "WebStatement", kXMP_NS_XMP_Rights, "WebStatement", 0 );
+
+	// Aliases from TIFF and EXIF to DC and XMP.
+	RegisterAlias ( kXMP_NS_TIFF, "Artist",            kXMP_NS_DC,  "creator", kXMP_PropArrayIsOrdered);
+	RegisterAlias ( kXMP_NS_TIFF, "Copyright",         kXMP_NS_DC,  "rights", 0 );
+	RegisterAlias ( kXMP_NS_TIFF, "DateTime",          kXMP_NS_XMP, "ModifyDate", 0 );
+	RegisterAlias ( kXMP_NS_EXIF, "DateTimeDigitized", kXMP_NS_XMP, "CreateDate", 0 );
+	RegisterAlias ( kXMP_NS_TIFF, "ImageDescription",  kXMP_NS_DC,  "description", 0 );
+	RegisterAlias ( kXMP_NS_TIFF, "Software",          kXMP_NS_XMP, "CreatorTool", 0 );
+
+	// Aliases from PNG to DC and XMP.
+	RegisterAlias ( kXMP_NS_PNG, "Author",           kXMP_NS_DC,  "creator", kXMP_PropArrayIsOrdered);
+	RegisterAlias ( kXMP_NS_PNG, "Copyright",        kXMP_NS_DC,  "rights", kXMP_PropArrayIsAltText);
+	RegisterAlias ( kXMP_NS_PNG, "CreationTime",     kXMP_NS_XMP, "CreateDate", 0 );
+	RegisterAlias ( kXMP_NS_PNG, "Description",      kXMP_NS_DC,  "description", kXMP_PropArrayIsAltText);
+	RegisterAlias ( kXMP_NS_PNG, "ModificationTime", kXMP_NS_XMP, "ModifyDate", 0 );
+	RegisterAlias ( kXMP_NS_PNG, "Software",         kXMP_NS_XMP, "CreatorTool", 0 );
+	RegisterAlias ( kXMP_NS_PNG, "Title",            kXMP_NS_DC,  "title", kXMP_PropArrayIsAltText);
 
 }	// RegisterStandardAliases
+
+
+// =================================================================================================
+// Constructors
+// ============
+
+
+XMPMeta::XMPMeta() : tree(XMP_Node(0,"",0)), clientRefs(0), prevTkVer(0), xmlParser(0)
+{
+	// Nothing more to do, clientRefs is incremented in wrapper.
+	#if XMP_TraceCTorDTor
+		printf ( "Default construct XMPMeta @ %.8X\n", this );
+	#endif
+}	// XMPMeta
+
+// -------------------------------------------------------------------------------------------------
+
+XMPMeta::~XMPMeta() RELEASE_NO_THROW
+{
+	#if XMP_TraceCTorDTor
+		printf ( "Destruct XMPMeta @ %.8X\n", this );
+	#endif
+
+	XMP_Assert ( this->clientRefs <= 0 );
+	if ( xmlParser != 0 ) delete ( xmlParser );
+	xmlParser = 0;
+
+}	// ~XMPMeta
+
+
+// =================================================================================================
+// Class Static Functions
+// ======================
+//
+//
+// =================================================================================================
+
+// -------------------------------------------------------------------------------------------------
+// GetVersionInfo
+// --------------
+
+/* class-static */ void
+XMPMeta::GetVersionInfo ( XMP_VersionInfo * info )
+{
+
+	memset ( info, 0, sizeof(*info) );	// AUDIT: Safe, using sizeof the destination.
+	XMP_Assert ( sizeof(*info) == sizeof(XMP_VersionInfo) );
+	
+	info->major   = XMP_API_VERSION_MAJOR;
+	info->minor   = XMP_API_VERSION_MINOR;
+	info->micro   = XMP_API_VERSION_MICRO;
+	info->isDebug = kXMPCore_DebugFlag;
+	info->flags   = 0;	// ! None defined yet.
+	info->message = kXMPCore_VersionMessage;
+	
+}	// GetVersionInfo
+
+// -------------------------------------------------------------------------------------------------
+// Initialize
+// ----------
+
+#if XMP_TraceCoreCalls
+	FILE * xmpCoreLog = stderr;
+#endif
+
+#if UseGlobalLibraryLock
+	XMP_BasicMutex sLibraryLock;
+#endif
+
+/* class-static */ bool
+XMPMeta::Initialize()
+{
+	// Allocate and initialize static objects.
+	
+	++sXMP_InitCount;
+	if ( sXMP_InitCount > 1 ) return true;
+	
+	#if XMP_TraceCoreCallsToFile
+		xmpCoreLog = fopen ( "XMPCoreLog.txt", "w" );
+		if ( xmpCoreLog == 0 ) xmpCoreLog = stderr;
+	#endif
+	
+	#if UseGlobalLibraryLock
+		InitializeBasicMutex ( sLibraryLock );
+	#endif
+
+	if ( ! Initialize_LibUtils() ) return false;
+
+	xdefaultName = new XMP_VarString ( "x-default" );
+	
+	sRegisteredNamespaces = new XMP_NamespaceTable;
+	sRegisteredAliasMap   = new XMP_AliasMap;
+	
+	InitializeUnicodeConversions();
+	
+	// Register standard namespaces and aliases.
+	
+	XMP_StringPtr	voidPtr;
+	XMP_StringLen	voidLen;
+	
+	(void) RegisterNamespace ( kXMP_NS_XML, "xml", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_RDF, "rdf", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_DC, "dc", &voidPtr, &voidLen );
+
+	(void) RegisterNamespace ( kXMP_NS_XMP, "xmp", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_PDF, "pdf", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_Photoshop, "photoshop", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_PSAlbum, "album", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_EXIF, "exif", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_EXIF_Aux, "aux", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_TIFF, "tiff", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_PNG, "png", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_JPEG, "jpeg", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_JP2K, "jp2k", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_CameraRaw, "crs", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_ASF, "asf", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_WAV, "wav", &voidPtr, &voidLen );
+
+	(void) RegisterNamespace ( kXMP_NS_AdobeStockPhoto, "bmsp", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_CreatorAtom, "creatorAtom", &voidPtr, &voidLen );
+
+	(void) RegisterNamespace ( kXMP_NS_XMP_Rights, "xmpRights", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_XMP_MM, "xmpMM", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_XMP_BJ, "xmpBJ", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_XMP_Note, "xmpNote", &voidPtr, &voidLen );
+
+	(void) RegisterNamespace ( kXMP_NS_DM, "xmpDM", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_Script, "xmpScript", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_BWF, "bext", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_XMP_Text, "xmpT", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_XMP_PagedFile, "xmpTPg", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_XMP_Graphics, "xmpG", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_XMP_Image, "xmpGImg", &voidPtr, &voidLen );
+
+	(void) RegisterNamespace ( kXMP_NS_XMP_Font, "stFnt", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_XMP_Dimensions, "stDim", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_XMP_ResourceEvent, "stEvt", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_XMP_ResourceRef, "stRef", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_XMP_ST_Version, "stVer", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_XMP_ST_Job, "stJob", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_XMP_ManifestItem, "stMfs", &voidPtr, &voidLen );
+
+	(void) RegisterNamespace ( kXMP_NS_XMP_IdentifierQual, "xmpidq", &voidPtr, &voidLen );
+
+	(void) RegisterNamespace ( kXMP_NS_IPTCCore, "Iptc4xmpCore", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_DICOM, "DICOM", &voidPtr, &voidLen );
+
+	(void) RegisterNamespace ( kXMP_NS_PDFA_Schema, "pdfaSchema", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_PDFA_Property, "pdfaProperty", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_PDFA_Type, "pdfaType", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_PDFA_Field, "pdfaField", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_PDFA_ID, "pdfaid", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_PDFA_Extension, "pdfaExtension", &voidPtr, &voidLen );
+
+	(void) RegisterNamespace ( kXMP_NS_PDFX, "pdfx", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( kXMP_NS_PDFX_ID, "pdfxid", &voidPtr, &voidLen );
+	
+	(void) RegisterNamespace ( "adobe:ns:meta/", "x", &voidPtr, &voidLen );
+	(void) RegisterNamespace ( "http://ns.adobe.com/iX/1.0/", "iX", &voidPtr, &voidLen );
+	
+	RegisterStandardAliases();
+	
+	// Initialize the other core classes.
+	
+	if ( ! XMPIterator::Initialize() ) XMP_Throw ( "Failure from XMPIterator::Initialize", kXMPErr_InternalFailure );
+	if ( ! XMPUtils::Initialize() ) XMP_Throw ( "Failure from XMPUtils::Initialize", kXMPErr_InternalFailure );
+	// Do miscelaneous semantic checks of types and arithmetic.
+
+	XMP_Assert ( sizeof(XMP_Int8) == 1 );
+	XMP_Assert ( sizeof(XMP_Int16) == 2 );
+	XMP_Assert ( sizeof(XMP_Int32) == 4 );
+	XMP_Assert ( sizeof(XMP_Int64) == 8 );
+	XMP_Assert ( sizeof(XMP_Uns8) == 1 );
+	XMP_Assert ( sizeof(XMP_Uns16) == 2 );
+	XMP_Assert ( sizeof(XMP_Uns32) == 4 );
+	XMP_Assert ( sizeof(XMP_Uns64) == 8 );
+	
+	XMP_Assert ( sizeof(XMP_OptionBits) == 4 );	// Check that option masking work on all 32 bits.
+	XMP_OptionBits flag = (XMP_OptionBits) (~0UL);
+	XMP_Assert ( flag == (XMP_OptionBits)(-1L) );
+	XMP_Assert ( (flag ^ kXMP_PropHasLang) == 0xFFFFFFBFUL );
+	XMP_Assert ( (flag & ~kXMP_PropHasLang) == 0xFFFFFFBFUL );
+	
+	XMP_OptionBits opt1 = 0;	// Check the general option bit macros.
+	XMP_OptionBits opt2 = (XMP_OptionBits)~0UL;
+	XMP_SetOption ( opt1, kXMP_PropValueIsArray );
+	XMP_ClearOption ( opt2, kXMP_PropValueIsArray );
+	XMP_Assert ( opt1 == ~opt2 );
+	XMP_Assert ( XMP_TestOption ( opt1, kXMP_PropValueIsArray ) );
+	XMP_Assert ( ! XMP_TestOption ( opt2, kXMP_PropValueIsArray ) );
+	
+	XMP_Assert ( XMP_PropIsSimple ( ~kXMP_PropCompositeMask ) );	// Check the special option bit macros.
+	XMP_Assert ( ! XMP_PropIsSimple ( kXMP_PropValueIsStruct ) );
+	XMP_Assert ( ! XMP_PropIsSimple ( kXMP_PropValueIsArray ) );
+
+	XMP_Assert ( XMP_PropIsStruct ( kXMP_PropValueIsStruct ) );
+	XMP_Assert ( XMP_PropIsArray  ( kXMP_PropValueIsArray ) );
+	XMP_Assert ( ! XMP_PropIsStruct ( ~kXMP_PropValueIsStruct ) );
+	XMP_Assert ( ! XMP_PropIsArray  ( ~kXMP_PropValueIsArray ) );
+	
+	XMP_Assert ( XMP_ArrayIsUnordered ( ~kXMP_PropArrayIsOrdered ) );
+	XMP_Assert ( XMP_ArrayIsOrdered   ( kXMP_PropArrayIsOrdered ) );
+	XMP_Assert ( XMP_ArrayIsAlternate ( kXMP_PropArrayIsAlternate ) );
+	XMP_Assert ( XMP_ArrayIsAltText   ( kXMP_PropArrayIsAltText ) );
+	XMP_Assert ( ! XMP_ArrayIsUnordered ( kXMP_PropArrayIsOrdered ) );
+	XMP_Assert ( ! XMP_ArrayIsOrdered   ( ~kXMP_PropArrayIsOrdered ) );
+	XMP_Assert ( ! XMP_ArrayIsAlternate ( ~kXMP_PropArrayIsAlternate ) );
+	XMP_Assert ( ! XMP_ArrayIsAltText   ( ~kXMP_PropArrayIsAltText ) );
+	
+	XMP_Assert ( XMP_PropHasQualifiers ( kXMP_PropHasQualifiers ) );
+	XMP_Assert ( XMP_PropIsQualifier   ( kXMP_PropIsQualifier ) );
+	XMP_Assert ( XMP_PropHasLang       ( kXMP_PropHasLang ) );
+	XMP_Assert ( ! XMP_PropHasQualifiers ( ~kXMP_PropHasQualifiers ) );
+	XMP_Assert ( ! XMP_PropIsQualifier   ( ~kXMP_PropIsQualifier ) );
+	XMP_Assert ( ! XMP_PropHasLang       ( ~kXMP_PropHasLang ) );
+	
+	XMP_Assert ( XMP_NodeIsSchema ( kXMP_SchemaNode ) );
+	XMP_Assert ( XMP_PropIsAlias  ( kXMP_PropIsAlias ) );
+	XMP_Assert ( ! XMP_NodeIsSchema ( ~kXMP_SchemaNode ) );
+	XMP_Assert ( ! XMP_PropIsAlias  ( ~kXMP_PropIsAlias ) );
+	
+	#if 0	// Generally off, enable to hand check generated code.
+		extern XMP_OptionBits opt3, opt4;
+		if ( XMP_TestOption ( opt3, kXMP_PropValueIsArray ) ) opt4 = opt3;
+		if ( ! XMP_TestOption ( opt3, kXMP_PropValueIsStruct ) ) opt4 = opt3;
+		static bool ok1 = XMP_TestOption ( opt4, kXMP_PropValueIsArray );
+		static bool ok2 = ! XMP_TestOption ( opt4, kXMP_PropValueIsStruct );
+	#endif
+	
+	// Make sure the embedded info strings are referenced and kept.
+	if ( (kXMPCore_EmbeddedVersion[0] == 0) || (kXMPCore_EmbeddedCopyright[0] == 0) ) return false;
+	return true;
+
+}	// Initialize
+
+
+// -------------------------------------------------------------------------------------------------
+// Terminate
+// ---------
+
+/* class-static */ void
+XMPMeta::Terminate() RELEASE_NO_THROW
+{
+	--sXMP_InitCount;
+	if ( sXMP_InitCount != 0 ) return;	// Not ready to terminate, or already terminated.
+
+	XMPIterator::Terminate();
+	XMPUtils::Terminate();
+	EliminateGlobal ( sRegisteredNamespaces );
+	EliminateGlobal ( sRegisteredAliasMap );
+    
+    EliminateGlobal ( xdefaultName );
+
+	Terminate_LibUtils();
+
+	#if UseGlobalLibraryLock
+		TerminateBasicMutex ( sLibraryLock );
+	#endif
+	
+	#if XMP_TraceCoreCallsToFile
+		if ( xmpCoreLog != stderr ) fclose ( xmpCoreLog );
+		xmpCoreLog = stderr;
+	#endif
+	
+}	// Terminate
+
+
+// -------------------------------------------------------------------------------------------------
+// DumpNamespaces
+// --------------
+//
+// Dump the prefix to URI map (easier to read) and verify that both are consistent and legit.
+
+// *** Should put checks in a separate routine for regular calling in debug builds.
+
+/* class-static */ XMP_Status
+XMPMeta::DumpNamespaces ( XMP_TextOutputProc outProc,
+                          void *             refCon )
+{
+
+	sRegisteredNamespaces->Dump ( outProc, refCon );
+	return 0;
+
+}	// DumpNamespaces
+
+
+// -------------------------------------------------------------------------------------------------
+// GetGlobalOptions
+// ----------------
+
+/* class-static */ XMP_OptionBits
+XMPMeta::GetGlobalOptions()
+{
+	XMP_OptionBits	options = 0;
+	
+	return options;
+	
+}	// GetGlobalOptions
+
+
+// -------------------------------------------------------------------------------------------------
+// SetGlobalOptions
+// ----------------
+
+/* class-static */ void
+XMPMeta::SetGlobalOptions ( XMP_OptionBits options )
+{
+
+	XMP_Throw ( "Unimplemented method XMPMeta::SetGlobalOptions", kXMPErr_Unimplemented );
+		void * p; p = &options;	// Avoid unused param warnings.
+
+}	// SetGlobalOptions
+
+
+// -------------------------------------------------------------------------------------------------
+// RegisterNamespace
+// -----------------
+
+/* class-static */ bool
+XMPMeta::RegisterNamespace ( XMP_StringPtr	 namespaceURI,
+							 XMP_StringPtr	 suggestedPrefix,
+							 XMP_StringPtr * registeredPrefix,
+							 XMP_StringLen * prefixSize )
+{
+
+	return sRegisteredNamespaces->Define ( namespaceURI, suggestedPrefix, registeredPrefix, prefixSize );
+
+}	// RegisterNamespace
+
+
+// -------------------------------------------------------------------------------------------------
+// GetNamespacePrefix
+// ------------------
+
+/* class-static */ bool
+XMPMeta::GetNamespacePrefix	( XMP_StringPtr   namespaceURI,
+							  XMP_StringPtr * namespacePrefix,
+							  XMP_StringLen * prefixSize )
+{
+
+	return sRegisteredNamespaces->GetPrefix ( namespaceURI, namespacePrefix, prefixSize );
+
+}	// GetNamespacePrefix
+
+
+// -------------------------------------------------------------------------------------------------
+// GetNamespaceURI
+// ---------------
+
+/* class-static */ bool
+XMPMeta::GetNamespaceURI ( XMP_StringPtr   namespacePrefix,
+						   XMP_StringPtr * namespaceURI,
+						   XMP_StringLen * uriSize )
+{
+
+	return sRegisteredNamespaces->GetURI ( namespacePrefix, namespaceURI, uriSize );
+
+}	// GetNamespaceURI
+
+
+// -------------------------------------------------------------------------------------------------
+// DeleteNamespace
+// ---------------
+
+// *** Don't allow standard namespaces to be deleted.
+// *** We would be better off not having this. Instead, have local namespaces from parsing be
+// *** restricted to the object that introduced them.
+
+/* class-static */ void
+XMPMeta::DeleteNamespace ( XMP_StringPtr namespaceURI )
+{
+
+	XMP_Throw ( "Unimplemented method XMPMeta::DeleteNamespace", kXMPErr_Unimplemented );
+
+}	// DeleteNamespace
 
 
 // =================================================================================================
@@ -1458,18 +1019,16 @@ XMPMeta::RegisterStandardAliases ( XMP_StringPtr schemaNS )
 // DumpObject
 // ----------
 
-XMP_Status
+void
 XMPMeta::DumpObject ( XMP_TextOutputProc outProc,
                       void *             refCon ) const
 {
 	XMP_Assert ( outProc != 0 );	// ! Enforced by wrapper.
-	XMP_Status status = 0;
 	
 	OutProcLiteral ( "Dumping XMPMeta object \"" );
 	DumpClearString ( tree.name, outProc, refCon );
 	OutProcNChars ( "\"  ", 3 );
-	status = DumpNodeOptions ( tree.options, outProc, refCon );
-	if ( status != 0 ) goto EXIT;
+	DumpNodeOptions ( tree.options, outProc, refCon );
 	#if 0	// *** XMP_DebugBuild
 		if ( (tree._namePtr != tree.name.c_str()) ||
 			 (tree._valuePtr != tree.value.c_str()) ) OutProcLiteral ( "  ** bad debug string **" );
@@ -1487,7 +1046,7 @@ XMPMeta::DumpObject ( XMP_TextOutputProc outProc,
 		OutProcLiteral ( "** bad root qualifiers **" );
 		OutProcNewline();
 		for ( size_t qualNum = 0, qualLim = tree.qualifiers.size(); qualNum < qualLim; ++qualNum ) {
-			status = DumpPropertyTree ( tree.qualifiers[qualNum], 3, 0, outProc, refCon );
+			DumpPropertyTree ( tree.qualifiers[qualNum], 3, 0, outProc, refCon );
 		}
 	}
 
@@ -1503,8 +1062,7 @@ XMPMeta::DumpObject ( XMP_TextOutputProc outProc,
 			OutProcNChars ( "  ", 2 );
 			DumpClearString ( currSchema->name, outProc, refCon );
 			OutProcNChars ( "  ", 2 );
-			status = DumpNodeOptions ( currSchema->options, outProc, refCon );
-			if ( status != 0 ) goto EXIT;
+			DumpNodeOptions ( currSchema->options, outProc, refCon );
 			#if 0	// *** XMP_DebugBuild
 				if ( (currSchema->_namePtr != currSchema->name.c_str()) ||
 					 (currSchema->_valuePtr != currSchema->value.c_str()) ) OutProcLiteral ( "  ** bad debug string **" );
@@ -1531,9 +1089,6 @@ XMPMeta::DumpObject ( XMP_TextOutputProc outProc,
 		}
 
 	}
-	
-EXIT:
-	return status;
 
 }	// DumpObject
 

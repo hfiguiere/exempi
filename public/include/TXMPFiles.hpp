@@ -7,7 +7,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -95,9 +95,7 @@ public:
     /// @brief Initializes the XMPFiles library; must be called before creating an \c SXMPFiles object.
     ///
     /// This overload of TXMPFiles::Initialize() accepts option bits to customize the initialization
-    /// actions. At this time only one option is defined, \c kXMPFiles_NoQuickTimeInit. This option
-    /// prevents calling the QuickTime initialization on Windows, which can be slow. The MOV file
-    /// handler on Windows uses Apple's QuickTime SDK for the actual file I/O.
+    /// actions. At this time no option is defined.
     ///
     /// The main action is to activate the available smart file handlers. Must be called before
     /// using any methods except \c GetVersionInfo().
@@ -158,12 +156,10 @@ public:
     ///   \li \c #kXMPFiles_OpenForRead
     ///   \li \c #kXMPFiles_OpenForUpdate
     ///   \li \c #kXMPFiles_OpenOnlyXMP
-    ///   \li \c #kXMPFiles_OpenCacheTNail
     ///   \li \c #kXMPFiles_OpenStrictly
     ///   \li \c #kXMPFiles_OpenUseSmartHandler
     ///   \li \c #kXMPFiles_OpenUsePacketScanning
     ///   \li \c #kXMPFiles_OpenLimitedScanning
-    ///   \li \c #kXMPFiles_OpenInBackground
     ///
     /// @return The new \c TXMPFiles object.
 
@@ -259,7 +255,6 @@ public:
     ///   \li \c #kXMPFiles_CanReconcile - Supports reconciliation between XMP and other forms.
     ///   \li \c #kXMPFiles_AllowsOnlyXMP - Allows access to just the XMP, ignoring other forms.
     ///   This is only meaningful if \c #kXMPFiles_CanReconcile is set.
-    ///   \li \c #kXMPFiles_ReturnsTNail - File handler returns native thumbnail information.
     ///   \li \c #kXMPFiles_ReturnsRawPacket - File handler returns raw XMP packet information and string.
     ///
     /// Even if \c #kXMPFiles_ReturnsRawPacket is set, the returned packet information might have an
@@ -286,31 +281,32 @@ public:
     // ---------------------------------------------------------------------------------------------
     /// @brief \c CheckFileFormat() tries to determine the format of a file.
     ///
-    /// \c CheckFileFormat tries to determine the format of a file, returning an XMP_FileFormat value.
-    /// It uses the same logic as \c OpenFile will use to select a smart handler.
+    /// Tries to determine the format of a file, returning an \c #XMP_FileFormat value. Uses the
+    /// same logic as \c OpenFile() to select a smart handler.
     ///
     /// @param filePath The path for the file, appropriate for the local operating system. Passed as
     /// a nul-terminated UTF-8 string. The path is the same as would be passed to \c OpenFile.
     ///
-    /// @return The file's format if a smart handler would be selected, otherwise \c kXMP_UnknownFile.
+    /// @return The file's format if a smart handler would be selected by \c OpenFile(), otherwise
+    /// \c #kXMP_UnknownFile.
 
     static XMP_FileFormat CheckFileFormat ( XMP_StringPtr filePath );
 
     // ---------------------------------------------------------------------------------------------
     /// @brief \c CheckPackageFormat() tries to determine the format of a "package" folder.
     ///
-    /// \c CheckPackageFormat tries to determine the format of a "package" given the name of the top
-    /// level folder, returning an XMP_FileFormat value. Examples of recognized packages include the
-    /// video formats P2, XDCAM, or Sony HDV. These packages contain collections of "clips", stored
-    /// as multiple files in specific subfolders.
+    /// Tries to determine the format of a package, given the name of the top-level folder. Returns
+    /// an \c #XMP_FileFormat value. Examples of recognized packages include the video formats P2,
+    /// XDCAM, or Sony HDV. These packages contain collections of "clips", stored as multiple files
+    /// in specific subfolders.
     ///
-    /// @param folderPath The path for the top level folder, appropriate for the local operating
-    /// system. Passed as a nul-terminated UTF-8 string. The path is not the same as would be passed
-    /// to \c OpenFile. For example the path passed to \c CheckPackageFormat might be ".../MyMovie",
-    /// while the path passed to \c OpenFile would be ".../MyMovie/SomeClip".
+    /// @param folderPath The path for the top-level folder, appropriate for the local operating
+    /// system. Passed as a nul-terminated UTF-8 string. This is not the same path you would pass to
+    /// \c OpenFile(). For example, the top-level path for a package might be ".../MyMovie", while
+    /// the path to a file you wish to open would be ".../MyMovie/SomeClip".
     ///
-    /// @return The package's format if a smart handler would be selected, otherwise \c kXMP_UnknownFile.
-    
+    /// @return The package's format if it can be determined, otherwise \c #kXMP_UnknownFile.
+
     static XMP_FileFormat CheckPackageFormat ( XMP_StringPtr folderPath );
 
     // ---------------------------------------------------------------------------------------------
@@ -319,8 +315,7 @@ public:
     /// Opens a file for the requested forms of metadata access. Opening the file at a minimum
     /// causes the raw XMP packet to be read from the file. If the file handler supports legacy
     /// metadata reconciliation then legacy metadata is also read, unless \c #kXMPFiles_OpenOnlyXMP
-    /// is passed. If the file handler supports native thumbnails and \c #kXMPFiles_OpenCacheTNail
-    /// is passed, the native thumbnail is cached.
+    /// is passed.
     ///
     /// If the file is opened for read-only access (passing \c #kXMPFiles_OpenForRead), the disk
     /// file is closed immediately after reading the data from it; the \c XMPFiles object, however,
@@ -356,7 +351,6 @@ public:
     ///   \li \c #kXMPFiles_OpenForRead - Open for read-only access.
     ///   \li \c #kXMPFiles_OpenForUpdate - Open for reading and writing.
     ///   \li \c #kXMPFiles_OpenOnlyXMP - Only the XMP is wanted, no reconciliation.
-    ///   \li \c #kXMPFiles_OpenCacheTNail - Cache thumbnail if possible, GetThumbnail will be called.
     ///   \li \c #kXMPFiles_OpenStrictly - Be strict about locating XMP and reconciling with other
     ///   forms. By default, a best effort is made to locate the	correct XMP and to reconcile XMP
     ///   with other forms (if reconciliation is done). This option forces stricter rules, resulting
@@ -488,40 +482,6 @@ public:
     			  XMP_PacketInfo * packetInfo = 0 );
 
     // ---------------------------------------------------------------------------------------------
-    /// @brief \c GetThumbnail() retrieves the native thumbnail from an open file.
-    ///
-    /// Use this function to obtain native thumbnail information, if the associated file handler
-    /// supports that and the thumbnail was cached by the call to \c OpenFile(); that is, the
-    /// \c #kXMPFiles_OpenCacheTNail option flag was set. The return value reports whether a thumbnail
-    /// is present in the file.
-    ///
-	/// The returned thumbnail information can be incomplete, depending on the file format, the file
-	/// handler's capabilities, and the specific file content.
-    ///
-    ///   \li The \c #XMP_ThumbnailInfo::fullWidth, \c fullHeight, and \c fullOrientation fields are
-    ///   only meaningful for image files. They are not meaningful for multi-page files such as PDF
-    ///   or InDesign, for dynamic audio or video files, and so on. The field values are zero if not
-    ///   meaningful or not determined.
-    ///   \li The \c #XMP_ThumbnailInfo::tnailImage and \c #XMP_ThumbnailInfo::tnailSize fields
-    ///   might be zero even if a recognized thumbnail is	present.
-    ///
-    /// Being recognized means only that the handler has determined that the file does contain a
-    /// native thumbnail. The thumbnail data might be of a format that the file handler cannot
-    /// return as a single contiguous block of thumbnail data. For example, for a TIFF uncompressed
-    /// thumbnail, the handler might not have logic to gather the various disjoint pieces of the
-    /// thumbnail from the overall TIFF stream.
-    ///
-    /// @param tnailInfo [out] Optional. A buffer in which to return information about a recognized
-    /// native thumbnail, and related information about the primary image if appropriate. Can be
-    /// null if the information is not desired.
-    ///
-    /// @return True if a recognized native thumbnail is present and the thumbnail was cached by the
-    /// call to \c OpenFile(); that is, the \c #kXMPFiles_OpenCacheTNail option flag was set. Can
-    /// return true even if the function cannot retrieve the actual thumbnail image.
-
-    bool GetThumbnail ( XMP_ThumbnailInfo * tnailInfo );
-
-    // ---------------------------------------------------------------------------------------------
     /// @brief \c PutXMP() updates the XMP metadata in this object without writing out the file.
     ///
     /// This function supplies new XMP for the file. However, the disk file is not written until the
@@ -626,7 +586,10 @@ public:
 	// =============================================================================================
 
 private:
+
 	XMPFilesRef xmpFilesRef;
+
+	static void SetClientString ( void * clientPtr, XMP_StringPtr valuePtr, XMP_StringLen valueLen );
 
 };	// class TXMPFiles
 

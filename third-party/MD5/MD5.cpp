@@ -52,11 +52,11 @@ using namespace std;
 #define S43 15
 #define S44 21
 
-static void MD5Transform (unsigned long [4], unsigned char [64]);
-static void Encode (unsigned char *, unsigned long *, unsigned int);
-static void Decode (unsigned long *, unsigned char *, unsigned int);
+static void MD5Transform (XMP_Uns32 [4], XMP_Uns8 [64]);
+static void Encode (XMP_Uns8 *, XMP_Uns32 *, XMP_Uns32);
+static void Decode (XMP_Uns32 *, XMP_Uns8 *, XMP_Uns32);
 
-static unsigned char PADDING[64] =
+static XMP_Uns8 PADDING[64] =
 	{
      0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -84,22 +84,22 @@ Rotation is separate from addition to prevent recomputation.
       */
 
 #define FF(a, b, c, d, x, s, ac) { \
-     (a) += F ((b), (c), (d)) + (x) + (unsigned long)(ac); \
+     (a) += F ((b), (c), (d)) + (x) + (XMP_Uns32)(ac); \
      (a) = ROTATE_LEFT ((a), (s)); \
      (a) += (b); \
      }
 #define GG(a, b, c, d, x, s, ac) { \
-     (a) += G ((b), (c), (d)) + (x) + (unsigned long)(ac); \
+     (a) += G ((b), (c), (d)) + (x) + (XMP_Uns32)(ac); \
      (a) = ROTATE_LEFT ((a), (s)); \
      (a) += (b); \
      }
 #define HH(a, b, c, d, x, s, ac) { \
-     (a) += H ((b), (c), (d)) + (x) + (unsigned long)(ac); \
+     (a) += H ((b), (c), (d)) + (x) + (XMP_Uns32)(ac); \
      (a) = ROTATE_LEFT ((a), (s)); \
      (a) += (b); \
      }
 #define II(a, b, c, d, x, s, ac) { \
-     (a) += I ((b), (c), (d)) + (x) + (unsigned long)(ac); \
+     (a) += I ((b), (c), (d)) + (x) + (XMP_Uns32)(ac); \
      (a) = ROTATE_LEFT ((a), (s)); \
      (a) += (b); \
      }
@@ -127,21 +127,21 @@ void MD5Init (MD5_CTX * context)
       */
 
 void MD5Update (	MD5_CTX *context, /* context */
-					unsigned char *input, /* input block */
-					unsigned int inputLen) /* length of input block */
+					XMP_Uns8 *input, /* input block */
+					XMP_Uns32 inputLen) /* length of input block */
 {
 	using namespace std;
 
-     unsigned int i, index, partLen;
+     XMP_Uns32 i, index, partLen;
 
        /* Compute number of bytes mod 64 */
-       index = (unsigned int)((context->count[0] >> 3) & 0x3F);
+       index = (XMP_Uns32)((context->count[0] >> 3) & 0x3F);
 
        /* Update number of bits */
-       if ((context->count[0] += ((unsigned long)inputLen << 3))
-        < ((unsigned long)inputLen << 3))
+       if ((context->count[0] += ((XMP_Uns32)inputLen << 3))
+        < ((XMP_Uns32)inputLen << 3))
       context->count[1]++;
-       context->count[1] += ((unsigned long)inputLen >> 29);
+       context->count[1] += ((XMP_Uns32)inputLen >> 29);
 
      partLen = 64 - index;
 
@@ -170,11 +170,11 @@ void MD5Update (	MD5_CTX *context, /* context */
 
       */
 
-void MD5Final (	unsigned char digest[16], /* message digest */
+void MD5Final (	XMP_Uns8 digest[16], /* message digest */
 				MD5_CTX *context /* context */)
 {
-     unsigned char bits[8];
-     unsigned int index, padLen;
+     XMP_Uns8 bits[8];
+     XMP_Uns32 index, padLen;
 
        /* Save number of bits */
        Encode (bits, context->count, 8);
@@ -182,7 +182,7 @@ void MD5Final (	unsigned char digest[16], /* message digest */
        /* Pad out to 56 mod 64.
 
 */
-     index = (unsigned int)((context->count[0] >> 3) & 0x3f);
+     index = (XMP_Uns32)((context->count[0] >> 3) & 0x3f);
      padLen = (index < 56) ? (56 - index) : (120 - index);
      MD5Update (context, PADDING, padLen);
 
@@ -202,10 +202,10 @@ void MD5Final (	unsigned char digest[16], /* message digest */
 
       */
 
-static void MD5Transform (	unsigned long state[4],
-							unsigned char block[64])
+static void MD5Transform (	XMP_Uns32 state[4],
+							XMP_Uns8 block[64])
 {
-     unsigned long a = state[0], b = state[1], c = state[2], d = state[3], x[16];
+     XMP_Uns32 a = state[0], b = state[1], c = state[2], d = state[3], x[16];
 
      Decode (x, block, 64);
 
@@ -291,37 +291,37 @@ static void MD5Transform (	unsigned long state[4],
     memset (x, 0, sizeof (x));
 }
 
-/* Encodes input (unsigned long) into output (unsigned char). Assumes len is
+/* Encodes input (XMP_Uns32) into output (XMP_Uns8). Assumes len is
      a multiple of 4.
 
       */
 
-static void Encode (	unsigned char *output,
-						unsigned long *input,
-						unsigned int len)
+static void Encode (	XMP_Uns8 *output,
+						XMP_Uns32 *input,
+						XMP_Uns32 len)
 {
-     unsigned int i, j;
+     XMP_Uns32 i, j;
 
      for (i = 0, j = 0; j < len; i++, j += 4) {
-     output[j] = (unsigned char)(input[i] & 0xff);
-     output[j+1] = (unsigned char)((input[i] >> 8) & 0xff);
-     output[j+2] = (unsigned char)((input[i] >> 16) & 0xff);
-     output[j+3] = (unsigned char)((input[i] >> 24) & 0xff);
+     output[j] = (XMP_Uns8)(input[i] & 0xff);
+     output[j+1] = (XMP_Uns8)((input[i] >> 8) & 0xff);
+     output[j+2] = (XMP_Uns8)((input[i] >> 16) & 0xff);
+     output[j+3] = (XMP_Uns8)((input[i] >> 24) & 0xff);
      }
 }
 
-/* Decodes input (unsigned char) into output (unsigned long). Assumes len is
+/* Decodes input (XMP_Uns8) into output (XMP_Uns32). Assumes len is
      a multiple of 4.
 
       */
 
-static void Decode (	unsigned long *output,
-						unsigned char *input,
-						unsigned int len)
+static void Decode (	XMP_Uns32 *output,
+						XMP_Uns8 *input,
+						XMP_Uns32 len)
 {
-     unsigned int i, j;
+     XMP_Uns32 i, j;
 
      for (i = 0, j = 0; j < len; i++, j += 4)
-     output[i] = ((unsigned long)input[j]) | (((unsigned long)input[j+1]) << 8) |
-     (((unsigned long)input[j+2]) << 16) | (((unsigned long)input[j+3]) << 24);
+     output[i] = ((XMP_Uns32)input[j]) | (((XMP_Uns32)input[j+1]) << 8) |
+     (((XMP_Uns32)input[j+2]) << 16) | (((XMP_Uns32)input[j+3]) << 24);
 }

@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -29,6 +29,8 @@ public final class ParseOptions extends Options
 	public static final int FIX_CONTROL_CHARS = 0x0008;
 	/** If the input is not unicode, try to parse it as ISO-8859-1. */
 	public static final int ACCEPT_LATIN_1 = 0x0010;
+	/** Do not carry run the XMPNormalizer on a packet, leave it as it is. */
+	public static final int OMIT_NORMALIZATION = 0x0020;
 
 	
 	/**
@@ -113,13 +115,33 @@ public final class ParseOptions extends Options
 	 * @param value the value to set
 	 * @return Returns the instance to call more set-methods.
 	 */
+	public ParseOptions setOmitNormalization(boolean value)
+	{
+		setOption(OMIT_NORMALIZATION, value);
+		return this;
+	}
+
+
+	/**
+	 * @return Returns the option "omit normalization".
+	 */
+	public boolean getOmitNormalization()
+	{
+		return getOption(OMIT_NORMALIZATION);
+	}
+
+	
+	/**
+	 * @param value the value to set
+	 * @return Returns the instance to call more set-methods.
+	 */
 	public ParseOptions setAcceptLatin1(boolean value)
 	{
 		setOption(ACCEPT_LATIN_1, value);
 		return this;
 	}
 
-
+	
 	/**
 	 * @see Options#defineOptionName(int)
 	 */
@@ -127,11 +149,12 @@ public final class ParseOptions extends Options
 	{
 		switch (option)
 		{
-			case REQUIRE_XMP_META : return "REQUIRE_XMP_META";
-			case STRICT_ALIASING :	return "STRICT_ALIASING";
-			case FIX_CONTROL_CHARS:	return "FIX_CONTROL_CHARS";
-			case ACCEPT_LATIN_1:	return "ACCEPT_LATIN_1";
-			default: 				return null;
+			case REQUIRE_XMP_META :		return "REQUIRE_XMP_META";
+			case STRICT_ALIASING :		return "STRICT_ALIASING";
+			case FIX_CONTROL_CHARS:		return "FIX_CONTROL_CHARS";
+			case ACCEPT_LATIN_1:		return "ACCEPT_LATIN_1";
+			case OMIT_NORMALIZATION:	return "OMIT_NORMALIZATION";
+			default: 					return null;
 		}
 	}
 
@@ -145,6 +168,7 @@ public final class ParseOptions extends Options
 			REQUIRE_XMP_META |
 			STRICT_ALIASING |
 			FIX_CONTROL_CHARS |
-			ACCEPT_LATIN_1;
+			ACCEPT_LATIN_1 |
+			OMIT_NORMALIZATION;
 	}
 }

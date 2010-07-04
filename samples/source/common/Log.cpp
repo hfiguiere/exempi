@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2005-2008 Adobe Systems Incorporated
+// Copyright 2008 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -35,6 +35,12 @@ FILE* Log::logfile=NULL;
 bool Log::noErrorsOrWarnings=true;
 bool Log::mute=false;
 bool Log::muteWarnings=false;
+
+// strings for skipped test information
+std::string Log::skippedTestsAll;
+std::string Log::skippedTestsWin;
+std::string Log::skippedTestsMac;
+std::string Log::skippedTestsUnix;
 //////////////////////////////////////////////////////////////////////////////////////
 
 /* standard log, use filename=NULL or filename="" or do not construct at all
@@ -184,6 +190,43 @@ void Log::important(std::string s1)
 	info(s1.c_str());
 }
 
+void Log::error( std::string s1 )
+{
+	error( s1.c_str() );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// skipped tests
+void Log::printSkippedTest(const char* filename)
+{
+	std::string completeString = "<html><head><title>Skipped Tests:</title><head><body>";
+	if (!skippedTestsAll.empty())
+		completeString.append("<br><br><table border=\"1\"><caption>all Plattforms:</caption><tr><th>Path to Test</th><th>comment</th></tr>"+skippedTestsAll + "</table>");
+	if (!skippedTestsWin.empty())
+		completeString.append("<br><br><table border=\"1\"><caption>Windows:</caption><tr><th>Path to Test</th><th>comment</th></tr>"+skippedTestsWin+ "</table>");
+	if (!skippedTestsMac.empty())
+		completeString.append("<br><br><table border=\"1\"><caption>Macintosh:</caption><tr><th>Path to Test</th><th>comment</th></tr>"+skippedTestsMac+ "</table>");
+	if (!skippedTestsUnix.empty())
+		completeString.append("<br><br><table border=\"1\"><caption>UNIX:</caption><tr><th>Path to Test</th><th>comment</th></tr>"+skippedTestsUnix+ "</table>");
+
+	completeString.append("</body></html>");
+	// print to console if mute is off
+	/*if (!Log::mute)
+		printf(completeString.c_str());*/
+
+	//print result to file
+	FILE* outputFile=fopen(filename,"wt");
+	if (!outputFile) {
+		printf("could not open output file %s for writing",filename); //do in addition to make sure it's output
+		throw LOG_Exception("could not open output file for writing");
+	}
+	fprintf( outputFile, "%s", completeString.c_str());
+	if(outputFile) {
+		fclose(outputFile);
+	}
+
+}
+
 /////////////////////////////////////////////////////////////////////////////////
 // mute vs. verbose
 
@@ -206,4 +249,3 @@ void Log::setVerboseWarnings()
 {
 	Log::muteWarnings = false;
 }
-

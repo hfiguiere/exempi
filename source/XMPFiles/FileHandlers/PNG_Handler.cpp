@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -110,17 +110,6 @@ void PNG_MetaHandler::CacheFileData()
 	}
 
 }	// PNG_MetaHandler::CacheFileData
-
-// =================================================================================================
-// PNG_MetaHandler::ProcessTNail
-// ==============================
-
-void PNG_MetaHandler::ProcessTNail()
-{
-
-	XMP_Throw ( "PNG_MetaHandler::ProcessTNail isn't implemented yet", kXMPErr_Unimplemented );
-
-}	// PNG_MetaHandler::ProcessTNail
 
 // =================================================================================================
 // PNG_MetaHandler::ProcessXMP
@@ -260,6 +249,7 @@ bool PNG_MetaHandler::SafeWriteFile ()
 		ret = true;
 	} catch ( ... ) {
 		LFA_Close ( updateRef );
+		LFA_Delete ( updatePath.c_str() );
 		this->parent->filePath = origPath;
 		this->parent->fileRef  = origRef;
 		throw;

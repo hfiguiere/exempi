@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -37,11 +37,8 @@ extern "C" {
 #define zXMPFiles_GetVersionInfo_1(versionInfo) \
 	WXMPFiles_GetVersionInfo_1 ( versionInfo /* no wResult */ )
 
-#define zXMPFiles_Initialize_1() \
-	WXMPFiles_Initialize_1 ( &wResult )
-
-#define zXMPFiles_Initialize_2(options) \
-	WXMPFiles_Initialize_2 ( options, &wResult )
+#define zXMPFiles_Initialize_1(options) \
+	WXMPFiles_Initialize_1 ( options, &wResult )
 
 #define zXMPFiles_Terminate_1() \
 	WXMPFiles_Terminate_1 ( /* no wResult */ )
@@ -64,17 +61,14 @@ extern "C" {
 #define zXMPFiles_CloseFile_1(closeFlags) \
 	WXMPFiles_CloseFile_1 ( this->xmpFilesRef, closeFlags, &wResult )
 	
-#define zXMPFiles_GetFileInfo_1(filePath,filePathLen,openFlags,format,handlerFlags) \
-	WXMPFiles_GetFileInfo_1 ( this->xmpFilesRef, filePath, filePathLen, openFlags, format, handlerFlags, &wResult )
+#define zXMPFiles_GetFileInfo_1(clientPath,openFlags,format,handlerFlags,SetClientString) \
+	WXMPFiles_GetFileInfo_1 ( this->xmpFilesRef, clientPath, openFlags, format, handlerFlags, SetClientString, &wResult )
     
 #define zXMPFiles_SetAbortProc_1(abortProc,abortArg) \
 	WXMPFiles_SetAbortProc_1 ( this->xmpFilesRef, abortProc, abortArg, &wResult )
     
-#define zXMPFiles_GetXMP_1(xmpRef,xmpPacket,xmpPacketLen,packetInfo) \
-	WXMPFiles_GetXMP_1 ( this->xmpFilesRef, xmpRef, xmpPacket, xmpPacketLen, packetInfo, &wResult )
-    
-#define zXMPFiles_GetThumbnail_1(tnailInfo) \
-	WXMPFiles_GetThumbnail_1 ( this->xmpFilesRef, tnailInfo, &wResult )
+#define zXMPFiles_GetXMP_1(xmpRef,clientPacket,packetInfo,SetClientString) \
+	WXMPFiles_GetXMP_1 ( this->xmpFilesRef, xmpRef, clientPacket, packetInfo, SetClientString, &wResult )
     
 #define zXMPFiles_PutXMP_1(xmpRef,xmpPacket,xmpPacketLen) \
 	WXMPFiles_PutXMP_1 ( this->xmpFilesRef, xmpRef, xmpPacket, xmpPacketLen, &wResult )
@@ -86,17 +80,12 @@ extern "C" {
 
 extern void WXMPFiles_GetVersionInfo_1 ( XMP_VersionInfo * versionInfo );
 
-extern void WXMPFiles_Initialize_1 ( WXMP_Result * result );
-
-extern void WXMPFiles_Initialize_2 ( XMP_OptionBits options, WXMP_Result * result );
+extern void WXMPFiles_Initialize_1 ( XMP_OptionBits      options,
+                                     WXMP_Result *       result );
 
 extern void WXMPFiles_Terminate_1();
 
 extern void WXMPFiles_CTor_1 ( WXMP_Result * result );
-
-extern void WXMPFiles_UnlockLib_1();
-
-extern void WXMPFiles_UnlockObj_1 ( XMPFilesRef xmpFilesRef );
 
 extern void WXMPFiles_IncrementRefCount_1 ( XMPFilesRef xmpFilesRef );
 
@@ -123,11 +112,11 @@ extern void WXMPFiles_CloseFile_1 ( XMPFilesRef    xmpFilesRef,
                                     WXMP_Result *  result );
 	
 extern void WXMPFiles_GetFileInfo_1 ( XMPFilesRef      xmpFilesRef,
-                                      XMP_StringPtr *  filePath,
-                                      XMP_StringLen *  filePathLen,
+                                      void *           clientPath,
 					                  XMP_OptionBits * openFlags,		// ! Can be null.
 					                  XMP_FileFormat * format,		// ! Can be null.
 					                  XMP_OptionBits * handlerFlags,	// ! Can be null.
+					                  SetClientStringProc SetClientString,
                                       WXMP_Result *    result );
     
 extern void WXMPFiles_SetAbortProc_1 ( XMPFilesRef   xmpFilesRef,
@@ -137,14 +126,10 @@ extern void WXMPFiles_SetAbortProc_1 ( XMPFilesRef   xmpFilesRef,
     
 extern void WXMPFiles_GetXMP_1 ( XMPFilesRef      xmpFilesRef,
                                  XMPMetaRef       xmpRef,		// ! Can be null.
-    			                 XMP_StringPtr *  xmpPacket,
-    			                 XMP_StringLen *  xmpPacketLen,
+    			                 void *           clientPacket,
     			                 XMP_PacketInfo * packetInfo,	// ! Can be null.
+    			                 SetClientStringProc SetClientString,
                                  WXMP_Result *    result );
-    
-extern void WXMPFiles_GetThumbnail_1 ( XMPFilesRef         xmpFilesRef,
-    			                       XMP_ThumbnailInfo * tnailInfo,	// ! Can be null.
-                                       WXMP_Result *       result );
     
 extern void WXMPFiles_PutXMP_1 ( XMPFilesRef   xmpFilesRef,
                                  XMPMetaRef    xmpRef,		// ! Only one of the XMP object or packet are passed.

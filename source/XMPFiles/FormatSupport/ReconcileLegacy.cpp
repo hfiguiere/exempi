@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -14,201 +14,172 @@
 
 // =================================================================================================
 /// \file ReconcileLegacy.cpp
-/// \brief Top level parts of utilities to reconcile between XMP and legacy metadata forms such as 
+/// \brief Top level parts of utilities to reconcile between XMP and legacy metadata forms such as
 /// TIFF/Exif and IPTC.
 ///
 // =================================================================================================
 
 // =================================================================================================
-// ImportJTPtoXMP
-// ==============
+// ImportPhotoData
+// ===============
 //
 // Import legacy metadata for JPEG, TIFF, and Photoshop files into the XMP. The caller must have
 // already done the file specific processing to select the appropriate sources of the TIFF stream,
 // the Photoshop image resources, and the IPTC.
 
-// ! Note that kLegacyJTP_None does not literally mean no legacy. It means no IPTC-like legacy, i.e.
-// ! stuff that Photoshop pre-7 would reconcile into the IPTC and thus affect the import order below.
+#define SaveExifTag(ns,prop)	\
+	if ( xmp->DoesPropertyExist ( ns, prop ) ) SXMPUtils::DuplicateSubtree ( *xmp, &savedExif, ns, prop )
+#define RestoreExifTag(ns,prop)	\
+	if ( savedExif.DoesPropertyExist ( ns, prop ) ) SXMPUtils::DuplicateSubtree ( savedExif, xmp, ns, prop )
 
-void ImportJTPtoXMP ( XMP_FileFormat		srcFormat,
-					  RecJTP_LegacyPriority lastLegacy,
-					  TIFF_Manager *        tiff,	// ! Need for UserComment and RelatedSoundFile hack.
-					  const PSIR_Manager &  psir,
-					  IPTC_Manager *        iptc,	// ! Need to call UpdateDataSets.
-					  SXMPMeta *			xmp,
-					  XMP_OptionBits		options /* = 0 */ )
+void ImportPhotoData ( const TIFF_Manager & exif,
+					   const IPTC_Manager & iptc,
+					   const PSIR_Manager & psir,
+					   int                  iptcDigestState,
+					   SXMPMeta *		    xmp,
+					   XMP_OptionBits	    options /* = 0 */ )
 {
 	bool haveXMP  = XMP_OptionIsSet ( options, k2XMP_FileHadXMP );
-	bool haveIPTC = XMP_OptionIsSet ( options, k2XMP_FileHadIPTC );
 	bool haveExif = XMP_OptionIsSet ( options, k2XMP_FileHadExif );
+	bool haveIPTC = XMP_OptionIsSet ( options, k2XMP_FileHadIPTC );
 	
-	int iptcDigestState = kDigestMatches;	// Default is to do no imports.
-	int tiffDigestState = kDigestMatches;
-	int exifDigestState = kDigestMatches;
-
-	if ( ! haveXMP ) {
+	// Save some new Exif writebacks that can be XMP-only from older versions, delete all of the
+	// XMP's tiff: and exif: namespaces (they should only reflect native Exif), then put back the
+	// saved writebacks (which might get replaced by the native Exif values in the Import calls).
+	// The value of exif:ISOSpeedRatings is saved for special case handling of ISO over 65535.
 	
-		// If there is no XMP then what we have differs.
-		if ( haveIPTC) iptcDigestState = kDigestDiffers;
-		if ( haveExif ) tiffDigestState = exifDigestState = kDigestDiffers;
+	SXMPMeta savedExif;
 	
-	} else {
+	SaveExifTag ( kXMP_NS_EXIF, "DateTimeOriginal" );
+	SaveExifTag ( kXMP_NS_EXIF, "GPSLatitude" );
+	SaveExifTag ( kXMP_NS_EXIF, "GPSLongitude" );
+	SaveExifTag ( kXMP_NS_EXIF, "GPSTimeStamp" );
+	SaveExifTag ( kXMP_NS_EXIF, "GPSAltitude" );
+	SaveExifTag ( kXMP_NS_EXIF, "GPSAltitudeRef" );
+	SaveExifTag ( kXMP_NS_EXIF, "ISOSpeedRatings" );
+	
+	SXMPUtils::RemoveProperties ( xmp, kXMP_NS_TIFF, 0, kXMPUtil_DoAllProperties );
+	SXMPUtils::RemoveProperties ( xmp, kXMP_NS_EXIF, 0, kXMPUtil_DoAllProperties );
 
-		// If there is XMP then check the digests for what we have. No legacy at all means the XMP
-		// is OK, and the CheckXyzDigest routines return true when there is no digest. This matches
-		// Photoshop, and avoids importing when an app adds XMP but does not export to the legacy or
-		// write a digest.
+	RestoreExifTag ( kXMP_NS_EXIF, "DateTimeOriginal" );
+	RestoreExifTag ( kXMP_NS_EXIF, "GPSLatitude" );
+	RestoreExifTag ( kXMP_NS_EXIF, "GPSLongitude" );
+	RestoreExifTag ( kXMP_NS_EXIF, "GPSTimeStamp" );
+	RestoreExifTag ( kXMP_NS_EXIF, "GPSAltitude" );
+	RestoreExifTag ( kXMP_NS_EXIF, "GPSAltitudeRef" );
+	RestoreExifTag ( kXMP_NS_EXIF, "ISOSpeedRatings" );
 
-		if ( haveIPTC ) iptcDigestState = ReconcileUtils::CheckIPTCDigest ( iptc, psir );
-		if ( iptcDigestState == kDigestMissing ) {
-			// *** Temporary hack to approximate Photoshop's behavior. Need fully documented policies!
-			tiffDigestState = exifDigestState = kDigestMissing;
-		} else if ( haveExif ) {
-			tiffDigestState = ReconcileUtils::CheckTIFFDigest ( *tiff, *xmp );
-			exifDigestState = ReconcileUtils::CheckExifDigest ( *tiff, *xmp );	// ! Yes, the Exif is in the TIFF stream.
-		}
+	// Not obvious here, but the logic in PhotoDataUtils follows the MWG reader guidelines.
+	
+	PhotoDataUtils::ImportPSIR ( psir, xmp, iptcDigestState );
 
+	if ( haveIPTC ) PhotoDataUtils::Import2WayIPTC ( iptc, xmp, iptcDigestState );
+	if ( haveExif ) PhotoDataUtils::Import2WayExif ( exif, xmp, iptcDigestState );
+
+	if ( haveExif | haveIPTC ) PhotoDataUtils::Import3WayItems ( exif, iptc, xmp, iptcDigestState );
+
+	// If photoshop:DateCreated does not exist try to create it from exif:DateTimeOriginal.
+	
+	if ( ! xmp->DoesPropertyExist ( kXMP_NS_Photoshop, "DateCreated" ) ) {
+		std::string exifValue;
+		bool haveExifDTO = xmp->GetProperty ( kXMP_NS_EXIF, "DateTimeOriginal", &exifValue, 0 );
+		if ( haveExifDTO ) xmp->SetProperty ( kXMP_NS_Photoshop, "DateCreated", exifValue.c_str() );
 	}
-	
-	if ( lastLegacy > kLegacyJTP_TIFF_IPTC ) {
-		XMP_Throw ( "Invalid JTP legacy priority", kXMPErr_InternalFailure );
-	}
 
-	// A TIFF file with tags 270, 315, or 33432 is currently the only case where the IPTC is less
-	// important than the TIFF/Exif. If there is no IPTC or no TIFF/Exif then the order does not
-	// matter. The order only affects collisions between those 3 TIFF tags and their IPTC counterparts.
-	
-	if ( lastLegacy == kLegacyJTP_TIFF_TIFF_Tags ) {
-
-		if ( iptcDigestState != kDigestMatches ) {
-			ReconcileUtils::ImportIPTC ( *iptc, xmp, iptcDigestState );
-			ReconcileUtils::ImportPSIR ( psir, xmp, iptcDigestState );
-		}
-		if ( tiffDigestState != kDigestMatches ) ReconcileUtils::ImportTIFF ( *tiff, xmp, tiffDigestState, srcFormat );
-		if ( exifDigestState != kDigestMatches ) ReconcileUtils::ImportExif ( *tiff, xmp, exifDigestState );
-
-	} else {
-
-		if ( tiffDigestState != kDigestMatches ) ReconcileUtils::ImportTIFF ( *tiff, xmp, tiffDigestState, srcFormat );
-		if ( exifDigestState != kDigestMatches ) ReconcileUtils::ImportExif ( *tiff, xmp, exifDigestState );
-		if ( iptcDigestState != kDigestMatches ) {
-			ReconcileUtils::ImportIPTC ( *iptc, xmp, iptcDigestState );
-			ReconcileUtils::ImportPSIR ( psir, xmp, iptcDigestState );
-		}
-
-	}
-	
-	// ! Older versions of Photoshop did not import the UserComment or RelatedSoundFile tags. Note
-	// ! whether the initial XMP has these tags. Don't delete them from the TIFF when saving unless
-	// ! they were in the XMP to begin with. Can't do this in ReconcileUtils::ImportExif, that is
-	// ! only called when the Exif is newer than the XMP.
-	
-	tiff->xmpHadUserComment = xmp->DoesPropertyExist ( kXMP_NS_EXIF, "UserComment" );
-	tiff->xmpHadRelatedSoundFile = xmp->DoesPropertyExist ( kXMP_NS_EXIF, "RelatedSoundFile" );
-
-}	// ImportJTPtoXMP
+}	// ImportPhotoData
 
 // =================================================================================================
-// ExportXMPtoJTP
-// ==============
+// ExportPhotoData
+// ===============
 
-void ExportXMPtoJTP ( XMP_FileFormat destFormat,
-					  SXMPMeta *     xmp,
-					  TIFF_Manager * tiff,
-					  PSIR_Manager * psir,
-					  IPTC_Manager * iptc,
-					  XMP_OptionBits options /* = 0 */ )
+void ExportPhotoData ( XMP_FileFormat destFormat,
+					   SXMPMeta *     xmp,
+					   TIFF_Manager * exif, // Pass 0 if not wanted.
+					   IPTC_Manager * iptc, // Pass 0 if not wanted.
+					   PSIR_Manager * psir, // Pass 0 if not wanted.
+					   XMP_OptionBits options /* = 0 */ )
 {
-	XMP_Assert ( xmp != 0 );
 	XMP_Assert ( (destFormat == kXMP_JPEGFile) || (destFormat == kXMP_TIFFFile) || (destFormat == kXMP_PhotoshopFile) );
-	
-	#if XMP_UNIXBuild
-		// ! Hack until the legacy-as-local issues are resolved for generic UNIX.
-		iptc = 0;	// Strip IIM from the file.
-		if ( tiff != 0 ) tiff->DeleteTag ( kTIFF_PrimaryIFD, kTIFF_IPTC );
-		if ( psir != 0 ) {
-			psir->DeleteImgRsrc ( kPSIR_IPTC );
-			psir->DeleteImgRsrc ( kPSIR_IPTCDigest );
-		}
-	#endif
 
-	// Save the IPTC changed flag specially. SetIPTCDigest will call UpdateMemoryDataSets, which
-	// will clear the IsChanged flag. Also, UpdateMemoryDataSets can be called twice, once for the
-	// general IPTC-in-PSIR case and once for the IPTC-as-TIFF-tag case.
-	
-	bool iptcChanged = false;
-	
-	// Do not write legacy IPTC (IIM) or PSIR in DNG files (which are a variant of TIFF).
-	
-	if ( (destFormat == kXMP_TIFFFile) && (tiff != 0) &&
-		 tiff->GetTag ( kTIFF_PrimaryIFD, kTIFF_DNGVersion, 0 ) ) {
-		
+	// Do not write IPTC-IIM or PSIR in DNG files (which are a variant of TIFF).
+
+	if ( (destFormat == kXMP_TIFFFile) && (exif != 0) &&
+		 exif->GetTag ( kTIFF_PrimaryIFD, kTIFF_DNGVersion, 0 ) ) {
+
 		iptc = 0;	// These prevent calls to ExportIPTC and ExportPSIR.
 		psir = 0;
-		
-		tiff->DeleteTag ( kTIFF_PrimaryIFD, kTIFF_IPTC );	// These remove any existing IPTC and PSIR.
-		tiff->DeleteTag ( kTIFF_PrimaryIFD, kTIFF_PSIR );
-	
-	}
-	
-	// Export the individual metadata items to the legacy forms. The PSIR and IPTC must be done
-	// before the TIFF and Exif. The PSIR and IPTC have side effects that can modify the XMP, and
-	// thus the values written to TIFF and Exif. The side effects are the CR<->LF normalization that
-	// is done to match Photoshop.
-	
-	if ( psir != 0) ReconcileUtils::ExportPSIR ( *xmp, psir );
 
+		exif->DeleteTag ( kTIFF_PrimaryIFD, kTIFF_IPTC );	// These remove any existing IPTC and PSIR.
+		exif->DeleteTag ( kTIFF_PrimaryIFD, kTIFF_PSIR );
+
+	}
+
+	// Export the individual metadata items to the non-XMP forms. Set the IPTC digest whether or not
+	// it changed, it might not have been present or correct before.
+
+	bool iptcChanged = false;	// Save explicitly, internal flag is reset by UpdateMemoryDataSets.
+
+	void *    iptcPtr = 0;
+	XMP_Uns32 iptcLen = 0;
+	
 	if ( iptc != 0 ) {
-		ReconcileUtils::ExportIPTC ( xmp, iptc );
-		iptcChanged = iptc->IsChanged();	// ! Do after calling ExportIPTC and before calling SetIPTCDigest.
-		if ( psir != 0 ) ReconcileUtils::SetIPTCDigest ( iptc, psir );	// ! Do always, in case the digest was missing before.
+		PhotoDataUtils::ExportIPTC ( *xmp, iptc );
+		iptcChanged = iptc->IsChanged();
+		if ( iptcChanged ) iptc->UpdateMemoryDataSets();
+		iptcLen = iptc->GetBlockInfo ( &iptcPtr );
+		if ( psir != 0 ) PhotoDataUtils::SetIPTCDigest ( iptcPtr, iptcLen, psir );
 	}
 
-	if ( tiff != 0 ) {
-		ReconcileUtils::ExportTIFF ( *xmp, tiff );
-		ReconcileUtils::ExportExif ( *xmp, tiff );
-		ReconcileUtils::SetTIFFDigest ( *tiff, xmp );	// ! Do always, in case the digest was missing before.
-		ReconcileUtils::SetExifDigest ( *tiff, xmp );	// ! Do always, in case the digest was missing before.
-	}
-	
-	// Now update the collections of metadata, e.g. the IPTC in PSIR 1028 or XMP in TIFF tag 700.
-	// - All of the formats have the IPTC in the PSIR portion.
-	// - JPEG has nothing else special.
-	// - PSD has the XMP and Exif in the PSIR portion.
-	// - TIFF has the XMP, IPTC, and PSIR in primary IFD tags. Yes, a 2nd copy of the IPTC.
-	
-	if ( (iptc != 0) && (psir != 0) && iptcChanged ) {
-		void*     iptcPtr;
-		XMP_Uns32 iptcLen = iptc->UpdateMemoryDataSets ( &iptcPtr );
-		psir->SetImgRsrc ( kPSIR_IPTC, iptcPtr, iptcLen );
-	}
-	
-	if ( destFormat == kXMP_PhotoshopFile ) {
+	if ( exif != 0 ) PhotoDataUtils::ExportExif ( xmp, exif );
+	if ( psir != 0 ) PhotoDataUtils::ExportPSIR ( *xmp, psir );
 
-		XMP_Assert ( psir != 0 );
+	// Now update the non-XMP collections of metadata according to the file format. Do not update
+	// the XMP here, that is done in the file handlers after deciding if an XMP-only in-place
+	// update should be done.
+	// - JPEG has the IPTC in PSIR 1028, the Exif and PSIR are marker segments.
+	// - TIFF has the IPTC and PSIR in primary IFD tags.
+	// - PSD has everything in PSIRs.
 
-		if ( (tiff != 0) && tiff->IsChanged() ) {
-			void* exifPtr;
-			XMP_Uns32 exifLen = tiff->UpdateMemoryStream ( &exifPtr );
-			psir->SetImgRsrc ( kPSIR_Exif, exifPtr, exifLen );
-		}
+	if ( destFormat == kXMP_JPEGFile ) {
+
+		if ( iptcChanged && (psir != 0) ) psir->SetImgRsrc ( kPSIR_IPTC, iptcPtr, iptcLen );
 
 	} else if ( destFormat == kXMP_TIFFFile ) {
-	
-		XMP_Assert ( tiff != 0 );	
 
-		if ( (iptc != 0) && iptcChanged ) {
-			void* iptcPtr;
-			XMP_Uns32 iptcLen = iptc->UpdateMemoryDataSets ( &iptcPtr );
-			tiff->SetTag ( kTIFF_PrimaryIFD, kTIFF_IPTC, kTIFF_UndefinedType, iptcLen, iptcPtr );
-		}
+		XMP_Assert ( exif != 0 );
+
+		if ( iptcChanged ) exif->SetTag ( kTIFF_PrimaryIFD, kTIFF_IPTC, kTIFF_UndefinedType, iptcLen, iptcPtr );
 
 		if ( (psir != 0) && psir->IsChanged() ) {
 			void* psirPtr;
 			XMP_Uns32 psirLen = psir->UpdateMemoryResources ( &psirPtr );
-			tiff->SetTag ( kTIFF_PrimaryIFD, kTIFF_PSIR, kTIFF_UndefinedType, psirLen, psirPtr );
+			exif->SetTag ( kTIFF_PrimaryIFD, kTIFF_PSIR, kTIFF_UndefinedType, psirLen, psirPtr );
 		}
-		
-	}
 
-}	// ExportXMPtoJTP
+	} else if ( destFormat == kXMP_PhotoshopFile ) {
+
+		XMP_Assert ( psir != 0 );
+
+		if ( iptcChanged ) psir->SetImgRsrc ( kPSIR_IPTC, iptcPtr, iptcLen );
+
+		if ( (exif != 0) && exif->IsChanged() ) {
+			void* exifPtr;
+			XMP_Uns32 exifLen = exif->UpdateMemoryStream ( &exifPtr );
+			psir->SetImgRsrc ( kPSIR_Exif, exifPtr, exifLen );
+		}
+
+	}
+	
+	// Strip the tiff: and exif: namespaces from the XMP, we're done with them. Save the Exif
+	// ISOSpeedRatings if any of the values are over 0xFFFF, the native tag is SHORT. Lower level
+	// code already kept or stripped the XMP form.
+	
+	SXMPMeta savedExif;
+	SaveExifTag ( kXMP_NS_EXIF, "ISOSpeedRatings" );
+	
+	SXMPUtils::RemoveProperties ( xmp, kXMP_NS_TIFF, 0, kXMPUtil_DoAllProperties );
+	SXMPUtils::RemoveProperties ( xmp, kXMP_NS_EXIF, 0, kXMPUtil_DoAllProperties );
+
+	RestoreExifTag ( kXMP_NS_EXIF, "ISOSpeedRatings" );
+
+}	// ExportPhotoData

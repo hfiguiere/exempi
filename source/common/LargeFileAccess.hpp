@@ -2,37 +2,17 @@
 #define __LargeFileAccess_hpp__	1
 
 // =================================================================================================
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright 2008 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
 
+#include "XMP_Environment.h"	// ! This must be the first include.
+
 #include <stdio.h>  // The assert macro needs printf.
-#include "XMP_Environment.h"
-#include "XMP_Const.h"
 #include <string>
-
-#include "EndianUtils.hpp"
-
-typedef void * LFA_FileRef;
-
-enum { // used by LFA_Throw, re-route to whatever you need
-	kLFAErr_InternalFailure = 1,
-	kLFAErr_ExternalFailure = 2,
-	kLFAErr_UserAbort = 3
-	};
-
-#define TXMP_STRING_TYPE std::string
-#define XMP_INCLUDE_XMPFILES 1
-#include "XMP.hpp"
-
-// to use these routines, user must define LFA_Throw, kLFAErr_ExternalFailure, kLFAErr_UserAbort
-// Note:LFA_Throw must be a function, not a macro (it may very well wrap a macro, i.e. 
-//LFA_Throw(msg,id)	{ throw std::logic_error ( msg ); }
-
-using namespace std;
 
 #if XMP_WinBuild
 	#include <Windows.h>
@@ -50,6 +30,27 @@ using namespace std;
 	#include <sys/types.h>
 #endif
 
+#include "XMP_Const.h"
+#include "EndianUtils.hpp"
+
+using namespace std;
+
+// =================================================================================================
+
+enum { // Used by LFA_Throw, re-route to whatever you need.
+	kLFAErr_InternalFailure = 1,
+	kLFAErr_ExternalFailure = 2,
+	kLFAErr_UserAbort = 3
+};
+
+extern void LFA_Throw ( const char* msg, int id );	// Function needed for reuse of LFA code in various projects.
+
+#if ! XMP_UNIXBuild
+	typedef void * LFA_FileRef;
+#else
+	typedef XMP_Int32 LFA_FileRef;
+#endif
+
 // *** Change the model of the LFA functions to not throw for "normal" open/create errors.
 // *** Make sure the semantics of open/create/rename are consistent, e.g. about create of existing.
 
@@ -59,6 +60,10 @@ extern void			LFA_Delete   ( const char* fileName );
 extern void			LFA_Rename   ( const char* oldName, const char * newName );
 extern void			LFA_Close    ( LFA_FileRef file );
 
+#if XMP_MacBuild
+	extern LFA_FileRef LFA_OpenRsrc ( const char * filePath, char mode );
+#endif
+
 // NOTE: unlike the fseek() 'original' LFA_Seek returns the new file position,
 //       *NOT* 0 to indicate everything's fine
 extern XMP_Int64	LFA_Seek     ( LFA_FileRef file, XMP_Int64 offset, int seekMode, bool* okPtr = 0 );
@@ -66,6 +71,7 @@ extern XMP_Int32	LFA_Read     ( LFA_FileRef file, void* buffer, XMP_Int32 bytes,
 extern void			LFA_Write    ( LFA_FileRef file, const void* buffer, XMP_Int32 bytes );
 extern void			LFA_Flush    ( LFA_FileRef file );
 extern XMP_Int64	LFA_Tell     ( LFA_FileRef file );
+extern XMP_Int64	LFA_Rewind   ( LFA_FileRef file );
 extern XMP_Int64	LFA_Measure  ( LFA_FileRef file );
 extern void			LFA_Extend   ( LFA_FileRef file, XMP_Int64 length );
 extern void			LFA_Truncate ( LFA_FileRef file, XMP_Int64 length );
@@ -84,6 +90,12 @@ enum { kLFA_RequireAll = true };	// Used for requireAll to LFA_Read.
 
 // =================================================================================================
 // Read and convert endianess in one go:
+static inline XMP_Uns8 LFA_ReadUns8 ( LFA_FileRef file )
+{
+	XMP_Uns8 value;
+	LFA_Read ( file, &value, 1, kLFA_RequireAll );
+	return value;
+}
 
 static inline XMP_Uns16 LFA_ReadUns16_BE ( LFA_FileRef file )
 {
@@ -134,6 +146,145 @@ static inline XMP_Uns64 LFA_ReadUns64_LE ( LFA_FileRef file )
 #define LFA_ReadInt32_LE(file) ((XMP_Int32) LFA_ReadUns32_LE ( file ))
 #define LFA_ReadInt64_BE(file) ((XMP_Int64) LFA_ReadUns64_BE ( file ))
 #define LFA_ReadInt64_LE(file) ((XMP_Int64) LFA_ReadUns64_LE ( file ))
+
+// peek functions /////////////////////////////////////////////
+// peek functions, to see what's next:
+static inline XMP_Uns8 LFA_PeekUns8(LFA_FileRef file)
+{
+	XMP_Uns8 value = LFA_ReadUns8( file );
+	LFA_Seek( file, -1, SEEK_CUR );
+	return value;
+}
+
+static inline XMP_Uns16 LFA_PeekUns16_BE(LFA_FileRef file)
+{
+	XMP_Uns16 value = LFA_ReadUns16_BE( file );
+	LFA_Seek( file, -2, SEEK_CUR );
+	return value;
+}
+
+static inline XMP_Uns16 LFA_PeekUns16_LE(LFA_FileRef file)
+{
+	XMP_Uns16 value = LFA_ReadUns16_LE( file );
+	LFA_Seek( file, -2, SEEK_CUR );
+	return value;
+}
+
+static inline XMP_Uns32 LFA_PeekUns32_BE(LFA_FileRef file)
+{
+	XMP_Uns32 value = LFA_ReadUns32_BE( file );
+	LFA_Seek( file, -4, SEEK_CUR );
+	return value;
+}
+
+static inline XMP_Uns32 LFA_PeekUns32_LE(LFA_FileRef file)
+{
+	XMP_Uns32 value = LFA_ReadUns32_LE( file );
+	LFA_Seek( file, -4, SEEK_CUR );
+	return value;
+}
+
+static inline XMP_Uns64 LFA_PeekUns64_BE(LFA_FileRef file)
+{
+	XMP_Uns64 value = LFA_ReadUns64_BE( file );
+	LFA_Seek( file, -8, SEEK_CUR );
+	return value;
+}
+
+static inline XMP_Uns64 LFA_PeekUns64_LE(LFA_FileRef file)
+{
+	XMP_Uns64 value = LFA_ReadUns64_LE( file );
+	LFA_Seek( file, -8, SEEK_CUR );
+	return value;
+}
+
+
+#define LFA_PeekInt16_BE(file) ((XMP_Int16) LFA_PeekUns16_BE ( file ))
+#define LFA_PeekInt16_LE(file) ((XMP_Int16) LFA_PeekUns16_LE ( file ))
+#define LFA_PeekInt32_BE(file) ((XMP_Int32) LFA_PeekUns32_BE ( file ))
+#define LFA_PeekInt32_LE(file) ((XMP_Int32) LFA_PeekUns32_LE ( file ))
+#define LFA_PeekInt64_BE(file) ((XMP_Int64) LFA_PeekUns64_BE ( file ))
+#define LFA_PeekInt64_LE(file) ((XMP_Int64) LFA_PeekUns64_LE ( file ))
+
+// write functions /////////////////////////////////////////////
+static inline void LFA_WriteUns8 ( LFA_FileRef file, XMP_Uns8 value )
+{
+	LFA_Write ( file, &value, 1 );
+}
+
+static inline void LFA_WriteUns16_LE ( LFA_FileRef file, XMP_Uns16 value )
+{
+	XMP_Uns16 v = MakeUns16LE(value);
+	LFA_Write ( file, &v, 2 );
+}
+
+static inline void LFA_WriteUns16_BE ( LFA_FileRef file, XMP_Uns16 value )
+{
+	XMP_Uns16 v = MakeUns16BE(value);
+	LFA_Write ( file, &v, 2 );
+}
+
+static inline void LFA_WriteUns32_LE ( LFA_FileRef file, XMP_Uns32 value )
+{
+	XMP_Uns32 v = MakeUns32LE(value);
+	LFA_Write ( file, &v, 4 );
+}
+
+static inline void LFA_WriteUns32_BE ( LFA_FileRef file, XMP_Uns32 value )
+{
+	XMP_Uns32 v = MakeUns32BE(value);
+	LFA_Write ( file, &v, 4 );
+}
+
+static inline void LFA_WriteUns64_LE ( LFA_FileRef file, XMP_Uns64 value )
+{
+	XMP_Uns64 v = MakeUns64LE(value);
+	LFA_Write ( file, &v, 8 );
+}
+
+static inline void LFA_WriteUns64_BE ( LFA_FileRef file, XMP_Uns64 value )
+{
+	XMP_Uns64 v = MakeUns64BE(value);
+	LFA_Write ( file, &v, 8 );
+}
+
+////////////////////////////////////////
+
+static inline void LFA_WriteInt16_LE ( LFA_FileRef file, XMP_Int16 value )
+{
+	XMP_Uns16 v = MakeUns16LE((XMP_Uns16)value);
+	LFA_Write ( file, &v, 2 );
+}
+
+static inline void LFA_WriteInt16_BE ( LFA_FileRef file, XMP_Int16 value )
+{
+	XMP_Uns16 v = MakeUns16BE((XMP_Uns16)value);
+	LFA_Write ( file, &v, 2 );
+}
+
+static inline void LFA_WriteInt32_LE ( LFA_FileRef file, XMP_Int32 value )
+{
+	XMP_Uns32 v = MakeUns32LE((XMP_Uns32)value);
+	LFA_Write ( file, &v, 4 );
+}
+
+static inline void LFA_WriteInt32_BE ( LFA_FileRef file, XMP_Int32 value )
+{
+	XMP_Uns32 v = MakeUns32BE((XMP_Uns32)value);
+	LFA_Write ( file, &v, 4 );
+}
+
+static inline void LFA_WriteInt64_LE ( LFA_FileRef file, XMP_Int64 value )
+{
+	XMP_Uns64 v = MakeUns64LE((XMP_Uns64)value);
+	LFA_Write ( file, &v, 8 );
+}
+
+static inline void LFA_WriteInt64_BE ( LFA_FileRef file, XMP_Int64 value )
+{
+	XMP_Uns64 v = MakeUns64BE((XMP_Uns64)value);
+	LFA_Write ( file, &v, 8 );
+}
 
 
 #endif	// __LargeFileAccess_hpp__

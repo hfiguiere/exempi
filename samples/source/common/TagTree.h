@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2005-2008 Adobe Systems Incorporated
+// Copyright 2008 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -38,6 +38,7 @@ class TagTree {
 private:
 	struct Node; //forward-looking declaration
 	typedef std::list<Node> NodeList;
+	typedef std::list<Node>::iterator NodeListIter;
 
 	struct Node {
 		std::string key;		// node structure name resp. tag name
@@ -54,10 +55,10 @@ private:
 		}
 
 		//the one to use
-		Node(std::string key, std::string value, std::string comment) {
-			this->key=key;
-			this->value=value;
-			this->comment=comment;
+		Node(std::string _key, std::string _value, std::string _comment) {
+			this->key = _key;
+			this->value = _value;
+			this->comment = _comment;
 			children.clear();
 		}
 	};
@@ -77,10 +78,19 @@ private:
 
 	NodeStack nodeStack;
 	Node rootNode; //TODO: ("root","");
-	
+
+	// control verbosity to ease debugging:
+	static bool verbose;
+
 public:
 	TagTree();
 	~TagTree();
+
+	void reset();
+
+	// verbosity control (mute by default ) ===================================
+	void setMute();
+	void setVerbose();
 
 	//input functions =========================================================
 
@@ -147,11 +157,11 @@ public:
 	//(length is counted w/o trailing zero termination, i.e. length("hans")==4 )
 	// TODO: length default = 0 not yet implemented
 	// verifyZeroTerm
-	//  - has an effect only if a length!=0 is given
+	//  - has an effect only if a length!=0 is given (otherwise things go up to the 0 anyway)
 	//  - in this case, asserts that the string has a terminating zero 
 	//   (_after_ <length> bytes, otherwise that byte is not read which has an impact on the filepointer!)
 	//    would throw if any zero (\0) is encountered prior to that
-	std::string digestString(LFA_FileRef file,const std::string key="", size_t length=0, bool verifyZeroTerm=false );
+	std::string digestString(LFA_FileRef file,const std::string key="", size_t length=0, bool verifyZeroTerm=false, bool allowEarlyZeroTerm=false );
 
 	// (wrappers)
 	// standalone comment
@@ -178,6 +188,8 @@ public:
 
 	std::string getValue(const std::string key);
 	std::string getComment(const std::string key);
+	unsigned int getSubNodePos( const std::string nodeKey, const std::string parentKey = "", int skip = 0 );
+	XMP_Int64 getNodeSize( const std::string nodeKey );
 
 	//returns true if there is such a node, false if not, error if it happens to be key-value pair
 	bool hasNode(const std::string key);

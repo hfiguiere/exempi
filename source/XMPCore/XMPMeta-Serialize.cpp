@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2003-2009 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -43,7 +43,7 @@ using namespace std;
 static const char * kPacketHeader  = "<?xpacket begin=\"\xEF\xBB\xBF\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>";
 static const char * kPacketTrailer = "<?xpacket end=\"w\"?>";	// ! The w/r is at [size-4].
 
-static const char * kPXMP_SchemaGroup = "XMP_SchemaGroup";
+static const char * kTXMP_SchemaGroup = "XMP_SchemaGroup";
 
 static const char * kRDF_XMPMetaStart = "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\" x:xmptk=\"";
 static const char * kRDF_XMPMetaEnd   = "</x:xmpmeta>";
@@ -134,13 +134,13 @@ EstimateRDFSize ( const XMP_Node * currNode, XMP_Index indent, size_t indentLen 
 // -------------------
 
 static void
-DeclareOneNamespace	( const XMP_VarString &	nsPrefix,
-					  const XMP_VarString &	nsURI,
-					  XMP_VarString	&		usedNS,		// ! A catenation of the prefixes with colons.
-					  XMP_VarString &		outputStr,
-					  XMP_StringPtr			newline,
-					  XMP_StringPtr			indentStr,
-					  XMP_Index				indent )
+DeclareOneNamespace	( XMP_StringPtr   nsPrefix,
+					  XMP_StringPtr   nsURI,
+					  XMP_VarString	& usedNS,		// ! A catenation of the prefixes with colons.
+					  XMP_VarString & outputStr,
+					  XMP_StringPtr   newline,
+					  XMP_StringPtr   indentStr,
+					  XMP_Index       indent )
 {
 	size_t nsPos = usedNS.find ( nsPrefix );
 
@@ -178,9 +178,10 @@ DeclareElemNamespace ( const XMP_VarString & elemName,
 
 	if ( colonPos != XMP_VarString::npos ) {
 		XMP_VarString nsPrefix ( elemName.substr ( 0, colonPos+1 ) );
-		XMP_StringMapPos prefixPos = sNamespacePrefixToURIMap->find ( nsPrefix );
-		XMP_Enforce ( prefixPos != sNamespacePrefixToURIMap->end() );
-		DeclareOneNamespace ( nsPrefix, prefixPos->second, usedNS, outputStr, newline, indentStr, indent );
+		XMP_StringPtr nsURI;
+		bool nsFound = sRegisteredNamespaces->GetURI ( nsPrefix.c_str(), &nsURI, 0 );
+		XMP_Enforce ( nsFound );
+		DeclareOneNamespace ( nsPrefix.c_str(), nsURI, usedNS, outputStr, newline, indentStr, indent );
 	}
 
 }	// DeclareElemNamespace
@@ -189,8 +190,6 @@ DeclareElemNamespace ( const XMP_VarString & elemName,
 // -------------------------------------------------------------------------------------------------
 // DeclareUsedNamespaces
 // ---------------------
-
-// ??? Should iterators be passed by reference to avoid temp copies?
 
 static void
 DeclareUsedNamespaces ( const XMP_Node * currNode,
@@ -203,7 +202,7 @@ DeclareUsedNamespaces ( const XMP_Node * currNode,
 
 	if ( currNode->options & kXMP_SchemaNode ) {
 		// The schema node name is the URI, the value is the prefix.
-		DeclareOneNamespace ( currNode->value, currNode->name, usedNS, outputStr, newline, indentStr, indent );
+		DeclareOneNamespace ( currNode->value.c_str(), currNode->name.c_str(), usedNS, outputStr, newline, indentStr, indent );
 	} else if ( currNode->options & kXMP_PropValueIsStruct ) {
 		for ( size_t fieldNum = 0, fieldLim = currNode->children.size(); fieldNum < fieldLim; ++fieldNum ) {
 			const XMP_Node * currField = currNode->children[fieldNum];
@@ -227,8 +226,6 @@ DeclareUsedNamespaces ( const XMP_Node * currNode,
 // -------------------------------------------------------------------------------------------------
 // EmitRDFArrayTag
 // ---------------
-
-// ??? Should iterators be passed by reference to avoid temp copies?
 
 enum {
 	kIsStartTag = true,
@@ -438,9 +435,8 @@ SerializePrettyRDFProperty ( const XMP_Node * propNode,
 	for ( level = indent; level > 0; --level ) outputStr += indentStr;
 	outputStr += '<';
 	outputStr += elemName;
-	
-	#define isCompact	false
-	bool hasGeneralQualifiers = isCompact;	// Might also become true later.
+
+	bool hasGeneralQualifiers = false;
 	bool hasRDFResourceQual   = false;
 	
 	for ( size_t qualNum = 0, qualLim = propNode->qualifiers.size(); qualNum < qualLim; ++qualNum ) {
@@ -476,7 +472,7 @@ SerializePrettyRDFProperty ( const XMP_Node * propNode,
 		outputStr += newline;
 
 		SerializePrettyRDFProperty ( propNode, outputStr, newline, indentStr, indent+1, true );
-		
+
 		for ( size_t qualNum = 0, qualLim = propNode->qualifiers.size(); qualNum < qualLim; ++qualNum ) {
 			const XMP_Node * currQual = propNode->qualifiers[qualNum];
 			if ( IsRDFAttrQualifier ( currQual->name ) ) continue;
@@ -618,13 +614,8 @@ SerializePrettyRDFSchema ( const XMP_VarString & treeName,
 	outputStr += treeName;
 	outputStr += '"';
 
-	size_t totalLen = 8;	// Start at 8 for "xml:rdf:".
-	XMP_cStringMapPos currPos = sNamespacePrefixToURIMap->begin();
-	XMP_cStringMapPos endPos  = sNamespacePrefixToURIMap->end();
-	for ( ; currPos != endPos; ++currPos ) totalLen += currPos->first.size();
-
 	XMP_VarString usedNS;
-	usedNS.reserve ( totalLen );
+	usedNS.reserve ( 400 );	// The predefined prefixes add up to about 320 bytes.
 	usedNS = "xml:rdf:";
 	DeclareUsedNamespaces ( schemaNode, usedNS, outputStr, newline, indentStr, baseIndent+4 );
 
@@ -632,36 +623,6 @@ SerializePrettyRDFSchema ( const XMP_VarString & treeName,
 	outputStr += newline;
 	
 	// Write alias comments, if wanted.
-
-	if ( options & kXMP_WriteAliasComments ) {	// *** Hoist into a routine, used for Plain XMP also.
-
-		#if 0	// *** Buggy, disable for now.
-		
-		XMP_cAliasMapPos aliasPos = sRegisteredAliasMap->begin();
-		XMP_cAliasMapPos aliasEnd = sRegisteredAliasMap->end();
-		
-		for ( ; aliasPos != aliasEnd; ++aliasPos ) {
-
-			size_t nsPos = aliasPos->first.find ( schemaNode->value );
-			if ( nsPos == XMP_VarString::npos ) continue;
-			XMP_Assert ( nsPos == 0 );
-
-			for ( level = baseIndent+3; level > 0; --level ) outputStr += indentStr;
-
-			outputStr += "<!-- ";
-			outputStr += aliasPos->first;
-			outputStr += " is aliased to ";
-			for ( size_t step = 1, stepLim = aliasPos->second.size(); step != stepLim; ++step ) {
-				outputStr += aliasPos->second[step].step;
-			}
-			outputStr += " -->";
-			outputStr += newline;
-
-		}
-		
-		#endif
-
-	}
 	
 	// Write each of the schema's actual properties.
 	for ( size_t propNum = 0, propLim = schemaNode->children.size(); propNum < propLim; ++propNum ) {
@@ -785,9 +746,8 @@ SerializeCompactRDFElemProps ( const XMP_Node *	parentNode,
 		for ( level = indent; level > 0; --level ) outputStr += indentStr;
 		outputStr += '<';
 		outputStr += elemName;
-
-		#define isCompact	false
-		bool hasGeneralQualifiers = isCompact;	// Might also become true later.
+	
+		bool hasGeneralQualifiers = false;
 		bool hasRDFResourceQual   = false;
 
 		for ( size_t qualNum = 0, qualLim = propNode->qualifiers.size(); qualNum < qualLim; ++qualNum ) {
@@ -821,7 +781,7 @@ SerializeCompactRDFElemProps ( const XMP_Node *	parentNode,
 			outputStr += newline;
 
 			SerializePrettyRDFProperty ( propNode, outputStr, newline, indentStr, indent+1, true );
-		
+
 			size_t qualNum = 0;
 			size_t qualLim = propNode->qualifiers.size();
 			if ( propNode->options & kXMP_PropHasLang ) ++qualNum;
@@ -993,14 +953,9 @@ SerializeCompactRDFSchemas ( const XMP_Node & xmpTree,
 	outputStr += '"';
 	
 	// Write all necessary xmlns attributes.
-	
-	size_t totalLen = 8;	// Start at 8 for "xml:rdf:".
-	XMP_cStringMapPos currPos = sNamespacePrefixToURIMap->begin();
-	XMP_cStringMapPos endPos  = sNamespacePrefixToURIMap->end();
-	for ( ; currPos != endPos; ++currPos ) totalLen += currPos->first.size();
 
 	XMP_VarString usedNS;
-	usedNS.reserve ( totalLen );
+	usedNS.reserve ( 400 );	// The predefined prefixes add up to about 320 bytes.
 	usedNS = "xml:rdf:";
 
 	for ( schema = 0, schemaLim = xmpTree.children.size(); schema != schemaLim; ++schema ) {
@@ -1166,16 +1121,16 @@ SerializeAsRDF ( const XMPMeta & xmpObj,
 // -----------------
 
 void
-XMPMeta::SerializeToBuffer ( XMP_StringPtr * rdfString,
-							 XMP_StringLen * rdfSize,
+XMPMeta::SerializeToBuffer ( XMP_VarString * rdfString,
 							 XMP_OptionBits	 options,
 							 XMP_StringLen	 padding,
 							 XMP_StringPtr	 newline,
 							 XMP_StringPtr	 indentStr,
 							 XMP_Index		 baseIndent ) const
 {
-	XMP_Assert ( (rdfString != 0) && (rdfSize != 0) && (newline != 0) && (indentStr != 0) );
-
+	XMP_Assert ( (rdfString != 0) && (newline != 0) && (indentStr != 0) );
+	rdfString->erase();
+	
 	// Fix up some default parameters.
 	
 	enum { kDefaultPad = 2048 };
@@ -1222,7 +1177,11 @@ XMPMeta::SerializeToBuffer ( XMP_StringPtr * rdfString,
 		}
 		padding = 0;
 	} else {
-		if ( padding == 0 ) padding = kDefaultPad * unicodeUnitSize;
+		if ( padding == 0 ) {
+			padding = kDefaultPad * unicodeUnitSize;
+		} else if ( (padding >> 28) != 0 ) {
+			XMP_Throw ( "Outrageously large padding size", kXMPErr_BadOptions );	// Bigger than 256 MB.
+		}
 		if ( options & kXMP_IncludeThumbnailPad ) {
 			if ( ! this->DoesPropertyExist ( kXMP_NS_XMP, "Thumbnails" ) ) padding += (10000 * unicodeUnitSize);	// *** Need a better estimate.
 		}
@@ -1232,11 +1191,11 @@ XMPMeta::SerializeToBuffer ( XMP_StringPtr * rdfString,
 	
 	std::string tailStr;
 
-	SerializeAsRDF ( *this, *sOutputStr, tailStr, options, newline, indentStr, baseIndent );
+	SerializeAsRDF ( *this, *rdfString, tailStr, options, newline, indentStr, baseIndent );
 	if ( charEncoding == kXMP_EncodeUTF8 ) {
 
 		if ( options & kXMP_ExactPacketLength ) {
-			size_t minSize = sOutputStr->size() + tailStr.size();
+			size_t minSize = rdfString->size() + tailStr.size();
 			if ( minSize > padding ) XMP_Throw ( "Can't fit into specified packet size", kXMPErr_BadSerialize );
 			padding -= minSize;	// Now the actual amount of padding to add.
 		}
@@ -1244,19 +1203,19 @@ XMPMeta::SerializeToBuffer ( XMP_StringPtr * rdfString,
 		size_t newlineLen = strlen ( newline );
 	
 		if ( padding < newlineLen ) {
-			sOutputStr->append ( padding, ' ' );
+			rdfString->append ( padding, ' ' );
 		} else {
 			padding -= newlineLen;	// Write this newline last.
 			while ( padding >= (100 + newlineLen) ) {
-				sOutputStr->append ( 100, ' ' );
-				*sOutputStr += newline;
+				rdfString->append ( 100, ' ' );
+				*rdfString += newline;
 				padding -= (100 + newlineLen);
 			}
-			sOutputStr->append ( padding, ' ' );
-			*sOutputStr += newline;
+			rdfString->append ( padding, ' ' );
+			*rdfString += newline;
 		}
 
-		*sOutputStr += tailStr;
+		*rdfString += tailStr;
 	
 	} else {
 	
@@ -1269,13 +1228,13 @@ XMPMeta::SerializeToBuffer ( XMP_StringPtr * rdfString,
 
 			std::string padStr ( "  " );  padStr[0] = 0;	// Assume big endian.
 			
-			utf8Str.swap ( *sOutputStr );
-			ToUTF16 ( (UTF8Unit*)utf8Str.c_str(), utf8Str.size(), sOutputStr, bigEndian );
+			utf8Str.swap ( *rdfString );
+			ToUTF16 ( (UTF8Unit*)utf8Str.c_str(), utf8Str.size(), rdfString, bigEndian );
 			utf8Str.swap ( tailStr );
 			ToUTF16 ( (UTF8Unit*)utf8Str.c_str(), utf8Str.size(), &tailStr, bigEndian );
 
 			if ( options & kXMP_ExactPacketLength ) {
-				size_t minSize = sOutputStr->size() + tailStr.size();
+				size_t minSize = rdfString->size() + tailStr.size();
 				if ( minSize > padding ) XMP_Throw ( "Can't fit into specified packet size", kXMPErr_BadSerialize );
 				padding -= minSize;	// Now the actual amount of padding to add (in bytes).
 			}
@@ -1285,19 +1244,19 @@ XMPMeta::SerializeToBuffer ( XMP_StringPtr * rdfString,
 			size_t newlineLen = newlineStr.size();
 	
 			if ( padding < newlineLen ) {
-				for ( int i = padding/2; i > 0; --i ) *sOutputStr += padStr;
+				for ( int i = padding/2; i > 0; --i ) *rdfString += padStr;
 			} else {
 				padding -= newlineLen;	// Write this newline last.
 				while ( padding >= (200 + newlineLen) ) {
-					for ( int i = 100; i > 0; --i ) *sOutputStr += padStr;
-					*sOutputStr += newlineStr;
+					for ( int i = 100; i > 0; --i ) *rdfString += padStr;
+					*rdfString += newlineStr;
 					padding -= (200 + newlineLen);
 				}
-				for ( int i = padding/2; i > 0; --i ) *sOutputStr += padStr;
-				*sOutputStr += newlineStr;
+				for ( int i = padding/2; i > 0; --i ) *rdfString += padStr;
+				*rdfString += newlineStr;
 			}
 
-			*sOutputStr += tailStr;
+			*rdfString += tailStr;
 
 		} else {
 
@@ -1309,13 +1268,13 @@ XMPMeta::SerializeToBuffer ( XMP_StringPtr * rdfString,
 				Converter = UTF8_to_UTF32LE;
 			}
 			
-			utf8Str.swap ( *sOutputStr );
-			ToUTF32 ( (UTF8Unit*)utf8Str.c_str(), utf8Str.size(), sOutputStr, bigEndian );
+			utf8Str.swap ( *rdfString );
+			ToUTF32 ( (UTF8Unit*)utf8Str.c_str(), utf8Str.size(), rdfString, bigEndian );
 			utf8Str.swap ( tailStr );
 			ToUTF32 ( (UTF8Unit*)utf8Str.c_str(), utf8Str.size(), &tailStr, bigEndian );
 
 			if ( options & kXMP_ExactPacketLength ) {
-				size_t minSize = sOutputStr->size() + tailStr.size();
+				size_t minSize = rdfString->size() + tailStr.size();
 				if ( minSize > padding ) XMP_Throw ( "Can't fit into specified packet size", kXMPErr_BadSerialize );
 				padding -= minSize;	// Now the actual amount of padding to add (in bytes).
 			}
@@ -1325,28 +1284,23 @@ XMPMeta::SerializeToBuffer ( XMP_StringPtr * rdfString,
 			size_t newlineLen = newlineStr.size();
 	
 			if ( padding < newlineLen ) {
-				for ( int i = padding/4; i > 0; --i ) *sOutputStr += padStr;
+				for ( int i = padding/4; i > 0; --i ) *rdfString += padStr;
 			} else {
 				padding -= newlineLen;	// Write this newline last.
 				while ( padding >= (400 + newlineLen) ) {
-					for ( int i = 100; i > 0; --i ) *sOutputStr += padStr;
-					*sOutputStr += newlineStr;
+					for ( int i = 100; i > 0; --i ) *rdfString += padStr;
+					*rdfString += newlineStr;
 					padding -= (400 + newlineLen);
 				}
-				for ( int i = padding/4; i > 0; --i ) *sOutputStr += padStr;
-				*sOutputStr += newlineStr;
+				for ( int i = padding/4; i > 0; --i ) *rdfString += padStr;
+				*rdfString += newlineStr;
 			}
 
-			*sOutputStr += tailStr;
+			*rdfString += tailStr;
 
 		}
 	
 	}
-
-	// Return the finished string.
-	
-	*rdfString = sOutputStr->c_str();
-	*rdfSize   = sOutputStr->size();
 
 }	// SerializeToBuffer
 

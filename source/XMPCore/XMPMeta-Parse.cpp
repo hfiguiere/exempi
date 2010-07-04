@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2003 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -258,18 +258,27 @@ NormalizeDCArrays ( XMP_Node * xmpTree )
 		arrayForm = VerifySetOptions ( arrayForm, 0 );	// Set the implicit array bits.
 		XMP_Node * newArray = new XMP_Node ( dcSchema, currProp->name.c_str(), arrayForm );
 		dcSchema->children[propNum] = newArray;
-		newArray->children.push_back ( currProp );
-		currProp->parent = newArray;
-		currProp->name = kXMP_ArrayItemName;
 		
-		if ( XMP_ArrayIsAltText ( arrayForm ) && (! (currProp->options & kXMP_PropHasLang)) ) {
-			XMP_Node * newLang = new XMP_Node ( currProp, "xml:lang", "x-default", kXMP_PropIsQualifier );
-			currProp->options |= (kXMP_PropHasQualifiers | kXMP_PropHasLang);
-			if ( currProp->qualifiers.empty() ) {	// *** Need a util?
-				currProp->qualifiers.push_back ( newLang );
-			} else {
-				currProp->qualifiers.insert ( currProp->qualifiers.begin(), newLang );
+		if ( currProp->value.empty() ) {	// Don't add an empty item, leave the array empty.
+		
+			delete ( currProp );
+		
+		} else {
+		
+			newArray->children.push_back ( currProp );
+			currProp->parent = newArray;
+			currProp->name = kXMP_ArrayItemName;
+			
+			if ( XMP_ArrayIsAltText ( arrayForm ) && (! (currProp->options & kXMP_PropHasLang)) ) {
+				XMP_Node * newLang = new XMP_Node ( currProp, "xml:lang", "x-default", kXMP_PropIsQualifier );
+				currProp->options |= (kXMP_PropHasQualifiers | kXMP_PropHasLang);
+				if ( currProp->qualifiers.empty() ) {	// *** Need a util?
+					currProp->qualifiers.push_back ( newLang );
+				} else {
+					currProp->qualifiers.insert ( currProp->qualifiers.begin(), newLang );
+				}
 			}
+		
 		}
 
 	}
@@ -496,11 +505,7 @@ FixGPSTimeStamp ( XMP_Node * exifSchema, XMP_Node * gpsDateTime )
 	binGPSStamp.month = binOtherDate.month;
 	binGPSStamp.day   = binOtherDate.day;
 
-	XMP_StringPtr goodStr;
-	XMP_StringLen goodLen;
-	XMPUtils::ConvertFromDate ( binGPSStamp, &goodStr, &goodLen );
-	
-	gpsDateTime->value.assign ( goodStr, goodLen );
+	XMPUtils::ConvertFromDate ( binGPSStamp, &gpsDateTime->value );
 
 }	// FixGPSTimeStamp
 
@@ -1086,7 +1091,7 @@ XMPMeta::ParseFromBuffer ( XMP_StringPtr  buffer,
 
 	if ( this->xmlParser == 0 ) {
 		if ( (xmpSize == 0) && lastClientCall ) return;	// Tolerate empty parse. Expat complains if there are no XML elements.
-		this->xmlParser = XMP_NewExpatAdapter();
+		this->xmlParser = XMP_NewExpatAdapter ( ExpatAdapter::kUseGlobalNamespaces );
 	}
 	
 	XMLParserAdapter& parser = *this->xmlParser;

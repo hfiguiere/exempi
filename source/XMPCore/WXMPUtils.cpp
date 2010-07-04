@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2004 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:	Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -9,10 +9,12 @@
 // *** Should change "type * inParam" to "type & inParam"
 
 #include "XMP_Environment.h"	// ! This must be the first include!
-#include "XMPCore_Impl.hpp"
+#include "XMP_Const.h"
 
-#include "XMPUtils.hpp"
 #include "client-glue/WXMPUtils.hpp"
+
+#include "XMPCore_Impl.hpp"
+#include "XMPUtils.hpp"
 
 #if XMP_WinBuild
 	#pragma warning ( disable : 4101 ) // unreferenced local variable
@@ -32,37 +34,24 @@ extern "C" {
 // =====================
 
 void
-WXMPUtils_Unlock_1 ( XMP_OptionBits options )
-{
-	WXMP_Result * wResult = &void_wResult;	// ! Needed to "fool" the EnterWrapper macro.
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPUtils_Unlock_1" )
-
-		XMPUtils::Unlock ( options );
-
-	XMP_EXIT_WRAPPER_NO_THROW
-}
-
-// =================================================================================================
-
-void
 WXMPUtils_ComposeArrayItemPath_1 ( XMP_StringPtr   schemaNS,
 								   XMP_StringPtr   arrayName,
 								   XMP_Index	   itemIndex,
-								   XMP_StringPtr * fullPath,
-								   XMP_StringLen * pathSize,
+								   void *          itemPath,
+								   SetClientStringProc SetClientString,
 								   WXMP_Result *   wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_ComposeArrayItemPath_1" )
-	
+	XMP_ENTER_Static ( "WXMPUtils_ComposeArrayItemPath_1" )
+
 		if ( (schemaNS == 0) || (*schemaNS == 0) ) XMP_Throw ( "Empty schema namespace URI", kXMPErr_BadSchema );
 		if ( (arrayName == 0) || (*arrayName == 0) ) XMP_Throw ( "Empty array name", kXMPErr_BadXPath );
-		
-		if ( fullPath == 0 ) fullPath = &voidStringPtr;
-		if ( pathSize == 0 ) pathSize = &voidStringLen;
 
-		XMPUtils::ComposeArrayItemPath ( schemaNS, arrayName, itemIndex, fullPath, pathSize );
+		XMP_VarString localStr;
 
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( true )
+		XMPUtils::ComposeArrayItemPath ( schemaNS, arrayName, itemIndex, &localStr );
+		if ( itemPath != 0 ) (*SetClientString) ( itemPath, localStr.c_str(), localStr.size() );
+
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -72,23 +61,23 @@ WXMPUtils_ComposeStructFieldPath_1 ( XMP_StringPtr	 schemaNS,
 									 XMP_StringPtr	 structName,
 									 XMP_StringPtr	 fieldNS,
 									 XMP_StringPtr	 fieldName,
-									 XMP_StringPtr * fullPath,
-									 XMP_StringLen * pathSize,
+									 void *          fieldPath,
+									 SetClientStringProc SetClientString,
 									 WXMP_Result *	 wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_ComposeStructFieldPath_1" )
+	XMP_ENTER_Static ( "WXMPUtils_ComposeStructFieldPath_1" )
 
 		if ( (schemaNS == 0) || (*schemaNS == 0) ) XMP_Throw ( "Empty schema namespace URI", kXMPErr_BadSchema );
 		if ( (structName == 0) || (*structName == 0) ) XMP_Throw ( "Empty struct name", kXMPErr_BadXPath );
 		if ( (fieldNS == 0) || (*fieldNS == 0) ) XMP_Throw ( "Empty field namespace URI", kXMPErr_BadSchema );
 		if ( (fieldName == 0) || (*fieldName == 0) ) XMP_Throw ( "Empty field name", kXMPErr_BadXPath );
-		
-		if ( fullPath == 0 ) fullPath = &voidStringPtr;
-		if ( pathSize == 0 ) pathSize = &voidStringLen;
 
-		XMPUtils::ComposeStructFieldPath ( schemaNS, structName, fieldNS, fieldName, fullPath, pathSize );
+		XMP_VarString localStr;
 
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( true )
+		XMPUtils::ComposeStructFieldPath ( schemaNS, structName, fieldNS, fieldName, &localStr );
+		if ( fieldPath != 0 ) (*SetClientString) ( fieldPath, localStr.c_str(), localStr.size() );
+
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -98,23 +87,23 @@ WXMPUtils_ComposeQualifierPath_1 ( XMP_StringPtr   schemaNS,
 								   XMP_StringPtr   propName,
 								   XMP_StringPtr   qualNS,
 								   XMP_StringPtr   qualName,
-								   XMP_StringPtr * fullPath,
-								   XMP_StringLen * pathSize,
+								   void *          qualPath,
+								   SetClientStringProc SetClientString,
 								   WXMP_Result *   wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_ComposeQualifierPath_1" )
-	
+	XMP_ENTER_Static ( "WXMPUtils_ComposeQualifierPath_1" )
+
 		if ( (schemaNS == 0) || (*schemaNS == 0) ) XMP_Throw ( "Empty schema namespace URI", kXMPErr_BadSchema );
 		if ( (propName == 0) || (*propName == 0) ) XMP_Throw ( "Empty property name", kXMPErr_BadXPath );
 		if ( (qualNS == 0) || (*qualNS == 0) ) XMP_Throw ( "Empty qualifier namespace URI", kXMPErr_BadSchema );
 		if ( (qualName == 0) || (*qualName == 0) ) XMP_Throw ( "Empty qualifier name", kXMPErr_BadXPath );
-		
-		if ( fullPath == 0 ) fullPath = &voidStringPtr;
-		if ( pathSize == 0 ) pathSize = &voidStringLen;
 
-		XMPUtils::ComposeQualifierPath ( schemaNS, propName, qualNS, qualName, fullPath, pathSize );
+		XMP_VarString localStr;
 
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( true )
+		XMPUtils::ComposeQualifierPath ( schemaNS, propName, qualNS, qualName, &localStr );
+		if ( qualPath != 0 ) (*SetClientString) ( qualPath, localStr.c_str(), localStr.size() );
+
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -123,22 +112,22 @@ void
 WXMPUtils_ComposeLangSelector_1 ( XMP_StringPtr	  schemaNS,
 								  XMP_StringPtr	  arrayName,
 								  XMP_StringPtr	  langName,
-								  XMP_StringPtr * fullPath,
-								  XMP_StringLen * pathSize,
+								  void *          selPath,
+								  SetClientStringProc SetClientString,
 								  WXMP_Result *	  wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_ComposeLangSelector_1" )
-	
+	XMP_ENTER_Static ( "WXMPUtils_ComposeLangSelector_1" )
+
 		if ( (schemaNS == 0) || (*schemaNS == 0) ) XMP_Throw ( "Empty schema namespace URI", kXMPErr_BadSchema );
 		if ( (arrayName == 0) || (*arrayName == 0) ) XMP_Throw ( "Empty array name", kXMPErr_BadXPath );
 		if ( (langName == 0) || (*langName == 0) ) XMP_Throw ( "Empty language name", kXMPErr_BadParam );
-		
-		if ( fullPath == 0 ) fullPath = &voidStringPtr;
-		if ( pathSize == 0 ) pathSize = &voidStringLen;
 
-		XMPUtils::ComposeLangSelector ( schemaNS, arrayName, langName, fullPath, pathSize );
+		XMP_VarString localStr;
 
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( true )
+		XMPUtils::ComposeLangSelector ( schemaNS, arrayName, langName, &localStr );
+		if ( selPath != 0 ) (*SetClientString) ( selPath, localStr.c_str(), localStr.size() );
+
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -149,123 +138,123 @@ WXMPUtils_ComposeFieldSelector_1 ( XMP_StringPtr   schemaNS,
 								   XMP_StringPtr   fieldNS,
 								   XMP_StringPtr   fieldName,
 								   XMP_StringPtr   fieldValue,
-								   XMP_StringPtr * fullPath,
-								   XMP_StringLen * pathSize,
+								   void *          selPath,
+								   SetClientStringProc SetClientString,
 								   WXMP_Result *   wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_ComposeFieldSelector_1" )
-	
+	XMP_ENTER_Static ( "WXMPUtils_ComposeFieldSelector_1" )
+
 		if ( (schemaNS == 0) || (*schemaNS == 0) ) XMP_Throw ( "Empty schema namespace URI", kXMPErr_BadSchema );
 		if ( (arrayName == 0) || (*arrayName == 0) ) XMP_Throw ( "Empty array name", kXMPErr_BadXPath );
 		if ( (fieldNS == 0) || (*fieldNS == 0) ) XMP_Throw ( "Empty field namespace URI", kXMPErr_BadSchema );
 		if ( (fieldName == 0) || (*fieldName == 0) ) XMP_Throw ( "Empty field name", kXMPErr_BadXPath );
 		if ( fieldValue == 0 ) fieldValue = "";
-		
-		if ( fullPath == 0 ) fullPath = &voidStringPtr;
-		if ( pathSize == 0 ) pathSize = &voidStringLen;
 
-		XMPUtils::ComposeFieldSelector ( schemaNS, arrayName, fieldNS, fieldName, fieldValue, fullPath, pathSize );
+		XMP_VarString localStr;
 
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( true )
+		XMPUtils::ComposeFieldSelector ( schemaNS, arrayName, fieldNS, fieldName, fieldValue, &localStr );
+		if ( selPath != 0 ) (*SetClientString) ( selPath, localStr.c_str(), localStr.size() );
+
+	XMP_EXIT
 }
 
 // =================================================================================================
 
 void
-WXMPUtils_ConvertFromBool_1 ( XMP_Bool		  binValue,
-							  XMP_StringPtr * strValue,
-							  XMP_StringLen * strSize,
-							  WXMP_Result *	  wResult )
+WXMPUtils_ConvertFromBool_1 ( XMP_Bool		binValue,
+							  void *        strValue,
+							  SetClientStringProc SetClientString,
+							  WXMP_Result *	wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_ConvertFromBool_1" )
+	XMP_ENTER_Static ( "WXMPUtils_ConvertFromBool_1" )
 
-		if ( strValue == 0 ) strValue = &voidStringPtr;
-		if ( strSize == 0 ) strSize = &voidStringLen;
+		XMP_VarString localStr;
 
-		XMPUtils::ConvertFromBool ( binValue, strValue, strSize );
+		XMPUtils::ConvertFromBool ( binValue, &localStr );
+		if ( strValue != 0 ) (*SetClientString) ( strValue, localStr.c_str(), localStr.size() );
 
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( true )
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
 
 void
-WXMPUtils_ConvertFromInt_1 ( XMP_Int32		 binValue,
-							 XMP_StringPtr	 format,
-							 XMP_StringPtr * strValue,
-							 XMP_StringLen * strSize,
-							 WXMP_Result *	 wResult )
+WXMPUtils_ConvertFromInt_1 ( XMP_Int32	   binValue,
+							 XMP_StringPtr format,
+							 void *        strValue,
+							 SetClientStringProc SetClientString,
+							 WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_ConvertFromInt_1" )
+	XMP_ENTER_Static ( "WXMPUtils_ConvertFromInt_1" )
 
 		if ( format == 0 ) format = "";
-		
-		if ( strValue == 0 ) strValue = &voidStringPtr;
-		if ( strSize == 0 ) strSize = &voidStringLen;
 
-		XMPUtils::ConvertFromInt ( binValue, format, strValue, strSize );
+		XMP_VarString localStr;
 
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( true )
+		XMPUtils::ConvertFromInt ( binValue, format, &localStr );
+		if ( strValue != 0 ) (*SetClientString) ( strValue, localStr.c_str(), localStr.size() );
+
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
 
 void
-WXMPUtils_ConvertFromInt64_1 ( XMP_Int64	   binValue,
-							   XMP_StringPtr   format,
-							   XMP_StringPtr * strValue,
-							   XMP_StringLen * strSize,
-							   WXMP_Result *   wResult )
+WXMPUtils_ConvertFromInt64_1 ( XMP_Int64	 binValue,
+							   XMP_StringPtr format,
+							   void *        strValue,
+							   SetClientStringProc SetClientString,
+							   WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_ConvertFromInt64_1" )
+	XMP_ENTER_Static ( "WXMPUtils_ConvertFromInt64_1" )
 
 		if ( format == 0 ) format = "";
-		
-		if ( strValue == 0 ) strValue = &voidStringPtr;
-		if ( strSize == 0 ) strSize = &voidStringLen;
 
-		XMPUtils::ConvertFromInt64 ( binValue, format, strValue, strSize );
+		XMP_VarString localStr;
 
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( true )
+		XMPUtils::ConvertFromInt64 ( binValue, format, &localStr );
+		if ( strValue != 0 ) (*SetClientString) ( strValue, localStr.c_str(), localStr.size() );
+
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
 
 void
-WXMPUtils_ConvertFromFloat_1 ( double		   binValue,
-							   XMP_StringPtr   format,
-							   XMP_StringPtr * strValue,
-							   XMP_StringLen * strSize,
-							   WXMP_Result *   wResult )
+WXMPUtils_ConvertFromFloat_1 ( double		 binValue,
+							   XMP_StringPtr format,
+							   void *        strValue,
+							   SetClientStringProc SetClientString,
+							   WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_ConvertFromFloat_1" )
+	XMP_ENTER_Static ( "WXMPUtils_ConvertFromFloat_1" )
 
 		if ( format == 0 ) format = "";
-		
-		if ( strValue == 0 ) strValue = &voidStringPtr;
-		if ( strSize == 0 ) strSize = &voidStringLen;
 
-		XMPUtils::ConvertFromFloat ( binValue, format, strValue, strSize );
+		XMP_VarString localStr;
 
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( true )
+		XMPUtils::ConvertFromFloat ( binValue, format, &localStr );
+		if ( strValue != 0 ) (*SetClientString) ( strValue, localStr.c_str(), localStr.size() );
+
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
 
 void
 WXMPUtils_ConvertFromDate_1 ( const XMP_DateTime & binValue,
-							  XMP_StringPtr *	   strValue,
-							  XMP_StringLen *	   strSize,
+							  void *               strValue,
+							  SetClientStringProc SetClientString,
 							  WXMP_Result *		   wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_ConvertFromDate_1" )
+	XMP_ENTER_Static ( "WXMPUtils_ConvertFromDate_1" )
 
-		if ( strValue == 0 ) strValue = &voidStringPtr;
-		if ( strSize == 0 ) strSize = &voidStringLen;
+		XMP_VarString localStr;
 
-		XMPUtils::ConvertFromDate( binValue, strValue, strSize );
+		XMPUtils::ConvertFromDate( binValue, &localStr );
+		if ( strValue != 0 ) (*SetClientString) ( strValue, localStr.c_str(), localStr.size() );
 
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( true )
+	XMP_EXIT
 }
 
 // =================================================================================================
@@ -274,13 +263,13 @@ void
 WXMPUtils_ConvertToBool_1 ( XMP_StringPtr strValue,
 							WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPUtils_ConvertToBool_1" )
+	XMP_ENTER_Static ( "WXMPUtils_ConvertToBool_1" )
 
 		if ( (strValue == 0) || (*strValue == 0) ) XMP_Throw ( "Empty string value", kXMPErr_BadParam);
 		XMP_Bool result = XMPUtils::ConvertToBool ( strValue );
 		wResult->int32Result = result;
 
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -289,13 +278,13 @@ void
 WXMPUtils_ConvertToInt_1 ( XMP_StringPtr strValue,
 						   WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPUtils_ConvertToInt_1" )
+	XMP_ENTER_Static ( "WXMPUtils_ConvertToInt_1" )
 
 		if ( (strValue == 0) || (*strValue == 0) ) XMP_Throw ( "Empty string value", kXMPErr_BadParam);
 		XMP_Int32 result = XMPUtils::ConvertToInt ( strValue );
 		wResult->int32Result = result;
 
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -304,13 +293,13 @@ void
 WXMPUtils_ConvertToInt64_1 ( XMP_StringPtr strValue,
 						     WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPUtils_ConvertToInt64_1" )
+	XMP_ENTER_Static ( "WXMPUtils_ConvertToInt64_1" )
 
 		if ( (strValue == 0) || (*strValue == 0) ) XMP_Throw ( "Empty string value", kXMPErr_BadParam);
 		XMP_Int64 result = XMPUtils::ConvertToInt64 ( strValue );
 		wResult->int64Result = result;
 
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -319,13 +308,13 @@ void
 WXMPUtils_ConvertToFloat_1 ( XMP_StringPtr strValue,
 							 WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPUtils_ConvertToFloat_1")
+	XMP_ENTER_Static ( "WXMPUtils_ConvertToFloat_1")
 
 		if ( (strValue == 0) || (*strValue == 0) ) XMP_Throw ( "Empty string value", kXMPErr_BadParam);
 		double result = XMPUtils::ConvertToFloat ( strValue );
 		wResult->floatResult = result;
 
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -335,12 +324,12 @@ WXMPUtils_ConvertToDate_1 ( XMP_StringPtr  strValue,
 							XMP_DateTime * binValue,
 							WXMP_Result *  wResult )
 {
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPUtils_ConvertToDate_1" )
+	XMP_ENTER_Static ( "WXMPUtils_ConvertToDate_1" )
 
 		if ( binValue == 0 ) XMP_Throw ( "Null output date", kXMPErr_BadParam); // ! Pointer is from the client.
 		XMPUtils::ConvertToDate ( strValue, binValue );
 
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // =================================================================================================
@@ -349,12 +338,12 @@ void
 WXMPUtils_CurrentDateTime_1 ( XMP_DateTime * time,
 							  WXMP_Result *	 wResult )
 {
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPUtils_CurrentDateTime_1" )
-	
+	XMP_ENTER_Static ( "WXMPUtils_CurrentDateTime_1" )
+
 		if ( time == 0 ) XMP_Throw ( "Null output date", kXMPErr_BadParam);
 		XMPUtils::CurrentDateTime ( time );
 
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -363,12 +352,12 @@ void
 WXMPUtils_SetTimeZone_1 ( XMP_DateTime * time,
 						  WXMP_Result *	 wResult )
 {
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPUtils_SetTimeZone_1" )
+	XMP_ENTER_Static ( "WXMPUtils_SetTimeZone_1" )
 
 		if ( time == 0 ) XMP_Throw ( "Null output date", kXMPErr_BadParam);
 		XMPUtils::SetTimeZone ( time );
 
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -377,12 +366,12 @@ void
 WXMPUtils_ConvertToUTCTime_1 ( XMP_DateTime * time,
 							   WXMP_Result *  wResult )
 {
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPUtils_ConvertToUTCTime_1" )
+	XMP_ENTER_Static ( "WXMPUtils_ConvertToUTCTime_1" )
 
 		if ( time == 0 ) XMP_Throw ( "Null output date", kXMPErr_BadParam);
 		XMPUtils::ConvertToUTCTime ( time );
 
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -391,12 +380,12 @@ void
 WXMPUtils_ConvertToLocalTime_1 ( XMP_DateTime * time,
 								 WXMP_Result *	wResult )
 {
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPUtils_ConvertToLocalTime_1" )
+	XMP_ENTER_Static ( "WXMPUtils_ConvertToLocalTime_1" )
 
 		if ( time == 0 ) XMP_Throw ( "Null output date", kXMPErr_BadParam);
 		XMPUtils::ConvertToLocalTime ( time );
 
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -406,77 +395,77 @@ WXMPUtils_CompareDateTime_1 ( const XMP_DateTime & left,
 							  const XMP_DateTime & right,
 							  WXMP_Result *		   wResult )
 {
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPUtils_CompareDateTime_1" )
+	XMP_ENTER_Static ( "WXMPUtils_CompareDateTime_1" )
 
 		int result = XMPUtils::CompareDateTime ( left, right );
 		wResult->int32Result = result;
 
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // =================================================================================================
 
 void
-WXMPUtils_EncodeToBase64_1 ( XMP_StringPtr	 rawStr,
-							 XMP_StringLen	 rawLen,
-							 XMP_StringPtr * encodedStr,
-							 XMP_StringLen * encodedLen,
-							 WXMP_Result *	 wResult )
+WXMPUtils_EncodeToBase64_1 ( XMP_StringPtr rawStr,
+							 XMP_StringLen rawLen,
+							 void *        encodedStr,
+							 SetClientStringProc SetClientString,
+							 WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_EncodeToBase64_1" )
-	
-		if ( encodedStr == 0 ) encodedStr = &voidStringPtr;
-		if ( encodedLen == 0 ) encodedLen = &voidStringLen;
+	XMP_ENTER_Static ( "WXMPUtils_EncodeToBase64_1" )
 
-		XMPUtils::EncodeToBase64 ( rawStr, rawLen, encodedStr, encodedLen );
+		XMP_VarString localStr;
 
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( true )
+		XMPUtils::EncodeToBase64 ( rawStr, rawLen, &localStr );
+		if ( encodedStr != 0 ) (*SetClientString) ( encodedStr, localStr.c_str(), localStr.size() );
+
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
 
 void
-WXMPUtils_DecodeFromBase64_1 ( XMP_StringPtr   encodedStr,
-							   XMP_StringLen   encodedLen,
-							   XMP_StringPtr * rawStr,
-							   XMP_StringLen * rawLen,
-							   WXMP_Result *   wResult )
+WXMPUtils_DecodeFromBase64_1 ( XMP_StringPtr encodedStr,
+							   XMP_StringLen encodedLen,
+							   void *        rawStr,
+							   SetClientStringProc SetClientString,
+							   WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_DecodeFromBase64_1" )
+	XMP_ENTER_Static ( "WXMPUtils_DecodeFromBase64_1" )
 
-		if ( rawStr == 0 ) rawStr = &voidStringPtr;
-		if ( rawLen == 0 ) rawLen = &voidStringLen;
+		XMP_VarString localStr;
 
-		XMPUtils::DecodeFromBase64 ( encodedStr, encodedLen, rawStr, rawLen );
+		XMPUtils::DecodeFromBase64 ( encodedStr, encodedLen, &localStr );
+		if ( rawStr != 0 ) (*SetClientString) ( rawStr, localStr.c_str(), localStr.size() );
 
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( true )
+	XMP_EXIT
 }
 
 // =================================================================================================
 
 void
-WXMPUtils_PackageForJPEG_1 ( XMPMetaRef      wxmpObj,
-                             XMP_StringPtr * stdStr,
-                             XMP_StringLen * stdLen,
-                             XMP_StringPtr * extStr,
-                             XMP_StringLen * extLen,
-                             XMP_StringPtr * digestStr,
-                             XMP_StringLen * digestLen,
-                             WXMP_Result *   wResult )
+WXMPUtils_PackageForJPEG_1 ( XMPMetaRef    wxmpObj,
+                             void *        stdStr,
+                             void *        extStr,
+                             void *        digestStr,
+                             SetClientStringProc SetClientString,
+                             WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_PackageForJPEG_1" )
+	XMP_ENTER_Static ( "WXMPUtils_PackageForJPEG_1" )
 
-		if ( stdStr == 0 ) stdStr = &voidStringPtr;
-		if ( stdLen == 0 ) stdLen = &voidStringLen;
-		if ( extStr == 0 ) extStr = &voidStringPtr;
-		if ( extLen == 0 ) extLen = &voidStringLen;
-		if ( digestStr == 0 ) digestStr = &voidStringPtr;
-		if ( digestLen == 0 ) digestLen = &voidStringLen;
+		XMP_VarString localStdStr;
+		XMP_VarString localExtStr;
+		XMP_VarString localDigestStr;
 
 		const XMPMeta & xmpObj = WtoXMPMeta_Ref ( wxmpObj );
-		XMPUtils::PackageForJPEG ( xmpObj, stdStr, stdLen, extStr, extLen, digestStr, digestLen );
+		XMP_AutoLock metaLock ( &xmpObj.lock, kXMP_ReadLock );
 
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( true )
+		XMPUtils::PackageForJPEG ( xmpObj, &localStdStr, &localExtStr, &localDigestStr );
+		if ( stdStr != 0 ) (*SetClientString) ( stdStr, localStdStr.c_str(), localStdStr.size() );
+		if ( extStr != 0 ) (*SetClientString) ( extStr, localExtStr.c_str(), localExtStr.size() );
+		if ( digestStr != 0 ) (*SetClientString) ( digestStr, localDigestStr.c_str(), localDigestStr.size() );
+
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -486,45 +475,52 @@ WXMPUtils_MergeFromJPEG_1 ( XMPMetaRef    wfullXMP,
                             XMPMetaRef    wextendedXMP,
                             WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_MergeFromJPEG_1" )
+	XMP_ENTER_Static ( "WXMPUtils_MergeFromJPEG_1" )
 
 		if ( wfullXMP == 0 ) XMP_Throw ( "Output XMP pointer is null", kXMPErr_BadParam );
+		if ( wfullXMP == wextendedXMP ) XMP_Throw ( "Full and extended XMP pointers match", kXMPErr_BadParam );
 
 		XMPMeta * fullXMP = WtoXMPMeta_Ptr ( wfullXMP );
+		XMP_AutoLock fullXMPLock ( &fullXMP->lock, kXMP_WriteLock );
+
 		const XMPMeta & extendedXMP = WtoXMPMeta_Ref ( wextendedXMP );
+		XMP_AutoLock extendedXMPLock ( &extendedXMP.lock, kXMP_ReadLock );
+
 		XMPUtils::MergeFromJPEG ( fullXMP, extendedXMP );
 
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // =================================================================================================
 
 void
-WXMPUtils_CatenateArrayItems_1 ( XMPMetaRef 	 wxmpObj,
-								 XMP_StringPtr	 schemaNS,
-								 XMP_StringPtr	 arrayName,
-								 XMP_StringPtr	 separator,
-								 XMP_StringPtr	 quotes,
-								 XMP_OptionBits	 options,
-								 XMP_StringPtr * catedStr,
-								 XMP_StringLen * catedLen,
-								 WXMP_Result *	 wResult )
+WXMPUtils_CatenateArrayItems_1 ( XMPMetaRef 	wxmpObj,
+								 XMP_StringPtr	schemaNS,
+								 XMP_StringPtr	arrayName,
+								 XMP_StringPtr	separator,
+								 XMP_StringPtr	quotes,
+								 XMP_OptionBits	options,
+								 void *         catedStr,
+								 SetClientStringProc SetClientString,
+								 WXMP_Result *	wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_CatenateArrayItems_1" )
+	XMP_ENTER_Static ( "WXMPUtils_CatenateArrayItems_1" )
 
 		if ( (schemaNS == 0) || (*schemaNS == 0) ) XMP_Throw ( "Empty schema namespace URI", kXMPErr_BadSchema );
 		if ( (arrayName == 0) || (*arrayName == 0) ) XMP_Throw ( "Empty array name", kXMPErr_BadXPath );
-		
+
 		if ( separator == 0 ) separator = "; ";
 		if ( quotes == 0 ) quotes = "\"";
-		
-		if ( catedStr == 0 ) catedStr = &voidStringPtr;
-		if ( catedLen == 0 ) catedLen = &voidStringLen;
+
+		XMP_VarString localStr;
 
 		const XMPMeta & xmpObj = WtoXMPMeta_Ref ( wxmpObj );
-		XMPUtils::CatenateArrayItems ( xmpObj, schemaNS, arrayName, separator, quotes, options, catedStr, catedLen );
+		XMP_AutoLock metaLock ( &xmpObj.lock, kXMP_ReadLock );
 
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( true )
+		XMPUtils::CatenateArrayItems ( xmpObj, schemaNS, arrayName, separator, quotes, options, &localStr );
+		if ( catedStr != 0 ) (*SetClientString) ( catedStr, localStr.c_str(), localStr.size() );
+
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -537,17 +533,42 @@ WXMPUtils_SeparateArrayItems_1 ( XMPMetaRef 	wxmpObj,
 								 XMP_StringPtr	catedStr,
 								 WXMP_Result *	wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_SeparateArrayItems_1" )
+	XMP_ENTER_Static ( "WXMPUtils_SeparateArrayItems_1" )
 
 		if ( wxmpObj == 0 ) XMP_Throw ( "Output XMP pointer is null", kXMPErr_BadParam );
 		if ( (schemaNS == 0) || (*schemaNS == 0) ) XMP_Throw ( "Empty schema namespace URI", kXMPErr_BadSchema );
 		if ( (arrayName == 0) || (*arrayName == 0) ) XMP_Throw ( "Empty array name", kXMPErr_BadXPath );
 		if ( catedStr == 0 ) catedStr = "";
-		
+
 		XMPMeta * xmpObj = WtoXMPMeta_Ptr ( wxmpObj );
+		XMP_AutoLock metaLock ( &xmpObj->lock, kXMP_WriteLock );
+
 		XMPUtils::SeparateArrayItems ( xmpObj, schemaNS, arrayName, options, catedStr );
 
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void
+WXMPUtils_ApplyTemplate_1 ( XMPMetaRef     wWorkingXMP,
+							XMPMetaRef 	   wTemplateXMP,
+							XMP_OptionBits actions,
+							WXMP_Result *  wResult )
+{
+	XMP_ENTER_Static ( "WXMPUtils_ApplyTemplate_1" )
+
+		XMP_Assert ( (wWorkingXMP != 0) && (wTemplateXMP != 0) );	// Client glue enforced.
+
+		XMPMeta * workingXMP = WtoXMPMeta_Ptr ( wWorkingXMP );
+		XMP_AutoLock workingLock ( &workingXMP->lock, kXMP_WriteLock );
+
+		const XMPMeta & templateXMP = WtoXMPMeta_Ref ( wTemplateXMP );
+		XMP_AutoLock templateLock ( &templateXMP.lock, kXMP_ReadLock );
+
+		XMPUtils::ApplyTemplate ( workingXMP, templateXMP, actions );
+
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -559,36 +580,21 @@ WXMPUtils_RemoveProperties_1 ( XMPMetaRef 	  wxmpObj,
 							   XMP_OptionBits options,
 							   WXMP_Result *  wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_RemoveProperties_1" )
+	XMP_ENTER_Static ( "WXMPUtils_RemoveProperties_1" )
 
 		if ( wxmpObj == 0 ) XMP_Throw ( "Output XMP pointer is null", kXMPErr_BadParam );
 		if ( schemaNS == 0 ) schemaNS = "";
 		if ( propName == 0 ) propName = "";
-		
+
 		XMPMeta * xmpObj = WtoXMPMeta_Ptr ( wxmpObj );
+		XMP_AutoLock metaLock ( &xmpObj->lock, kXMP_WriteLock );
+
 		XMPUtils::RemoveProperties ( xmpObj, schemaNS, propName, options );
 
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
-
-void
-WXMPUtils_AppendProperties_1 ( XMPMetaRef     wSource,
-							   XMPMetaRef 	  wDest,
-							   XMP_OptionBits options,
-							   WXMP_Result *  wResult )
-{
-	XMP_ENTER_WRAPPER ( "WXMPUtils_AppendProperties_1" )
-
-		if ( wDest == 0 ) XMP_Throw ( "Output XMP pointer is null", kXMPErr_BadParam );
-
-		const XMPMeta & source = WtoXMPMeta_Ref ( wSource );
-		XMPMeta * dest = WtoXMPMeta_Ptr ( wDest );
-		XMPUtils::AppendProperties ( source, dest, options );
-
-	XMP_EXIT_WRAPPER
-}
 
 // -------------------------------------------------------------------------------------------------
 
@@ -602,8 +608,8 @@ WXMPUtils_DuplicateSubtree_1 ( XMPMetaRef     wSource,
 							   XMP_OptionBits options,
 							   WXMP_Result *  wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPUtils_DuplicateSubtree_1" )
-	
+	XMP_ENTER_Static ( "WXMPUtils_DuplicateSubtree_1" )
+
 		if ( wDest == 0 ) XMP_Throw ( "Output XMP pointer is null", kXMPErr_BadParam );
 		if ( (sourceNS == 0) || (*sourceNS == 0) ) XMP_Throw ( "Empty source schema URI", kXMPErr_BadSchema );
 		if ( (sourceRoot == 0) || (*sourceRoot == 0) ) XMP_Throw ( "Empty source root name", kXMPErr_BadXPath );
@@ -611,10 +617,14 @@ WXMPUtils_DuplicateSubtree_1 ( XMPMetaRef     wSource,
 		if ( destRoot == 0 ) destRoot = sourceRoot;
 
 		const XMPMeta & source = WtoXMPMeta_Ref ( wSource );
+		XMP_AutoLock sourceLock ( &source.lock, kXMP_ReadLock, (wSource != wDest) );
+
 		XMPMeta * dest = WtoXMPMeta_Ptr ( wDest );
+		XMP_AutoLock destLock ( &dest->lock, kXMP_WriteLock );
+
 		XMPUtils::DuplicateSubtree ( source, dest, sourceNS, sourceRoot, destNS, destRoot, options );
 
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // =================================================================================================

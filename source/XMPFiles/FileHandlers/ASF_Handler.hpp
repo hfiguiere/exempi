@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -26,9 +26,9 @@
 extern XMPFileHandler* ASF_MetaHandlerCTor ( XMPFiles* parent );
 
 extern bool ASF_CheckFormat ( XMP_FileFormat format,
-							   XMP_StringPtr  filePath,
-                               LFA_FileRef    fileRef,
-                               XMPFiles*     parent );
+							  XMP_StringPtr  filePath,
+                              LFA_FileRef    fileRef,
+                              XMPFiles *     parent );
 
 static const XMP_OptionBits kASF_HandlerFlags = ( kXMPFiles_CanInjectXMP | 
 												  kXMPFiles_CanExpand | 
@@ -36,15 +36,13 @@ static const XMP_OptionBits kASF_HandlerFlags = ( kXMPFiles_CanInjectXMP |
                                                   kXMPFiles_CanReconcile |
 												  kXMPFiles_AllowsOnlyXMP | 
 												  kXMPFiles_ReturnsRawPacket |
-												  kXMPFiles_NeedsReadOnlyPacket
-													);
+												  kXMPFiles_NeedsReadOnlyPacket );
 
 class ASF_MetaHandler : public XMPFileHandler
 {
 public:
 
 	void CacheFileData();
-	void ProcessTNail();
 	void ProcessXMP();
 	
 	void UpdateFile ( bool doSafeUpdate );

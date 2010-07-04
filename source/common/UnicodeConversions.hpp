@@ -2,7 +2,7 @@
 #define __UnicodeConversions_h__
 
 // =================================================================================================
-// Copyright 2004-2007 Adobe Systems Incorporated
+// Copyright 2004 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -14,9 +14,10 @@
 // =================================================================================================
 
 #if UnicodeTestBuild
-	typedef unsigned char  UTF8Unit;
-	typedef unsigned short UTF16Unit;
-	typedef unsigned long  UTF32Unit;
+	#error "Never used."
+	//typedef unsigned char  UTF8Unit;
+	//typedef unsigned short UTF16Unit;
+	//typedef unsigned long  UTF32Unit;
 #else
 	typedef XMP_Uns8  UTF8Unit;
 	typedef XMP_Uns16 UTF16Unit;

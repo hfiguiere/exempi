@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2002 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -19,7 +19,7 @@
 #include <stdexcept>
 #include <errno.h>
 
-#if WIN_ENV
+#if XMP_WinBuild
 	#pragma warning ( disable : 4127 )	// conditional expression is constant
 	#pragma warning ( disable : 4996 )	// '...' was declared deprecated
 #endif
@@ -154,7 +154,7 @@ main ( int argc, const char * argv [] )
 		return 0;
 	}
 
-	ProcessFile ( argv[1] );
+	for ( int i = 1; i < argc; ++i ) ProcessFile ( argv[i] );
 		
 	SXMPMeta::Terminate();
 	return 0;

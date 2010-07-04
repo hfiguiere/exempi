@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2003 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -79,10 +79,11 @@ SetNodeValue ( XMP_Node * node, XMP_StringPtr value )
 		}
 	#endif
 	
-	node->value = value;
+	std::string newValue = value;	// Need a local copy to tweak and not change node.value for errors.
 	
-	XMP_Uns8* chPtr = (XMP_Uns8*) node->value.c_str();	// Check for valid UTF-8, replace ASCII controls with a space.
+	XMP_Uns8* chPtr = (XMP_Uns8*) newValue.c_str();	// Check for valid UTF-8, replace ASCII controls with a space.
 	while ( *chPtr != 0 ) {
+
 		while ( (*chPtr != 0) && (*chPtr < 0x80) ) {
 			if ( *chPtr < 0x20 ) {
 				if ( (*chPtr != kTab) && (*chPtr != kLF) && (*chPtr != kCR) ) *chPtr = 0x20;
@@ -91,11 +92,21 @@ SetNodeValue ( XMP_Node * node, XMP_StringPtr value )
 			}
 			++chPtr;
 		}
+
 		XMP_Assert ( (*chPtr == 0) || (*chPtr >= 0x80) );
-		if ( *chPtr != 0 ) (void) GetCodePoint ( (const XMP_Uns8 **) &chPtr );	// Throws for bad UTF-8.
+
+		if ( *chPtr != 0 ) {
+			XMP_Uns32 cp = GetCodePoint ( (const XMP_Uns8 **) &chPtr );	// Throws for bad UTF-8.
+			if ( (cp == 0xFFFE) || (cp == 0xFFFF) ) {
+				XMP_Throw ( "U+FFFE and U+FFFF are not allowed in XML", kXMPErr_BadXML );
+			}
+		}
+
 	}
 
-	if ( XMP_PropIsQualifier(node->options) && (node->name == "xml:lang") ) NormalizeLangValue ( &node->value );
+	if ( XMP_PropIsQualifier(node->options) && (node->name == "xml:lang") ) NormalizeLangValue ( &newValue );
+
+	node->value.swap ( newValue );
 
 	#if 0	// *** XMP_DebugBuild
 		node->_valuePtr = node->value.c_str();
@@ -314,8 +325,18 @@ ChooseLocalizedText ( const XMP_Node *	 arrayNode,
 static void
 AppendLangItem ( XMP_Node * arrayNode, XMP_StringPtr itemLang, XMP_StringPtr itemValue )
 {
-	XMP_Node * newItem  = new XMP_Node ( arrayNode, kXMP_ArrayItemName, itemValue, (kXMP_PropHasQualifiers | kXMP_PropHasLang) );
-	XMP_Node * langQual = new XMP_Node ( newItem, "xml:lang", itemLang, kXMP_PropIsQualifier );
+	XMP_Node * newItem  = new XMP_Node ( arrayNode, kXMP_ArrayItemName, (kXMP_PropHasQualifiers | kXMP_PropHasLang) );
+	XMP_Node * langQual = new XMP_Node ( newItem, "xml:lang", kXMP_PropIsQualifier );
+	
+	try {	// ! Use SetNodeValue, not constructors above, to get the character checks.
+		SetNodeValue ( newItem, itemValue );
+		SetNodeValue ( langQual, itemLang );
+	} catch (...) {
+		delete newItem;
+		delete langQual;
+		throw;
+	}
+	
 	newItem->qualifiers.push_back ( langQual );
 
 	if ( (arrayNode->children.empty()) || (langQual->value != "x-default") ) {
@@ -373,17 +394,19 @@ XMPMeta::GetArrayItem ( XMP_StringPtr	 schemaNS,
 						XMP_StringPtr	 arrayName,
 						XMP_Index		 itemIndex,
 						XMP_StringPtr *	 itemValue,
-						XMP_StringLen *	 valueSize,
+						XMP_StringLen *  valueSize,
 						XMP_OptionBits * options ) const
 {
 	XMP_Assert ( (schemaNS != 0) && (arrayName != 0) );	// Enforced by wrapper.
-	XMP_Assert ( (itemValue != 0) && (valueSize != 0) && (options != 0) );	// Enforced by wrapper.
+	XMP_Assert ( (itemValue != 0) && (options != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr itemPath;
-	XMP_StringLen pathLen;
+	// ! Special case check to make errors consistent if the array does not exist. The other array
+	// ! functions and existing array here (empty or not) already throw.
+	if ( (itemIndex <= 0) && (itemIndex != kXMP_ArrayLastItem) ) XMP_Throw ( "Array index must be larger than zero", kXMPErr_BadXPath );
 
-	XMPUtils::ComposeArrayItemPath ( schemaNS, arrayName, itemIndex, &itemPath, &pathLen );
-	return GetProperty ( schemaNS, itemPath, itemValue, valueSize, options );
+	XMP_VarString itemPath;
+	XMPUtils::ComposeArrayItemPath ( schemaNS, arrayName, itemIndex, &itemPath );
+	return GetProperty ( schemaNS, itemPath.c_str(), itemValue, valueSize, options );
 
 }	// GetArrayItem
 
@@ -402,13 +425,11 @@ XMPMeta::GetStructField	( XMP_StringPtr	   schemaNS,
 						  XMP_OptionBits * options ) const
 {
 	XMP_Assert ( (schemaNS != 0) && (structName != 0) && (fieldNS != 0) && (fieldName != 0) );	// Enforced by wrapper.
-	XMP_Assert ( (fieldValue != 0) && (valueSize != 0) && (options != 0) );	// Enforced by wrapper.
+	XMP_Assert ( (fieldValue != 0) && (options != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr fieldPath;
-	XMP_StringLen pathLen;
-
-	XMPUtils::ComposeStructFieldPath ( schemaNS, structName, fieldNS, fieldName, &fieldPath, &pathLen );
-	return GetProperty ( schemaNS, fieldPath, fieldValue, valueSize, options );
+	XMP_VarString fieldPath;
+	XMPUtils::ComposeStructFieldPath ( schemaNS, structName, fieldNS, fieldName, &fieldPath );
+	return GetProperty ( schemaNS, fieldPath.c_str(), fieldValue, valueSize, options );
 
 }	// GetStructField
 
@@ -423,17 +444,15 @@ XMPMeta::GetQualifier ( XMP_StringPtr	 schemaNS,
 						XMP_StringPtr	 qualNS,
 						XMP_StringPtr	 qualName,
 						XMP_StringPtr *	 qualValue,
-						XMP_StringLen *	 valueSize,
+						XMP_StringLen *  valueSize,
 						XMP_OptionBits * options ) const
 {
 	XMP_Assert ( (schemaNS != 0) && (propName != 0) && (qualNS != 0) && (qualName != 0) );	// Enforced by wrapper.
-	XMP_Assert ( (qualValue != 0) && (valueSize != 0) && (options != 0) );	// Enforced by wrapper.
+	XMP_Assert ( (qualValue != 0) && (options != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr qualPath;
-	XMP_StringLen pathLen;
-
-	XMPUtils::ComposeQualifierPath ( schemaNS, propName, qualNS, qualName, &qualPath, &pathLen );
-	return GetProperty ( schemaNS, qualPath, qualValue, valueSize, options );
+	XMP_VarString qualPath;
+	XMPUtils::ComposeQualifierPath ( schemaNS, propName, qualNS, qualName, &qualPath );
+	return GetProperty ( schemaNS, qualPath.c_str(), qualValue, valueSize, options );
 
 }	// GetQualifier
 
@@ -550,11 +569,9 @@ XMPMeta::SetStructField	( XMP_StringPtr	 schemaNS,
 {
 	XMP_Assert ( (schemaNS != 0) && (structName != 0) && (fieldNS != 0) && (fieldName != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr	fieldPath;
-	XMP_StringLen	pathLen;
-
-	XMPUtils::ComposeStructFieldPath ( schemaNS, structName, fieldNS, fieldName, &fieldPath, &pathLen );
-	SetProperty ( schemaNS, fieldPath, fieldValue, options );
+	XMP_VarString fieldPath;
+	XMPUtils::ComposeStructFieldPath ( schemaNS, structName, fieldNS, fieldName, &fieldPath );
+	SetProperty ( schemaNS, fieldPath.c_str(), fieldValue, options );
 
 }	// SetStructField
 
@@ -573,16 +590,14 @@ XMPMeta::SetQualifier ( XMP_StringPtr  schemaNS,
 {
 	XMP_Assert ( (schemaNS != 0) && (propName != 0) && (qualNS != 0) && (qualName != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr	qualPath;
-	XMP_StringLen	pathLen;
-
 	XMP_ExpandedXPath expPath;
 	ExpandXPath ( schemaNS, propName, &expPath );
 	XMP_Node * propNode = FindNode ( &tree, expPath, kXMP_ExistingOnly );
 	if ( propNode == 0 ) XMP_Throw ( "Specified property does not exist", kXMPErr_BadXPath );
 
-	XMPUtils::ComposeQualifierPath ( schemaNS, propName, qualNS, qualName, &qualPath, &pathLen );
-	SetProperty ( schemaNS, qualPath, qualValue, options );
+	XMP_VarString qualPath;
+	XMPUtils::ComposeQualifierPath ( schemaNS, propName, qualNS, qualName, &qualPath );
+	SetProperty ( schemaNS, qualPath.c_str(), qualValue, options );
 
 }	// SetQualifier
 
@@ -644,11 +659,9 @@ XMPMeta::DeleteArrayItem ( XMP_StringPtr schemaNS,
 {
 	XMP_Assert ( (schemaNS != 0) && (arrayName != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr	itemPath;
-	XMP_StringLen	pathLen;
-
-	XMPUtils::ComposeArrayItemPath ( schemaNS, arrayName, itemIndex, &itemPath, &pathLen );
-	DeleteProperty ( schemaNS, itemPath );
+	XMP_VarString itemPath;
+	XMPUtils::ComposeArrayItemPath ( schemaNS, arrayName, itemIndex, &itemPath );
+	DeleteProperty ( schemaNS, itemPath.c_str() );
 
 }	// DeleteArrayItem
 
@@ -665,11 +678,9 @@ XMPMeta::DeleteStructField ( XMP_StringPtr schemaNS,
 {
 	XMP_Assert ( (schemaNS != 0) && (structName != 0) && (fieldNS != 0) && (fieldName != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr	fieldPath;
-	XMP_StringLen	pathLen;
-
-	XMPUtils::ComposeStructFieldPath ( schemaNS, structName, fieldNS, fieldName, &fieldPath, &pathLen );
-	DeleteProperty ( schemaNS, fieldPath );
+	XMP_VarString fieldPath;
+	XMPUtils::ComposeStructFieldPath ( schemaNS, structName, fieldNS, fieldName, &fieldPath );
+	DeleteProperty ( schemaNS, fieldPath.c_str() );
 
 }	// DeleteStructField
 
@@ -686,11 +697,9 @@ XMPMeta::DeleteQualifier ( XMP_StringPtr schemaNS,
 {
 	XMP_Assert ( (schemaNS != 0) && (propName != 0) && (qualNS != 0) && (qualName != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr	qualPath;
-	XMP_StringLen	pathLen;
-
-	XMPUtils::ComposeQualifierPath ( schemaNS, propName, qualNS, qualName, &qualPath, &pathLen );
-	DeleteProperty ( schemaNS, qualPath );
+	XMP_VarString qualPath;
+	XMPUtils::ComposeQualifierPath ( schemaNS, propName, qualNS, qualName, &qualPath );
+	DeleteProperty ( schemaNS, qualPath.c_str() );
 
 }	// DeleteQualifier
 
@@ -725,11 +734,9 @@ XMPMeta::DoesArrayItemExist	( XMP_StringPtr	schemaNS,
 {
 	XMP_Assert ( (schemaNS != 0) && (arrayName != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr	itemPath;
-	XMP_StringLen	pathLen;
-
-	XMPUtils::ComposeArrayItemPath ( schemaNS, arrayName, itemIndex, &itemPath, &pathLen );
-	return DoesPropertyExist ( schemaNS, itemPath );
+	XMP_VarString itemPath;
+	XMPUtils::ComposeArrayItemPath ( schemaNS, arrayName, itemIndex, &itemPath );
+	return DoesPropertyExist ( schemaNS, itemPath.c_str() );
 
 }	// DoesArrayItemExist
 
@@ -746,11 +753,9 @@ XMPMeta::DoesStructFieldExist ( XMP_StringPtr schemaNS,
 {
 	XMP_Assert ( (schemaNS != 0) && (structName != 0) && (fieldNS != 0) && (fieldName != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr	fieldPath;
-	XMP_StringLen	pathLen;
-
-	XMPUtils::ComposeStructFieldPath ( schemaNS, structName, fieldNS, fieldName, &fieldPath, &pathLen );
-	return DoesPropertyExist ( schemaNS, fieldPath );
+	XMP_VarString fieldPath;
+	XMPUtils::ComposeStructFieldPath ( schemaNS, structName, fieldNS, fieldName, &fieldPath );
+	return DoesPropertyExist ( schemaNS, fieldPath.c_str() );
 
 }	// DoesStructFieldExist
 
@@ -767,11 +772,9 @@ XMPMeta::DoesQualifierExist	( XMP_StringPtr	schemaNS,
 {
 	XMP_Assert ( (schemaNS != 0) && (propName != 0) && (qualNS != 0) && (qualName != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr	qualPath;
-	XMP_StringLen	pathLen;
-
-	XMPUtils::ComposeQualifierPath ( schemaNS, propName, qualNS, qualName, &qualPath, &pathLen );
-	return DoesPropertyExist ( schemaNS, qualPath );
+	XMP_VarString qualPath;
+	XMPUtils::ComposeQualifierPath ( schemaNS, propName, qualNS, qualName, &qualPath );
+	return DoesPropertyExist ( schemaNS, qualPath.c_str() );
 
 }	// DoesQualifierExist
 
@@ -971,6 +974,107 @@ XMPMeta::SetLocalizedText ( XMP_StringPtr  schemaNS,
 
 }	// SetLocalizedText
 
+// -------------------------------------------------------------------------------------------------
+// DeleteLocalizedText
+// -------------------
+
+void
+XMPMeta::DeleteLocalizedText ( XMP_StringPtr schemaNS,
+                               XMP_StringPtr arrayName,
+                               XMP_StringPtr _genericLang,
+                               XMP_StringPtr _specificLang )
+{
+	XMP_Assert ( (schemaNS != 0) && (arrayName != 0) && (_genericLang != 0) && (_specificLang != 0) );	// Enforced by wrapper.
+
+	XMP_VarString zGenericLang  ( _genericLang );
+	XMP_VarString zSpecificLang ( _specificLang );
+	NormalizeLangValue ( &zGenericLang );
+	NormalizeLangValue ( &zSpecificLang );
+
+	XMP_StringPtr genericLang  = zGenericLang.c_str();
+	XMP_StringPtr specificLang = zSpecificLang.c_str();
+
+	XMP_ExpandedXPath arrayPath;
+	ExpandXPath ( schemaNS, arrayName, &arrayPath );
+	
+	// Find the LangAlt array and the selected array item.
+
+	XMP_Node * arrayNode = FindNode ( &tree, arrayPath, kXMP_ExistingOnly );
+	if ( arrayNode == 0 ) return;
+	size_t arraySize = arrayNode->children.size();
+
+	XMP_CLTMatch match;
+	XMP_Node * itemNode;
+
+	match = ChooseLocalizedText ( arrayNode, genericLang, specificLang, (const XMP_Node **) &itemNode );
+	if ( match != kXMP_CLT_SpecificMatch ) return;
+
+	size_t itemIndex = 0;
+	for ( ; itemIndex < arraySize; ++itemIndex ) {
+		if ( arrayNode->children[itemIndex] == itemNode ) break;
+	}
+	XMP_Enforce ( itemIndex < arraySize );
+	
+	// Decide if the selected item is x-default or not, find relevant matching item.
+	
+	bool itemIsXDefault = false;
+	if ( ! itemNode->qualifiers.empty() ) {
+		XMP_Node * qualNode = itemNode->qualifiers[0];
+		if ( (qualNode->name == "xml:lang") && (qualNode->value == "x-default") ) itemIsXDefault = true;
+	}
+	
+	if ( itemIsXDefault && (itemIndex != 0) ) {	// Enforce the x-default is first policy.
+		XMP_Node * temp = arrayNode->children[0];
+		arrayNode->children[0] = arrayNode->children[itemIndex];
+		arrayNode->children[itemIndex] = temp;
+		itemIndex = 0;
+	}
+	
+	XMP_Node * assocNode = 0;
+	size_t assocIndex;
+	size_t assocIsXDefault = false;
+	
+	if ( itemIsXDefault ) {
+
+		for ( assocIndex = 1; assocIndex < arraySize; ++assocIndex ) {
+			if ( arrayNode->children[assocIndex]->value == itemNode->value ) {
+				assocNode = arrayNode->children[assocIndex];
+				break;
+			}
+		}
+
+	} else if ( itemIndex > 0 ) {
+
+		XMP_Node * itemZero = arrayNode->children[0];
+		if ( itemZero->value == itemNode->value ) {
+			XMP_Node * qualNode = itemZero->qualifiers[0];
+			if ( (qualNode->name == "xml:lang") && (qualNode->value == "x-default") ) {
+				assocNode = arrayNode->children[0];
+				assocIndex = 0;
+				assocIsXDefault = true;
+			}
+		}
+
+	}
+	
+	// Delete the appropriate nodes.
+	
+	XMP_NodePtrPos arrayBegin = arrayNode->children.begin();
+	
+	if ( assocNode == 0 ) {
+		arrayNode->children.erase ( arrayBegin + itemIndex );
+	} else if ( itemIndex < assocIndex ) {
+		arrayNode->children.erase ( arrayBegin + assocIndex );
+		arrayNode->children.erase ( arrayBegin + itemIndex );
+	} else {
+		arrayNode->children.erase ( arrayBegin + itemIndex );
+		arrayNode->children.erase ( arrayBegin + assocIndex );
+	}
+
+	delete itemNode;
+	if ( assocNode != 0 ) delete assocNode;
+
+}	// DeleteLocalizedText
 
 // -------------------------------------------------------------------------------------------------
 // GetProperty_Bool
@@ -1114,11 +1218,9 @@ XMPMeta::SetProperty_Bool ( XMP_StringPtr  schemaNS,
 {
 	XMP_Assert ( (schemaNS != 0) && (propName != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr	valueStr;
-	XMP_StringLen	valueLen;
-	
-	XMPUtils::ConvertFromBool ( propValue, &valueStr, &valueLen );
-	SetProperty ( schemaNS, propName, valueStr, options );
+	XMP_VarString valueStr;
+	XMPUtils::ConvertFromBool ( propValue, &valueStr );
+	SetProperty ( schemaNS, propName, valueStr.c_str(), options );
 	
 }	// SetProperty_Bool
 
@@ -1135,11 +1237,9 @@ XMPMeta::SetProperty_Int ( XMP_StringPtr  schemaNS,
 {
 	XMP_Assert ( (schemaNS != 0) && (propName != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr	valueStr;
-	XMP_StringLen	valueLen;
-	
-	XMPUtils::ConvertFromInt ( propValue, "", &valueStr, &valueLen );
-	SetProperty ( schemaNS, propName, valueStr, options );
+	XMP_VarString valueStr;
+	XMPUtils::ConvertFromInt ( propValue, "", &valueStr );
+	SetProperty ( schemaNS, propName, valueStr.c_str(), options );
 	
 }	// SetProperty_Int
 
@@ -1156,11 +1256,9 @@ XMPMeta::SetProperty_Int64 ( XMP_StringPtr  schemaNS,
 {
 	XMP_Assert ( (schemaNS != 0) && (propName != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr	valueStr;
-	XMP_StringLen	valueLen;
-	
-	XMPUtils::ConvertFromInt64 ( propValue, "", &valueStr, &valueLen );
-	SetProperty ( schemaNS, propName, valueStr, options );
+	XMP_VarString valueStr;
+	XMPUtils::ConvertFromInt64 ( propValue, "", &valueStr );
+	SetProperty ( schemaNS, propName, valueStr.c_str(), options );
 	
 }	// SetProperty_Int64
 
@@ -1177,11 +1275,9 @@ XMPMeta::SetProperty_Float ( XMP_StringPtr	schemaNS,
 {
 	XMP_Assert ( (schemaNS != 0) && (propName != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr	valueStr;
-	XMP_StringLen	valueLen;
-	
-	XMPUtils::ConvertFromFloat ( propValue, "", &valueStr, &valueLen );
-	SetProperty ( schemaNS, propName, valueStr, options );
+	XMP_VarString valueStr;
+	XMPUtils::ConvertFromFloat ( propValue, "", &valueStr );
+	SetProperty ( schemaNS, propName, valueStr.c_str(), options );
 	
 }	// SetProperty_Float
 
@@ -1198,11 +1294,9 @@ XMPMeta::SetProperty_Date ( XMP_StringPtr		   schemaNS,
 {
 	XMP_Assert ( (schemaNS != 0) && (propName != 0) );	// Enforced by wrapper.
 
-	XMP_StringPtr	valueStr;
-	XMP_StringLen	valueLen;
-	
-	XMPUtils::ConvertFromDate ( propValue, &valueStr, &valueLen );
-	SetProperty ( schemaNS, propName, valueStr, options );
+	XMP_VarString valueStr;
+	XMPUtils::ConvertFromDate ( propValue, &valueStr );
+	SetProperty ( schemaNS, propName, valueStr.c_str(), options );
 	
 }	// SetProperty_Date
 

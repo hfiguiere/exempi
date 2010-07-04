@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2004-2008 Adobe Systems Incorporated
+// Copyright 2004 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -13,6 +13,7 @@
 #include "XMP_Environment.h"	// ! Must be the first #include!
 #include "XMP_Const.h"
 #include "XMP_BuildInfo.h"
+#include "XMP_LibUtils.hpp"
 #include "EndianUtils.hpp"
 
 #include <string>
@@ -30,14 +31,12 @@
 #include <cassert>
 
 #if XMP_WinBuild
-	#include <Windows.h>
 	#define snprintf _snprintf
 #else
 	#if XMP_MacBuild
 		#include <Files.h>
 	#endif
 	// POSIX headers for both Mac and generic UNIX.
-	#include <pthread.h>
 	#include <fcntl.h>
 	#include <unistd.h>
 	#include <dirent.h>
@@ -48,7 +47,9 @@
 // =================================================================================================
 // General global variables and macros
 
-extern long sXMPFilesInitCount;
+extern bool ignoreLocalText;
+
+extern XMP_Int32 sXMPFilesInitCount;
 
 #ifndef GatherPerformanceData
 	#define GatherPerformanceData 0
@@ -67,14 +68,13 @@ extern long sXMPFilesInitCount;
 		kAPIPerf_OpenFile,
 		kAPIPerf_CloseFile,
 		kAPIPerf_GetXMP,
-		kAPIPerf_GetThumbnail,
 		kAPIPerf_PutXMP,
 		kAPIPerf_CanPutXMP,
 		kAPIPerfProcCount	// Last, count of the procs.
 	};
 	
 	static const char* kAPIPerfNames[] =
-		{ "OpenFile", "CloseFile", "GetXMP", "GetThumbnail", "PutXMP", "CanPutXMP", 0 };
+		{ "OpenFile", "CloseFile", "GetXMP", "PutXMP", "CanPutXMP", 0 };
 	
 	struct APIPerfItem {
 		XMP_Uns8    whichProc;
@@ -133,10 +133,6 @@ extern const char * kKnownRejectedFiles[];
 
 #define Uns8Ptr(p) ((XMP_Uns8 *) (p))
 
-#define kTab ((char)0x09)
-#define kLF ((char)0x0A)
-#define kCR ((char)0x0D)
-
 #define IsNewline( ch )    ( ((ch) == kLF) || ((ch) == kCR) )
 #define IsSpaceOrTab( ch ) ( ((ch) == ' ') || ((ch) == kTab) )
 #define IsWhitespace( ch ) ( IsSpaceOrTab ( ch ) || IsNewline ( ch ) )
@@ -160,31 +156,40 @@ static inline void MakeUpperCase ( std::string * str )
 #define XMP_LitMatch(s,l)		(std::strcmp((s),(l)) == 0)
 #define XMP_LitNMatch(s,l,n)	(std::strncmp((s),(l),(n)) == 0)
 
-#define IgnoreParam(p)	voidVoidPtr = (void*)&p
-
 // =================================================================================================
-// Support for asserts
+// Support for call tracing
 
-#define _MakeStr(p)			#p
-#define _NotifyMsg(n,c,f,l)	#n " failed: " #c " in " f " at line " _MakeStr(l)
-#define _NotifyMsg2(msg,c,e) #e " " #msg ": " #c
-
-#if ! XMP_DebugBuild
-	#define XMP_Assert(c)	((void) 0)
-#else
-		#define XMP_Assert(c)	assert ( c )
+#ifndef XMP_TraceFilesCalls
+	#define XMP_TraceFilesCalls			0
+	#define XMP_TraceFilesCallsToFile	0
 #endif
 
-	#define XMP_Enforce(c)																			\
-		if ( ! (c) ) {																				\
-			const char * assert_msg = _NotifyMsg ( XMP_Enforce, (c), __FILE__, __LINE__ );			\
-			XMP_Throw ( assert_msg , kXMPErr_EnforceFailure );										\
-		}
-#define XMP_Validate(c,msg,e)																	\
-	if ( ! (c) ) {																				\
-		const char * enforce_msg = _NotifyMsg2(msg,c,e);										\
-		XMP_Throw ( enforce_msg , e );															\
-	}
+#if XMP_TraceFilesCalls
+
+	#undef AnnounceThrow
+	#undef AnnounceCatch
+
+	#undef AnnounceEntry
+	#undef AnnounceNoLock
+	#undef AnnounceExit
+
+	extern FILE * xmpFilesLog;
+
+	#define AnnounceThrow(msg)	\
+		fprintf ( xmpFilesLog, "XMP_Throw: %s\n", msg ); fflush ( xmpFilesLog )
+	#define AnnounceCatch(msg)	\
+		fprintf ( xmpFilesLog, "Catch in %s: %s\n", procName, msg ); fflush ( xmpFilesLog )
+
+	#define AnnounceEntry(proc)			\
+		const char * procName = proc;	\
+		fprintf ( xmpFilesLog, "Entering %s\n", procName ); fflush ( xmpFilesLog )
+	#define AnnounceNoLock(proc)		\
+		const char * procName = proc;	\
+		fprintf ( xmpFilesLog, "Entering %s (no lock)\n", procName ); fflush ( xmpFilesLog )
+	#define AnnounceExit()	\
+		fprintf ( xmpFilesLog, "Exiting %s\n", procName ); fflush ( xmpFilesLog )
+
+#endif
 
 // =================================================================================================
 // Support for memory leak tracking
@@ -214,148 +219,6 @@ static inline void MakeUpperCase ( std::string * str )
 #endif
 
 // =================================================================================================
-// Support for exceptions and thread locking
-
-// *** Local copies of threading and exception macros from XMP_Impl.hpp. XMPFiles needs to use a
-// *** separate thread lock from XMPCore. Eventually this could benefit from being recast into an
-// *** XMPToolkit_Impl that supports separate locks.
-
-typedef std::string	XMP_VarString;
-
-#ifndef TraceXMPCalls
-	#define TraceXMPCalls	0
-#endif
-
-#if ! TraceXMPCalls
-
-	#define AnnounceThrow(msg)		/* Do nothing. */
-	#define AnnounceCatch(msg)		/* Do nothing. */
-
-	#define AnnounceEntry(proc)		/* Do nothing. */
-	#define AnnounceNoLock(proc)	/* Do nothing. */
-	#define AnnounceExit()			/* Do nothing. */
-
-	#define ReportLock()			++sXMPFilesLockCount
-	#define ReportUnlock()			--sXMPFilesLockCount
-	#define ReportKeepLock()		/* Do nothing. */
-
-#else
-
-	extern FILE * xmpFilesOut;
-
-	#define AnnounceThrow(msg)	\
-		fprintf ( xmpFilesOut, "XMP_Throw: %s\n", msg ); fflush ( xmpFilesOut )
-	#define AnnounceCatch(msg)	\
-		fprintf ( xmpFilesOut, "Catch in %s: %s\n", procName, msg ); fflush ( xmpFilesOut )
-
-	#define AnnounceEntry(proc)			\
-		const char * procName = proc;	\
-		fprintf ( xmpFilesOut, "Entering %s\n", procName ); fflush ( xmpFilesOut )
-	#define AnnounceNoLock(proc)		\
-		const char * procName = proc;	\
-		fprintf ( xmpFilesOut, "Entering %s (no lock)\n", procName ); fflush ( xmpFilesOut )
-	#define AnnounceExit()	\
-		fprintf ( xmpFilesOut, "Exiting %s\n", procName ); fflush ( xmpFilesOut )
-
-	#define ReportLock()	\
-		++sXMPFilesLockCount; fprintf ( xmpFilesOut, "  Auto lock, count = %d\n", sXMPFilesLockCount ); fflush ( xmpFilesOut )
-	#define ReportUnlock()	\
-		--sXMPFilesLockCount; fprintf ( xmpFilesOut, "  Auto unlock, count = %d\n", sXMPFilesLockCount ); fflush ( xmpFilesOut )
-	#define ReportKeepLock()	\
-		fprintf ( xmpFilesOut, "  Keeping lock, count = %d\n", sXMPFilesLockCount ); fflush ( xmpFilesOut )
-
-#endif
-
-#define XMP_Throw(msg,id)	{ AnnounceThrow ( msg ); throw XMP_Error ( id, msg ); }
-
-// -------------------------------------------------------------------------------------------------
-
-#if XMP_WinBuild
-	typedef CRITICAL_SECTION XMP_Mutex;
-#else
-	// Use pthread for both Mac and generic UNIX.
-	typedef pthread_mutex_t XMP_Mutex;
-#endif
-
-extern XMP_Mutex sXMPFilesLock;
-extern int sXMPFilesLockCount;	// Keep signed to catch unlock errors.
-extern XMP_VarString * sXMPFilesExceptionMessage;
-
-extern bool XMP_InitMutex ( XMP_Mutex * mutex );
-extern void XMP_TermMutex ( XMP_Mutex & mutex );
-
-extern void XMP_EnterCriticalRegion ( XMP_Mutex & mutex );
-extern void XMP_ExitCriticalRegion ( XMP_Mutex & mutex );
-
-class XMPFiles_AutoMutex {
-public:
-	XMPFiles_AutoMutex() : mutex(&sXMPFilesLock) { XMP_EnterCriticalRegion ( *mutex ); ReportLock(); };
-	~XMPFiles_AutoMutex() { if ( mutex != 0 ) { ReportUnlock(); XMP_ExitCriticalRegion ( *mutex ); mutex = 0; } };
-	void KeepLock() { ReportKeepLock(); mutex = 0; };
-private:
-	XMP_Mutex * mutex;
-};
-
-// *** Switch to XMPEnterObjectWrapper & XMPEnterStaticWrapper, to allow for per-object locks.
-
-// ! Don't do the initialization check (sXMP_InitCount > 0) for the no-lock case. That macro is used
-// ! by WXMPMeta_Initialize_1.
-
-#define XMP_ENTER_WRAPPER_NO_LOCK(proc)						\
-	AnnounceNoLock ( proc );								\
-	XMP_Assert ( (0 <= sXMPFilesLockCount) && (sXMPFilesLockCount <= 1) );	\
-	try {													\
-		wResult->errMessage = 0;
-
-#define XMP_ENTER_WRAPPER(proc)								\
-	AnnounceEntry ( proc );									\
-	XMP_Assert ( sXMPFilesInitCount > 0 );					\
-	XMP_Assert ( (0 <= sXMPFilesLockCount) && (sXMPFilesLockCount <= 1) );	\
-	try {													\
-		XMPFiles_AutoMutex mutex;							\
-		wResult->errMessage = 0;
-
-#define XMP_EXIT_WRAPPER	\
-	XMP_CATCH_EXCEPTIONS	\
-	AnnounceExit();
-
-#define XMP_EXIT_WRAPPER_KEEP_LOCK(keep)	\
-		if ( keep ) mutex.KeepLock();		\
-	XMP_CATCH_EXCEPTIONS					\
-	AnnounceExit();
-
-#define XMP_EXIT_WRAPPER_NO_THROW				\
-	} catch ( ... )	{							\
-		AnnounceCatch ( "no-throw catch-all" );	\
-		/* Do nothing. */						\
-	}											\
-	AnnounceExit();
-
-#define XMP_CATCH_EXCEPTIONS										\
-	} catch ( XMP_Error & xmpErr ) {								\
-		wResult->int32Result = xmpErr.GetID(); 						\
-		wResult->ptrResult   = (void*)"XMP";						\
-		wResult->errMessage  = xmpErr.GetErrMsg();					\
-		if ( wResult->errMessage == 0 ) wResult->errMessage = "";	\
-		AnnounceCatch ( wResult->errMessage );						\
-	} catch ( std::exception & stdErr ) {							\
-		wResult->int32Result = kXMPErr_StdException; 				\
-		wResult->errMessage  = stdErr.what(); 						\
-		if ( wResult->errMessage == 0 ) wResult->errMessage = "";	\
-		AnnounceCatch ( wResult->errMessage );						\
-	} catch ( ... ) {												\
-		wResult->int32Result = kXMPErr_UnknownException; 			\
-		wResult->errMessage  = "Caught unknown exception";			\
-		AnnounceCatch ( wResult->errMessage );						\
-	}
-
-#if XMP_DebugBuild
-	#define RELEASE_NO_THROW	/* empty */
-#else
-	#define RELEASE_NO_THROW	throw()
-#endif
-
-// =================================================================================================
 // FileHandler declarations
 
 extern void ReadXMPPacket ( XMPFileHandler * handler );
@@ -367,7 +230,6 @@ public:
     
     #define DefaultCTorPresets							\
     	handlerFlags(0), stdCharForm(kXMP_CharUnknown),	\
-    	containsTNail(false), processedTNail(false),	\
     	containsXMP(false), processedXMP(false), needsUpdate(false)
 
     XMPFileHandler() : parent(0), DefaultCTorPresets {};
@@ -376,7 +238,6 @@ public:
 	virtual ~XMPFileHandler() {};	// ! The specific handler is responsible for tnailInfo.tnailImage.
     
 	virtual void CacheFileData() = 0;
-	virtual void ProcessTNail();	// The default implementation just sets processedTNail to true.
 	virtual void ProcessXMP();		// The default implementation just parses the XMP.
 	
 	virtual XMP_OptionBits GetSerializeOptions();	// The default is compact.
@@ -390,8 +251,6 @@ public:
 	XMP_OptionBits handlerFlags;	// Capabilities of this handler.
 	XMP_Uns8       stdCharForm;		// The standard character form for output.
 
-	bool containsTNail;		// True if the file has a native thumbnail.
-	bool processedTNail;	// True if the cached thumbnail data has been processed.
 	bool containsXMP;		// True if the file has XMP or PutXMP has been called.
 	bool processedXMP;		// True if the XMP is parsed and reconciled.
 	bool needsUpdate;		// True if the file needs to be updated.
@@ -399,8 +258,6 @@ public:
 	XMP_PacketInfo packetInfo;	// ! This is always info about the packet in the file, if any!
 	std::string    xmpPacket;	// ! This is the current XMP, updated by XMPFiles::PutXMP.
 	SXMPMeta       xmpObj;
-
-	XMP_ThumbnailInfo tnailInfo;
 
 };	// XMPFileHandler
 

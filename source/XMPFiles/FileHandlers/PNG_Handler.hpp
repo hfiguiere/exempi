@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -25,24 +25,22 @@
 extern XMPFileHandler* PNG_MetaHandlerCTor ( XMPFiles* parent );
 
 extern bool PNG_CheckFormat ( XMP_FileFormat format,
-							   XMP_StringPtr  filePath,
-                               LFA_FileRef    fileRef,
-                               XMPFiles*     parent );
+							  XMP_StringPtr  filePath,
+                              LFA_FileRef    fileRef,
+                              XMPFiles *     parent );
 
 static const XMP_OptionBits kPNG_HandlerFlags = ( kXMPFiles_CanInjectXMP | 
 												  kXMPFiles_CanExpand | 
 												  kXMPFiles_PrefersInPlace | 
 												  kXMPFiles_AllowsOnlyXMP | 
 												  kXMPFiles_ReturnsRawPacket |
-												  kXMPFiles_NeedsReadOnlyPacket
-													);
+												  kXMPFiles_NeedsReadOnlyPacket );
 
 class PNG_MetaHandler : public XMPFileHandler
 {
 public:
 
 	void CacheFileData();
-	void ProcessTNail();
 	void ProcessXMP();
 	
 	void UpdateFile ( bool doSafeUpdate );

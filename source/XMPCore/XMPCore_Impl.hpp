@@ -1,8 +1,8 @@
 #ifndef __XMPCore_Impl_hpp__
-#define __XMPCore_Impl_hpp__
+#define __XMPCore_Impl_hpp__ 1
 
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2004 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -12,21 +12,15 @@
 #include "XMP_Environment.h"	// ! Must be the first #include!
 #include "XMP_Const.h"
 #include "XMP_BuildInfo.h"
+#include "XMP_LibUtils.hpp"
 
-#include "client-glue/WXMPMeta.hpp"
+#include "client-glue/WXMP_Common.hpp"
 
 #include <vector>
 #include <string>
 #include <map>
 
 #include <cassert>
-
-#if XMP_WinBuild
-	#include <Windows.h>
-#else
-	// Use pthread for both Mac and generic UNIX.
-	#include <pthread.h>
-#endif
 
 #if XMP_WinBuild
 	#pragma warning ( disable : 4244 )	// possible loss of data (temporary for 64 bit builds)
@@ -45,15 +39,8 @@ typedef XMP_Node *	XMP_NodePtr;
 typedef std::vector<XMP_Node*>		XMP_NodeOffspring;
 typedef XMP_NodeOffspring::iterator	XMP_NodePtrPos;
 
-typedef std::string	XMP_VarString;
 typedef XMP_VarString::iterator			XMP_VarStringPos;
 typedef XMP_VarString::const_iterator	XMP_cVarStringPos;
-
-typedef std::pair < XMP_VarString, XMP_VarString >	XMP_StringPair;
-
-typedef std::map < XMP_VarString, XMP_VarString > XMP_StringMap;
-typedef XMP_StringMap::iterator			XMP_StringMapPos;
-typedef XMP_StringMap::const_iterator	XMP_cStringMapPos;
 
 typedef std::vector < XPathStepInfo >		XMP_ExpandedXPath;
 typedef XMP_ExpandedXPath::iterator			XMP_ExpandedXPathPos;
@@ -68,13 +55,14 @@ typedef XMP_AliasMap::const_iterator	XMP_cAliasMapPos;
 
 extern XMP_Int32 sXMP_InitCount;
 
-extern XMP_AliasMap *	sRegisteredAliasMap;
+extern XMP_NamespaceTable * sRegisteredNamespaces;
 
-extern XMP_StringMap *	sNamespaceURIToPrefixMap;
-extern XMP_StringMap *	sNamespacePrefixToURIMap;
+extern XMP_AliasMap * sRegisteredAliasMap;
 
-extern XMP_VarString *	sOutputNS;
-extern XMP_VarString *	sOutputStr;
+#define WtoXMPMeta_Ref(xmpRef)	(const XMPMeta &) (*((XMPMeta*)(xmpRef)))
+#define WtoXMPMeta_Ptr(xmpRef)	((XMPMeta*)(xmpRef))
+
+#define WtoXMPDocOps_Ptr(docRef)	((XMPDocOps*)(docRef))
 
 extern void *			voidVoidPtr;	// Used to backfill null output parameters.
 extern XMP_StringPtr	voidStringPtr;
@@ -94,24 +82,9 @@ extern WXMP_Result		void_wResult;
 #define XMP_LitNMatch(s,l,n)	(std::strncmp((s),(l),(n)) == 0)
 	// *** Use the above macros!
 
-#define kTab ((char)0x09)
-#define kLF ((char)0x0A)
-#define kCR ((char)0x0D)
-
 #if XMP_WinBuild
 	#define snprintf _snprintf
 #endif
-
-#define WtoXMPMeta_Ref(xmpRef)	*((const XMPMeta *)(xmpRef))
-#define WtoXMPMeta_Ptr(xmpRef)	(((xmpRef) == 0) ? 0 : (XMPMeta *)(xmpRef))
-
-#define WtoXMPIterator_Ref(iterRef)	*((const XMPIterator *)(iterRef))
-#define WtoXMPIterator_Ptr(iterRef)	(((iterRef) == 0) ? 0 : (XMPIterator *)(iterRef))
-
-#define WtoXMPDocOps_Ref(docRef)	*((const XMPDocOps *)(docRef))
-#define WtoXMPDocOps_Ptr(docRef)	(((docRef) == 0) ? 0 : (XMPDocOps *)(docRef))
-
-#define IgnoreParam(p)	voidVoidPtr = (void*)&p
 
 // =================================================================================================
 // Version info
@@ -130,156 +103,38 @@ extern WXMP_Result		void_wResult;
 	#define kXMPCoreName "XMP Core"
 	#define kXMPCore_VersionMessage	kXMPCoreName " " XMP_API_VERSION_STRING
 // =================================================================================================
-// Support for asserts
+// Support for call tracing
 
-#define _MakeStr(p)			#p
-#define _NotifyMsg(n,c,f,l)	#n " failed: " #c " in " f " at line " _MakeStr(l)
-
-#if ! XMP_DebugBuild
-	#define XMP_Assert(c)	((void) 0)
-#else
-		#define XMP_Assert(c)	assert ( c )
+#ifndef XMP_TraceCoreCalls
+	#define XMP_TraceCoreCalls			0
+	#define XMP_TraceCoreCallsToFile	0
 #endif
 
-	#define XMP_Enforce(c)																			\
-		if ( ! (c) ) {																				\
-			const char * assert_msg = _NotifyMsg ( XMP_Enforce, (c), __FILE__, __LINE__ );			\
-			XMP_Throw ( assert_msg , kXMPErr_EnforceFailure );										\
-		}
-// =================================================================================================
-// Support for exceptions and thread locking
+#if XMP_TraceCoreCalls
 
-#ifndef TraceXMPCalls
-	#define TraceXMPCalls	0
-#endif
+	#undef AnnounceThrow
+	#undef AnnounceCatch
 
-#if ! TraceXMPCalls
+	#undef AnnounceEntry
+	#undef AnnounceNoLock
+	#undef AnnounceExit
 
-	#define AnnounceThrow(msg)		/* Do nothing. */
-	#define AnnounceCatch(msg)		/* Do nothing. */
-
-	#define AnnounceEntry(proc)		/* Do nothing. */
-	#define AnnounceNoLock(proc)	/* Do nothing. */
-	#define AnnounceExit()			/* Do nothing. */
-
-	#define ReportLock()			++sLockCount
-	#define ReportUnlock()			--sLockCount
-	#define ReportKeepLock()		/* Do nothing. */
-
-#else
-
-	extern FILE * xmpCoreOut;
+	extern FILE * xmpCoreLog;
 
 	#define AnnounceThrow(msg)	\
-		fprintf ( xmpCoreOut, "XMP_Throw: %s\n", msg ); fflush ( xmpOut )
+		fprintf ( xmpCoreLog, "XMP_Throw: %s\n", msg ); fflush ( xmpCoreLog )
 	#define AnnounceCatch(msg)	\
-		fprintf ( xmpCoreOut, "Catch in %s: %s\n", procName, msg ); fflush ( xmpOut )
+		fprintf ( xmpCoreLog, "Catch in %s: %s\n", procName, msg ); fflush ( xmpCoreLog )
 
 	#define AnnounceEntry(proc)			\
 		const char * procName = proc;	\
-		fprintf ( xmpCoreOut, "Entering %s\n", procName ); fflush ( xmpOut )
+		fprintf ( xmpCoreLog, "Entering %s\n", procName ); fflush ( xmpCoreLog )
 	#define AnnounceNoLock(proc)		\
 		const char * procName = proc;	\
-		fprintf ( xmpCoreOut, "Entering %s (no lock)\n", procName ); fflush ( xmpOut )
+		fprintf ( xmpCoreLog, "Entering %s (no lock)\n", procName ); fflush ( xmpCoreLog )
 	#define AnnounceExit()	\
-		fprintf ( xmpCoreOut, "Exiting %s\n", procName ); fflush ( xmpOut )
+		fprintf ( xmpCoreLog, "Exiting %s\n", procName ); fflush ( xmpCoreLog )
 
-	#define ReportLock()	\
-		++sLockCount; fprintf ( xmpCoreOut, "  Auto lock, count = %d\n", sLockCount ); fflush ( xmpOut )
-	#define ReportUnlock()	\
-		--sLockCount; fprintf ( xmpCoreOut, "  Auto unlock, count = %d\n", sLockCount ); fflush ( xmpOut )
-	#define ReportKeepLock()	\
-		fprintf ( xmpCoreOut, "  Keeping lock, count = %d\n", sLockCount ); fflush ( xmpOut )
-
-#endif
-
-#define XMP_Throw(msg,id)	{ AnnounceThrow ( msg ); throw XMP_Error ( id, msg ); }
-
-// -------------------------------------------------------------------------------------------------
-
-#if XMP_WinBuild
-	typedef CRITICAL_SECTION XMP_Mutex;
-#else
-	// Use pthread for both Mac and generic UNIX.
-	typedef pthread_mutex_t XMP_Mutex;
-#endif
-
-extern XMP_Mutex sXMPCoreLock;
-extern int	sLockCount;	// Keep signed to catch unlock errors.
-extern XMP_VarString * sExceptionMessage;
-
-extern bool XMP_InitMutex ( XMP_Mutex * mutex );
-extern void XMP_TermMutex ( XMP_Mutex & mutex );
-
-extern void XMP_EnterCriticalRegion ( XMP_Mutex & mutex );
-extern void XMP_ExitCriticalRegion ( XMP_Mutex & mutex );
-
-class XMP_AutoMutex {
-public:
-	XMP_AutoMutex() : mutex(&sXMPCoreLock) { XMP_EnterCriticalRegion ( *mutex ); ReportLock(); };
-	~XMP_AutoMutex() { if ( mutex != 0 ) { ReportUnlock(); XMP_ExitCriticalRegion ( *mutex ); mutex = 0; } };
-	void KeepLock() { ReportKeepLock(); mutex = 0; };
-private:
-	XMP_Mutex * mutex;
-};
-
-// *** Switch to XMPEnterObjectWrapper & XMPEnterStaticWrapper, to allow for per-object locks.
-
-// ! Don't do the initialization check (sXMP_InitCount > 0) for the no-lock case. That macro is used
-// ! by WXMPMeta_Initialize_1.
-
-#define XMP_ENTER_WRAPPER_NO_LOCK(proc)						\
-	AnnounceNoLock ( proc );								\
-	XMP_Assert ( (0 <= sLockCount) && (sLockCount <= 1) );	\
-	try {													\
-		wResult->errMessage = 0;
-
-#define XMP_ENTER_WRAPPER(proc)								\
-	AnnounceEntry ( proc );									\
-	XMP_Assert ( sXMP_InitCount > 0 );	                    \
-	XMP_Assert ( (0 <= sLockCount) && (sLockCount <= 1) );	\
-	try {													\
-		XMP_AutoMutex mutex;								\
-		wResult->errMessage = 0;
-
-#define XMP_EXIT_WRAPPER	\
-	XMP_CATCH_EXCEPTIONS	\
-	AnnounceExit();
-
-#define XMP_EXIT_WRAPPER_KEEP_LOCK(keep)	\
-		if ( keep ) mutex.KeepLock();		\
-	XMP_CATCH_EXCEPTIONS					\
-	AnnounceExit();
-
-#define XMP_EXIT_WRAPPER_NO_THROW				\
-	} catch ( ... )	{							\
-		AnnounceCatch ( "no-throw catch-all" );	\
-		/* Do nothing. */						\
-	}											\
-	AnnounceExit();
-
-#define XMP_CATCH_EXCEPTIONS										\
-	} catch ( XMP_Error & xmpErr ) {								\
-		wResult->int32Result = xmpErr.GetID(); 						\
-		wResult->ptrResult   = (void*)"XMP";						\
-		wResult->errMessage  = xmpErr.GetErrMsg();					\
-		if ( wResult->errMessage == 0 ) wResult->errMessage = "";	\
-		AnnounceCatch ( wResult->errMessage );						\
-	} catch ( std::exception & stdErr ) {							\
-		wResult->int32Result = kXMPErr_StdException; 				\
-		wResult->errMessage  = stdErr.what(); 						\
-		if ( wResult->errMessage == 0 ) wResult->errMessage = "";	\
-		AnnounceCatch ( wResult->errMessage );						\
-	} catch ( ... ) {												\
-		wResult->int32Result = kXMPErr_UnknownException; 			\
-		wResult->errMessage  = "Caught unknown exception";			\
-		AnnounceCatch ( wResult->errMessage );						\
-	}
-
-#if XMP_DebugBuild
-	#define RELEASE_NO_THROW	/* empty */
-#else
-	#define RELEASE_NO_THROW	throw()
 #endif
 
 // =================================================================================================
@@ -341,13 +196,16 @@ extern XMP_Index
 LookupFieldSelector ( const XMP_Node * arrayNode, XMP_StringPtr fieldName, XMP_StringPtr fieldValue );
 
 extern void
-CloneOffspring ( const XMP_Node * origParent, XMP_Node * cloneParent );
+CloneOffspring ( const XMP_Node * origParent, XMP_Node * cloneParent, bool skipEmpty = false );
 
 extern XMP_Node *
-CloneSubtree ( const XMP_Node * origRoot, XMP_Node * cloneParent );
+CloneSubtree ( const XMP_Node * origRoot, XMP_Node * cloneParent, bool skipEmpty = false );
 
 extern bool
 CompareSubtrees ( const XMP_Node & leftNode, const XMP_Node & rightNode );
+
+extern void
+DeleteSubtree ( XMP_NodePtrPos rootNodePos );
 
 extern void
 DeleteEmptySchema ( XMP_Node * schemaNode );

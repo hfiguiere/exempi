@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2004 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -107,9 +107,6 @@ PickMainPacket ( std::vector<CandidateInfo>& candidates, bool beLenient )
 		
 		for ( child = 0; child < (int)candidates.size(); ++child ) {
 			if ( pruned[child] || (child == pkt) ) continue; // Skip already pruned ones and self.
-#if 0	// *** Disable for now, SXMPUtils::HasContainedDoc is Adobe private.
-			pruned[child] = SXMPUtils::HasContainedDoc ( *candidates[pkt].xmpObj, *candidates[child].xmpObj );
-#endif
 		}
 
 	}

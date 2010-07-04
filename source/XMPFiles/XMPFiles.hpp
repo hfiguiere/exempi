@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2004 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -15,7 +15,12 @@
 #define TXMP_STRING_TYPE std::string
 #include "XMP.hpp"
 
-typedef void * LFA_FileRef;
+#if ! UNIX_ENV
+	typedef void * LFA_FileRef;
+#else
+	typedef XMP_Int32 LFA_FileRef;
+#endif
+
 class XMPFileHandler;
 
 // =================================================================================================
@@ -167,9 +172,6 @@ public:
 	XMPFiles();
 	virtual ~XMPFiles();
 
-	static void UnlockLib();
-	void UnlockObj();
-
 	static bool GetFormatInfo ( XMP_FileFormat   format,
                                 XMP_OptionBits * flags = 0 );
 
@@ -186,7 +188,7 @@ public:
                        XMP_StringLen *  filePathLen = 0,
 			           XMP_OptionBits * openFlags = 0,
 			           XMP_FileFormat * format = 0,
-			           XMP_OptionBits * handlerFlags = 0 );
+			           XMP_OptionBits * handlerFlags = 0 ) const;
     
 	void SetAbortProc ( XMP_AbortProc abortProc,
 						void *        abortArg );
@@ -195,8 +197,6 @@ public:
 		          XMP_StringPtr *  xmpPacket = 0,
 		          XMP_StringLen *  xmpPacketLen = 0,
                   XMP_PacketInfo * packetInfo = 0 );
-
-	bool GetThumbnail ( XMP_ThumbnailInfo * tnailInfo );
     
 	void PutXMP ( const SXMPMeta & xmpObj );
     
@@ -211,13 +211,16 @@ public:
 	// Leave this data public so file handlers can see it.
 
 	XMP_Int32 clientRefs;	// ! Must be signed to allow decrement from zero.
+	XMP_ReadWriteLock lock;
 
 	XMP_FileFormat   format;
 	LFA_FileRef      fileRef;		// Non-zero if a file is open.
 	std::string      filePath;
 	XMP_OptionBits   openFlags;
 	XMPFileHandler * handler;		// Non-null if a file is open.
-	void *           handlerTemp;	// For use between the CheckProc and handler creation.
+	
+	void *           tempPtr;	// For use between the CheckProc and handler creation.
+	XMP_Uns32        tempUI32;
 
 	XMP_AbortProc    abortProc;
 	void *           abortArg;

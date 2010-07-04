@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -63,9 +63,11 @@ public:
 private:
 
 	AVCHD_MetaHandler() {};	// Hidden on purpose.
-	
-	void MakeClipInfoPath ( std::string * path, XMP_StringPtr suffix );
-	void MakeClipStreamPath ( std::string * path, XMP_StringPtr suffix );
+
+	bool MakeClipInfoPath ( std::string * path, XMP_StringPtr suffix, bool checkFile = false ) const;
+	bool MakeClipStreamPath ( std::string * path, XMP_StringPtr suffix, bool checkFile = false ) const;
+	bool MakePlaylistPath ( std::string * path, XMP_StringPtr suffix, bool checkFile = false ) const;
+
 	void MakeLegacyDigest ( std::string * digestStr );
 	
 	std::string rootPath, clipName;

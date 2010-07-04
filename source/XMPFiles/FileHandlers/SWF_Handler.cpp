@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -128,17 +128,6 @@ void SWF_MetaHandler::CacheFileData()
 	
 
 }	// SWF_MetaHandler::CacheFileData
-
-// =================================================================================================
-// SWF_MetaHandler::ProcessTNail
-// ==============================
-
-void SWF_MetaHandler::ProcessTNail()
-{
-
-	XMP_Throw ( "SWF_MetaHandler::ProcessTNail isn't implemented yet", kXMPErr_Unimplemented );
-
-}	// SWF_MetaHandler::ProcessTNail
 
 // =================================================================================================
 // SWF_MetaHandler::ProcessXMP

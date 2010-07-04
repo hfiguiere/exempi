@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -12,6 +12,7 @@ package com.adobe.xmp;
 import java.util.Calendar;
 
 import com.adobe.xmp.options.IteratorOptions;
+import com.adobe.xmp.options.ParseOptions;
 import com.adobe.xmp.options.PropertyOptions;
 import com.adobe.xmp.properties.XMPProperty;
 
@@ -1152,7 +1153,20 @@ public interface XMPMeta extends Cloneable
 	 * </ul>
 	 */
 	void sort();
-
+	
+	
+	/**
+	 * Perform the normalization as a separate parsing step.
+	 * Normally it is done during parsing, unless the parsing option
+	 * {@link ParseOptions#OMIT_NORMALIZATION} is set to <code>true</code>.
+	 * <em>Note:</em> It does no harm to call this method to an already normalized xmp object. 
+	 * It was a PDF/A requirement to get hand on the unnormalized <code>XMPMeta</code> object.
+	 * 
+	 * @param options optional parsing options.
+ 	 * @throws XMPException Wraps all errors and exceptions that may occur.
+	 */
+	void normalize(ParseOptions options) throws XMPException;
+	
 	
 	/**
 	 * Renders this node and the tree unter this node in a human readable form.

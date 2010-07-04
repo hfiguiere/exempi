@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2008 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -76,9 +76,12 @@ int main ( int argc, const char * argv[] )
 		cout << "Could not initialize toolkit!";
 		return -1;
 	}
-	
+	XMP_OptionBits options = 0;
+	#if UNIX_ENV
+		options |= kXMPFiles_ServerMode;
+	#endif
 	// Must initialize SXMPFiles before we use it
-	if ( ! SXMPFiles::Initialize() )
+	if ( ! SXMPFiles::Initialize ( options ) )
 	{
 		cout << "Could not initialize SXMPFiles.";
 		return -1;

@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2004-2008 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -23,7 +23,6 @@ const char * XMP_EXE_VERSION= "4.4";
 
 #include "globals.h"
 #include "Log.h"
-#include "OutputUtils.h"
 
 #include "Actions.h" //must come after XMP.hpp/XMP_Const.h
 
@@ -90,6 +89,146 @@ const char * XMP_EXE_VERSION= "4.4";
 		return content;
 	}
 
+	/* hand over the fileFormat and get a fileFormatName (2-3 Letters ie. PDF) 
+	* and a Description (i.e. "Portable Document Format") back.
+	* see also public/include/XMP_Const.h
+	*/
+	void fileFormatNameToString ( XMP_FileFormat fileFormat, std::string & fileFormatName, std::string & fileFormatDesc ) 
+	{
+		fileFormatName.erase();
+		fileFormatDesc.erase();
+		switch(fileFormat) {
+		case kXMP_PDFFile:
+			fileFormatName = "PDF ";fileFormatDesc = "Portable Document Format";break;
+		case kXMP_PostScriptFile:
+			fileFormatName = "PS  ";fileFormatDesc = "Post Script";break;
+		case kXMP_EPSFile:
+			fileFormatName = "EPS ";fileFormatDesc = "Encapsulated Post Script";break;
+		case kXMP_JPEGFile:
+			fileFormatName = "JPEG";fileFormatDesc = "Joint Photographic Experts Group";break;
+		case kXMP_JPEG2KFile:
+			fileFormatName = "JPX ";fileFormatDesc = "JPEG 2000";break;
+		case kXMP_TIFFFile:
+			fileFormatName = "TIFF";fileFormatDesc = "Tagged Image File Format";break;
+		case kXMP_GIFFile:
+			fileFormatName = "GIF ";fileFormatDesc = "Graphics Interchange Format";break;
+		case kXMP_PNGFile:
+			fileFormatName = "PNG ";fileFormatDesc = "Portable Network Graphic";break;
+		case kXMP_MOVFile:
+			fileFormatName = "MOV ";fileFormatDesc = "Quicktime";break;
+		case kXMP_AVIFile:
+			fileFormatName = "AVI ";fileFormatDesc = "Quicktime";break;
+		case kXMP_CINFile:
+			fileFormatName = "CIN ";fileFormatDesc = "Cineon";break;
+		case kXMP_WAVFile:
+			fileFormatName = "WAV ";fileFormatDesc = "WAVE Form Audio Format";break;
+		case kXMP_MP3File:
+			fileFormatName = "MP3 ";fileFormatDesc = "MPEG-1 Audio Layer 3";break;
+		case kXMP_SESFile:
+			fileFormatName = "SES ";fileFormatDesc = "Audition session";break;
+		case kXMP_CELFile:
+			fileFormatName = "CEL ";fileFormatDesc = "Audition loop";break;
+		case kXMP_MPEGFile:
+			fileFormatName = "MPEG";fileFormatDesc = "Motion Pictures Experts Group";break;
+		case kXMP_MPEG2File:
+			fileFormatName = "MP2 ";fileFormatDesc = "MPEG-2";break;
+		case kXMP_WMAVFile:
+			fileFormatName = "WMAV";fileFormatDesc = "Windows Media Audio and Video";break;
+		case kXMP_HTMLFile:
+			fileFormatName = "HTML";fileFormatDesc = "HyperText Markup Language";break;
+		case kXMP_XMLFile:
+			fileFormatName = "XML ";fileFormatDesc = "Extensible Markup Language";break;
+		case kXMP_TextFile:
+			fileFormatName = "TXT ";fileFormatDesc = "text";break;
+		case kXMP_PhotoshopFile:
+			fileFormatName = "PSD ";fileFormatDesc = "Photoshop Document";break;
+		case kXMP_IllustratorFile:
+			fileFormatName = "AI  ";fileFormatDesc = "Adobe Illustrator";break;
+		case kXMP_InDesignFile:
+			fileFormatName = "INDD";fileFormatDesc = "Adobe InDesign";break;
+		case kXMP_AEProjectFile:
+			fileFormatName = "AEP ";fileFormatDesc = "AfterEffects Project";break;
+		case kXMP_AEFilterPresetFile:
+			fileFormatName = "FFX ";fileFormatDesc = "AfterEffects Filter Preset";break;
+		case kXMP_EncoreProjectFile:
+			fileFormatName = "NCOR";fileFormatDesc = "Encore Project";break;
+		case kXMP_PremiereProjectFile:
+			fileFormatName = "PPRJ";fileFormatDesc = "Premier Project";break;
+		case kXMP_SWFFile:
+			fileFormatName = "SWF ";fileFormatDesc = "Shockwave Flash";break;
+		case kXMP_PremiereTitleFile:
+			fileFormatName = "PRTL";fileFormatDesc = "Premier Title";break;
+		case kXMP_UnknownFile:
+			fileFormatName = "    ";fileFormatDesc = "Unkown file format";break;
+		default:
+			fileFormatName = "    ";fileFormatDesc = "no known format constant";break;
+		}
+	} //fileFormatNameToString
+
+	/**
+	* GetFormatInfo-Flags  (aka Handler-Flags)
+	* find this in XMP_Const.h under "Options for GetFormatInfo"
+	*/
+	std::string XMPFiles_FormatInfoToString ( const XMP_OptionBits options) {
+		std::string outString;
+
+		if( options & kXMPFiles_CanInjectXMP )
+			outString.append(" CanInjectXMP");
+		if( options & kXMPFiles_CanExpand )
+			outString.append(" CanExpand");
+		if( options & kXMPFiles_CanRewrite )
+			outString.append(" CanRewrite");
+		if( options & kXMPFiles_PrefersInPlace )
+			outString.append(" PrefersInPlace");
+		if( options & kXMPFiles_CanReconcile )
+			outString.append(" CanReconcile");
+		if( options & kXMPFiles_AllowsOnlyXMP )
+			outString.append(" AllowsOnlyXMP");
+		if( options & kXMPFiles_ReturnsRawPacket )
+			outString.append(" ReturnsRawPacket");
+		if( options & kXMPFiles_HandlerOwnsFile )
+			outString.append(" HandlerOwnsFile");
+		if( options & kXMPFiles_AllowsSafeUpdate )
+			outString.append(" AllowsSafeUpdate");
+
+		if (outString.empty()) outString=" (none)";
+		return outString;
+	}
+
+	/**
+	* openOptions to String, find this in 
+	* XMP_Const.h under "Options for OpenFile"
+	*/
+	std::string XMPFiles_OpenOptionsToString ( const XMP_OptionBits options) {
+		std::string outString;
+		if( options & kXMPFiles_OpenForRead)
+			outString.append(" OpenForRead");
+		if( options & kXMPFiles_OpenForUpdate)
+			outString.append(" OpenForUpdate");
+		if( options & kXMPFiles_OpenOnlyXMP)
+			outString.append(" OpenOnlyXMP");
+		if( options & kXMPFiles_OpenStrictly)
+			outString.append(" OpenStrictly");
+		if( options & kXMPFiles_OpenUseSmartHandler)
+			outString.append(" OpenUseSmartHandler");
+		if( options & kXMPFiles_OpenUsePacketScanning)
+			outString.append(" OpenUsePacketScanning");
+		if( options & kXMPFiles_OpenLimitedScanning)
+			outString.append(" OpenLimitedScanning");
+
+		if (outString.empty()) outString=" (none)";
+		return outString;
+	}
+
+	//just the callback-Function
+	XMP_Status DumpToString( void * refCon, XMP_StringPtr outStr, XMP_StringLen outLen )
+	{
+		XMP_Status status	= 0; 
+		std::string* dumpString = static_cast < std::string* > ( refCon );
+		dumpString->append (outStr, outLen);
+		return status;
+	}
+
 // ********************************************************************************
 
 void Actions::version() {
@@ -100,21 +239,21 @@ void Actions::version() {
 	Log::info("%s", filesVersion.message);
 	Log::info("Executable Version:%s", XMP_EXE_VERSION);
 
-#ifdef WIN_ENV
+#if XMP_WinBuild
 	Log::info("compiled on Windows on %s, %s",__DATE__,__TIME__);
 #endif
-#ifdef MAC_ENV
+#if XMP_MacBuild
 	Log::info("compiled on Mac on %s, %s",__DATE__,__TIME__);
 #endif
-#ifndef NDEBUG
+#if NDEBUG
 	Log::info("Configuration: debug");
 #else
 	Log::info("Configuration: release");
 #endif
 	Log::info("Edition: Public SDK");
-#if defined(XMPQE_BIG_ENDIAN)
+#if XMPQE_BIG_ENDIAN
 	Log::info("Big endian machine");
-#elif defined(XMPQE_LITTLE_ENDIAN)
+#elif XMPQE_LITTLE_ENDIAN
 	Log::info("Little endian machine");
 #else
 	Log::warn("unknown Endian !!!");
@@ -144,7 +283,7 @@ void Actions::info() {
 		out_filepath.c_str(),this->mediafile.c_str());
 
 	//openOptions (also verify that identical to what's been used)
-	std::string openFlagsString=Utils::XMPFiles_OpenOptionsToString(out_openFlags);
+	std::string openFlagsString=XMPFiles_OpenOptionsToString(out_openFlags);
 	Log::info("openFlags: %s (%X)", openFlagsString.c_str(), out_openFlags);
 	if ( generalOpenFlags != out_openFlags )
 		Log::warn("out_openFlags (0x%X) differ from those used for open (0x%X)",
@@ -152,12 +291,12 @@ void Actions::info() {
 
 	//FileFormat (resolves, usually by way of extension unless specified)
 	std::string fileFormatName, fileFormatDescription;
-	Utils::fileFormatNameToString(out_fileFormat,fileFormatName,fileFormatDescription);
+	fileFormatNameToString(out_fileFormat,fileFormatName,fileFormatDescription);
 	Log::info("fileFormat: %s (%s,0x%X)",
 		fileFormatDescription.c_str(),fileFormatName.c_str(),out_fileFormat);
 
 	//FormatInfo aka "HandlerFlags" (show what is possible with this format)
-	std::string formatInfoString=Utils::XMPFiles_FormatInfoToString(out_handlerFlags);
+	std::string formatInfoString=XMPFiles_FormatInfoToString(out_handlerFlags);
 	Log::info("formatInfo:%s (0x%X)", formatInfoString.c_str(), out_handlerFlags);
 
 	xmpFile.CloseFile(generalCloseFlags); //(enabled again now that bug 1352603 is fixed)
@@ -209,45 +348,11 @@ void Actions::dump() {
 	if ( !xmpFile.GetXMP(&xmpMeta,0,0))
 		Log::warn("file contains no XMP. - says xmpFile.GetXMP()");
 	else {
-		Utils::dumpXMP(&xmpMeta);
+		std::string dump;
+		xmpMeta.DumpObject(DumpToString, &dump);
+		Log::info( dump );
 	}
 	
-	xmpFile.CloseFile(generalCloseFlags); //(enabled again now that bug 1352603 is fixed)
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-void Actions::thumb() {
-	if(!this->switch_nocheck) verifyFileIsReadable(this->mediafile); //need readability
-	XMP_FileFormat xmpFileFormat=kXMP_UnknownFile;
-
-	SXMPFiles xmpFile;
-	XMP_ThumbnailInfo tnailInfo;
-	if ( !xmpFile.OpenFile(this->mediafile,
-							xmpFileFormat,
-							 generalOpenFlags | kXMPFiles_OpenCacheTNail) )
-		Log::error("error opening file %s",this->mediafile.c_str());
-
-	if ( !xmpFile.GetThumbnail(&tnailInfo)) {
-		Log::warn("no thumbnail found. - says xmpFile.GetThumbnail()");
-		//TODO: comment-in again once bug 1352603 fixed
-		//xmpFile.CloseFile(generalCloseFlags);
-		return;
-	}
-	else {
-		//FileFormat (resolves, usually by way of extension unless specified)
-		std::string fileFormatName, fileFormatDescription;
-		Utils::fileFormatNameToString(tnailInfo.fileFormat,fileFormatName,fileFormatDescription);
-		Log::info("fileFormat: %s (%s,0x%X)",
-			fileFormatDescription.c_str(),fileFormatName.c_str(),tnailInfo.fileFormat);
-
-		Log::info("full image size:%dx%d",tnailInfo.fullWidth,tnailInfo.fullHeight);
-		Log::info("full orientation:0x%X",tnailInfo.fullOrientation);
-		Log::info("thumbnail size:%dx%d (%d bytes)",tnailInfo.tnailWidth,tnailInfo.tnailHeight,tnailInfo.tnailSize);
-		Log::info("thumbnail orientation:0x%X",tnailInfo.tnailOrientation);
-		Log::info("thumbnail format 0x%X",tnailInfo.tnailFormat);
-	}
-
 	xmpFile.CloseFile(generalCloseFlags); //(enabled again now that bug 1352603 is fixed)
 }
 
@@ -293,7 +398,7 @@ void Actions::put() {
 	} else { //handle the error
 		//FileFormat (resolves, usually by way of extension unless specified TODO)
 		std::string fileFormatName, fileFormatDescription;
-		Utils::fileFormatNameToString(out_fileFormat,fileFormatName,fileFormatDescription);
+		fileFormatNameToString(out_fileFormat,fileFormatName,fileFormatDescription);
 		Log::error("the File %s of type %s neither contains XMP nor can it be injected (at least kXMPFiles_CanInjectXMP not returned)",
 			this->mediafile.c_str(), fileFormatName.c_str());
 	};
@@ -314,9 +419,6 @@ void Actions::doAction() {
 			break;
 		case Actions::INFO:
 			info();
-			break;
-		case Actions::THUMB: //GetThumbnail()
-			thumb();
 			break;
 		case Actions::PUT: //PutXMP()
 			put();

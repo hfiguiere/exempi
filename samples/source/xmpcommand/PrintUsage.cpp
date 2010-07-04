@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2004-2008 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -60,8 +60,6 @@ namespace XMPQE {
 		Log::info("");
 		Log::info("Actions:");
 		Log::info("  info <mediafile>	Prints basic information about the file.");
-		Log::info("  thumb <mediafile>	Prints information about the native thumbnail ");
-		Log::info("         	 	  		if one is included, or informs that none is available.");
 		Log::info("  put <xmpfile> <mediafile>	Injects the XMP contained in the specified xmpfile ");
 		Log::info("            					into the specified mediafile.");
 		Log::info("  get <mediafile> Retrieves the XMP Packet contained in the specified mediafile.");

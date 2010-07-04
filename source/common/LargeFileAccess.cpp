@@ -1,15 +1,13 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2004-2008 Adobe Systems Incorporated
+// Copyright 2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "LargeFileAccess.hpp"
-
-extern void			LFA_Throw	( const char* msg, int id );
 
 // =================================================================================================
 // LFA implementations for Macintosh
@@ -37,7 +35,11 @@ extern void			LFA_Throw	( const char* msg, int id );
 		FSRef fileRef;
 		SInt8 perm = ( (mode == 'r') ? fsRdPerm : fsRdWrPerm );
 		HFSUniStr255 dataForkName;
+#if __LP64__
+		FSIORefNum refNum;
+#else
 		SInt16 refNum;
+#endif
 		
 		OSErr err = FSGetDataForkName ( &dataForkName );
 		if ( err != noErr ) LFA_Throw ( "LFA_Open: FSGetDataForkName failure", kLFAErr_ExternalFailure );
@@ -98,7 +100,11 @@ extern void			LFA_Throw	( const char* msg, int id );
 		FSRef fileRef;
 		SInt8 perm = ( (mode == 'r') ? fsRdPerm : fsRdWrPerm );
 		HFSUniStr255 rsrcForkName;
+#if __LP64__
+		FSIORefNum refNum;
+#else
 		SInt16 refNum;
+#endif
 		
 		OSErr err = FSGetResourceForkName ( &rsrcForkName );
 		if ( err != noErr ) LFA_Throw ( "LFA_OpenRsrc: FSGetResourceForkName failure", kLFAErr_ExternalFailure );
@@ -523,9 +529,23 @@ extern void			LFA_Throw	( const char* msg, int id );
 		
 		int flags = ((mode == 'r') ? O_RDONLY : O_RDWR);	// *** Include O_EXLOCK?
 
+
+
 		int descr = open ( filePath, flags, ( S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP ) );
-		if ( descr == -1 ) LFA_Throw ( "LFA_Open: open failure", kLFAErr_ExternalFailure );
+		if ( descr == -1 )
+			LFA_Throw ( "LFA_Open: open failure", kLFAErr_ExternalFailure );
+
+		struct stat info;
+		if ( fstat(descr,&info) == -1 )
+			LFA_Throw( "LFA_Open: fstat failed.", kLFAErr_ExternalFailure );
 		
+		// troublesome issue:
+		// a root user might be able to open a write-protected file w/o complaint
+		// although we should (to stay in sync with Mac/Win behaviour)
+		// reject write access (i.e. OpenForUpdate) to write-protected files:
+		if ( (mode == 'w') && ( 0 == (info.st_mode & S_IWUSR) ))
+			LFA_Throw( "LFA_Open:file is write proected", kLFAErr_ExternalFailure );
+
 		return (LFA_FileRef)descr;
 
 	}	// LFA_Open
@@ -766,7 +786,13 @@ void LFA_Move ( LFA_FileRef srcFile, XMP_Int64 srcOffset,
 
 XMP_Int64 LFA_Tell ( LFA_FileRef file )
 {
-	return LFA_Seek( file, 0 , SEEK_CUR );
+	return LFA_Seek( file, 0 , SEEK_CUR ); // _CUR !
+}
+
+// plain convenience
+XMP_Int64 LFA_Rewind( LFA_FileRef file)
+{
+	return LFA_Seek( file, 0 , SEEK_SET ); // _SET !
 }
 
 //*** kind of a hack, TOTEST
@@ -800,8 +826,13 @@ bool LFA_isEof( LFA_FileRef file )
 	#endif
 	
 	#if XMP_UNIXBuild
-		LFA_Throw ( "LFA_isEof: not implemented for Unix yet", kLFAErr_ExternalFailure );
-		return 0;
+		int descr = (int)file;
+
+		struct stat info; 
+		if (fstat(descr,&info) == -1)
+		  LFA_Throw ( "LFA_isEof: fstat failed.", kLFAErr_ExternalFailure );
+		
+		return LFA_Tell(file) == info.st_size;
 	#endif
 }
 

@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2005-2007 Adobe Systems Incorporated
+// Copyright 2007 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -212,7 +212,7 @@ static void DumpNodeList ( std::string * buffer, const XML_NodeVector & list, in
 		if ( node->nsPrefixLen != 0 ) {
 			*buffer += ", prefixLen=";
 			char numBuf [20];
-			snprintf ( numBuf, sizeof(numBuf), "%d", node->nsPrefixLen );
+			snprintf ( numBuf, sizeof(numBuf), "%d", (int)node->nsPrefixLen );
 			*buffer += numBuf;
 		}
 		*buffer += "\n";

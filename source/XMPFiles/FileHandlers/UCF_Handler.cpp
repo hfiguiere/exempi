@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2007 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -116,7 +116,11 @@ bool UCF_CheckFormat (  XMP_FileFormat format,
 		XMP_LitMatch( mimetype, "application/vnd.adobe.x-mars" ) ||  //Mars plugin(labs only), Acrobat8
 		XMP_LitMatch( mimetype, "application/vnd.adobe.pdfxml" ) ||  //Mars plugin(labs only), Acrobat 9
 		XMP_LitMatch( mimetype, "vnd.adobe.x-asnd"             ) ||  //Adobe Sound Document (Soundbooth Team)
-		XMP_LitMatch( mimetype, "application/vnd.adobe.indesign-idml-package" ) ) //inCopy (inDesign) IDML Document
+		XMP_LitMatch( mimetype, "application/vnd.adobe.indesign-idml-package" ) || //inCopy (inDesign) IDML Document
+		XMP_LitMatch( mimetype, "application/vnd.adobe.incopy-package"        ) ||  // InDesign Document
+		XMP_LitMatch( mimetype, "application/vnd.adobe.indesign-package"      ) ||  // InDesign Document
+
+		false ) // "sentinel"
 
 		// *** ==> unknown are also treated as not acceptable
 		okMimetype = true;
@@ -129,7 +133,7 @@ bool UCF_CheckFormat (  XMP_FileFormat format,
 	//.airi - temporary Adobe Air Files
 	//application/vnd.adobe.air-application-intermediate-package+zip
 
-	delete mimetype;
+	delete [] mimetype;
 	return okMimetype;
 
 }	// UCF_CheckFormat

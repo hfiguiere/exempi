@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2005-2008 Adobe Systems Incorporated
+// Copyright 2008 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -60,6 +60,7 @@ class Log {
 		//convenience overloads:
 		static void info(std::string s1);
 		static void important(std::string s1);
+		static void error( std::string s1 );
 
 		// mute vs. verbose
 		static void setMute();
@@ -72,7 +73,16 @@ class Log {
 		// NB: public on intend, such that i.e. copy commands can decide to
 		// send their output to nirvana accordingly on mute==true;
 		// (getter/setter on a static boolean var is fairly pointless)
-			
+
+		// strings to store the skipped test for different plattforms
+		static std::string skippedTestsAll;
+		static std::string skippedTestsWin;
+		static std::string skippedTestsMac;
+		static std::string skippedTestsUnix;
+
+		// function to print the skipped tests on console and into a log file
+		static void printSkippedTest(const char* filename);
+
 	private:
 		static bool singletonInstanciated;
 		static FILE* logfile;
@@ -80,6 +90,8 @@ class Log {
 		//should only be temporarily used, i.e. on selftests that
 		//inevitable yield (during selftet: bogus) warnings
 		static bool muteWarnings;
+
+		
 };
 
 #endif

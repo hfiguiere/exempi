@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -1120,26 +1120,27 @@ void ASF_LegacyManager::ImportLegacy ( SXMPMeta* xmp )
 
 	if ( ! broadcastSet ) {
 		ConvertMSDateToISODate ( fields[fieldCreationDate], &utf8 );
-		xmp->SetProperty ( kXMP_NS_XMP, "CreateDate", utf8.c_str(), kXMP_DeleteExisting );
+		if ( ! utf8.empty() ) xmp->SetProperty ( kXMP_NS_XMP, "CreateDate", utf8.c_str(), kXMP_DeleteExisting );
 	}
 
 	FromUTF16 ( (UTF16Unit*)fields[fieldTitle].c_str(), (fields[fieldTitle].size() / 2), &utf8, false );
-	xmp->SetLocalizedText ( kXMP_NS_DC, "title", "", "x-default", utf8.c_str(), kXMP_DeleteExisting );
+	if ( ! utf8.empty() ) xmp->SetLocalizedText ( kXMP_NS_DC, "title", "", "x-default", utf8.c_str(), kXMP_DeleteExisting );
 
 	xmp->DeleteProperty ( kXMP_NS_DC, "creator" );
 	FromUTF16 ( (UTF16Unit*)fields[fieldAuthor].c_str(), (fields[fieldAuthor].size() / 2), &utf8, false );
-	SXMPUtils::SeparateArrayItems ( xmp, kXMP_NS_DC, "creator", kXMPUtil_AllowCommas, utf8.c_str() );
+	if ( ! utf8.empty() ) SXMPUtils::SeparateArrayItems ( xmp, kXMP_NS_DC, "creator",
+														  (kXMP_PropArrayIsOrdered | kXMPUtil_AllowCommas), utf8.c_str() );
 
 	FromUTF16 ( (UTF16Unit*)fields[fieldCopyright].c_str(), (fields[fieldCopyright].size() / 2), &utf8, false );
-	xmp->SetLocalizedText ( kXMP_NS_DC, "rights", "", "x-default", utf8.c_str(), kXMP_DeleteExisting );
+	if ( ! utf8.empty() ) xmp->SetLocalizedText ( kXMP_NS_DC, "rights", "", "x-default", utf8.c_str(), kXMP_DeleteExisting );
 
 	FromUTF16 ( (UTF16Unit*)fields[fieldDescription].c_str(), (fields[fieldDescription].size() / 2), &utf8, false );
-	xmp->SetLocalizedText ( kXMP_NS_DC, "description", "", "x-default", utf8.c_str(), kXMP_DeleteExisting );
+	if ( ! utf8.empty() ) xmp->SetLocalizedText ( kXMP_NS_DC, "description", "", "x-default", utf8.c_str(), kXMP_DeleteExisting );
 
-	xmp->SetProperty ( kXMP_NS_XMP_Rights, "WebStatement", fields[fieldCopyrightURL].c_str(), kXMP_DeleteExisting );
+	if ( ! utf8.empty() ) xmp->SetProperty ( kXMP_NS_XMP_Rights, "WebStatement", fields[fieldCopyrightURL].c_str(), kXMP_DeleteExisting );
 
 #if ! Exclude_LicenseURL_Recon
-	xmp->SetProperty ( kXMP_NS_XMP_Rights, "Certificate", fields[fieldLicenseURL].c_str(), kXMP_DeleteExisting );
+	if ( ! fields[fieldLicenseURL].empty() ) xmp->SetProperty ( kXMP_NS_XMP_Rights, "Certificate", fields[fieldLicenseURL].c_str(), kXMP_DeleteExisting );
 #endif
 
 	imported = true;
@@ -1393,6 +1394,7 @@ void ASF_LegacyManager::ConvertMSDateToISODate ( std::string& source, std::strin
 	date.second = second;
 	date.nanoSecond = nanoSec;
 
+	date.hasTimeZone = true;	// ! Needed for ConvertToUTCTime to do anything.
 	SXMPUtils::ConvertToUTCTime ( &date );   // Normalize the date/time.
 	SXMPUtils::ConvertFromDate ( date, dest );   // Convert to an ISO 8601 string.
 

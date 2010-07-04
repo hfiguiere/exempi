@@ -1092,24 +1092,12 @@ public class ParseRDF implements XMPError, XMPConst
 			throws XMPException
 	{
 		boolean isLang = XML_LANG.equals(name);
-		boolean isCompact = "pxmp:compact".equals(name);
 	
 		XMPNode newQual = null;
 
-		if (isCompact)
-		{
-			if (xmpParent.getOptions().isCompositeProperty())
-			{
-				throw new XMPException("Only structs and arrays can be compact", BADXMP);
-			}
-			xmpParent.getOptions().setCompact(true);
-		}
-		else
-		{
-			// normalize value of language qualifiers
-			newQual = new XMPNode(name, isLang ? Utils.normalizeLangValue(value) : value, null);
-			xmpParent.addQualifier(newQual);
-		}
+		// normalize value of language qualifiers
+		newQual = new XMPNode(name, isLang ? Utils.normalizeLangValue(value) : value, null);
+		xmpParent.addQualifier(newQual);
 		
 		return newQual;
 	}
@@ -1162,20 +1150,7 @@ public class ParseRDF implements XMPError, XMPConst
 		for (int i = 2; i <= xmpParent.getChildrenLength(); i++)
 		{
 			XMPNode qualifier = xmpParent.getChild(i);
-		
-			if ("pxmp:compact".equals(qualifier.getName()))
-			{
-				// Compactness is an option bit, not an actual qualifier.
-				if (!xmpParent.getOptions().isCompositeProperty())
-				{
-					throw new XMPException("Only structs and arrays can be compact", BADXMP);
-				}
-				xmpParent.getOptions().setCompact(true);
-			}
-			else
-			{
-				xmpParent.addQualifier(qualifier);
-			}
+			xmpParent.addQualifier(qualifier);
 		}
 		
 		// Move the options and value last, other checks need the parent's original options. 

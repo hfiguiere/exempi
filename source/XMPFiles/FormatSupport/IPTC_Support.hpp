@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -114,11 +114,12 @@ enum {	// List of recognized 2:* IIM DataSets. The names are from IIMv4 and IPTC
 	kIPTC_PreviewData       = 202
 };
 
-enum {	// Forms of mapping legacy IPTC to XMP.
+enum {	// Forms of mapping legacy IPTC to XMP. Order is significant, see PhotoDataUtils::Import2WayIPTC!
 	kIPTC_MapSimple,	// The XMP is simple, the last DataSet occurrence is kept.
 	kIPTC_MapLangAlt,	// The XMP is a LangAlt x-default item, the last DataSet occurrence is kept.
 	kIPTC_MapArray,		// The XMP is an unordered array, all DataSets are kept.
 	kIPTC_MapSpecial,	// The mapping requires DataSet specific code.
+	kIPTC_Map3Way,		// Has a 3 way mapping between Exif, IPTC, and XMP. 
 	kIPTC_UnmappedText,	// A text DataSet that is not mapped to XMP.
 	kIPTC_UnmappedBin	// A binary DataSet that is not mapped to XMP.
 };
@@ -201,12 +202,18 @@ public:
 	
 	bool UsingUTF8() const { return this->utf8Encoding; };
 
-	// ---------------------------------------------------------------------------------------------
-	// Update the DataSets to reflect the changed values. Returns the new size of the DataSets. The
-	// returned dataPtr must be treated as read only. It exists until the IPTC_Manager destructor
-	// is called. Can be used with read-only instances to get the raw data block info.
+	// --------------------------------------------------
+	// Update the DataSets to reflect the changed values.
 
-	virtual XMP_Uns32 UpdateMemoryDataSets ( void** dataPtr ) = 0;
+	virtual void UpdateMemoryDataSets() = 0;
+
+	// ---------------------------------------------------------------------------------------------
+	// Get the location and size of the full IPTC block. The client must call UpdateMemoryDataSets
+	// first if appropriate. The returned dataPtr must be treated as read only. It exists until the
+	// IPTC_Manager destructor is called.
+
+	XMP_Uns32 GetBlockInfo ( void** dataPtr ) const
+		{ if ( dataPtr != 0 ) *dataPtr = this->iptcContent; return this->iptcLength; };
 
 	// ---------------------------------------------------------------------------------------------
 
@@ -221,13 +228,13 @@ protected:
 	DataSetMap dataSets;
 
 	XMP_Uns8* iptcContent;
-	XMP_Uns32 iptcLength, rec2Offset, rec2Length;
+	XMP_Uns32 iptcLength, offset190, length190, offset2xx, length2xx;
 
 	bool changed;
 	bool ownedContent;	// True if IPTC_Manager destructor needs to release the content block.
 	bool utf8Encoding;	// True if text values are encoded as UTF-8.
 
-	IPTC_Manager() : iptcContent(0), iptcLength(0), rec2Offset(0), rec2Length(0),
+	IPTC_Manager() : iptcContent(0), iptcLength(0), offset190(0), length190(0), offset2xx(0), length2xx(0),
 					 changed(false), ownedContent(false), utf8Encoding(false) {};
 	
 	void DisposeLooseValue ( DataSetInfo & dsInfo );
@@ -254,8 +261,7 @@ public:
 
 	bool IsChanged() { return false; };
 	
-	XMP_Uns32 UpdateMemoryDataSets ( void** dataPtr )
-		{ if ( dataPtr != 0 ) *dataPtr = iptcContent; return iptcLength; };
+	void UpdateMemoryDataSets() { NotAppropriate(); };
 
 	virtual ~IPTC_Reader() {};
 	
@@ -269,8 +275,6 @@ private:
 // IPTC_Writer
 // ===========
 
-#if ! XMP_UNIXBuild	// ! Disable IPTC output for generic UNIX until the legacy-as-local issues are resolved.
-
 class IPTC_Writer : public IPTC_Manager {
 public:
 		
@@ -280,7 +284,7 @@ public:
 
 	bool IsChanged() { return changed; };
 	
-	XMP_Uns32 UpdateMemoryDataSets ( void** dataPtr );
+	void UpdateMemoryDataSets ();
 
 	IPTC_Writer() {};
 
@@ -288,18 +292,12 @@ public:
 
 private:
 
-#if 0
-
 	void ConvertToUTF8();
 	void ConvertToLocal();
 
 	bool CheckRoundTripLoss();
-	
-#endif	// *** Disable the round trip loss checking for now.
 
 };	// IPTC_Writer
-
-#endif	// ! XMP_UNIXBuild
 
 // =================================================================================================
 

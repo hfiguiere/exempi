@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2004 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -48,21 +48,9 @@ using namespace std;
 
 XMP_Int32 sXMP_InitCount = 0;
 
-XMP_StringMap *	sNamespaceURIToPrefixMap = 0;
-XMP_StringMap *	sNamespacePrefixToURIMap = 0;
+XMP_NamespaceTable * sRegisteredNamespaces = 0;
 
-XMP_AliasMap *	sRegisteredAliasMap = 0;	// Needed by XMPIterator.
-
-XMP_VarString *	sOutputNS  = 0;
-XMP_VarString *	sOutputStr = 0;
-XMP_VarString * sExceptionMessage = 0;
-
-XMP_Mutex sXMPCoreLock;
-int sLockCount = 0;
-
-#if TraceXMPCalls
-	FILE * xmpOut = stderr;
-#endif
+XMP_AliasMap * sRegisteredAliasMap = 0;
 
 void *              voidVoidPtr    = 0;	// Used to backfill null output parameters.
 XMP_StringPtr		voidStringPtr  = 0;
@@ -75,60 +63,6 @@ XMP_Int64			voidInt64      = 0;
 double				voidDouble     = 0.0;
 XMP_DateTime		voidDateTime;
 WXMP_Result 		void_wResult;
-
-// =================================================================================================
-// Mutex Utilities
-// ===============
-
-// ! Note that the mutex need not be "recursive", allowing the same thread to acquire it multiple
-// ! times. There is a single XMP lock which is acquired in the wrapper classes. Internal calls
-// ! never go back out to the wrappers.
-
-#if XMP_WinBuild
-
-	bool XMP_InitMutex ( XMP_Mutex * mutex ) {
-		InitializeCriticalSection ( mutex );
-		return true;
-	}
-	
-	void XMP_TermMutex ( XMP_Mutex & mutex ) {
-		DeleteCriticalSection ( &mutex );
-	}
-
-	void XMP_EnterCriticalRegion ( XMP_Mutex & mutex ) {
-		EnterCriticalSection ( &mutex );
-	}
-	
-	void XMP_ExitCriticalRegion ( XMP_Mutex & mutex ) {
-		LeaveCriticalSection ( &mutex );
-	}
-
-#else
-
-	// Use pthread for both Mac and generic UNIX.
-	// ! Would be nice to specify PTHREAD_MUTEX_ERRORCHECK, but the POSIX documentation is useless.
-	// ! Would be OK but overkill to specify PTHREAD_MUTEX_RECURSIVE.
-
-	bool XMP_InitMutex ( XMP_Mutex * mutex ) {
-		int err = pthread_mutex_init ( mutex, 0 );
-		return (err == 0 );
-	}
-	
-	void XMP_TermMutex ( XMP_Mutex & mutex ) {
-		(void) pthread_mutex_destroy ( &mutex );
-	}
-
-	void XMP_EnterCriticalRegion ( XMP_Mutex & mutex ) {
-		int err = pthread_mutex_lock ( &mutex );
-		if ( err != 0 ) XMP_Throw ( "XMP_EnterCriticalRegion - pthread_mutex_lock failure", kXMPErr_ExternalFailure );
-	}
-	
-	void XMP_ExitCriticalRegion ( XMP_Mutex & mutex ) {
-		int err = pthread_mutex_unlock ( &mutex );
-		if ( err != 0 ) XMP_Throw ( "XMP_ExitCriticalRegion - pthread_mutex_unlock failure", kXMPErr_ExternalFailure );
-	}
-
-#endif
 
 // =================================================================================================
 // Local Utilities
@@ -166,10 +100,9 @@ VerifyXPathRoot	( XMP_StringPtr			schemaURI,
 		}
 	}
 
-	XMP_StringMapPos uriPos = sNamespaceURIToPrefixMap->find ( XMP_VarString ( schemaURI ) );
-	if ( uriPos == sNamespaceURIToPrefixMap->end() ) {
-		XMP_Throw ( "Unregistered schema namespace URI", kXMPErr_BadSchema );
-	}
+	XMP_StringPtr schemaPrefix;
+	bool nsFound = sRegisteredNamespaces->GetPrefix ( schemaURI, &schemaPrefix, 0 );
+	if ( ! nsFound ) XMP_Throw ( "Unregistered schema namespace URI", kXMPErr_BadSchema );
 
 	XMP_StringPtr colonPos = propName;
 	while ( (*colonPos != 0) && (*colonPos != ':') ) ++colonPos;
@@ -182,7 +115,7 @@ VerifyXPathRoot	( XMP_StringPtr			schemaURI,
 		// The propName is unqualified, use the schemaURI and associated prefix.
 		
 		expandedXPath->push_back ( XPathStepInfo ( schemaURI, kXMP_SchemaNode ) );
-		expandedXPath->push_back ( XPathStepInfo ( uriPos->second, 0 ) );
+		expandedXPath->push_back ( XPathStepInfo ( schemaPrefix, 0 ) );
 		(*expandedXPath)[kRootPropStep].step += propName;
 	
 	} else {
@@ -193,13 +126,7 @@ VerifyXPathRoot	( XMP_StringPtr			schemaURI,
 		VerifySimpleXMLName ( colonPos+1, colonPos+strlen(colonPos) );
 
 		XMP_VarString prefix ( propName, prefixLen );
-		XMP_StringMapPos prefixPos = sNamespacePrefixToURIMap->find ( prefix );
-		if ( prefixPos == sNamespacePrefixToURIMap->end() ) {
-			XMP_Throw ( "Unknown schema namespace prefix", kXMPErr_BadSchema );
-		}
-		if ( prefix != uriPos->second ) {
-			XMP_Throw ( "Schema namespace URI and prefix mismatch", kXMPErr_BadSchema );
-		}
+		if ( prefix != schemaPrefix ) XMP_Throw ( "Schema namespace URI and prefix mismatch", kXMPErr_BadSchema );
 
 		expandedXPath->push_back ( XPathStepInfo ( schemaURI, kXMP_SchemaNode ) );
 		expandedXPath->push_back ( XPathStepInfo ( propName, 0 ) );
@@ -226,10 +153,8 @@ VerifyQualName ( XMP_StringPtr qualName, XMP_StringPtr nameEnd )
 
 	size_t prefixLen = colonPos - qualName + 1;	// ! Include the colon.
 	XMP_VarString prefix ( qualName, prefixLen );
-	XMP_StringMapPos prefixPos = sNamespacePrefixToURIMap->find ( prefix );
-	if ( prefixPos == sNamespacePrefixToURIMap->end() ) {
-		XMP_Throw ( "Unknown namespace prefix for qualified name", kXMPErr_BadXPath );
-	}
+	bool nsFound = sRegisteredNamespaces->GetURI ( prefix.c_str(), 0, 0 );
+	if ( ! nsFound ) XMP_Throw ( "Unknown namespace prefix for qualified name", kXMPErr_BadXPath );
 
 }	// VerifyQualName
 
@@ -498,9 +423,7 @@ CheckImplicitStruct	( XMP_Node * node,
 // DeleteSubtree
 // -------------
 
-// *** Might be useful elsewhere?
-
-static void
+void
 DeleteSubtree ( XMP_NodePtrPos rootNodePos )
 {
 	XMP_Node * rootNode   = *rootNodePos;
@@ -1171,7 +1094,7 @@ EXIT:
 // ==============
 
 void
-CloneOffspring ( const XMP_Node * origParent, XMP_Node * cloneParent )
+CloneOffspring ( const XMP_Node * origParent, XMP_Node * cloneParent, bool skipEmpty /* = false */ )
 {
 	size_t qualCount  = origParent->qualifiers.size();
 	size_t childCount = origParent->children.size();
@@ -1182,8 +1105,14 @@ CloneOffspring ( const XMP_Node * origParent, XMP_Node * cloneParent )
 
 		for ( size_t qualNum = 0, qualLim = qualCount; qualNum != qualLim; ++qualNum ) {
 			const XMP_Node * origQual  = origParent->qualifiers[qualNum];
-			XMP_Node *       cloneQual = new XMP_Node ( cloneParent, origQual->name, origQual->value, origQual->options );
-			CloneOffspring ( origQual, cloneQual );
+			if ( skipEmpty && origQual->value.empty() && origQual->children.empty() ) continue;
+			XMP_Node * cloneQual = new XMP_Node ( cloneParent, origQual->name, origQual->value, origQual->options );
+			CloneOffspring ( origQual, cloneQual, skipEmpty );
+			if ( skipEmpty && cloneQual->value.empty() && cloneQual->children.empty() ) {
+				// Check again, might have had an array or struct with all empty children.
+				delete cloneQual;
+				continue;
+			}
 			cloneParent->qualifiers.push_back ( cloneQual );
 		}
 
@@ -1195,8 +1124,14 @@ CloneOffspring ( const XMP_Node * origParent, XMP_Node * cloneParent )
 
 		for ( size_t childNum = 0, childLim = childCount; childNum != childLim; ++childNum ) {
 			const XMP_Node * origChild  = origParent->children[childNum];
-			XMP_Node *       cloneChild = new XMP_Node ( cloneParent, origChild->name, origChild->value, origChild->options );
-			CloneOffspring ( origChild, cloneChild );
+			if ( skipEmpty && origChild->value.empty() && origChild->children.empty() ) continue;
+			XMP_Node * cloneChild = new XMP_Node ( cloneParent, origChild->name, origChild->value, origChild->options );
+			CloneOffspring ( origChild, cloneChild, skipEmpty );
+			if ( skipEmpty && cloneChild->value.empty() && cloneChild->children.empty() ) {
+				// Check again, might have had an array or struct with all empty children.
+				delete cloneChild;
+				continue;
+			}
 			cloneParent->children.push_back ( cloneChild );
 		}
 
@@ -1209,7 +1144,7 @@ CloneOffspring ( const XMP_Node * origParent, XMP_Node * cloneParent )
 // ============
 
 XMP_Node *
-CloneSubtree ( const XMP_Node * origRoot, XMP_Node * cloneParent )
+CloneSubtree ( const XMP_Node * origRoot, XMP_Node * cloneParent, bool skipEmpty /* = false */ )
 {
 	#if XMP_DebugBuild
 		if ( cloneParent->parent == 0 ) {
@@ -1224,9 +1159,15 @@ CloneSubtree ( const XMP_Node * origRoot, XMP_Node * cloneParent )
 	#endif
 	
 	XMP_Node * cloneRoot = new XMP_Node ( cloneParent, origRoot->name, origRoot->value, origRoot->options );
-	CloneOffspring ( origRoot, cloneRoot ) ;
+	CloneOffspring ( origRoot, cloneRoot, skipEmpty ) ;
+
+	if ( skipEmpty && cloneRoot->value.empty() && cloneRoot->children.empty() ) {
+		// ! Can't do earlier, CloneOffspring might be skipping empty children.
+		delete cloneRoot;
+		return 0;
+	}
+
 	cloneParent->children.push_back ( cloneRoot );
-	
 	return cloneRoot;
 	
 }	// CloneSubtree

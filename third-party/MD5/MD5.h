@@ -29,17 +29,19 @@
 
 /******************************************************************************/
 
+#include "XMP_Const.h"	// For safe fixed integer sizes.
+
 /* MD5 context. */
 struct MD5_CTX
 	{
-	unsigned long state[4];                                   /* state (ABCD) */
-	unsigned long count[2];        /* number of bits, modulo 2^64 (lsb first) */
-	unsigned char buffer[64];                         /* input buffer */
+	XMP_Uns32 state[4];                                   /* state (ABCD) */
+	XMP_Uns32 count[2];        /* number of bits, modulo 2^64 (lsb first) */
+	XMP_Uns8 buffer[64];                         /* input buffer */
 	};
 
 extern void MD5Init (MD5_CTX *);
-extern void MD5Update (MD5_CTX *, unsigned char *, unsigned int);
-extern void MD5Final(unsigned char [16], MD5_CTX *);
+extern void MD5Update (MD5_CTX *, XMP_Uns8 *, XMP_Uns32);
+extern void MD5Final(XMP_Uns8 [16], MD5_CTX *);
 
 /******************************************************************************/
 

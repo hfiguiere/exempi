@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2003 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:	Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -10,6 +10,8 @@
 #include "XMPCore_Impl.hpp"
 
 #include "XMPUtils.hpp"
+
+#include <algorithm>	// For binary_search.
 
 #include <time.h>
 #include <string.h>
@@ -431,6 +433,47 @@ ApplyQuotes ( XMP_VarString * item, UniCodePoint openQuote, UniCodePoint closeQu
 
 // *** Need static checks of the schema prefixes!
 
+static const char * kExternalxmpDM[] =
+	{ "xmpDM:album",
+	  "xmpDM:altTapeName",
+	  "xmpDM:altTimecode",
+	  "xmpDM:artist",
+	  "xmpDM:cameraAngle",
+	  "xmpDM:cameraLabel",
+	  "xmpDM:cameraModel",
+	  "xmpDM:cameraMove",
+	  "xmpDM:client",
+	  "xmpDM:comment",
+	  "xmpDM:composer",
+	  "xmpDM:director",
+	  "xmpDM:directorPhotography",
+	  "xmpDM:engineer",
+	  "xmpDM:genre",
+	  "xmpDM:good",
+	  "xmpDM:instrument",
+	  "xmpDM:logComment",
+	  "xmpDM:projectName",
+	  "xmpDM:releaseDate",
+	  "xmpDM:scene",
+	  "xmpDM:shotDate",
+	  "xmpDM:shotDay",
+	  "xmpDM:shotLocation",
+	  "xmpDM:shotName",
+	  "xmpDM:shotNumber",
+	  "xmpDM:shotSize",
+	  "xmpDM:speakerPlacement",
+	  "xmpDM:takeNumber",
+	  "xmpDM:tapeName",
+	  "xmpDM:trackNumber",
+	  "xmpDM:videoAlphaMode",
+	  "xmpDM:videoAlphaPremultipleColor",
+	  0 };	// ! Must have zero sentinel!
+
+typedef const char ** CharStarIterator;	// Used for binary search of kExternalxmpDM;
+static const char ** kLastExternalxmpDM = 0;	// Set on first use.
+static int CharStarLess (const char * left, const char * right )
+	{ return (strcmp ( left, right ) < 0); }
+
 #define IsExternalProperty(s,p) (! IsInternalProperty ( s, p ))
 
 static bool
@@ -490,12 +533,28 @@ IsInternalProperty ( const XMP_VarString & schema, const XMP_VarString & prop )
 	
 	} else if ( schema == kXMP_NS_CameraRaw ) {
 	
-		if ( (prop == "crs:Version")		||
-			 (prop == "crs:RawFileName")	||
-			 (prop == "crs:ToneCurveName") ) {
-			isInternal = true;
+		isInternal = true;	// All of crs: is internal, they are processing settings.
+
+	} else if ( schema == kXMP_NS_DM ) {
+	
+		// ! Most of the xmpDM schema is internal, and unknown properties default to internal.
+		if ( kLastExternalxmpDM == 0 ) {
+			for ( kLastExternalxmpDM = &kExternalxmpDM[0]; *kLastExternalxmpDM != 0; ++kLastExternalxmpDM ) {}
+		}
+		isInternal = (! std::binary_search ( &kExternalxmpDM[0], kLastExternalxmpDM, prop.c_str(), CharStarLess ));
+
+	} else if ( schema == kXMP_NS_Script ) {
+	
+		isInternal = true;	// ! Most of the xmpScript schema is internal, and unknown properties default to internal.
+		if ( (prop == "xmpScript:action") || (prop == "xmpScript:character") || (prop == "xmpScript:dialog") || 
+			 (prop == "xmpScript:sceneSetting") || (prop == "xmpScript:sceneTimeOfDay") ) {
+			isInternal = false;
 		}
 	
+	} else if ( schema == kXMP_NS_BWF ) {
+	
+		if ( prop == "bext:version" ) isInternal = true;
+
 	} else if ( schema == kXMP_NS_AdobeStockPhoto ) {
 	
 		isInternal = true;	// ! The bmsp schema has only internal properties.
@@ -634,127 +693,153 @@ ItemValuesMatch ( const XMP_Node * leftNode, const XMP_Node * rightNode )
 // The main implementation of XMPUtils::AppendProperties. See the description in TXMPMeta.hpp.
 
 static void
-AppendSubtree ( const XMP_Node * sourceNode, XMP_Node * destParent, const bool replaceOld, const bool deleteEmpty )
+AppendSubtree ( const XMP_Node * sourceNode, XMP_Node * destParent,
+				const bool mergeCompound, const bool replaceOld, const bool deleteEmpty )
 {
 	XMP_NodePtrPos destPos;
 	XMP_Node * destNode = FindChildNode ( destParent, sourceNode->name.c_str(), kXMP_ExistingOnly, &destPos );
 	
 	bool valueIsEmpty = false;
-	if ( deleteEmpty ) {
-		if ( XMP_PropIsSimple ( sourceNode->options ) ) {
-			valueIsEmpty = sourceNode->value.empty();
-		} else {
-			valueIsEmpty = sourceNode->children.empty();
-		} 
+	if ( XMP_PropIsSimple ( sourceNode->options ) ) {
+		valueIsEmpty = sourceNode->value.empty();
+	} else {
+		valueIsEmpty = sourceNode->children.empty();
 	}
-	
-	if ( deleteEmpty & valueIsEmpty ) {
-	
-		if ( destNode != 0 ) {
+
+	if ( valueIsEmpty ) {
+		if ( deleteEmpty && (destNode != 0) ) {
 			delete ( destNode );
 			destParent->children.erase ( destPos );
 		}
+		return;	// ! Done, empty values are either ignored or cause deletions.
+	}
 	
-	} else if ( destNode == 0 ) {
-	
+	if ( destNode == 0 ) {
 		// The one easy case, the destination does not exist.
-		CloneSubtree ( sourceNode, destParent );
-
-	} else if ( replaceOld ) {
+		destNode = CloneSubtree ( sourceNode, destParent, true /* skipEmpty */ );
+		XMP_Assert ( (destNode == 0) || (! destNode->value.empty()) || (! destNode->children.empty()) );
+		return;
+	}
 	
-		// The destination exists and should be replaced.
+	// If we get here we're going to modify an existing property, either replacing or merging.
+	
+	XMP_Assert ( (! valueIsEmpty) && (destNode != 0) );
+
+	XMP_OptionBits sourceForm = sourceNode->options & kXMP_PropCompositeMask;
+	XMP_OptionBits destForm	  = destNode->options & kXMP_PropCompositeMask;
+	
+	bool replaceThis = replaceOld;	// ! Don't modify replaceOld, it gets passed to inner calls.
+	if ( mergeCompound && (! XMP_PropIsSimple ( sourceForm )) ) replaceThis = false;
+
+	if ( replaceThis ) {
 
 		destNode->value	  = sourceNode->value;	// *** Should use SetNode.
 		destNode->options = sourceNode->options;
 		destNode->RemoveChildren();
 		destNode->RemoveQualifiers();
-		CloneOffspring ( sourceNode, destNode );
-
-		#if 0	// *** XMP_DebugBuild
-			destNode->_valuePtr = destNode->value.c_str();
-		#endif
-	
-	} else {
-
-		// The destination exists and is not totally replaced. Structs and arrays are merged.
-
-		XMP_OptionBits sourceForm = sourceNode->options & kXMP_PropCompositeMask;
-		XMP_OptionBits destForm	  = destNode->options & kXMP_PropCompositeMask;
-		if ( sourceForm != destForm ) return;
+		CloneOffspring ( sourceNode, destNode, true /* skipEmpty */ );
 		
-		if ( sourceForm == kXMP_PropValueIsStruct ) {
-		
-			// To merge a struct process the fields recursively. E.g. add simple missing fields. The
-			// recursive call to AppendSubtree will handle deletion for fields with empty values.
-
-			for ( size_t sourceNum = 0, sourceLim = sourceNode->children.size(); sourceNum != sourceLim; ++sourceNum ) {
-				const XMP_Node * sourceField = sourceNode->children[sourceNum];
-				AppendSubtree ( sourceField, destNode, replaceOld, deleteEmpty );
-				if ( deleteEmpty && destNode->children.empty() ) {
-					delete ( destNode );
-					destParent->children.erase ( destPos );
-				}
-			}
-			
-		} else if ( sourceForm & kXMP_PropArrayIsAltText ) {
-		
-			// Merge AltText arrays by the xml:lang qualifiers. Make sure x-default is first. Make a
-			// special check for deletion of empty values. Meaningful in AltText arrays because the
-			// xml:lang qualifier provides unambiguous source/dest correspondence.
-
-			for ( size_t sourceNum = 0, sourceLim = sourceNode->children.size(); sourceNum != sourceLim; ++sourceNum ) {
-
-				const XMP_Node * sourceItem = sourceNode->children[sourceNum];
-				if ( sourceItem->qualifiers.empty() || (sourceItem->qualifiers[0]->name != "xml:lang") ) continue;
-				
-				XMP_Index  destIndex = LookupLangItem ( destNode, sourceItem->qualifiers[0]->value );
-				
-				if ( deleteEmpty && sourceItem->value.empty() ) {
-
-					if ( destIndex != -1 ) {
-						delete ( destNode->children[destIndex] );
-						destNode->children.erase ( destNode->children.begin() + destIndex );
-						if ( destNode->children.empty() ) {
-							delete ( destNode );
-							destParent->children.erase ( destPos );
-						}
-					}
-
-				} else {
-				
-					if (  destIndex != -1 ) continue;	// Not replacing, keep the existing item.
-				
-					if ( (sourceItem->qualifiers[0]->value != "x-default") || destNode->children.empty() ) {
-						CloneSubtree ( sourceItem, destNode );
-					} else {
-						XMP_Node * destItem = new XMP_Node ( destNode, sourceItem->name, sourceItem->value, sourceItem->options );
-						CloneOffspring ( sourceItem, destItem );
-						destNode->children.insert ( destNode->children.begin(), destItem );
-				}
-				
-				}
-
-			}
-		
-		} else if ( sourceForm & kXMP_PropValueIsArray ) {
-		
-			// Merge other arrays by item values. Don't worry about order or duplicates. Source 
-			// items with empty values do not cause deletion, that conflicts horribly with merging.
-
-			for ( size_t sourceNum = 0, sourceLim = sourceNode->children.size(); sourceNum != sourceLim; ++sourceNum ) {
-				const XMP_Node * sourceItem = sourceNode->children[sourceNum];
-
-				size_t	destNum, destLim;
-				for ( destNum = 0, destLim = destNode->children.size(); destNum != destLim; ++destNum ) {
-					const XMP_Node * destItem = destNode->children[destNum];
-					if ( ItemValuesMatch ( sourceItem, destItem ) ) break;
-				}
-				if ( destNum == destLim ) CloneSubtree ( sourceItem, destNode );
-
-			}
-			
+		if ( (! XMP_PropIsSimple ( destNode->options )) && destNode->children.empty() ) {
+			// Don't keep an empty array or struct. The source might be implicitly empty due to
+			// all children being empty. In this case CloneOffspring should skip them.
+			DeleteSubtree ( destPos );
 		}
 
+		return;
+
+	}
+	
+	// From here on are cases for merging arrays or structs.
+	
+	if ( XMP_PropIsSimple ( sourceForm ) || (sourceForm != destForm) ) return;
+	
+	if ( sourceForm == kXMP_PropValueIsStruct ) {
+	
+		// To merge a struct process the fields recursively. E.g. add simple missing fields. The
+		// recursive call to AppendSubtree will handle deletion for fields with empty values.
+
+		for ( size_t sourceNum = 0, sourceLim = sourceNode->children.size(); sourceNum != sourceLim; ++sourceNum ) {
+			const XMP_Node * sourceField = sourceNode->children[sourceNum];
+			AppendSubtree ( sourceField, destNode, mergeCompound, replaceOld, deleteEmpty );
+			if ( deleteEmpty && destNode->children.empty() ) {
+				delete ( destNode );
+				destParent->children.erase ( destPos );
+			}
+		}
+		
+	} else if ( sourceForm & kXMP_PropArrayIsAltText ) {
+	
+		// Merge AltText arrays by the xml:lang qualifiers. Make sure x-default is first. Make a
+		// special check for deletion of empty values. Meaningful in AltText arrays because the
+		// xml:lang qualifier provides unambiguous source/dest correspondence.
+	
+		XMP_Assert ( mergeCompound );
+
+		for ( size_t sourceNum = 0, sourceLim = sourceNode->children.size(); sourceNum != sourceLim; ++sourceNum ) {
+
+			const XMP_Node * sourceItem = sourceNode->children[sourceNum];
+			if ( sourceItem->qualifiers.empty() || (sourceItem->qualifiers[0]->name != "xml:lang") ) continue;
+			
+			XMP_Index destIndex = LookupLangItem ( destNode, sourceItem->qualifiers[0]->value );
+			
+			if ( sourceItem->value.empty() ) {
+
+				if ( deleteEmpty && (destIndex != -1) ) {
+					delete ( destNode->children[destIndex] );
+					destNode->children.erase ( destNode->children.begin() + destIndex );
+					if ( destNode->children.empty() ) {
+						delete ( destNode );
+						destParent->children.erase ( destPos );
+					}
+				}
+
+			} else {
+			
+				if ( destIndex != -1 ) {
+				
+					// The source and dest arrays both have this language item.
+					
+					if ( replaceOld ) {	// ! Yes, check replaceOld not replaceThis!
+						destNode->children[destIndex]->value = sourceItem->value;
+					}
+				
+				} else {
+				
+					// The dest array does not have this language item, add it.
+					
+					if ( (sourceItem->qualifiers[0]->value != "x-default") || destNode->children.empty() ) {
+						// Typical case, empty dest array or not "x-default". Non-empty should always have "x-default".
+						CloneSubtree ( sourceItem, destNode, true /* skipEmpty */ );
+					} else {
+						// Edge case, non-empty dest array had no "x-default", insert that at the beginning.
+						XMP_Node * destItem = new XMP_Node ( destNode, sourceItem->name, sourceItem->value, sourceItem->options );
+						CloneOffspring ( sourceItem, destItem, true /* skipEmpty */ );
+						destNode->children.insert ( destNode->children.begin(), destItem );
+					}
+				
+				}
+			
+			}
+
+		}
+	
+	} else if ( sourceForm & kXMP_PropValueIsArray ) {
+	
+		// Merge other arrays by item values. Don't worry about order or duplicates. Source 
+		// items with empty values do not cause deletion, that conflicts horribly with merging.
+
+		for ( size_t sourceNum = 0, sourceLim = sourceNode->children.size(); sourceNum != sourceLim; ++sourceNum ) {
+			const XMP_Node * sourceItem = sourceNode->children[sourceNum];
+
+			size_t	destNum, destLim;
+			for ( destNum = 0, destLim = destNode->children.size(); destNum != destLim; ++destNum ) {
+				const XMP_Node * destItem = destNode->children[destNum];
+				if ( ItemValuesMatch ( sourceItem, destItem ) ) break;
+			}
+			if ( destNum == destLim ) CloneSubtree ( sourceItem, destNode, true /* skipEmpty */ );
+
+		}
+		
 	}
 
 }	// AppendSubtree
@@ -775,11 +860,10 @@ XMPUtils::CatenateArrayItems ( const XMPMeta & xmpObj,
 							   XMP_StringPtr   separator,
 							   XMP_StringPtr   quotes,
 							   XMP_OptionBits  options,
-							   XMP_StringPtr * catedStr,
-							   XMP_StringLen * catedLen )
+							   XMP_VarString * catedStr )
 {
 	XMP_Assert ( (schemaNS != 0) && (arrayName != 0) ); // ! Enforced by wrapper.
-	XMP_Assert ( (separator != 0) && (quotes != 0) && (catedStr != 0) && (catedLen != 0) ); // ! Enforced by wrapper.
+	XMP_Assert ( (separator != 0) && (quotes != 0) && (catedStr != 0) ); // ! Enforced by wrapper.
 	
 	size_t		 strLen, strPos, charLen;
 	UniCharKind	 charKind;
@@ -828,19 +912,19 @@ XMPUtils::CatenateArrayItems ( const XMPMeta & xmpObj,
 
 	// Return an empty result if the array does not exist, hurl if it isn't the right form.
 	
-	sCatenatedItems->erase();
+	catedStr->erase();
 
 	XMP_ExpandedXPath arrayPath;
 	ExpandXPath ( schemaNS, arrayName, &arrayPath );
 
 	arrayNode = FindConstNode ( &xmpObj.tree, arrayPath );
-	if ( arrayNode == 0 ) goto EXIT;	// ! Need to set the output pointer and length.
+	if ( arrayNode == 0 ) return;
 
 	arrayForm = arrayNode->options & kXMP_PropCompositeMask;
 	if ( (! (arrayForm & kXMP_PropValueIsArray)) || (arrayForm & kXMP_PropArrayIsAlternate) ) {
 		XMP_Throw ( "Named property must be non-alternate array", kXMPErr_BadParam );
 	}
-	if ( arrayNode->children.empty() ) goto EXIT;	// ! Need to set the output pointer and length.
+	if ( arrayNode->children.empty() ) return;
 	
 	// Build the result, quoting the array items, adding separators. Hurl if any item isn't simple.
 	// Start the result with the first value, then add the rest with a preceeding separator.
@@ -848,21 +932,17 @@ XMPUtils::CatenateArrayItems ( const XMPMeta & xmpObj,
 	currItem = arrayNode->children[0];
 	
 	if ( (currItem->options & kXMP_PropCompositeMask) != 0 ) XMP_Throw ( "Array items must be simple", kXMPErr_BadParam );
-	*sCatenatedItems = currItem->value;
-	ApplyQuotes ( sCatenatedItems, openQuote, closeQuote, allowCommas );
+	*catedStr = currItem->value;
+	ApplyQuotes ( catedStr, openQuote, closeQuote, allowCommas );
 	
 	for ( size_t itemNum = 1, itemLim = arrayNode->children.size(); itemNum != itemLim; ++itemNum ) {
 		const XMP_Node * currItem = arrayNode->children[itemNum];
 		if ( (currItem->options & kXMP_PropCompositeMask) != 0 ) XMP_Throw ( "Array items must be simple", kXMPErr_BadParam );
 		XMP_VarString tempStr ( currItem->value );
 		ApplyQuotes ( &tempStr, openQuote, closeQuote, allowCommas );
-		*sCatenatedItems += separator;
-		*sCatenatedItems += tempStr;
+		*catedStr += separator;
+		*catedStr += tempStr;
 	}
-	
-EXIT:
-	*catedStr = sCatenatedItems->c_str();
-	*catedLen = sCatenatedItems->size();
 
 }	// CatenateArrayItems
 
@@ -1037,6 +1117,120 @@ XMPUtils::SeparateArrayItems ( XMPMeta *	  xmpObj,
 
 
 // -------------------------------------------------------------------------------------------------
+// ApplyTemplate
+// -------------
+
+/* class static */ void
+XMPUtils::ApplyTemplate ( XMPMeta *	      workingXMP,
+						  const XMPMeta & templateXMP,
+						  XMP_OptionBits  actions )
+{
+	bool doClear   = XMP_OptionIsSet ( actions, kXMPTemplate_ClearUnnamedProperties );
+	bool doAdd     = XMP_OptionIsSet ( actions, kXMPTemplate_AddNewProperties );
+	bool doReplace = XMP_OptionIsSet ( actions, kXMPTemplate_ReplaceExistingProperties );
+	
+	bool deleteEmpty = XMP_OptionIsSet ( actions, kXMPTemplate_ReplaceWithDeleteEmpty );
+	doReplace |= deleteEmpty;	// Delete-empty implies Replace.
+	deleteEmpty &= (! doClear);	// Clear implies not delete-empty, but keep the implicit Replace. 
+
+	bool doAll = XMP_OptionIsSet ( actions, kXMPTemplate_IncludeInternalProperties );
+	
+	// ! In several places we do loops backwards so that deletions do not perturb the remaining indices.
+	// ! These loops use ordinals (size .. 1), we must use a zero based index inside the loop.
+	
+	if ( doClear ) {
+	
+		// Visit the top level working properties, delete if not in the template.
+
+		for ( size_t schemaOrdinal = workingXMP->tree.children.size(); schemaOrdinal > 0; --schemaOrdinal ) {
+	
+			size_t schemaNum = schemaOrdinal-1;	// ! Convert ordinal to index!
+			XMP_Node * workingSchema = workingXMP->tree.children[schemaNum];
+			const XMP_Node * templateSchema = FindConstSchema ( &templateXMP.tree, workingSchema->name.c_str() );
+			
+			if ( templateSchema == 0 ) {
+			
+				// The schema is not in the template, delete all properties or just all external ones.
+
+				if ( doAll ) {
+
+					workingSchema->RemoveChildren();	// Remove the properties here, delete the schema below.
+
+				} else {
+
+					for ( size_t propOrdinal = workingSchema->children.size(); propOrdinal > 0; --propOrdinal ) {
+						size_t propNum = propOrdinal-1;	// ! Convert ordinal to index!
+						XMP_Node * workingProp = workingSchema->children[propNum];
+						if ( IsExternalProperty ( workingSchema->name, workingProp->name ) ) {
+							delete ( workingProp );
+							workingSchema->children.erase ( workingSchema->children.begin() + propNum );
+						}
+					}
+
+				}
+
+			} else {
+			
+				// Check each of the working XMP's properties to see if it is in the template.
+
+				for ( size_t propOrdinal = workingSchema->children.size(); propOrdinal > 0; --propOrdinal ) {
+					size_t propNum = propOrdinal-1;	// ! Convert ordinal to index!
+					XMP_Node * workingProp = workingSchema->children[propNum];
+					if ( (doAll || IsExternalProperty ( workingSchema->name, workingProp->name )) && 
+						 (FindConstChild ( templateSchema, workingProp->name.c_str() ) == 0) ) {
+						delete ( workingProp );
+						workingSchema->children.erase ( workingSchema->children.begin() + propNum );
+					}
+				}
+
+			}
+			
+			if ( workingSchema->children.empty() ) {
+				delete ( workingSchema );
+				workingXMP->tree.children.erase ( workingXMP->tree.children.begin() + schemaNum );
+			}
+	
+		}
+		
+	}
+	
+	if ( doAdd | doReplace ) {
+
+		for ( size_t schemaNum = 0, schemaLim = templateXMP.tree.children.size(); schemaNum < schemaLim; ++schemaNum ) {
+	
+			const XMP_Node * templateSchema = templateXMP.tree.children[schemaNum];
+	
+			// Make sure we have an output schema node, then process the top level template properties.
+			
+			XMP_NodePtrPos workingSchemaPos;
+			XMP_Node * workingSchema = FindSchemaNode ( &workingXMP->tree, templateSchema->name.c_str(),
+														kXMP_ExistingOnly, &workingSchemaPos );
+			if ( workingSchema == 0 ) {
+				workingSchema = new XMP_Node ( &workingXMP->tree, templateSchema->name, templateSchema->value, kXMP_SchemaNode );
+				workingXMP->tree.children.push_back ( workingSchema );
+				workingSchemaPos = workingXMP->tree.children.end() - 1;
+			}
+			
+			for ( size_t propNum = 0, propLim = templateSchema->children.size(); propNum < propLim; ++propNum ) {
+				const XMP_Node * templateProp = templateSchema->children[propNum];
+				if ( doAll || IsExternalProperty ( templateSchema->name, templateProp->name ) ) {
+					AppendSubtree ( templateProp, workingSchema, doAdd, doReplace, deleteEmpty );
+				}
+			}
+			
+			if ( workingSchema->children.empty() ) {
+				delete ( workingSchema );
+				workingXMP->tree.children.erase ( workingSchemaPos );
+			}
+			
+		}
+
+	}
+
+}	// ApplyTemplate
+
+
+// -------------------------------------------------------------------------------------------------
 // RemoveProperties
 // ----------------
 
@@ -1133,58 +1327,6 @@ XMPUtils::RemoveProperties ( XMPMeta *		xmpObj,
 	}
 
 }	// RemoveProperties
-
-
-// -------------------------------------------------------------------------------------------------
-// AppendProperties
-// ----------------
-
-/* class static */ void
-XMPUtils::AppendProperties ( const XMPMeta & source,
-							 XMPMeta *		 dest,
-							 XMP_OptionBits	 options )
-{
-	XMP_Assert ( dest != 0 );	// ! Enforced by wrapper.
-
-	const bool doAll	   = ((options & kXMPUtil_DoAllProperties) != 0);
-	const bool replaceOld  = ((options & kXMPUtil_ReplaceOldValues) != 0);
-	const bool deleteEmpty = ((options & kXMPUtil_DeleteEmptyValues) != 0);
-
-	for ( size_t schemaNum = 0, schemaLim = source.tree.children.size(); schemaNum != schemaLim; ++schemaNum ) {
-
-		const XMP_Node * sourceSchema = source.tree.children[schemaNum];
-
-		// Make sure we have a destination schema node. Remember if it is newly created.
-		
-		XMP_Node * destSchema = FindSchemaNode ( &dest->tree, sourceSchema->name.c_str(), kXMP_ExistingOnly );
-		const bool newDestSchema = (destSchema == 0);
-		if ( newDestSchema ) {
-			destSchema = new XMP_Node ( &dest->tree, sourceSchema->name, sourceSchema->value, kXMP_SchemaNode );
-			dest->tree.children.push_back ( destSchema );
-		}
-
-		// Process the source schema's children. Do this backwards in case deleteEmpty is set.
-		
-		for ( long propNum = ((long)sourceSchema->children.size() - 1); propNum >= 0; --propNum ) {
-			const XMP_Node * sourceProp = sourceSchema->children[propNum];
-			if ( doAll || IsExternalProperty ( sourceSchema->name, sourceProp->name ) ) {
-				AppendSubtree ( sourceProp, destSchema, replaceOld, deleteEmpty );
-// ***				RemoveMultiValueInfo ( dest, sourceSchema->name.c_str(), sourceProp->name.c_str() );
-			}
-		}
-		
-		if ( destSchema->children.empty() ) {
-			if ( newDestSchema ) {
-				delete ( destSchema );
-				dest->tree.children.pop_back();
-			} else if ( deleteEmpty ) {
-				DeleteEmptySchema ( destSchema );
-			}
-		}
-		
-	}
-
-}	// AppendProperties
 
 
 // -------------------------------------------------------------------------------------------------

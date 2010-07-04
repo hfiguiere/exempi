@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2004-2008 Adobe Systems Incorporated
+// Copyright 2003 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -18,9 +18,9 @@
 //sanity check platform/endianess
 #include "globals.h"
 
-#ifdef WIN_ENV
-#pragma warning ( disable : 4267 )	// suppress string conversion warning
-//	#pragma warning ( disable : 1234 )	// say what you do here
+#if XMP_WinBuild
+	#pragma warning ( disable : 4267 )	// suppress string conversion warning
+	//	#pragma warning ( disable : 1234 )	// say what you do here
 #endif
 
 //only define in one non-public-source, non-header(.cpp) place
@@ -46,21 +46,40 @@ const int DUMPFILEVERSION=2;
 
 #include "LargeFileAccess.hpp"
 
-void LFA_Throw ( const char* msg, int id ) 
+//void LFA_Throw ( const char* msg, int id ) 
+//{
+	//switch(id)
+	//{
+	//	case kLFAErr_InternalFailure:
+	//		Log::error("LFA User Abort:%s", msg);
+	//		break;
+	//	case kLFAErr_ExternalFailure:
+	//		Log::error("LFA External Failure:%s", msg);
+	//		break;
+	//	case kLFAErr_UserAbort:
+	//		Log::error("LFA User Abort:%s", msg);
+	//		break;
+	//	default:
+	//		Log::error("LFA unknown error:%s", msg); //should not occur
+	//		break;
+	//}
+//}
+#define XMP_Throw(msg,id)	{ throw XMP_Error ( id, msg ); }
+void LFA_Throw ( const char* msg, int id )
 {
 	switch(id)
 	{
 		case kLFAErr_InternalFailure:
-			Log::error("LFA User Abort:%s", msg);
+			XMP_Throw(msg,kXMPErr_InternalFailure);
 			break;
 		case kLFAErr_ExternalFailure:
-			Log::error("LFA External Failure:%s", msg);
+			XMP_Throw(msg,kXMPErr_ExternalFailure);
 			break;
 		case kLFAErr_UserAbort:
-			Log::error("LFA User Abort:%s", msg);
+			XMP_Throw(msg,kXMPErr_UserAbort);
 			break;
 		default:
-			Log::error("LFA unknown error:%s", msg); //should not occur
+			XMP_Throw(msg,kXMPErr_UnknownException);
 			break;
 	}
 }

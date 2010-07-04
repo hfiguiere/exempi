@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2004 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -7,10 +7,12 @@
 // =================================================================================================
 
 #include "XMP_Environment.h"	// ! This must be the first include!
-#include "XMPCore_Impl.hpp"
+#include "XMP_Const.h"
 
-#include "XMPIterator.hpp"
 #include "client-glue/WXMPIterator.hpp"
+
+#include "XMPCore_Impl.hpp"
+#include "XMPIterator.hpp"
 
 #if XMP_WinBuild
 	#pragma warning ( disable : 4101 ) // unreferenced local variable
@@ -36,18 +38,20 @@ WXMPIterator_PropCTor_1 ( XMPMetaRef     xmpRef,
                           XMP_OptionBits options,
                           WXMP_Result *  wResult )
 {
-    XMP_ENTER_WRAPPER ( "WXMPIterator_PropCTor_1" )
+    XMP_ENTER_Static ( "WXMPIterator_PropCTor_1" )	// No lib object yet, use the static entry.
 
 		if ( schemaNS == 0 ) schemaNS = "";
 		if ( propName == 0 ) propName = "";
 
 		const XMPMeta & xmpObj = WtoXMPMeta_Ref ( xmpRef );
-		XMPIterator *   iter   = new XMPIterator ( xmpObj, schemaNS, propName, options );
+		XMP_AutoLock metaLock ( &xmpObj.lock, kXMP_ReadLock );
+		
+		XMPIterator * iter = new XMPIterator ( xmpObj, schemaNS, propName, options );
 		++iter->clientRefs;
 		XMP_Assert ( iter->clientRefs == 1 );
 		wResult->ptrResult = XMPIteratorRef ( iter );
 
-    XMP_EXIT_WRAPPER
+    XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -58,7 +62,7 @@ WXMPIterator_TableCTor_1 ( XMP_StringPtr  schemaNS,
                            XMP_OptionBits options,
                            WXMP_Result *  wResult )
 {
-    XMP_ENTER_WRAPPER ( "WXMPIterator_TableCTor_1" )
+    XMP_ENTER_Static ( "WXMPIterator_TableCTor_1" )	// No lib object yet, use the static entry.
 
 		if ( schemaNS == 0 ) schemaNS = "";
 		if ( propName == 0 ) propName = "";
@@ -68,53 +72,39 @@ WXMPIterator_TableCTor_1 ( XMP_StringPtr  schemaNS,
 		XMP_Assert ( iter->clientRefs == 1 );
 		wResult->ptrResult = XMPIteratorRef ( iter );
 
-    XMP_EXIT_WRAPPER
+    XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
 
 void
-WXMPIterator_IncrementRefCount_1 ( XMPIteratorRef iterRef )
+WXMPIterator_IncrementRefCount_1 ( XMPIteratorRef xmpObjRef )
 {
 	WXMP_Result * wResult = &void_wResult;	// ! Needed to "fool" the EnterWrapper macro.
-	XMP_ENTER_WRAPPER ( "WXMPIterator_IncrementRefCount_1" )
+	XMP_ENTER_ObjWrite ( XMPIterator, "WXMPIterator_IncrementRefCount_1" )
 
-		XMPIterator * thiz = (XMPIterator*)iterRef;
-		
 		++thiz->clientRefs;
 		XMP_Assert ( thiz->clientRefs > 1 );
 
-	XMP_EXIT_WRAPPER_NO_THROW
+	XMP_EXIT_NoThrow
 }
 
 // -------------------------------------------------------------------------------------------------
 
 void
-WXMPIterator_DecrementRefCount_1 ( XMPIteratorRef iterRef )
+WXMPIterator_DecrementRefCount_1 ( XMPIteratorRef xmpObjRef )
 {
 	WXMP_Result * wResult = &void_wResult;	// ! Needed to "fool" the EnterWrapper macro.
-	XMP_ENTER_WRAPPER ( "WXMPIterator_DecrementRefCount_1" )
+	XMP_ENTER_ObjWrite ( XMPIterator, "WXMPIterator_DecrementRefCount_1" )
 
-		XMPIterator * thiz = (XMPIterator*)iterRef;
-		
 		XMP_Assert ( thiz->clientRefs > 0 );
 		--thiz->clientRefs;
-		if ( thiz->clientRefs <= 0 ) delete ( thiz );
+		if ( thiz->clientRefs <= 0 ) {
+			objLock.Release();
+			delete ( thiz );
+		}
 
-	XMP_EXIT_WRAPPER_NO_THROW
-}
-
-// -------------------------------------------------------------------------------------------------
-
-void
-WXMPIterator_Unlock_1 ( XMP_OptionBits options )
-{
-	WXMP_Result * wResult = &void_wResult;	// ! Needed to "fool" the EnterWrapper macro.
-    XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPIterator_Unlock_1" )
-
-		XMPIterator::Unlock ( options );
-
-    XMP_EXIT_WRAPPER_NO_THROW
+	XMP_EXIT_NoThrow
 }
 
 // =================================================================================================
@@ -122,61 +112,53 @@ WXMPIterator_Unlock_1 ( XMP_OptionBits options )
 // =====================
 
 void
-WXMPIterator_Next_1 ( XMPIteratorRef   iterRef,
-                      XMP_StringPtr *  schemaNS,
-                      XMP_StringLen *  nsSize,
-                      XMP_StringPtr *  propPath,
-                      XMP_StringLen *  pathSize,
-                      XMP_StringPtr *  propValue,
-                      XMP_StringLen *  valueSize,
+WXMPIterator_Next_1 ( XMPIteratorRef   xmpObjRef,
+                      void *           schemaNS,
+                      void *           propPath,
+                      void *           propValue,
                       XMP_OptionBits * propOptions,
+                      SetClientStringProc SetClientString,
                       WXMP_Result *    wResult )
 {
-    XMP_ENTER_WRAPPER ( "WXMPIterator_Next_1" )
+    XMP_ENTER_ObjWrite ( XMPIterator, "WXMPIterator_Next_1" )
 
-		if ( schemaNS == 0 ) schemaNS = &voidStringPtr;
-		if ( nsSize == 0 ) nsSize = &voidStringLen;
-		if ( propPath == 0 ) propPath = &voidStringPtr;
-		if ( pathSize == 0 ) pathSize = &voidStringLen;
-		if ( propValue == 0 ) propValue = &voidStringPtr;
-		if ( valueSize == 0 ) valueSize = &voidStringLen;
+		XMP_StringPtr schemaPtr = 0;
+		XMP_StringLen schemaLen = 0;
+		XMP_StringPtr pathPtr = 0;
+		XMP_StringLen pathLen = 0;
+		XMP_StringPtr valuePtr = 0;
+		XMP_StringLen valueLen = 0;
+		
 		if ( propOptions == 0 ) propOptions = &voidOptionBits;
 
-		XMPIterator * iter = WtoXMPIterator_Ptr ( iterRef );
-		XMP_Bool found = iter->Next ( schemaNS, nsSize, propPath, pathSize, propValue, valueSize, propOptions );
-		wResult->int32Result = found;
+		XMP_AutoLock metaLock ( &thiz->info.xmpObj->lock, kXMP_ReadLock, (thiz->info.xmpObj != 0) );
 
-    XMP_EXIT_WRAPPER_KEEP_LOCK ( found )
+		XMP_Bool found = thiz->Next ( &schemaPtr, &schemaLen, &pathPtr, &pathLen, &valuePtr, &valueLen, propOptions );
+		wResult->int32Result = found;
+		
+		if ( found ) {
+			if ( schemaNS != 0 ) (*SetClientString) ( schemaNS, schemaPtr, schemaLen );
+			if ( propPath != 0 ) (*SetClientString) ( propPath, pathPtr, pathLen );
+			if ( propValue != 0 ) (*SetClientString) ( propValue, valuePtr, valueLen );
+		}
+
+    XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
 
 void
-WXMPIterator_Skip_1 ( XMPIteratorRef iterRef,
+WXMPIterator_Skip_1 ( XMPIteratorRef xmpObjRef,
                       XMP_OptionBits options,
                       WXMP_Result *  wResult )
 {
-    XMP_ENTER_WRAPPER ( "WXMPIterator_Skip_1" )
+    XMP_ENTER_ObjWrite ( XMPIterator, "WXMPIterator_Skip_1" )
 
-		XMPIterator * iter = WtoXMPIterator_Ptr ( iterRef );
-		iter->Skip ( options );
+		XMP_AutoLock metaLock ( &thiz->info.xmpObj->lock, kXMP_ReadLock, (thiz->info.xmpObj != 0) );
 
-    XMP_EXIT_WRAPPER
-}
+		thiz->Skip ( options );
 
-// -------------------------------------------------------------------------------------------------
-
-void
-WXMPUtils_UnlockIter_1 ( XMPIteratorRef iterRef,
-                         XMP_OptionBits options )
-{
-	WXMP_Result * wResult = &void_wResult;	// ! Needed to "fool" the EnterWrapper macro.
-    XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPUtils_UnlockIter_1" )
-
-		XMPIterator * iter = WtoXMPIterator_Ptr ( iterRef );
-		iter->UnlockIter ( options );
-
-    XMP_EXIT_WRAPPER_NO_THROW
+    XMP_EXIT
 }
 
 // =================================================================================================

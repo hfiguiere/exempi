@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE:	Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -17,6 +17,7 @@
 #endif
 
 #include "client-glue/WXMP_Common.hpp"
+
 #include "client-glue/WXMPFiles.hpp"
 
 // =================================================================================================
@@ -45,6 +46,15 @@
 // =================================================================================================
 
 XMP_MethodIntro(TXMPFiles,void)::
+SetClientString ( void * clientPtr, XMP_StringPtr valuePtr, XMP_StringLen valueLen )
+{
+	tStringObj * clientStr = (tStringObj*) clientPtr;
+	clientStr->assign ( valuePtr, valueLen );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPFiles,void)::
 GetVersionInfo ( XMP_VersionInfo * versionInfo )
 {
 	WrapNoCheckVoid ( zXMPFiles_GetVersionInfo_1 ( versionInfo ) );
@@ -55,7 +65,7 @@ GetVersionInfo ( XMP_VersionInfo * versionInfo )
 XMP_MethodIntro(TXMPFiles,bool)::
 Initialize()
 {
-	WrapCheckBool ( ok, zXMPFiles_Initialize_2 ( 0 ) );
+	WrapCheckBool ( ok, zXMPFiles_Initialize_1 ( 0 ) );
 	return ok;
 }
 
@@ -64,7 +74,7 @@ Initialize()
 XMP_MethodIntro(TXMPFiles,bool)::
 Initialize ( XMP_OptionBits options )
 {
-	WrapCheckBool ( ok, zXMPFiles_Initialize_2 ( options ) );
+	WrapCheckBool ( ok, zXMPFiles_Initialize_1 ( options ) );
 	return ok;
 }
 
@@ -256,14 +266,7 @@ GetFileInfo ( tStringObj *     filePath /* = 0 */,
 		      XMP_FileFormat * format /* = 0 */,
 		      XMP_OptionBits * handlerFlags /* =0 */ )
 {
-	XMP_StringPtr   pathStr;
-	XMP_StringLen   pathLen;
-	
-	WrapCheckBool ( isOpen, zXMPFiles_GetFileInfo_1 ( &pathStr, &pathLen, openFlags, format, handlerFlags ) );
-	if ( isOpen ) {
-		if ( filePath != 0 ) filePath->assign ( pathStr, pathLen );
-		WXMPFiles_UnlockObj_1 ( this->xmpFilesRef );
-	}
+	WrapCheckBool ( isOpen, zXMPFiles_GetFileInfo_1 ( filePath, openFlags, format, handlerFlags, SetClientString ) );
 	return isOpen;
 }
 
@@ -283,31 +286,14 @@ GetXMP ( SXMPMeta *       xmpObj /* = 0 */,
     	 tStringObj *     xmpPacket /* = 0 */,
     	 XMP_PacketInfo * packetInfo /* =0 */ )
 {
-	XMP_StringPtr   xmpStr;
-	XMP_StringLen   xmpLen;
-	
 	XMPMetaRef xmpRef = 0;
 	if ( xmpObj != 0 ) {
-		SXMPUtils::RemoveProperties ( xmpObj, 0, 0, kXMPUtil_DoAllProperties );
-		// *** Need an SXMPMeta::Clear method:
+		SXMPUtils::RemoveProperties ( xmpObj, 0, 0, kXMPUtil_DoAllProperties );	// *** Need an SXMPMeta::Clear method:
 		xmpRef = xmpObj->GetInternalRef();
 	}
 	
-	WrapCheckBool ( hasXMP, zXMPFiles_GetXMP_1 ( xmpRef, &xmpStr, &xmpLen, packetInfo ) );
-	if ( hasXMP ) {
-		if ( xmpPacket != 0 ) xmpPacket->assign ( xmpStr, xmpLen );
-		WXMPFiles_UnlockObj_1 ( this->xmpFilesRef );
-	}
+	WrapCheckBool ( hasXMP, zXMPFiles_GetXMP_1 ( xmpRef, xmpPacket, packetInfo, SetClientString ) );
 	return hasXMP;
-}
-
-// -------------------------------------------------------------------------------------------------
-
-XMP_MethodIntro(TXMPFiles,bool)::
-GetThumbnail ( XMP_ThumbnailInfo * tnailInfo )
-{
-	WrapCheckBool ( hasTNail, zXMPFiles_GetThumbnail_1 ( tnailInfo ) );
-	return hasTNail;
 }
 
 // -------------------------------------------------------------------------------------------------

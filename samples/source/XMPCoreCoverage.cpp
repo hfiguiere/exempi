@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2002 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -287,6 +287,30 @@ static const char * kDateTimeRDF =
 
 // -------------------------------------------------------------------------------------------------
 
+static void FillDateTime ( XMP_DateTime * dateTime, XMP_Int32 year, XMP_Int32 month, XMP_Int32 day,
+						   XMP_Int32 hour, XMP_Int32 minute, XMP_Int32 second,
+						   XMP_Bool hasDate, XMP_Bool hasTime, XMP_Bool hasTimeZone,
+						   XMP_Int8 tzSign, XMP_Int32 tzHour, XMP_Int32 tzMinute, XMP_Int32 nanoSecond )
+{
+
+	dateTime->year = year;
+	dateTime->month = month;
+	dateTime->day = day;
+	dateTime->hour = hour;
+	dateTime->minute = minute;
+	dateTime->second = second;
+	dateTime->hasDate = hasDate;
+	dateTime->hasTime = hasTime;
+	dateTime->hasTimeZone = hasTimeZone;
+	dateTime->tzSign = tzSign;
+	dateTime->tzHour = tzHour;
+	dateTime->tzMinute = tzMinute;
+	dateTime->nanoSecond = nanoSecond;
+
+}	// FillDateTime
+
+// -------------------------------------------------------------------------------------------------
+
 static void WriteMajorLabel ( FILE * log, const char * title )
 {
 
@@ -397,11 +421,9 @@ static void DoXMPCoreCoverage ( FILE * log )
 
 	// --------------------------------------------------------------------------------------------
 
-	WriteMajorLabel ( log, "Dump predefined namespaces and aliases" );
+	WriteMajorLabel ( log, "Dump predefined namespaces" );
 
 	SXMPMeta::DumpNamespaces ( DumpToFile, log );
-	fprintf ( log, "\n" );
-	SXMPMeta::DumpAliases ( DumpToFile, log );
 
 	// --------------------------------------------------------------------------------------------
 
@@ -478,118 +500,6 @@ static void DoXMPCoreCoverage ( FILE * log )
 		SXMPMeta::DumpNamespaces ( DumpToFile, log );
 		(void) SXMPMeta::RegisterNamespace ( kNS2, "ns2", 0 );
 	#endif
-
-	// --------------------------------------------------------------------------------------------
-	// Static alias functions
-	// ----------------------
-
-	WriteMajorLabel ( log, "Initial default aliases" );
-	fprintf ( log, "\n" );
-
-	SXMPMeta::DumpAliases ( DumpToFile, log );
-
-	WriteMajorLabel ( log, "Add ns2: to ns1: aliases" );
-	fprintf ( log, "\n" );
-
-	SXMPMeta::RegisterAlias ( kNS2, "SimpleAlias", kNS1, "SimpleActual" );
-
-	SXMPMeta::RegisterAlias ( kNS2, "BagAlias", kNS1, "BagActual" );
-	SXMPMeta::RegisterAlias ( kNS2, "ns2:SeqAlias", kNS1, "SeqActual" );
-	SXMPMeta::RegisterAlias ( kNS2, "AltAlias", kNS1, "AltActual" );
-	SXMPMeta::RegisterAlias ( kNS2, "AltTextAlias", kNS1, "AltTextActual" );
-
-	SXMPMeta::RegisterAlias ( kNS2, "BagItemAlias", kNS1, "BagActual", kXMP_PropValueIsArray );
-	SXMPMeta::RegisterAlias ( kNS2, "SeqItemAlias", kNS1, "ns1:SeqActual", kXMP_PropArrayIsOrdered );
-	SXMPMeta::RegisterAlias ( kNS2, "AltItemAlias", kNS1, "ns1:AltActual", kXMP_PropArrayIsAlternate );
-	SXMPMeta::RegisterAlias ( kNS2, "AltTextItemAlias", kNS1, "ns1:AltTextActual", kXMP_PropArrayIsAltText );
-
-	SXMPMeta::DumpAliases ( DumpToFile, log );
-
-	WriteMajorLabel ( log, "Resolve ns2: to ns1: aliases" );
-	fprintf ( log, "\n" );
-
-	tmpStr1.erase();  tmpStr2.erase();
-	ok = SXMPMeta::ResolveAlias ( kNS1, "SimpleActual", &tmpStr1, &tmpStr2, &options );
-	fprintf ( log, "ResolveAlias ns1:SimpleActual : %s\n", FoundOrNot ( ok ) );
-
-	fprintf ( log, "\n" );
-
-	tmpStr1.erase();  tmpStr2.erase();
-	ok = SXMPMeta::ResolveAlias ( kNS2, "SimpleAlias", &tmpStr1, &tmpStr2, &options );
-	fprintf ( log, "ResolveAlias ns2:SimpleAlias : %s, %s %s, 0x%X\n", FoundOrNot ( ok ), tmpStr1.c_str(), tmpStr2.c_str(), options );
-
-	fprintf ( log, "\n" );
-
-	tmpStr1.erase();  tmpStr2.erase();
-	ok = SXMPMeta::ResolveAlias ( kNS2, "ns2:BagAlias", &tmpStr1, &tmpStr2, &options );
-	fprintf ( log, "ResolveAlias ns2:BagAlias : %s, %s %s, 0x%X\n", FoundOrNot ( ok ), tmpStr1.c_str(), tmpStr2.c_str(), options );
-
-	tmpStr1.erase();  tmpStr2.erase();
-	ok = SXMPMeta::ResolveAlias ( kNS2, "SeqAlias", &tmpStr1, &tmpStr2, &options );
-	fprintf ( log, "ResolveAlias ns2:SeqAlias : %s, %s %s, 0x%X\n", FoundOrNot ( ok ), tmpStr1.c_str(), tmpStr2.c_str(), options );
-
-	tmpStr1.erase();  tmpStr2.erase();
-	ok = SXMPMeta::ResolveAlias ( kNS2, "AltAlias", &tmpStr1, &tmpStr2, &options );
-	fprintf ( log, "ResolveAlias ns2:AltAlias : %s, %s %s, 0x%X\n", FoundOrNot ( ok ), tmpStr1.c_str(), tmpStr2.c_str(), options );
-
-	tmpStr1.erase();  tmpStr2.erase();
-	ok = SXMPMeta::ResolveAlias ( kNS2, "AltTextAlias", &tmpStr1, &tmpStr2, &options );
-	fprintf ( log, "ResolveAlias ns2:AltTextAlias : %s, %s %s, 0x%X\n", FoundOrNot ( ok ), tmpStr1.c_str(), tmpStr2.c_str(), options );
-
-	fprintf ( log, "\n" );
-
-	tmpStr1.erase();  tmpStr2.erase();
-	ok = SXMPMeta::ResolveAlias ( kNS2, "BagItemAlias", &tmpStr1, &tmpStr2, &options );
-	fprintf ( log, "ResolveAlias ns2:BagItemAlias : %s, %s %s, 0x%X\n", FoundOrNot ( ok ), tmpStr1.c_str(), tmpStr2.c_str(), options );
-
-	tmpStr1.erase();  tmpStr2.erase();
-	ok = SXMPMeta::ResolveAlias ( kNS2, "SeqItemAlias", &tmpStr1, &tmpStr2, &options );
-	fprintf ( log, "ResolveAlias ns2:SeqItemAlias : %s, %s %s, 0x%X\n", FoundOrNot ( ok ), tmpStr1.c_str(), tmpStr2.c_str(), options );
-
-	tmpStr1.erase();  tmpStr2.erase();
-	ok = SXMPMeta::ResolveAlias ( kNS2, "AltItemAlias", &tmpStr1, &tmpStr2, &options );
-	fprintf ( log, "ResolveAlias ns2:AltItemAlias : %s, %s %s, 0x%X\n", FoundOrNot ( ok ), tmpStr1.c_str(), tmpStr2.c_str(), options );
-
-	tmpStr1.erase();  tmpStr2.erase();
-	ok = SXMPMeta::ResolveAlias ( kNS2, "AltTextItemAlias", &tmpStr1, &tmpStr2, &options );
-	fprintf ( log, "ResolveAlias ns2:AltTextItemAlias : %s, %s %s, 0x%X\n", FoundOrNot ( ok ), tmpStr1.c_str(), tmpStr2.c_str(), options );
-
-	{
-		SXMPMeta meta;
-
-		WriteMajorLabel ( log, "Test SetProperty through ns2: simple aliases" );
-
-		meta.SetProperty ( kNS2, "SimpleAlias", "Simple value" );
-		meta.SetProperty ( kNS2, "ns2:BagItemAlias", "BagItem value" );
-		meta.SetProperty ( kNS2, "SeqItemAlias", "SeqItem value" );
-		meta.SetProperty ( kNS2, "AltItemAlias", "AltItem value" );
-		meta.SetProperty ( kNS2, "AltTextItemAlias", "AltTextItem value" );
-
-		DumpXMPObj ( log, meta, "Check for aliases and bases" );
-
-	}
-
-	#if 0
-
-		WriteMajorLabel ( log, "Delete some ns2: to ns1: aliases" );
-		fprintf ( log, "\n" );
-
-		SXMPMeta::DeleteAlias ( kNS2, "ns2:SimpleAlias" );
-		SXMPMeta::DeleteAlias ( kNS2, "SeqAlias" );
-		SXMPMeta::DeleteAlias ( kNS2, "AltAlias" );
-		SXMPMeta::DeleteAlias ( kNS2, "SeqItemAlias" );
-		SXMPMeta::DeleteAlias ( kNS2, "AltItemAlias" );
-
-		SXMPMeta::DumpAliases ( DumpToFile, log );
-
-	#endif
-
-	WriteMajorLabel ( log, "Register standard EXIF aliases" );
-	fprintf ( log, "\n" );
-
-	SXMPMeta::RegisterStandardAliases ( kXMP_NS_EXIF );
-	
-	SXMPMeta::DumpAliases ( DumpToFile, log );
 
 	// --------------------------------------------------------------------------------------------
 	// Basic set/get methods
@@ -943,13 +853,15 @@ static void DoXMPCoreCoverage ( FILE * log )
 
 	{
 		SXMPMeta meta ( kDateTimeRDF, strlen(kDateTimeRDF) );
-		XMP_DateTime dateValue = { 2000, 1, 2, 3, 4, 5, 0, 0, 0, 0 };
-		bool	boolValue;
-		long	intValue;
-		double	floatValue;
-		char	dateName [8];
+		XMP_DateTime dateValue;
+		bool		boolValue;
+		XMP_Int32	intValue;
+		double		floatValue;
+		char		dateName [8];
 
 		WriteMajorLabel ( log, "Test SetProperty... and GetProperty... methods (set/get with binary values)" );
+		
+		FillDateTime ( &dateValue, 2000, 1, 2, 3, 4, 5, true, true, false, 0, 0, 0, 0 );
 
 		meta.SetProperty_Bool ( kNS1, "Bool0", false );
 		meta.SetProperty_Bool ( kNS1, "Bool1", true );
@@ -1129,7 +1041,7 @@ static void DoXMPCoreCoverage ( FILE * log )
 			meta2.SetProperty ( kXMP_NS_PDF, "Author", "PDF Author" );
 			
 			tmpStr1.erase();
-			meta2.SerializeToBuffer ( &tmpStr1, kXMP_ReadOnlyPacket | kXMP_WriteAliasComments );
+			meta2.SerializeToBuffer ( &tmpStr1, kXMP_ReadOnlyPacket );
 			WriteMinorLabel ( log, "Read-only serialize with alias comments" );
 			fprintf ( log, "%s\n", tmpStr1.c_str() );
 
@@ -1137,7 +1049,7 @@ static void DoXMPCoreCoverage ( FILE * log )
 			meta2.SetProperty ( kXMP_NS_XMP, "Actual", "XMP Actual" );
 			
 			tmpStr1.erase();
-			meta2.SerializeToBuffer ( &tmpStr1, kXMP_ReadOnlyPacket | kXMP_WriteAliasComments );
+			meta2.SerializeToBuffer ( &tmpStr1, kXMP_ReadOnlyPacket );
 			WriteMinorLabel ( log, "Read-only serialize with alias comments (more actuals)" );
 			fprintf ( log, "%s\n", tmpStr1.c_str() );
 		}
@@ -1475,22 +1387,6 @@ static void DoXMPCoreCoverage ( FILE * log )
 					}
 				}
 			}
-
-			SXMPIterator iter2 ( meta, kXMP_IterIncludeAliases );
-			WriteMinorLabel ( log, "Iterate showing aliases" );
-			while ( true ) {
-				tmpStr1.erase();  tmpStr2.erase();  tmpStr3.erase();
-				if ( ! iter2.Next ( &tmpStr1, &tmpStr2, &tmpStr3, &options ) ) break;
-				fprintf ( log, "  %s %s = \"%s\", 0x%X\n", tmpStr1.c_str(), tmpStr2.c_str(), tmpStr3.c_str(), options );
-				if ( ! (options & kXMP_SchemaNode) ) {
-					tmpStr4.erase();
-					options &= ~(kXMP_PropIsAlias | kXMP_PropHasAliases);	// So the comparison below works.
-					ok = meta.GetProperty ( tmpStr1.c_str(), tmpStr2.c_str(), &tmpStr4, &opt2 );
-					if ( (! ok) || (tmpStr4 != tmpStr3) || (opt2 != options) ) {
-						fprintf ( log, "    ** GetProperty failed: %s, \"%s\", 0x%X\n", FoundOrNot(ok), tmpStr4.c_str(), opt2 );
-					}
-				}
-			}
 		}
 
 	}
@@ -1688,8 +1584,9 @@ static void DoXMPCoreCoverage ( FILE * log )
 
 	fprintf ( log, "\n" );
 
-	XMP_DateTime	date1	= { 2000, 1, 31, 12, 34, 56, -1, 8, 0, 0 };
-	XMP_DateTime	date2	= { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	XMP_DateTime date1, date2;
+	FillDateTime ( &date1, 2000, 1, 31, 12, 34, 56, true, true, true, -1, 8, 0, 0 );
+
 
 	tmpStr1.erase();
 	SXMPUtils::ConvertFromDate ( date1, &tmpStr1 );
@@ -1708,8 +1605,7 @@ static void DoXMPCoreCoverage ( FILE * log )
 		WriteMajorLabel ( log, "Test date/time utilities and special values" );
 		fprintf ( log, "\n" );
 		
-		XMP_DateTime	utcNow		= { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-		XMP_DateTime	localNow	= { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		XMP_DateTime utcNow, localNow;
 		
 		SXMPUtils::SetTimeZone ( &utcNow );
 		fprintf ( log, "SetTimeZone : %d-%02d-%02d %02d:%02d:%02d %d*%02d:%02d %d\n",
@@ -1825,25 +1721,25 @@ static void DoXMPCoreCoverage ( FILE * log )
 		meta2.SetProperty ( kXMP_NS_XMP, "Format", "new Format" );
 		DumpXMPObj ( log, meta2, "Create 2nd XMP object with new values" );
 		
-		SXMPUtils::AppendProperties ( meta2, &meta1 );
+		SXMPUtils::ApplyTemplate ( &meta1, meta2, kXMPTemplate_AddNewProperties );
 		DumpXMPObj ( log, meta1, "Append 2nd to 1st, keeping old values, external only" );
 		
 		meta2.SetProperty ( kXMP_NS_XMP, "CreatorTool", "newer CreatorTool" );
 		meta2.SetProperty ( kXMP_NS_XMP, "Nickname", "newer Nickname" );
 		meta2.SetProperty ( kXMP_NS_XMP, "Format", "newer Format" );
-		SXMPUtils::AppendProperties ( meta2, &meta1, kXMPUtil_DoAllProperties );
+		SXMPUtils::ApplyTemplate ( &meta1, meta2, kXMPTemplate_AddNewProperties | kXMPTemplate_IncludeInternalProperties );
 		DumpXMPObj ( log, meta1, "Append 2nd to 1st, keeping old values, internal also" );
 
 		meta2.SetProperty ( kXMP_NS_XMP, "CreatorTool", "newest CreatorTool" );
 		meta2.SetProperty ( kXMP_NS_XMP, "Nickname", "newest Nickname" );
 		meta2.SetProperty ( kXMP_NS_XMP, "Format", "newest Format" );
-		SXMPUtils::AppendProperties ( meta2, &meta1, kXMPUtil_ReplaceOldValues );
+		SXMPUtils::ApplyTemplate ( &meta1, meta2, kXMPTemplate_AddNewProperties | kXMPTemplate_ReplaceExistingProperties );
 		DumpXMPObj ( log, meta1, "Append 2nd to 1st, replacing old values, external only" );
 		
 		meta2.SetProperty ( kXMP_NS_XMP, "CreatorTool", "final CreatorTool" );
 		meta2.SetProperty ( kXMP_NS_XMP, "Nickname", "final Nickname" );
 		meta2.SetProperty ( kXMP_NS_XMP, "Format", "final Format" );
-		SXMPUtils::AppendProperties ( meta2, &meta1, (kXMPUtil_ReplaceOldValues | kXMPUtil_DoAllProperties) );
+		SXMPUtils::ApplyTemplate ( &meta1, meta2, kXMPTemplate_AddNewProperties | kXMPTemplate_ReplaceExistingProperties | kXMPTemplate_IncludeInternalProperties );
 		DumpXMPObj ( log, meta1, "Append 2nd to 1st, replacing old values, internal also" );
 
 	}

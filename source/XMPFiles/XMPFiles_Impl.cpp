@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2004 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -43,35 +43,9 @@ using namespace std;
 	#pragma warning ( disable : 4800 )	// forcing value to bool 'true' or 'false' (performance warning)
 #endif
 
+bool ignoreLocalText = false;
+
 XMP_FileFormat voidFileFormat = 0;	// Used as sink for unwanted output parameters.
-XMP_Mutex sXMPFilesLock;
-int sXMPFilesLockCount = 0;
-std::string * sXMPFilesExceptionMessage = 0;
-
-#if TraceXMPCalls
-	FILE * xmpFilesOut = stderr;
-#endif
-
-//only define in one non-public-source, non-header(.cpp) place
-void LFA_Throw ( const char* msg, int id )
-{
-	switch(id)
-	{
-		case kLFAErr_InternalFailure:
-			XMP_Throw(msg,kXMPErr_InternalFailure);
-			break;
-		case kLFAErr_ExternalFailure:
-			XMP_Throw(msg,kXMPErr_ExternalFailure);
-			break;
-		case kLFAErr_UserAbort:
-			XMP_Throw(msg,kXMPErr_UserAbort);
-			break;
-		default:
-			XMP_Throw(msg,kXMPErr_UnknownException);
-			break;
-	}
-}
-
 // =================================================================================================
 
 // Add all known mappings, multiple mappings (tif, tiff) are OK.
@@ -145,6 +119,8 @@ const FileExtMapping kFileExtMap[] =
 	  { "pdfxml", kXMP_UCFFile },
 	  { "mars", kXMP_UCFFile },
 	  { "idml", kXMP_UCFFile },
+	  { "idap", kXMP_UCFFile },
+	  { "icap", kXMP_UCFFile },
 	  { "", 0 } };	// ! Must be last as a sentinel.
 
 // Files known to contain XMP but have no smart handling, here or elsewhere.
@@ -177,14 +153,31 @@ const char * kKnownRejectedFiles[] =
 		// RAW files
 		"cr2", "erf", "fff", "dcr", "kdc", "mos", "mfw", "mef",
 		"raw", "nef", "orf", "pef", "arw", "sr2", "srf", "sti",
-		"3fr",
-		// not supported UCF subformats
+		"3fr", "rwl", "crw", "sraw", "mos", "mrw", "nrw", "rw2",
+		"c3f",
+		// UCF subformats
 		"air",
+		// Others
+		"r3d",
 	  0 };	// ! Keep a 0 sentinel at the end.
 
 // =================================================================================================
 
 // =================================================================================================
+
+void LFA_Throw ( const char* msg, int id )
+{
+	switch ( id ) {
+		case kLFAErr_InternalFailure:
+			XMP_Throw ( msg, kXMPErr_InternalFailure );
+		case kLFAErr_ExternalFailure:
+			XMP_Throw ( msg, kXMPErr_ExternalFailure );
+		case kLFAErr_UserAbort:
+			XMP_Throw ( msg, kXMPErr_UserAbort );
+		default:
+			XMP_Throw ( msg, kXMPErr_UnknownException );
+	}
+}
 
 // =================================================================================================
 
@@ -198,6 +191,7 @@ const char * kKnownRejectedFiles[] =
 	}
 #endif
 
+// =================================================================================================
 
 static bool CreateNewFile ( const char * newPath, const char * origPath, size_t filePos, bool copyMacRsrc )
 {
@@ -746,17 +740,6 @@ void ReadXMPPacket ( XMPFileHandler * handler )
 	LFA_Read ( fileRef, (char*)packetStr, packetLen, kLFA_RequireAll );
 	
 }	// ReadXMPPacket
-
-// =================================================================================================
-// XMPFileHandler::ProcessTNail
-// ============================
-
-void XMPFileHandler::ProcessTNail()
-{
-
-	this->processedTNail = true;	// ! Must be overridden by handlers that support thumbnails.
-
-}	// XMPFileHandler::ProcessTNail
 
 // =================================================================================================
 // XMPFileHandler::ProcessXMP
