@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2004-2008 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -11,7 +11,7 @@
 
 class Actions {
 	public:
-		enum ACTION_TYPE { NONE, VERSION, INFO, PUT, GET, DUMP, THUMB};
+		enum ACTION_TYPE { NONE, VERSION, INFO, PUT, GET, DUMP };
 
 		//the params to be set:
 		bool switch_safe;	//asking for closing file with kXMPFiles_UpdateSafely (safe+rename that is)
@@ -36,7 +36,6 @@ class Actions {
 private:
 		void version(void);
 		void info(void);
-		void thumb(void);
 		void put();
 		void get(void);
 		void dump(void);

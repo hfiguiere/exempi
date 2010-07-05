@@ -41,7 +41,7 @@ noinst_HEADERS = IPTC_Support.hpp  PSIR_Support.hpp\
 	ReconcileLegacy.hpp  TIFF_Support.hpp  GIF_Support.hpp
 
 
-INCLUDES = -I$(srcdir)/.. -I$(srcdir)/../../common \
+INCLUDES = -I$(srcdir)/.. -I$(srcdir)/../FileHandlers -I$(srcdir)/../../common \
 	-I$(top_srcdir)/public/include/ -I$(top_srcdir)/build/ \
 	-I$(top_srcdir)/third-party/MD5
 
@@ -50,14 +50,18 @@ AM_CPPFLAGS = -Wno-multichar\
 	-D@EXEMPI_PLATFORM_DEF@=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
 	-D_FILE_OFFSET_BITS=64 -DHAVE_EXPAT_CONFIG_H=1 -DXML_STATIC=1
 
-libformatsupport_la_SOURCES = ID3_Support.cpp   PSIR_FileWriter.cpp    Reconcile_Impl.cpp \
+libformatsupport_la_SOURCES = PSIR_FileWriter.cpp    Reconcile_Impl.cpp \
 	ReconcileTIFF.cpp    TIFF_MemoryReader.cpp \
 	IPTC_Support.cpp  PSIR_MemoryReader.cpp  ReconcileIPTC.cpp   \
+	RIFF.cpp RIFF.hpp \
 	RIFF_Support.cpp     TIFF_Support.cpp \
+	ISOBaseMedia_Support.hpp ISOBaseMedia_Support.cpp \
 	PNG_Support.cpp   ReconcileLegacy.cpp  \
 	SWF_Support.hpp SWF_Support.cpp\
 	XDCAM_Support.hpp XDCAM_Support.cpp\
 	TIFF_FileWriter.cpp  XMPScanner.cpp  GIF_Support.cpp \
+	MOOV_Support.cpp MOOV_Support.hpp \
 	QuickTime_Support.cpp \
 	ASF_Support.hpp ASF_Support.cpp \
+	MacScriptExtracts.h \
 	$(NULL)

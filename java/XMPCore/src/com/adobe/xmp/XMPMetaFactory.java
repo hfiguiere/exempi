@@ -11,7 +11,6 @@ package com.adobe.xmp;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Properties;
 
 import com.adobe.xmp.impl.XMPMetaImpl;
 import com.adobe.xmp.impl.XMPMetaParser;
@@ -261,24 +260,16 @@ public final class XMPMetaFactory
 		{
 			try
 			{
-				Properties versProperties = new Properties();
-				versProperties.load(XMPMetaFactory.class.getResourceAsStream("version.properties"));
+				final int major = 5;
+				final int minor = 1;
+				final int micro = 0;
+				final int engBuild = 3;
+				final boolean debug = false;
 				
-				final int major = Integer.parseInt(versProperties
-						.getProperty("implementation.version.major"));
-				final int minor = Integer.parseInt(versProperties
-						.getProperty("implementation.version.minor"));
-				final int micro = Integer.parseInt(versProperties
-						.getProperty("implementation.version.micro"));
-				final boolean debug = Boolean.valueOf(
-						versProperties.getProperty("implementation.version.debug")).booleanValue();
-				final String message;
-				final int engBuild;
+				// Adobe XMP Core 5.0-jc001 DEBUG-<branch>.<changelist>, 2009 Jan 28 15:22:38-CET
+				final String message = "Adobe XMP Core 5.1.0-jc003";
+					
 
-				message = versProperties.getProperty("implementation.version");
-				engBuild = Integer.parseInt(versProperties
-						.getProperty("implementation.version.engbuild"));
-				
 				versionInfo = new XMPVersionInfo()
 				{
 					public int getMajor()
@@ -321,6 +312,7 @@ public final class XMPMetaFactory
 			catch (Throwable e)
 			{
 				// EMTPY, severe error would be detected during the tests
+				System.out.println(e);
 			}
 		}
 		return versionInfo;

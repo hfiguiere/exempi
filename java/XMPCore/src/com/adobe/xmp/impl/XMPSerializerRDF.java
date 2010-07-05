@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -512,8 +512,7 @@ public class XMPSerializerRDF
 			write('<');
 			write(elemName);
 	
-			boolean isCompact = node.getOptions().isCompact();
-			boolean hasGeneralQualifiers = isCompact;	// Might also become true later.
+			boolean hasGeneralQualifiers = false;
 			boolean hasRDFResourceQual   = false;
 	
 			for (Iterator iq = 	node.iterateQualifier(); iq.hasNext();)
@@ -538,7 +537,7 @@ public class XMPSerializerRDF
 			// Process the property according to the standard patterns.
 			if (hasGeneralQualifiers)
 			{
-				serializeCompactRDFGeneralQualifier(indent, node, isCompact);
+				serializeCompactRDFGeneralQualifier(indent, node);
 			}
 			else
 			{
@@ -739,11 +738,10 @@ public class XMPSerializerRDF
 	 * Serializes the general qualifier.  
 	 * @param node the root node of the subtree
 	 * @param indent the current indent level
-	 * @param isCompact flag if qual shall be renderen in compact form.
 	 * @throws IOException Forwards all writer exceptions.
 	 * @throws XMPException If qualifier and element fields are mixed.
 	 */
-	private void serializeCompactRDFGeneralQualifier(int indent, XMPNode node, boolean isCompact)
+	private void serializeCompactRDFGeneralQualifier(int indent, XMPNode node)
 			throws IOException, XMPException
 	{
 		// The node has general qualifiers, ones that can't be
@@ -755,14 +753,6 @@ public class XMPSerializerRDF
 		writeNewline();
 
 		serializePrettyRDFProperty(node, true, indent + 1);
-
-		if (isCompact)
-		{
-			// Emit a "pxmp:compact" fake qualifier.
-			writeIndent(1);
-			write("<pxmp:compact/>");
-			writeNewline();
-		}
 
 		for (Iterator iq = 	node.iterateQualifier(); iq.hasNext();)
 		{
@@ -980,8 +970,7 @@ public class XMPSerializerRDF
 		write('<');
 		write(elemName);
 		
-		boolean isCompact = node.getOptions().isCompact();
-		boolean hasGeneralQualifiers = isCompact;	// Might also become true later.
+		boolean hasGeneralQualifiers = false;
 		boolean hasRDFResourceQual   = false;
 		
 		for (Iterator it = node.iterateQualifier(); it.hasNext();)
@@ -1025,14 +1014,6 @@ public class XMPSerializerRDF
 	
 			serializePrettyRDFProperty(node, true, indent + 1);
 			
-			if (isCompact)
-			{
-				// Emit a "pxmp:compact" fake qualifier.
-				writeIndent(indent);
-				write("<pxmp:compact/>");
-				writeNewline();
-			}
-
 			for (Iterator it = node.iterateQualifier(); it.hasNext();)
 			{
 				XMPNode qualifier = (XMPNode) it.next();

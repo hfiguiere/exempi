@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2007 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -316,7 +316,7 @@ static inline bool CheckName ( XMP_StringPtr inputName,  XMP_Uns16 inputLen,
 
 void FLV_MetaHandler::CacheFileData()
 {
-	XMP_Assert ( (! this->containsXMP) && (! this->containsTNail) );
+	XMP_Assert ( ! this->containsXMP );
 
 	XMP_AbortProc abortProc  = this->parent->abortProc;
 	void *        abortArg   = this->parent->abortArg;
@@ -569,6 +569,7 @@ void FLV_MetaHandler::UpdateFile ( bool doSafeUpdate )
 			this->WriteFile ( origRef, origPath );
 		} catch ( ... ) {
 			LFA_Close ( updateRef );
+			LFA_Delete ( updatePath.c_str() );
 			this->parent->filePath = origPath;
 			this->parent->fileRef  = origRef;
 			throw;

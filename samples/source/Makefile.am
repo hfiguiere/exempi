@@ -50,9 +50,7 @@ XMPLIBS = $(top_builddir)/source/XMPCore/libXMPCore.la \
 	$(top_builddir)/source/common/libxmpcommon.la -lexpat -lz \
 	$(top_builddir)/third-party/MD5/libmd5.la
 
-INCLUDES = -I$(top_srcdir)/public/include
-
-noinst_HEADERS = XMPScanner.hpp
+INCLUDES = -I$(top_srcdir)/public/include -I$(srcdir)/common -I$(top_srcdir)/source/XMPFiles/FormatSupport
 
 customschema_SOURCES = CustomSchema.cpp
 customschema_LDADD = $(XMPLIBS)
@@ -63,14 +61,20 @@ modifyingxmp_LDADD = $(XMPLIBS)
 readingxmp_SOURCES = ReadingXMP.cpp
 readingxmp_LDADD = $(XMPLIBS)
 
-xmpcoverage_SOURCES = XMPCoreCoverage.cpp XMPScanner.cpp
+xmpcoverage_SOURCES = XMPCoreCoverage.cpp
 xmpcoverage_LDADD = $(XMPLIBS)
 
 xmpfilescoverage_SOURCES = XMPFilesCoverage.cpp
 xmpfilescoverage_LDADD = $(XMPLIBS)
 
-dumpxmp_SOURCES = DumpScannedXMP.cpp XMPScanner.cpp
+dumpxmp_SOURCES = DumpScannedXMP.cpp
 dumpxmp_LDADD = $(XMPLIBS)
 
 dumpmainxmp_SOURCES = DumpMainXMP.cpp
 dumpmainxmp_LDADD = $(XMPLIBS)
+
+#xmpcommand_SOURCES = xmpcommand/Actions.cpp xmpcommand/Actions.h \
+#	xmpcommand/PrintUsage.cpp xmpcommand/PrintUsage.h \
+#	xmpcommand/XMPCommand.cpp \
+#	$(NULL)
+#xmpcommand_LDADD = $(XMPLIBS)

@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -69,7 +69,7 @@ private:
 
 	void CleanupLegacyXML();
 	
-	std::string rootPath, clipName, defaultNS, xdcNS, legacyNS, clipUMID;
+	std::string rootPath, clipName, xdcNS, legacyNS, clipUMID;
 	
 	ExpatAdapter * expat;
 	XML_Node * clipMetadata;

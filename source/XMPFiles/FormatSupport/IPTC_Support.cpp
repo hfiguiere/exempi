@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2008 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -16,6 +16,11 @@
 /// \brief XMPFiles support for IPTC (IIM) DataSets.
 ///
 // =================================================================================================
+
+enum { kUTF8_IncomingMode = 0, kUTF8_LosslessMode = 1, kUTF8_AlwaysMode = 2 };
+#ifndef kUTF8_Mode
+	#define kUTF8_Mode kUTF8_AlwaysMode
+#endif
 
 const DataSetCharacteristics kKnownDataSets[] =
 	{ { kIPTC_ObjectType,        kIPTC_UnmappedText,   67, "",                "" },						// Not mapped to XMP.
@@ -40,14 +45,14 @@ const DataSetCharacteristics kKnownDataSets[] =
 	  { kIPTC_RefService,        kIPTC_UnmappedText,   10, "",                "" },						// Not mapped to XMP. ! Interleave 2:45, 2:47, 2:50!
 	  { kIPTC_RefDate,           kIPTC_UnmappedText,    8, "",                "" },						// Not mapped to XMP. ! Interleave 2:45, 2:47, 2:50!
 	  { kIPTC_RefNumber,         kIPTC_UnmappedText,    8, "",                "" },						// Not mapped to XMP. ! Interleave 2:45, 2:47, 2:50!
-	  { kIPTC_DateCreated,       kIPTC_MapSpecial,      8, kXMP_NS_Photoshop, "DateCreated" },			// Combined with 2:60, TimeCreated.
-	  { kIPTC_TimeCreated,       kIPTC_MapSpecial,     11, "",                "" },						// Combined with 2:55, DateCreated.
-	  { kIPTC_DigitalCreateDate, kIPTC_UnmappedText,    8, "",                "" },						// Not mapped to XMP.
-	  { kIPTC_DigitalCreateTime, kIPTC_UnmappedText,   11, "",                "" },						// Not mapped to XMP.
+	  { kIPTC_DateCreated,       kIPTC_MapSpecial,      8, kXMP_NS_Photoshop, "DateCreated" },			// ! Reformatted date. Combined with 2:60, TimeCreated.
+	  { kIPTC_TimeCreated,       kIPTC_UnmappedText,   11, "",                "" },						// ! Combined with 2:55, DateCreated.
+	  { kIPTC_DigitalCreateDate, kIPTC_Map3Way,         8, "",                "" },						// ! 3 way Exif-IPTC-XMP date/time set. Combined with 2:63, DigitalCreateTime.
+	  { kIPTC_DigitalCreateTime, kIPTC_UnmappedText,   11, "",                "" },						// ! Combined with 2:62, DigitalCreateDate.
 	  { kIPTC_OriginProgram,     kIPTC_UnmappedText,   32, "",                "" },						// Not mapped to XMP.
 	  { kIPTC_ProgramVersion,    kIPTC_UnmappedText,   10, "",                "" },						// Not mapped to XMP.
 	  { kIPTC_ObjectCycle,       kIPTC_UnmappedText,    1, "",                "" },						// Not mapped to XMP.
-	  { kIPTC_Creator,           kIPTC_MapSimple,      32, kXMP_NS_Photoshop, "Author" },				// ! Aliased to dc:creator[1].
+	  { kIPTC_Creator,           kIPTC_Map3Way,        32, "",                "" },						// ! In the 3 way Exif-IPTC-XMP set.
 	  { kIPTC_CreatorJobtitle,   kIPTC_MapSimple,      32, kXMP_NS_Photoshop, "AuthorsPosition" },
 	  { kIPTC_City,              kIPTC_MapSimple,      32, kXMP_NS_Photoshop, "City" },
 	  { kIPTC_Location,          kIPTC_MapSimple,      32, kXMP_NS_IPTCCore,  "Location" },
@@ -58,9 +63,9 @@ const DataSetCharacteristics kKnownDataSets[] =
 	  { kIPTC_Headline,          kIPTC_MapSimple,     256, kXMP_NS_Photoshop, "Headline" },
 	  { kIPTC_Provider,          kIPTC_MapSimple,      32, kXMP_NS_Photoshop, "Credit" },
 	  { kIPTC_Source,            kIPTC_MapSimple,      32, kXMP_NS_Photoshop, "Source" },
-	  { kIPTC_CopyrightNotice,   kIPTC_MapLangAlt,    128, kXMP_NS_DC,        "rights" },
+	  { kIPTC_CopyrightNotice,   kIPTC_Map3Way,       128, "",                "" },						// ! In the 3 way Exif-IPTC-XMP set.
 	  { kIPTC_Contact,           kIPTC_UnmappedText,  128, "",                "" },						// Not mapped to XMP.
-	  { kIPTC_Description,       kIPTC_MapLangAlt,   2000, kXMP_NS_DC,        "description" },
+	  { kIPTC_Description,       kIPTC_Map3Way,      2000, "",                "" },						// ! In the 3 way Exif-IPTC-XMP set.
 	  { kIPTC_DescriptionWriter, kIPTC_MapSimple,      32, kXMP_NS_Photoshop, "CaptionWriter" },
 	  { kIPTC_RasterizedCaption, kIPTC_UnmappedBin,  7360, "",                "" },						// Not mapped to XMP. ! Binary data!
 	  { kIPTC_ImageType,         kIPTC_UnmappedText,    2, "",                "" },						// Not mapped to XMP.
@@ -72,8 +77,8 @@ const DataSetCharacteristics kKnownDataSets[] =
 	  { kIPTC_AudioDuration,     kIPTC_UnmappedText,    6, "",                "" },						// Not mapped to XMP.
 	  { kIPTC_AudioOutcue,       kIPTC_UnmappedText,   64, "",                "" },						// Not mapped to XMP.
 	  { kIPTC_PreviewFormat,     kIPTC_UnmappedBin,     2, "",                "" },						// Not mapped to XMP. ! Binary data!
-	  { kIPTC_PreviewFormatVers, kIPTC_UnmappedText,    2, "",                "" },						// Not mapped to XMP. ! Binary data!
-	  { kIPTC_PreviewData,       kIPTC_UnmappedText, 256000, "",              "" },						// Not mapped to XMP. ! Binary data!
+	  { kIPTC_PreviewFormatVers, kIPTC_UnmappedBin,     2, "",                "" },						// Not mapped to XMP. ! Binary data!
+	  { kIPTC_PreviewData,       kIPTC_UnmappedBin, 256000, "",               "" },						// Not mapped to XMP. ! Binary data!
 	  { 255,                     kIPTC_MapSpecial,      0, 0,                 0 } };					// ! Must be last as a sentinel.
 
 // A combination of the IPTC "Subject Reference System Guidelines" and IIMv4.1 Appendix G.
@@ -142,7 +147,7 @@ static const DataSetCharacteristics* FindKnownDataSet ( XMP_Uns8 id )
 // IPTC_Manager::ParseMemoryDataSets
 // =================================
 //
-// Parse the legacy IIM block, keeping information about all 2:* DataSets and size of other records.
+// Parse the legacy IIM block. Offsets and lengths are kept for any 1:90 DataSet and all of Record 2.
 
 void IPTC_Manager::ParseMemoryDataSets ( const void* data, XMP_Uns32 length, bool copyData /* = true */ )
 {
@@ -188,7 +193,8 @@ void IPTC_Manager::ParseMemoryDataSets ( const void* data, XMP_Uns32 length, boo
 	
 	this->utf8Encoding = false;
 	
-	bool foundRec2 = false;
+	bool found190 = false;
+	bool found2xx = false;
 	
 	for ( ; iptcPtr <= iptcLimit; iptcPtr += dsLen ) {
 	
@@ -217,25 +223,28 @@ void IPTC_Manager::ParseMemoryDataSets ( const void* data, XMP_Uns32 length, boo
 		if ( recNum == 0 ) continue;	// Should not be a record 0. Throw instead?
 
 		if ( recNum == 1 ) {
-			if ( (dsNum == 90) && (dsLen >= 3) ) {
-				if ( memcmp ( iptcPtr, "\x1B\x25\x47", 3 ) == 0 ) this->utf8Encoding = true;
+			if ( dsNum == 90 ) {
+				found190 = true;
+				this->offset190 = (XMP_Uns32) (dsPtr - this->iptcContent);
+				this->length190 = 5 + dsLen;
+				if ( (dsLen == 3) && (memcmp ( iptcPtr, "\x1B\x25\x47", 3 ) == 0) ) this->utf8Encoding = true;
 			}
 			continue;	// Ignore all other record 1 DataSets.
 		}
 
 		if ( recNum == 2 ) {
-			if ( ! foundRec2 ) {
-				foundRec2 = true;
-				this->rec2Offset = (XMP_Uns32) (dsPtr - this->iptcContent);
-				this->rec2Length = this->iptcLength - this->rec2Offset;	// ! In case there are no other records.
+			if ( ! found2xx ) {
+				found2xx = true;
+				this->offset2xx = (XMP_Uns32) (dsPtr - this->iptcContent);
+				this->length2xx = this->iptcLength - this->offset2xx;	// ! In case there are no other records.
 			}
 		} else {
-			this->rec2Length = (XMP_Uns32) (dsPtr - (this->iptcContent + this->rec2Offset));
-			break;	// The records are in ascending order, done.
+			this->length2xx = (XMP_Uns32) (dsPtr - (this->iptcContent + this->offset2xx));
+			break;	// The records are in ascending order, done with 2:xx DataSets.
 		}
 		
 		XMP_Assert ( recNum == 2 );
-		if ( dsNum == 0 ) continue;	// Ignore 2:00 when reading.
+		if ( dsNum == 0 ) continue;	// Ignore 2:00 when reading, it is created explicitly when writing.
 		
 		DataSetInfo dsInfo ( dsNum, dsLen, iptcPtr );
 		DataSetMap::iterator dsPos = this->dataSets.find ( dsNum );
@@ -246,7 +255,7 @@ void IPTC_Manager::ParseMemoryDataSets ( const void* data, XMP_Uns32 length, boo
 
 		if ( (knownDS == 0) || (knownDS->mapForm == kIPTC_MapArray) ) {
 			repeatable = true;	// Allow repeats for unknown DataSets.
-		} else if ( dsNum == kIPTC_SubjectCode ) {
+		} else if ( (dsNum == kIPTC_Creator) || (dsNum == kIPTC_SubjectCode) ) {
 			repeatable = true;
 		}
 		
@@ -276,7 +285,7 @@ size_t IPTC_Manager::GetDataSet ( XMP_Uns8 id, DataSetInfo* info, size_t which /
 	if ( which >= dsCount ) return 0;	// Valid range for which is 0 .. count-1.
 	
 	if ( info != 0 ) {
-		for ( size_t i = 0; i < which; ++i ) ++dsPos;	// ??? dsPos += which;
+		for ( size_t i = 0; i < which; ++i ) ++dsPos;	// Can't do "dsPos += which", no iter+int operator.
 		*info = dsPos->second;
 	}
 	
@@ -290,6 +299,8 @@ size_t IPTC_Manager::GetDataSet ( XMP_Uns8 id, DataSetInfo* info, size_t which /
 	
 size_t IPTC_Manager::GetDataSet_UTF8 ( XMP_Uns8 id, std::string * utf8Str, size_t which /* = 0 */ ) const
 {
+	if ( utf8Str != 0 ) utf8Str->erase();
+	
 	DataSetInfo dsInfo;
 	size_t dsCount = GetDataSet ( id, &dsInfo, which );
 	if ( dsCount == 0 ) return 0;
@@ -297,14 +308,10 @@ size_t IPTC_Manager::GetDataSet_UTF8 ( XMP_Uns8 id, std::string * utf8Str, size_
 	if ( utf8Str != 0 ) {
 		if ( this->utf8Encoding ) {
 			utf8Str->assign ( (char*)dsInfo.dataPtr, dsInfo.dataLen );
-		} else {
-			#if ! XMP_UNIXBuild
-				ReconcileUtils::LocalToUTF8 ( dsInfo.dataPtr, dsInfo.dataLen, utf8Str );
-			#else
-				// ! Hack until legacy-as-local issues are resolved for generic UNIX.
-				if ( ! ReconcileUtils::IsUTF8 ( dsInfo.dataPtr, dsInfo.dataLen ) ) return 0;
-				utf8Str->assign ( (char*)dsInfo.dataPtr, dsInfo.dataLen );
-			#endif
+		} else if ( ! ignoreLocalText ) {
+			ReconcileUtils::LocalToUTF8 ( dsInfo.dataPtr, dsInfo.dataLen, utf8Str );
+		} else if ( ReconcileUtils::IsASCII ( dsInfo.dataPtr, dsInfo.dataLen ) ) {
+			utf8Str->assign ( (char*)dsInfo.dataPtr, dsInfo.dataLen );
 		}
 	}
 	
@@ -339,8 +346,6 @@ void IPTC_Manager::DisposeLooseValue ( DataSetInfo & dsInfo )
 // =================================================================================================
 // =================================================================================================
 
-#if ! XMP_UNIXBuild	// ! Disable IPTC output for generic UNIX until the legacy-as-local issues are resolved.
-
 // =================================================================================================
 // IPTC_Writer::~IPTC_Writer
 // =========================
@@ -367,39 +372,57 @@ void IPTC_Writer::SetDataSet_UTF8 ( XMP_Uns8 id, const void* utf8Ptr, XMP_Uns32 
 	
 	// Decide which character encoding to use and get a temporary pointer to the value.
 	
-	XMP_Uns8 * tempPtr;
-	XMP_Uns32  dataLen;
+	XMP_Uns8 *  tempPtr;
+	XMP_Uns32   dataLen;
+	std::string localStr;
+	
+	if ( kUTF8_Mode == kUTF8_AlwaysMode ) {
 
-	std::string localStr, rtStr;
-	
-	if ( this->utf8Encoding ) {
-	
-		// We're already using UTF-8.
+		// Always use UTF-8.
+		if ( ! this->utf8Encoding ) this->ConvertToUTF8();
 		tempPtr = (XMP_Uns8*) utf8Ptr;
 		dataLen = utf8Len;
 	
-	} else {
+	} else if ( kUTF8_Mode == kUTF8_IncomingMode ) {
 
-// *** Disable the round trip loss checking for now. We only use UTF-8 if the input had it.
-	
-		ReconcileUtils::UTF8ToLocal ( utf8Ptr, utf8Len, &localStr );
-//		ReconcileUtils::LocalToUTF8 ( localStr.data(), localStr.size(), &rtStr );
-		
-//		if ( (rtStr.size() == utf8Len) && (memcmp ( rtStr.data(), utf8Ptr, utf8Len ) == 0) ) {
-
-			// It round-tripped without loss, keep local encoding.
+		// Only use UTF-8 if that was what the parsed block used.
+		if ( this->utf8Encoding ) {
+			tempPtr = (XMP_Uns8*) utf8Ptr;
+			dataLen = utf8Len;
+		} else if ( ! ignoreLocalText ) {
+			ReconcileUtils::UTF8ToLocal ( utf8Ptr, utf8Len, &localStr );
 			tempPtr = (XMP_Uns8*) localStr.data();
-			dataLen = (XMP_Uns32)localStr.size();
-
-//		} else {
-
-//			// Had round-trip loss, change to UTF-8 for all text DataSets.
-//			this->ConvertToUTF8();
-//			XMP_Assert ( this->utf8Encoding );
-//			tempPtr = (XMP_Uns8*) utf8Ptr;
-//			dataLen = utf8Len;
-
-//		}
+			dataLen = (XMP_Uns32) localStr.size();
+		} else {
+			if ( ! ReconcileUtils::IsASCII ( utf8Ptr, utf8Len ) ) return;
+			tempPtr = (XMP_Uns8*) utf8Ptr;
+			dataLen = utf8Len;
+		}
+	
+	} else if ( kUTF8_Mode == kUTF8_LosslessMode ) {
+	
+		// Convert to UTF-8 if needed to prevent round trip loss.
+		if ( this->utf8Encoding ) {
+			tempPtr = (XMP_Uns8*) utf8Ptr;
+			dataLen = utf8Len;
+		} else if ( ! ignoreLocalText ) {
+			std::string rtStr;
+			ReconcileUtils::UTF8ToLocal ( utf8Ptr, utf8Len, &localStr );
+			ReconcileUtils::LocalToUTF8 ( localStr.data(), localStr.size(), &rtStr );
+			if ( (rtStr.size() == utf8Len) && (memcmp ( rtStr.data(), utf8Ptr, utf8Len ) == 0) ) {
+				tempPtr = (XMP_Uns8*) localStr.data();	// No loss, keep local encoding.
+				dataLen = (XMP_Uns32) localStr.size();
+			} else {
+				this->ConvertToUTF8();	// Had loss, change everything to UTF-8.
+				XMP_Assert ( this->utf8Encoding );
+				tempPtr = (XMP_Uns8*) utf8Ptr;
+				dataLen = utf8Len;
+			}
+		} else {
+			if ( ! ReconcileUtils::IsASCII ( utf8Ptr, utf8Len ) ) return;
+			tempPtr = (XMP_Uns8*) utf8Ptr;
+			dataLen = utf8Len;
+		}
 		
 	}
 	
@@ -422,7 +445,7 @@ void IPTC_Writer::SetDataSet_UTF8 ( XMP_Uns8 id, const void* utf8Ptr, XMP_Uns32 
 		
 	if ( knownDS->mapForm == kIPTC_MapArray ) {
 		repeatable = true;
-	} else if ( id == kIPTC_SubjectCode ) {
+	} else if ( (id == kIPTC_Creator) || (id == kIPTC_SubjectCode) ) {
 		repeatable = true;
 	}
 	
@@ -500,35 +523,43 @@ void IPTC_Writer::DeleteDataSet ( XMP_Uns8 id, long which /* = -1 */ )
 // IPTC_Writer::UpdateMemoryDataSets
 // =================================
 //
-// Reconstruct the entire IIM block. Start with DataSet 1:0 and 1:90 if UTF-8 encoding is used,
-// then 2:0, then 2:xx DataSets that have values. This does not include any alignment padding, that
-// is an artifact of some specific wrappers such as Photoshop image resources.
+// Reconstruct the entire IIM block. This does not include any final alignment padding, that is an
+// artifact of some specific wrappers such as Photoshop image resources.
 
-XMP_Uns32 IPTC_Writer::UpdateMemoryDataSets ( void** dataPtr )
+void IPTC_Writer::UpdateMemoryDataSets()
 {
-	if ( ! this->changed ) {
-		if ( dataPtr != 0 ) *dataPtr = this->iptcContent;
-		return this->iptcLength;
-	}
+	if ( ! this->changed ) return;
 
 	DataSetMap::iterator dsPos;
 	DataSetMap::iterator dsEnd = this->dataSets.end();
 	
-//	if ( this->utf8Encoding ) {		*** Disable round trip loss checking for now. ***
-//		if ( ! this->CheckRoundTripLoss() ) this->ConvertToLocal();
-//	}
+	if ( kUTF8_Mode == kUTF8_LosslessMode ) {
+		if ( this->utf8Encoding ) {
+			if ( ! this->CheckRoundTripLoss() ) this->ConvertToLocal();
+		} else {
+			if ( this->CheckRoundTripLoss() ) this->ConvertToUTF8();
+		}
+	}
 	
 	// Compute the length of the new IIM block, including space for records other than 2. All other
-	// records are preserved as-is, including 1:90. If we ever start changing the encoding, we will
-	// have to remove any existing 1:90 and insert a new one.
-
-	XMP_Uns32 newLength = (5+2);	// For 2:0.
-	newLength += (this->iptcLength - rec2Length);	// For records other than 2.
+	// records are preserved as-is, except for 1:90. If local text is used then 1:90 is omitted,
+	// if UTF-8 text is used then 1:90 is written.
 	
-	for ( dsPos = this->dataSets.begin(); dsPos != dsEnd; ++dsPos ) {
+	XMP_Uns32 midOffset = this->offset190 + this->length190;
+	XMP_Uns32 midLength = this->offset2xx - midOffset;
+	
+	XMP_Uns32 suffixOffset = this->offset2xx + this->length2xx;
+	XMP_Uns32 suffixLength = this->iptcLength - suffixOffset;
+
+	XMP_Uns32 newLength = this->offset190 + (5+2);	// For things before 1:90 and 2:0.
+	if ( this->utf8Encoding ) newLength += (5+3);	// For 1:90, if written.
+	newLength += midLength;		// For things between 1:90 and 2:xx.
+	newLength += suffixLength;	// For records after 2.
+	
+	for ( dsPos = this->dataSets.begin(); dsPos != dsEnd; ++dsPos ) {	// Accumulate the 2:xx sizes.
 		XMP_Uns32 dsLen = dsPos->second.dataLen;
 		newLength += (5 + dsLen);
-		if ( dsLen > 0x7FFF ) newLength += 4;	// We always use a 4 byte extended length.
+		if ( dsLen > 0x7FFF ) newLength += 4;	// We always use a 4 byte extended length for big values.
 	}
 	
 	// Allocate the new IIM block.
@@ -538,24 +569,34 @@ XMP_Uns32 IPTC_Writer::UpdateMemoryDataSets ( void** dataPtr )
 	
 	XMP_Uns8* dsPtr = newContent;
 	
-	XMP_Uns32 prefixLength = this->rec2Offset;
-	XMP_Uns32 suffixOffset = this->rec2Offset + this->rec2Length;
-	XMP_Uns32 suffixLength = this->iptcLength - suffixOffset;
+	// Write the 1:xx DataSets, including whatever is appropriate for 1:90.
 	
-	if ( prefixLength > 0 ) {	// Write the records before 2.
-		memcpy ( dsPtr, this->iptcContent, prefixLength );	// AUDIT: Within range of allocation.
-		dsPtr += prefixLength;
+	if ( this->offset190 > 0 ) {	// Whatever was before an existing 1:90.
+		memcpy ( dsPtr, this->iptcContent, this->offset190 );	// AUDIT: Within range of allocation.
+		dsPtr += this->offset190;
 	}
 	
-	if ( ! this->utf8Encoding ) {
+	if ( this->utf8Encoding ) {	// Write 1:90 only if text is UTF-8.
+		memcpy ( dsPtr, "\x1C\x01\x5A\x00\x03\x1B\x25\x47", (5+3) );	// AUDIT: Within range of allocation.
+		dsPtr += (5+3);
+	}
+	
+	if ( midLength > 0 ) {	// Write the remainder before record 2.
+		memcpy ( dsPtr, (this->iptcContent + midOffset), midLength );	// AUDIT: Within range of allocation.
+		dsPtr += midLength;
+	}
+	
+	// Write the 2:xx DataSets, starting with an explicit 2:00.
+	
+	if ( this->utf8Encoding ) {
+		// Start with 2:00 for version 4.
+		memcpy ( dsPtr, "\x1C\x02\x00\x00\x02\x00\x04", (5+2) );	// AUDIT: Within range of allocation.
+		dsPtr += (5+2);
+	} else {
 		// Start with 2:00 for version 2.
 		// *** We should probably write version 4 all the time. This is a late CS3 change, don't want
 		// *** to risk breaking other apps that might be strict about version checking.
 		memcpy ( dsPtr, "\x1C\x02\x00\x00\x02\x00\x02", (5+2) );	// AUDIT: Within range of allocation.
-		dsPtr += (5+2);
-	} else {
-		// Start with 2:00 for version 4.
-		memcpy ( dsPtr, "\x1C\x02\x00\x00\x02\x00\x04", (5+2) );	// AUDIT: Within range of allocation.
 		dsPtr += (5+2);
 	}
 	
@@ -601,14 +642,7 @@ XMP_Uns32 IPTC_Writer::UpdateMemoryDataSets ( void** dataPtr )
 	XMP_Assert ( this->iptcLength == newLength );
 	this->ownedContent = (newLength > 0);	// We really do own the new content, if not empty.
 	
-	// Done.
-
-	if ( dataPtr != 0 ) *dataPtr = this->iptcContent;
-	return this->iptcLength;
-	
 }	// IPTC_Writer::UpdateMemoryDataSets
-
-#if 0	// *** Disable the round trip loss checking for now.
 
 // =================================================================================================
 // IPTC_Writer::ConvertToUTF8
@@ -631,7 +665,7 @@ void IPTC_Writer::ConvertToUTF8()
 		ReconcileUtils::LocalToUTF8 ( dsInfo.dataPtr, dsInfo.dataLen, &utf8Str );
 		this->DisposeLooseValue ( dsInfo );
 
-		dsInfo.dataLen = utf8Str.size();
+		dsInfo.dataLen = (XMP_Uns32)utf8Str.size();
 		dsInfo.dataPtr = (XMP_Uns8*) malloc ( dsInfo.dataLen );
 		if ( dsInfo.dataPtr == 0 ) XMP_Throw ( "Out of memory", kXMPErr_NoMemory );
 		memcpy ( dsInfo.dataPtr, utf8Str.data(), dsInfo.dataLen );	// AUDIT: Safe, malloc'ed dataLen bytes above.
@@ -663,7 +697,7 @@ void IPTC_Writer::ConvertToLocal()
 		ReconcileUtils::UTF8ToLocal ( dsInfo.dataPtr, dsInfo.dataLen, &localStr );
 		this->DisposeLooseValue ( dsInfo );
 
-		dsInfo.dataLen = localStr.size();
+		dsInfo.dataLen = (XMP_Uns32)localStr.size();
 		dsInfo.dataPtr = (XMP_Uns8*) malloc ( dsInfo.dataLen );
 		if ( dsInfo.dataPtr == 0 ) XMP_Throw ( "Out of memory", kXMPErr_NoMemory );
 		memcpy ( dsInfo.dataPtr, localStr.data(), dsInfo.dataLen );	// AUDIT: Safe, malloc'ed dataLen bytes above.
@@ -708,8 +742,4 @@ bool IPTC_Writer::CheckRoundTripLoss()
 
 }	// IPTC_Writer::CheckRoundTripLoss
 
-#endif	// Round-trip loss checking
-
 // =================================================================================================
-
-#endif	// ! XMP_UNIXBuild

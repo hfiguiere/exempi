@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2005-2008 Adobe Systems Incorporated
+// Copyright 2005 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -62,14 +62,16 @@ static void CommentHandler               ( void * userData, XMP_StringPtr commen
 
 // =================================================================================================
 
-extern "C" ExpatAdapter * XMP_NewExpatAdapter()
+extern "C" ExpatAdapter * XMP_NewExpatAdapter ( bool useGlobalNamespaces )
 {
-	return new ExpatAdapter;
+
+	return new ExpatAdapter ( useGlobalNamespaces );
+
 }	// XMP_NewExpatAdapter
 
 // =================================================================================================
 
-ExpatAdapter::ExpatAdapter() : parser(0)
+ExpatAdapter::ExpatAdapter ( bool useGlobalNamespaces ) : parser(0), registeredNamespaces(0)
 {
 
 	#if XMP_DebugBuild
@@ -81,6 +83,12 @@ ExpatAdapter::ExpatAdapter() : parser(0)
 
 	this->parser = XML_ParserCreateNS ( 0, FullNameSeparator );
 	if ( this->parser == 0 ) XMP_Throw ( "Failure creating Expat parser", kXMPErr_ExternalFailure );
+	
+	if ( useGlobalNamespaces ) {
+		this->registeredNamespaces = sRegisteredNamespaces;
+	} else {
+		this->registeredNamespaces = new XMP_NamespaceTable ( *sRegisteredNamespaces );
+	}
 	
 	XML_SetUserData ( this->parser, this );
 	
@@ -109,6 +117,9 @@ ExpatAdapter::~ExpatAdapter()
 
 	if ( this->parser != 0 ) XML_ParserFree ( this->parser );
 	this->parser = 0;
+	
+	if ( this->registeredNamespaces != sRegisteredNamespaces ) delete ( this->registeredNamespaces );
+	this->registeredNamespaces = 0;
 
 }	// ExpatAdapter::~ExpatAdapter
 
@@ -181,7 +192,7 @@ void ExpatAdapter::ParseBuffer ( const void * buffer, size_t length, bool last /
 
 // =================================================================================================
 
-static void SetQualName ( XMP_StringPtr fullName, XML_Node * node )
+static void SetQualName ( ExpatAdapter * thiz, XMP_StringPtr fullName, XML_Node * node )
 {
 	// Expat delivers the full name as a catenation of namespace URI, separator, and local name.
 
@@ -207,7 +218,7 @@ static void SetQualName ( XMP_StringPtr fullName, XML_Node * node )
 		node->ns.assign ( fullName, sepPos );
 		if ( node->ns == "http://purl.org/dc/1.1/" ) node->ns = "http://purl.org/dc/elements/1.1/";
 
-		bool found = XMPMeta::GetNamespacePrefix ( node->ns.c_str(), &prefix, &prefixLen );
+		bool found = thiz->registeredNamespaces->GetPrefix ( node->ns.c_str(), &prefix, &prefixLen );
 		if ( ! found ) XMP_Throw ( "Unknown URI in Expat full name", kXMPErr_ExternalFailure );
 		node->nsPrefixLen = prefixLen;	// ! Includes the ':'.
 		
@@ -243,9 +254,7 @@ static void StartNamespaceDeclHandler ( void * userData, XMP_StringPtr prefix, X
 	// As a bug fix hack, change a URI of "http://purl.org/dc/1.1/" to ""http://purl.org/dc/elements/1.1/.
 	// Early versions of Flash that put XMP in SWF used a bad URI for the dc: namespace.
 	
-	#if XMP_DebugBuild & DumpXMLParseEvents		// Avoid unused variable warning.
-		ExpatAdapter * thiz = (ExpatAdapter*)userData;
-	#endif
+	ExpatAdapter * thiz = (ExpatAdapter*)userData;
 
 	if ( prefix == 0 ) prefix = "_dflt_";	// Have default namespace.
 	if ( uri == 0 ) return;	// Ignore, have xmlns:pre="", no URI to register.
@@ -258,7 +267,7 @@ static void StartNamespaceDeclHandler ( void * userData, XMP_StringPtr prefix, X
 	#endif
 	
 	if ( XMP_LitMatch ( uri, "http://purl.org/dc/1.1/" ) ) uri = "http://purl.org/dc/elements/1.1/";
-	(void) XMPMeta::RegisterNamespace ( uri, prefix, &voidStringPtr, &voidStringLen );
+	(void) thiz->registeredNamespaces->Define ( uri, prefix, 0, 0 );
 
 }	// StartNamespaceDeclHandler
 
@@ -313,7 +322,7 @@ static void StartElementHandler ( void * userData, XMP_StringPtr name, XMP_Strin
 	XML_Node * parentNode = thiz->parseStack.back();
 	XML_Node * elemNode   = new XML_Node ( parentNode, "", kElemNode );
 	
-	SetQualName ( name, elemNode );
+	SetQualName ( thiz, name, elemNode );
 	
 	for ( XMP_StringPtr* attr = attrs; *attr != 0; attr += 2 ) {
 
@@ -321,7 +330,7 @@ static void StartElementHandler ( void * userData, XMP_StringPtr name, XMP_Strin
 		XMP_StringPtr attrValue = *(attr+1);
 		XML_Node * attrNode = new XML_Node ( elemNode, "", kAttrNode );
 
-		SetQualName ( attrName, attrNode );
+		SetQualName ( thiz, attrName, attrNode );
 		attrNode->value = attrValue;
 		if ( attrNode->name == "xml:lang" ) NormalizeLangValue ( &attrNode->value );
 		elemNode->attrs.push_back ( attrNode );

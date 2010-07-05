@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2008 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -39,8 +39,6 @@
 /// This is the case for all of the derived classes, even though the memory based ones happen to
 /// have all of the image resources in memory. Being "handled" means being in the image resource
 /// map used by GetImgRsrc. The handled image resources are:
-/// \li 1008 - Ancient caption PString
-/// \li 1020 - Ancient caption string
 /// \li 1028 - IPTC
 /// \li 1034 - Copyrighted flag
 /// \li 1035 - Copyright information URL
@@ -52,7 +50,7 @@
 /// packaged in a DLL by themselves. They do not provide any form of C++ ABI protection.
 // =================================================================================================
 
-	
+
 // These aren't inside PSIR_Manager because the static array can't be initialized there.
 
 enum {
@@ -60,26 +58,23 @@ enum {
 	kMinImgRsrcSize = 4+2+2+4	// The minimum size for an image resource.
 };
 
-enum { kPSIR_MetadataCount = 9 };			//    1     2     3     4     5     6     7     8     9
-static const XMP_Uns16 kPSIR_MetadataIDs[] = { 1008, 1020, 1028, 1034, 1035, 1036, 1058, 1060, 1061, 0 };
-
 enum {
-	kPSIR_OldCaptionPStr = 1008,
-	kPSIR_OldCaption     = 1020,
 	kPSIR_IPTC           = 1028,
 	kPSIR_CopyrightFlag  = 1034,
 	kPSIR_CopyrightURL   = 1035,
-	kPSIR_Thumbnail      = 1036,
 	kPSIR_Exif           = 1058,
 	kPSIR_XMP            = 1060,
 	kPSIR_IPTCDigest     = 1061
 };
 
+enum { kPSIR_MetadataCount = 6 };
+static const XMP_Uns16 kPSIR_MetadataIDs[] =	// ! Must be in descending order with 0 sentinel.
+	{ kPSIR_IPTCDigest, kPSIR_XMP, kPSIR_Exif, kPSIR_CopyrightURL, kPSIR_CopyrightFlag, kPSIR_IPTC, 0 };
 
 // =================================================================================================
 // =================================================================================================
 
-// NOTE: Although Photoshop image resources have a type and ID, for metadatya we only care about 
+// NOTE: Although Photoshop image resources have a type and ID, for metadatya we only care about
 // those of type "8BIM". Resources of other types are preserved in files, but can't be individually
 // accessed through the PSIR_Manager API.
 
@@ -102,10 +97,10 @@ public:
 		ImgRsrcInfo ( XMP_Uns16 _id, XMP_Uns32 _dataLen, void* _dataPtr, XMP_Uns32 _origOffset )
 			: id(_id), dataLen(_dataLen), dataPtr(_dataPtr), origOffset(_origOffset) {};
 	};
-	
+
 	// The origOffset is the absolute file offset for file parses, the memory block offset for
 	// memory parses. It is the offset of the resource data portion, not the overall resource.
-	
+
 	// ---------------------------------------------------------------------------------------------
 	// Get the information about a "handled" image resource. Returns false if the image resource is
 	// not handled, even if it was present in the parsed input.
@@ -114,20 +109,20 @@ public:
 
 	// ---------------------------------------------------------------------------------------------
 	// Set the value for an image resource. It can be any resource, even one not originally handled.
-	
+
 	virtual void SetImgRsrc ( XMP_Uns16 id, const void* dataPtr, XMP_Uns32 length ) = 0;
 
 	// ---------------------------------------------------------------------------------------------
 	// Delete an image resource. Does nothing if the image resource does not exist.
-	
+
 	virtual void DeleteImgRsrc ( XMP_Uns16 id ) = 0;
 
 	// ---------------------------------------------------------------------------------------------
 	// Determine if the image resources are changed.
-	
+
 	virtual bool IsChanged() = 0;
 	virtual bool IsLegacyChanged() = 0;
-	
+
 	// ---------------------------------------------------------------------------------------------
 
 	virtual void ParseMemoryResources ( const void* data, XMP_Uns32 length, bool copyData = true ) = 0;
@@ -139,7 +134,7 @@ public:
 	// by \c UpdateMemoryResources must be treated as read only. It exists until the PSIR_Manager
 	// destructor is called. UpdateMemoryResources can be used on a read-only instance to get the
 	// raw data block info.
-	
+
 	virtual XMP_Uns32 UpdateMemoryResources ( void** dataPtr ) = 0;
 	virtual XMP_Uns32 UpdateFileResources   ( LFA_FileRef sourceRef, LFA_FileRef destRef,
 											  IOBuffer * ioBuf, XMP_AbortProc abortProc, void * abortArg ) = 0;
@@ -167,9 +162,9 @@ class PSIR_MemoryReader : public PSIR_Manager {	// The leaf class for memory-bas
 public:
 
 	bool GetImgRsrc ( XMP_Uns16 id, ImgRsrcInfo* info ) const;
-	
+
 	void SetImgRsrc ( XMP_Uns16 id, const void* dataPtr, XMP_Uns32 length ) { NotAppropriate(); };
-	
+
 	void DeleteImgRsrc ( XMP_Uns16 id ) { NotAppropriate(); };
 
 	bool IsChanged() { return false; };
@@ -185,7 +180,7 @@ public:
 	PSIR_MemoryReader() : ownedContent(false), psirLength(0), psirContent(0) {};
 
 	virtual ~PSIR_MemoryReader() { if ( this->ownedContent ) free ( this->psirContent ); };
-	
+
 private:
 
 	// Memory usage notes: PSIR_MemoryReader is for memory-based read-only usage (both apply). There
@@ -193,12 +188,12 @@ private:
 	// PSIR stream.
 
 	bool ownedContent;
-	
+
 	XMP_Uns32 psirLength;
 	XMP_Uns8* psirContent;
-	
+
 	typedef std::map<XMP_Uns16,ImgRsrcInfo>  ImgRsrcMap;
-	
+
 	ImgRsrcMap imgRsrcs;
 
 	static inline void NotAppropriate() { XMP_Throw ( "Not appropriate for PSIR_Reader", kXMPErr_InternalFailure ); };
@@ -226,10 +221,10 @@ public:
 	bool IsChanged() { return this->changed; };
 
 	bool IsLegacyChanged();
-	
+
 	void ParseMemoryResources ( const void* data, XMP_Uns32 length, bool copyData = true );
 	void ParseFileResources   ( LFA_FileRef file, XMP_Uns32 length );
-	
+
 	XMP_Uns32 UpdateMemoryResources ( void** dataPtr );
 	XMP_Uns32 UpdateFileResources   ( LFA_FileRef sourceRef, LFA_FileRef destRef,
 									  IOBuffer * ioBuf, XMP_AbortProc abortProc, void * abortArg );
@@ -242,16 +237,16 @@ public:
 	// Memory usage notes: PSIR_FileWriter is for file-based OR read/write usage. For memory-based
 	// streams the dataPtr and rsrcName are initially into the stream, they become a separate
 	// allocation if changed. For file-based streams they are always a separate allocation.
-	
+
 	// ! The working data values are always big endian, no matter where stored. It is the client's
 	// ! responsibility to flip them as necessary.
-	
+
 	static const bool kIsFileBased   = true;	// For use in the InternalRsrcInfo constructor.
 	static const bool kIsMemoryBased = false;
 
 	struct InternalRsrcInfo {
 	public:
-	
+
 		bool      changed;
 		bool      fileBased;
 		XMP_Uns16 id;
@@ -271,7 +266,7 @@ public:
 				if ( this->rsrcName != 0 ) { free ( this->rsrcName ); this->rsrcName = 0; }
 			}
 		}
-	
+
 		InternalRsrcInfo ( XMP_Uns16 _id, XMP_Uns32 _dataLen, bool _fileBased )
 			: changed(false), fileBased(_fileBased), id(_id), dataLen(_dataLen), dataPtr(0),
 			  origOffset(0), rsrcName(0) {};
@@ -290,9 +285,9 @@ public:
 
 		InternalRsrcInfo()	// Hidden on purpose, fileBased must be properly set.
 			: changed(false), fileBased(false), id(0), dataLen(0), dataPtr(0), origOffset(0), rsrcName(0) {};
-	
+
 	};
-	
+
 	// The origOffset is the absolute file offset for file parses, the memory block offset for
 	// memory parses. It is the offset of the resource data portion, not the overall resource.
 
@@ -307,7 +302,7 @@ private:
 
 	typedef std::map<XMP_Uns16,InternalRsrcInfo>  InternalRsrcMap;
 	InternalRsrcMap imgRsrcs;
-	
+
 	struct OtherRsrcInfo {		// For the resources of types other than "8BIM".
 		XMP_Uns32 rsrcOffset;	// The offset of the resource origin, the type field.
 		XMP_Uns32 rsrcLength;	// The full length of the resource, offset to the next resource.
@@ -316,7 +311,7 @@ private:
 			: rsrcOffset(_rsrcOffset), rsrcLength(_rsrcLength) {};
 	};
 	std::vector<OtherRsrcInfo> otherRsrcs;
-	
+
 	void DeleteExistingInfo();
 
 };	// PSIR_FileWriter

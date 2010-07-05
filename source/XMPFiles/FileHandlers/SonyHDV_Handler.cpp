@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2007 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -136,16 +136,16 @@ bool SonyHDV_CheckFormat ( XMP_FileFormat format,
 	clipName = leafName;
 	
 	// Set tempPath to <root>/<clip-name>, e.g. ".../MyMovie/00_0001_2007-08-06_165555". This is
-	// passed to the handler via the handlerTemp hackery.
+	// passed to the handler via the tempPtr hackery.
 	
 	tempPath = rootPath;
 	tempPath += kDirChar;
 	tempPath += clipName;
 	
 	size_t pathLen = tempPath.size() + 1;	// Include a terminating nul.
-	parent->handlerTemp = malloc ( pathLen );
-	if ( parent->handlerTemp == 0 ) XMP_Throw ( "No memory for SonyHDV clip info", kXMPErr_NoMemory );
-	memcpy ( parent->handlerTemp, tempPath.c_str(), pathLen );	// AUDIT: Safe, allocated above.
+	parent->tempPtr = malloc ( pathLen );
+	if ( parent->tempPtr == 0 ) XMP_Throw ( "No memory for SonyHDV clip info", kXMPErr_NoMemory );
+	memcpy ( parent->tempPtr, tempPath.c_str(), pathLen );	// AUDIT: Safe, allocated above.
 	
 	return true;
 	
@@ -488,11 +488,11 @@ SonyHDV_MetaHandler::SonyHDV_MetaHandler ( XMPFiles * _parent )
 	
 	// Extract the root path and clip name.
 	
-	XMP_Assert ( this->parent->handlerTemp != 0 );
+	XMP_Assert ( this->parent->tempPtr != 0 );
 	
-	this->rootPath.assign ( (char*) this->parent->handlerTemp );
-	free ( this->parent->handlerTemp );
-	this->parent->handlerTemp = 0;
+	this->rootPath.assign ( (char*) this->parent->tempPtr );
+	free ( this->parent->tempPtr );
+	this->parent->tempPtr = 0;
 
 	SplitLeafName ( &this->rootPath, &this->clipName );
 	
@@ -505,9 +505,9 @@ SonyHDV_MetaHandler::SonyHDV_MetaHandler ( XMPFiles * _parent )
 SonyHDV_MetaHandler::~SonyHDV_MetaHandler()
 {
 
-	if ( this->parent->handlerTemp != 0 ) {
-		free ( this->parent->handlerTemp );
-		this->parent->handlerTemp = 0;
+	if ( this->parent->tempPtr != 0 ) {
+		free ( this->parent->tempPtr );
+		this->parent->tempPtr = 0;
 	}
 
 }	// SonyHDV_MetaHandler::~SonyHDV_MetaHandler
@@ -632,7 +632,7 @@ void SonyHDV_MetaHandler::MakeLegacyDigest ( std::string * digestStr )
 
 void SonyHDV_MetaHandler::CacheFileData()
 {
-	XMP_Assert ( (! this->containsXMP) && (! this->containsTNail) );
+	XMP_Assert ( ! this->containsXMP );
 	
 	// See if the clip's .XMP file exists.
 	

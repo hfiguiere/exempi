@@ -54,4 +54,6 @@ noinst_HEADERS = UnicodeConversions.hpp ExpatAdapter.hpp EndianUtils.hpp\
 
 
 libxmpcommon_la_SOURCES = UnicodeInlines.incl_cpp UnicodeConversions.cpp\
-	XML_Node.cpp LargeFileAccess.cpp 
+	XML_Node.cpp LargeFileAccess.cpp \
+	XMP_LibUtils.hpp XMP_LibUtils.cpp \
+	$(NULL)

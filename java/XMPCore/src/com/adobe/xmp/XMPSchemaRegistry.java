@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -11,7 +11,6 @@ package com.adobe.xmp;
 
 import java.util.Map;
 
-import com.adobe.xmp.options.AliasOptions;
 import com.adobe.xmp.properties.XMPAliasInfo;
 
 /**
@@ -134,43 +133,7 @@ public interface XMPSchemaRegistry
 	// ---------------------------------------------------------------------------------------------
 	// Alias Functions
 
-	/**
-	 * Associates an alias name with an actual name.
-	 * <p>
-	 * Define a alias mapping from one namespace/property to another. Both
-	 * property names must be simple names. An alias can be a direct mapping,
-	 * where the alias and actual have the same data type. It is also possible
-	 * to map a simple alias to an item in an array. This can either be to the
-	 * first item in the array, or to the 'x-default' item in an alt-text array.
-	 * Multiple alias names may map to the same actual, as long as the forms
-	 * match. It is a no-op to reregister an alias in an identical fashion.
-	 * 
-	 * @param aliasNS
-	 *            The namespace URI for the alias. Must not be null or the empty
-	 *            string.
-	 * @param aliasProp
-	 *            The name of the alias. Must be a simple name, not null or the
-	 *            empty string and not a general path expression.
-	 * @param actualNS
-	 *            The namespace URI for the actual. Must not be null or the
-	 *            empty string.
-	 * @param actualProp
-	 *            The name of the actual. Must be a simple name, not null or the
-	 *            empty string and not a general path expression.
-	 * @param aliasForm
-	 *            Provides options for aliases for simple aliases to array
-	 *            items. This is needed to know what kind of array to create if
-	 *            set for the first time via the simple alias. Pass
-	 *            <code>XMP_NoOptions</code>, the default value, for all
-	 *            direct aliases regardless of whether the actual data type is
-	 *            an array or not (see {@link AliasOptions}).
-	 * @throws XMPException
-	 *             for inconsistant aliases.
-	 */
-	void registerAlias(String aliasNS, String aliasProp, String actualNS, String actualProp,
-			AliasOptions aliasForm) throws XMPException;
-
-	
+		
 	/**
 	 * Determines if a name is an alias, and what it is aliased to.
 	 * 
@@ -207,24 +170,6 @@ public interface XMPSchemaRegistry
 	XMPAliasInfo findAlias(String qname);
 	
 		
-	/**
-	 * Delete an alias.
-	 * <p>
-	 * This only deletes the registration of the alias, it does not delete the
-	 * actual property. It does delete any view of the property through the
-	 * alias name. It is OK to attempt to delete an alias that does not exist,
-	 * that is if the alias name is not registered as an alias.
-	 * 
-	 * @param aliasNS
-	 *            The namespace URI for the alias. Must not be null or the empty
-	 *            string.
-	 * @param aliasProp
-	 *            The name of the alias. Must be a simple name, not null or the
-	 *            empty string and not a general path expression.
-	 */
-	void deleteAlias(String aliasNS, String aliasProp);
-
-	
 	/**
 	 * @return Returns the registered aliases as map, where the key is the "qname" (prefix and name)
 	 * and the value an <code>XMPAliasInfo</code>-object.

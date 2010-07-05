@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2002 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -20,7 +20,7 @@
 #include <errno.h>
 #include <cstring>
 
-#if WIN_ENV
+#if XMP_WinBuild
 	#pragma warning ( disable : 4127 )	// conditional expression is constant
 	#pragma warning ( disable : 4996 )	// '...' was declared deprecated
 #endif
@@ -109,19 +109,19 @@ main ( int argc, const char * argv [] )
 		printf ( "## SXMPMeta::Initialize failed!\n" );
 		return -1;
 	}	
-
-	if ( ! SXMPFiles::Initialize() ) {
+	
+	XMP_OptionBits options = 0;
+	#if UNIX_ENV
+		options |= kXMPFiles_ServerMode;
+	#endif
+		
+	if ( ! SXMPFiles::Initialize ( options ) ) {
+	
 		printf ( "## SXMPFiles::Initialize failed!\n" );
 		return -1;
 	}
 
-	if ( argc != 2 ) // 2 := command and 1 parameter
-	{
-		printf( "usage: DumpMainXMP (filename)\n");
-		return 0;
-	}
-
-	ProcessFile ( argv[1] );
+	for ( int i = 1; i < argc; ++i ) ProcessFile ( argv[i] );
 		
 	SXMPFiles::Terminate();
 	SXMPMeta::Terminate();

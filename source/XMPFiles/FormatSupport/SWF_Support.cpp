@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2007 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -16,7 +16,7 @@ namespace SWF_Support
 
 	// =============================================================================================
 
-	int CalcHeaderSize ( IO::InputStream* inputStream )
+	static int CalcHeaderSize ( IO::InputStream* inputStream )
 	{
 		int size = 0; 		
 
@@ -44,7 +44,7 @@ namespace SWF_Support
 
 	// =============================================================================================
 
-	unsigned long CheckTag ( IO::InputStream* inputStream, TagState& inOutTagState, TagData& inOutTagData )
+	static unsigned long CheckTag ( IO::InputStream* inputStream, TagState& inOutTagState, TagData& inOutTagData )
 	{
 		unsigned long ret = 0;
 		XMP_Uns8 * buffer = 0;

@@ -2,7 +2,7 @@
 #define __XMPIterator_hpp__
 
 // =================================================================================================
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2003 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -97,9 +97,6 @@ public:
 	static void
 	Terminate() RELEASE_NO_THROW;	// ! For internal use only!
 
-	static void
-	Unlock ( XMP_OptionBits options );
-
 	XMPIterator ( const XMPMeta & xmpObj,	// Construct a property iterator.
 				  XMP_StringPtr	  schemaNS,
 				  XMP_StringPtr	  propName,
@@ -123,12 +120,11 @@ public:
 	void
 	Skip ( XMP_OptionBits options );
 
-	void
-	UnlockIter ( XMP_OptionBits options );
-
 	// ! Expose so that wrappers and file static functions can see the data.
 
 	XMP_Int32 clientRefs;	// ! Must be signed to allow decrement from 0.
+	XMP_ReadWriteLock lock;
+
 	IterInfo info;
 
 private:

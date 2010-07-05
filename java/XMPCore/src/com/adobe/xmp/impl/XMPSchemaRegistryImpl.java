@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -295,10 +295,42 @@ public final class XMPSchemaRegistryImpl implements XMPSchemaRegistry, XMPConst
 	
 	
 	/**
-	 * @see XMPSchemaRegistry#registerAlias(String, String, String, String,
-	 *      AliasOptions)
+	 * Associates an alias name with an actual name.
+	 * <p>
+	 * Define a alias mapping from one namespace/property to another. Both
+	 * property names must be simple names. An alias can be a direct mapping,
+	 * where the alias and actual have the same data type. It is also possible
+	 * to map a simple alias to an item in an array. This can either be to the
+	 * first item in the array, or to the 'x-default' item in an alt-text array.
+	 * Multiple alias names may map to the same actual, as long as the forms
+	 * match. It is a no-op to reregister an alias in an identical fashion.
+	 * Note: This method is not locking because only called by registerStandardAliases 
+	 * which is only called by the constructor.
+	 * Note2: The method is only package-private so that it can be tested with unittests 
+	 * 
+	 * @param aliasNS
+	 *            The namespace URI for the alias. Must not be null or the empty
+	 *            string.
+	 * @param aliasProp
+	 *            The name of the alias. Must be a simple name, not null or the
+	 *            empty string and not a general path expression.
+	 * @param actualNS
+	 *            The namespace URI for the actual. Must not be null or the
+	 *            empty string.
+	 * @param actualProp
+	 *            The name of the actual. Must be a simple name, not null or the
+	 *            empty string and not a general path expression.
+	 * @param aliasForm
+	 *            Provides options for aliases for simple aliases to array
+	 *            items. This is needed to know what kind of array to create if
+	 *            set for the first time via the simple alias. Pass
+	 *            <code>XMP_NoOptions</code>, the default value, for all
+	 *            direct aliases regardless of whether the actual data type is
+	 *            an array or not (see {@link AliasOptions}).
+	 * @throws XMPException
+	 *             for inconsistant aliases.
 	 */
-	public synchronized void registerAlias(String aliasNS, String aliasProp, final String actualNS,
+	synchronized void registerAlias(String aliasNS, String aliasProp, final String actualNS,
 			final String actualProp, final AliasOptions aliasForm) throws XMPException
 	{
 		ParameterAsserts.assertSchemaNS(aliasNS);
@@ -389,17 +421,7 @@ public final class XMPSchemaRegistryImpl implements XMPSchemaRegistry, XMPConst
 		aliasMap.put(key, aliasInfo);
 	}
 
-	
-	/**
-	 * @see XMPSchemaRegistry#deleteAlias(String, String)
-	 */
-	public synchronized void deleteAlias(String aliasNS, String aliasProp)
-	{
-		String aliasPrefix = getNamespacePrefix(aliasNS);
-		aliasMap.remove(aliasPrefix + aliasProp);
-	}
-
-	
+		
 	/**
 	 * @see XMPSchemaRegistry#getAliases()
 	 */

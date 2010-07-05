@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -715,7 +715,7 @@ public class XMPUtilsImpl implements XMPConst
 					XMPNode sourceItem = (XMPNode) is.next();
 
 					boolean match = false;
-					for (Iterator id = sourceNode.iterateChildren(); id.hasNext();)
+					for (Iterator id = destNode.iterateChildren(); id.hasNext();)
 					{
 						XMPNode destItem = (XMPNode) id.next();
 						if (itemValuesMatch(sourceItem, destItem))
@@ -803,7 +803,7 @@ public class XMPUtilsImpl implements XMPConst
 				XMPNode leftItem = (XMPNode) il.next();
 
 				boolean match = false;
-				for (Iterator ir = leftNode.iterateChildren(); ir.hasNext();)
+				for (Iterator ir = rightNode.iterateChildren(); ir.hasNext();)
 				{
 					XMPNode rightItem = (XMPNode) ir.next();
 					if (itemValuesMatch(leftItem, rightItem))

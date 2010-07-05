@@ -35,6 +35,17 @@
 #
 
 
+INCLUDES = -I$(top_srcdir)/public/include \
+	-I$(top_srcdir)/public/include/client-glue \
+	-I$(top_srcdir)/build/ \
+	-I$(top_srcdir)/source/common/ \
+	-I$(top_srcdir)/third-party/MD5
+
+AM_CXXFLAGS = -Wno-multichar -Wno-implicit -Wno-ctor-dtor-privacy \
+	-funsigned-char -fexceptions
+AM_CPPFLAGS = -Wall \
+	-D@EXEMPI_PLATFORM_DEF@=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
+	-D_FILE_OFFSET_BITS=64 -DHAVE_EXPAT_CONFIG_H=1 -DXML_STATIC=1 
 
 noinst_LTLIBRARIES = libmd5.la
 

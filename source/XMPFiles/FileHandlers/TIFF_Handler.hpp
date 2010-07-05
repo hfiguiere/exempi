@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -38,7 +38,6 @@ static const XMP_OptionBits kTIFF_HandlerFlags = (kXMPFiles_CanInjectXMP |
                                                   kXMPFiles_CanReconcile |
                                                   kXMPFiles_AllowsOnlyXMP |
                                                   kXMPFiles_ReturnsRawPacket |
-                                                  kXMPFiles_ReturnsTNail |
                                                   kXMPFiles_AllowsSafeUpdate);
 
 class TIFF_MetaHandler : public XMPFileHandler
@@ -46,7 +45,6 @@ class TIFF_MetaHandler : public XMPFileHandler
 public:
 
 	void CacheFileData();
-	void ProcessTNail();
 	void ProcessXMP();
 	
 	void UpdateFile ( bool doSafeUpdate );

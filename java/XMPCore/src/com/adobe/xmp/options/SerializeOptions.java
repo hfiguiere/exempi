@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -37,8 +37,6 @@ public final class SerializeOptions extends Options
 	 * computed. An exception is thrown if the packet exceeds this length with no padding.
 	 */
 	public static final int EXACT_PACKET_LENGTH = 0x0200;
-	/** Show aliases as XML comments. <em>Note:</em> This option is currently not supported. */
-	public static final int WRITE_ALIAS_COMMENTS = 0x0400;
 	/** Sort the struct properties and qualifier before serializing */
 	public static final int SORT = 0x1000;
 
@@ -201,27 +199,6 @@ public final class SerializeOptions extends Options
 	}
 
 
-	/**
-	 * @return Returns the option.
-	 */
-	public boolean getWriteAliasComments()
-	{
-		return getOption(WRITE_ALIAS_COMMENTS);
-	}
-
-
-	/**
-	 * <em>Note:</em> This options is not supported at the moment.
-	 * @param value the value to set
-	 * @return Returns the instance to call more set-methods.
-	 */
-	public SerializeOptions setWriteAliasComments(boolean value)
-	{
-		setOption(WRITE_ALIAS_COMMENTS, value);
-		return this;
-	}
-
-	
 	/**
 	 * @return Returns the option.
 	 */
@@ -437,7 +414,6 @@ public final class SerializeOptions extends Options
 			case USE_COMPACT_FORMAT :		return "USE_COMPACT_FORMAT";
 			case INCLUDE_THUMBNAIL_PAD :	return "INCLUDE_THUMBNAIL_PAD";
 			case EXACT_PACKET_LENGTH :		return "EXACT_PACKET_LENGTH";
-			case WRITE_ALIAS_COMMENTS :		return "WRITE_ALIAS_COMMENTS";
 			case SORT :				return "NORMALIZED";
 			default: 						return null;
 		}
@@ -455,7 +431,6 @@ public final class SerializeOptions extends Options
 		USE_COMPACT_FORMAT |
 		INCLUDE_THUMBNAIL_PAD |
 		EXACT_PACKET_LENGTH |
-		WRITE_ALIAS_COMMENTS |
 		SORT;
 	}
 }

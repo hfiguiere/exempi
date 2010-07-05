@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2007 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -90,10 +90,12 @@ private:
 
 	void SetVideoFrameInfoFromLegacyXML ( XML_NodePtr legacyVideoContext, bool digestFound );
 	void SetStartTimecodeFromLegacyXML  ( XML_NodePtr legacyVideoContext, bool digestFound );
+	void SetGPSPropertyFromLegacyXML  ( XML_NodePtr legacyLocationContext, bool digestFound, XMP_StringPtr propName, XMP_StringPtr legacyPropName );
+	void SetAltitudeFromLegacyXML  ( XML_NodePtr legacyLocationContext, bool digestFound );
 
 	XML_Node * ForceChildElement ( XML_Node * parent, XMP_StringPtr localName, int indent = 0 );
 	
-	std::string rootPath, clipName, p2NS, defaultNS;
+	std::string rootPath, clipName, p2NS;
 	
 	ExpatAdapter * expat;
 	XML_Node * clipMetadata;	// ! Don't delete, points into the Expat tree.

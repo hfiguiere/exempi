@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -138,9 +138,9 @@ bool XDCAMEX_CheckFormat ( XMP_FileFormat format,
 	tempPath += kDirChar;
 	tempPath += clipName;
 	size_t pathLen = tempPath.size() + 1;	// Include a terminating nul.
-	parent->handlerTemp = malloc ( pathLen );
-	if ( parent->handlerTemp == 0 ) XMP_Throw ( "No memory for XDCAMEX clip info", kXMPErr_NoMemory );
-	memcpy ( parent->handlerTemp, tempPath.c_str(), pathLen );
+	parent->tempPtr = malloc ( pathLen );
+	if ( parent->tempPtr == 0 ) XMP_Throw ( "No memory for XDCAMEX clip info", kXMPErr_NoMemory );
+	memcpy ( parent->tempPtr, tempPath.c_str(), pathLen );
 
 	return true;
 
@@ -166,13 +166,13 @@ XDCAMEX_MetaHandler::XDCAMEX_MetaHandler ( XMPFiles * _parent ) : expat(0)
 	this->handlerFlags = kXDCAMEX_HandlerFlags;
 	this->stdCharForm  = kXMP_Char8Bit;
 	
-	// Extract the root path and clip name from handlerTemp.
+	// Extract the root path and clip name from tempPtr.
 	
-	XMP_Assert ( this->parent->handlerTemp != 0 );
+	XMP_Assert ( this->parent->tempPtr != 0 );
 	
-	this->rootPath.assign ( (char*) this->parent->handlerTemp );
-	free ( this->parent->handlerTemp );
-	this->parent->handlerTemp = 0;
+	this->rootPath.assign ( (char*) this->parent->tempPtr );
+	free ( this->parent->tempPtr );
+	this->parent->tempPtr = 0;
 
 	SplitLeafName ( &this->rootPath, &this->clipName );
 
@@ -186,9 +186,9 @@ XDCAMEX_MetaHandler::~XDCAMEX_MetaHandler()
 {
 
 	this->CleanupLegacyXML();
-	if ( this->parent->handlerTemp != 0 ) {
-		free ( this->parent->handlerTemp );
-		this->parent->handlerTemp = 0;
+	if ( this->parent->tempPtr != 0 ) {
+		free ( this->parent->tempPtr );
+		this->parent->tempPtr = 0;
 	}
 
 }	// XDCAMEX_MetaHandler::~XDCAMEX_MetaHandler
@@ -274,11 +274,6 @@ void XDCAMEX_MetaHandler::MakeLegacyDigest ( std::string * digestStr )
 
 void XDCAMEX_MetaHandler::CleanupLegacyXML()
 {
-
-	if ( ! this->defaultNS.empty() ) {
-		SXMPMeta::DeleteNamespace ( this->defaultNS.c_str() );
-		this->defaultNS.erase();
-	}
 	
 	if ( this->expat != 0 ) { delete ( this->expat ); this->expat = 0; }
 	
@@ -292,7 +287,7 @@ void XDCAMEX_MetaHandler::CleanupLegacyXML()
 
 void XDCAMEX_MetaHandler::CacheFileData()
 {
-	XMP_Assert ( (! this->containsXMP) && (! this->containsTNail) );
+	XMP_Assert ( ! this->containsXMP );
 	
 	// See if the clip's .XMP file exists.
 	
@@ -383,7 +378,7 @@ void XDCAMEX_MetaHandler::GetTakeDuration ( const std::string & takeURI, std::st
 	takeXMLFile.fileRef = LFA_Open ( takePath.c_str(), 'r' );
 	if ( takeXMLFile.fileRef == 0 ) return;	// The open failed.
 
-	ExpatAdapter * expat = XMP_NewExpatAdapter();
+	ExpatAdapter * expat = XMP_NewExpatAdapter ( ExpatAdapter::kUseLocalNamespaces );
 	if ( this->expat == 0 ) return;
 	
 	XMP_Uns8 buffer [64*1024];
@@ -461,7 +456,7 @@ void XDCAMEX_MetaHandler::GetTakeUMID ( const std::string& clipUMID,
 	mediaproXMLFile.fileRef = LFA_Open ( mediapropath.c_str(), 'r' );
 	if ( mediaproXMLFile.fileRef == 0 ) return;	// The open failed.
 
-	ExpatAdapter * expat = XMP_NewExpatAdapter();
+	ExpatAdapter * expat = XMP_NewExpatAdapter ( ExpatAdapter::kUseLocalNamespaces );
 	if ( this->expat == 0 ) return;
 	
 	XMP_Uns8 buffer [64*1024];
@@ -564,15 +559,11 @@ void XDCAMEX_MetaHandler::ProcessXMP()
 	std::string xmlPath;
 	this->MakeClipFilePath ( &xmlPath, "M01.XML" );
 	
-	// *** Hack: Special case trickery to detect and clean up default XML namespace usage.
-	
-	bool haveDefaultNS = SXMPMeta::GetNamespaceURI ( "_dflt_", 0 );	// Is there already a default namespace?
-	
 	AutoFile xmlFile;
 	xmlFile.fileRef = LFA_Open ( xmlPath.c_str(), 'r' );
 	if ( xmlFile.fileRef == 0 ) return;	// The open failed.
 	
-	this->expat = XMP_NewExpatAdapter();
+	this->expat = XMP_NewExpatAdapter ( ExpatAdapter::kUseLocalNamespaces );
 	if ( this->expat == 0 ) XMP_Throw ( "XDCAMEX_MetaHandler: Can't create Expat adapter", kXMPErr_NoMemory );
 	
 	XMP_Uns8 buffer [64*1024];
@@ -585,12 +576,6 @@ void XDCAMEX_MetaHandler::ProcessXMP()
 	
 	LFA_Close ( xmlFile.fileRef );
 	xmlFile.fileRef = 0;
-	
-	if ( ! haveDefaultNS ) {
-		// No prior default XML namespace. If there is one now, remember it and delete it when done.
-		haveDefaultNS = SXMPMeta::GetNamespaceURI ( "_dflt_", &this->defaultNS );
-		XMP_Assert ( haveDefaultNS == (! this->defaultNS.empty()) );
-	}
 	
 	// The root element should be NonRealTimeMeta in some namespace. Take whatever this file uses.
 

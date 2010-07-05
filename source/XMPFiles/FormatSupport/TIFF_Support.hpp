@@ -3,7 +3,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2008 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -38,14 +38,11 @@
 /// entirely in memory. Think of TIFF_FileWriter as "file-based OR read-write". TIFF_FileWriter only
 /// maintains information for tags of interest as metadata.
 ///
-/// The needs of XMPFiles are well defined metadata access. Only 5 IFDs are recognized:
+/// The needs of XMPFiles are well defined metadata access. Only 4 IFDs are processed:
 /// \li The 0th IFD, for the primary image, the first one in the outer list of IFDs.
-/// \li The 1st IFD, for an Exif thumbnail, the second one in the outer list of IFDs.
 /// \li The Exif general metadata IFD, from tag 34665 in the primary image IFD.
 /// \li The Exif GPS Info metadata IFD, from tag 34853 in the primary image IFD.
 /// \li The Exif Interoperability IFD, from tag 40965 in the Exif general metadata IFD.
-///
-/// \note In the future we should add support for the non-Exif thumbnails in DNG (TIFF/EP) files.
 ///
 /// \note These classes are for use only when directly compiled and linked. They should not be
 /// packaged in a DLL by themselves. They do not provide any form of C++ ABI protection.
@@ -60,7 +57,7 @@
 
 enum {	// Constants for the recognized IFDs.
 	kTIFF_PrimaryIFD    = 0,	// The primary image IFD, also called the 0th IFD.
-	kTIFF_TNailIFD      = 1,	// The thumbnail image IFD also called the 1st IFD.
+	kTIFF_TNailIFD      = 1,	// The thumbnail image IFD also called the 1st IFD. (not used)
 	kTIFF_ExifIFD       = 2,	// The Exif general metadata IFD.
 	kTIFF_GPSInfoIFD    = 3,	// The Exif GPS Info IFD.
 	kTIFF_InteropIFD    = 4,	// The Exif Interoperability IFD.
@@ -143,7 +140,7 @@ enum {
 	kTIFF_GPSInfoIFDPointer = 34853,
 	kTIFF_DNGVersion = 50706,
 	kTIFF_DNGBackwardVersion = 50707,
-	
+
 	// Additional thumbnail IFD tags. We also care about 256, 257, and 259 in thumbnails.
 	kTIFF_JPEGInterchangeFormat = 513,
 	kTIFF_JPEGInterchangeFormatLength = 514,
@@ -218,7 +215,7 @@ enum {
 	kTIFF_DeviceSettingDescription = 41995,
 	kTIFF_SubjectDistanceRange = 41996,
 	kTIFF_ImageUniqueID = 42016,
-	
+
 	kTIFF_MakerNote = 37500, // Gets deleted when rewriting memory-based TIFF.
 
 	// GPS IFD tags.
@@ -254,7 +251,7 @@ enum {
 	kTIFF_GPSAreaInformation = 28,
 	kTIFF_GPSDateStamp = 29,
 	kTIFF_GPSDifferential = 30
-	
+
 };
 
 // ------------------------------------------------------------------
@@ -437,7 +434,7 @@ public:
 	static const size_t kEmptyTIFFLength = 8;		// Just the header.
 	static const size_t kEmptyIFDLength  = 2 + 4;	// Entry count and next-IFD offset.
 	static const size_t kIFDEntryLength  = 12;
-	
+
 	struct TagInfo {
 		XMP_Uns16   id;
 		XMP_Uns16   type;
@@ -448,7 +445,7 @@ public:
 		TagInfo ( XMP_Uns16 _id, XMP_Uns16 _type, XMP_Uns32 _count, const void* _dataPtr, XMP_Uns32 _dataLen )
 			: id(_id), type(_type), count(_count), dataPtr(_dataPtr), dataLen(_dataLen) {};
 	};
-	
+
 	typedef std::map<XMP_Uns16,TagInfo> TagInfoMap;
 
 	struct Rational  { XMP_Uns32 num, denom; };
@@ -458,15 +455,14 @@ public:
 	// The IsXyzEndian methods return the external endianness of the original parsed TIFF stream.
 	// The \c GetTag methods return native endian values, the \c SetTag methods take native values.
 	// The original endianness is preserved in output.
-	
+
 	bool IsBigEndian() const { return this->bigEndian; };
 	bool IsLittleEndian() const { return (! this->bigEndian); };
 	bool IsNativeEndian() const { return this->nativeEndian; };
-	
+
 	// ---------------------------------------------------------------------------------------------
-	// The TIFF_Manager only keeps explicit knowledge of up to 5 IFDs:
+	// The TIFF_Manager only keeps explicit knowledge of up to 4 IFDs:
 	// - The primary image IFD, also known as the 0th IFD. This must be present.
-	// - A possible thumbnail IFD, also known as the 1st IFD, chained from the primary image IFD.
 	// - A possible Exif general metadata IFD, found from tag 34665 in the primary image IFD.
 	// - A possible Exif GPS metadata IFD, found from tag 34853 in the primary image IFD.
 	// - A possible Exif Interoperability IFD, found from tag 40965 in the Exif general metadata IFD.
@@ -476,11 +472,10 @@ public:
 	// removed. Parsing will sort the tags into ascending order, AppendTIFF and ComposeTIFF will
 	// preserve the sorted order. These fixes do not cause IsChanged to return true, that only
 	// happens if the client makes explicit changes using SetTag or DeleteTag.
-	
-	virtual bool HasThumbnailIFD() const = 0;
+
 	virtual bool HasExifIFD() const = 0;
 	virtual bool HasGPSInfoIFD() const = 0;
-	
+
 	// ---------------------------------------------------------------------------------------------
 	// These are the basic methods to get a map of all of the tags in an IFD, to get or set a tag,
 	// or to delete a tag. The dataPtr returned by \c GetTag is consided read-only, the client must
@@ -491,17 +486,17 @@ public:
 	// \c SetTag replaces an existing tag regardless of type or count. \c DeleteTag deletes a tag,
 	// it is a no-op if the tag does not exist. \c GetValueOffset returns the offset within the
 	// parsed stream of the tag's value. It returns 0 if the tag was not in the parsed input.
-	
+
 	virtual bool GetIFD ( XMP_Uns8 ifd, TagInfoMap* ifdMap ) const = 0;
-	
+
 	virtual bool GetTag ( XMP_Uns8 ifd, XMP_Uns16 id, TagInfo* info ) const = 0;
 
 	virtual void SetTag ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns16 type, XMP_Uns32 count, const void* dataPtr ) = 0;
-	
+
 	virtual void DeleteTag ( XMP_Uns8 ifd, XMP_Uns16 id ) = 0;
-	
+
 	virtual XMP_Uns32 GetValueOffset ( XMP_Uns8 ifd, XMP_Uns16 id ) const = 0;
-	
+
 	// ---------------------------------------------------------------------------------------------
 	// These methods are for tags whose type can be short or long, depending on the actual value.
 	// \c GetTag_Integer returns false if an existing tag's type is not short, or long, or if the
@@ -511,7 +506,7 @@ public:
 	virtual bool GetTag_Integer ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns32* data ) const = 0;
 
 	void SetTag_Integer ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns32 data );
-	
+
 	// ---------------------------------------------------------------------------------------------
 	// These are customized forms of GetTag that verify the type and return a typed value. False is
 	// returned if the type does not match or if the count is not 1.
@@ -532,7 +527,7 @@ public:
 	virtual bool GetTag_Double ( XMP_Uns8 ifd, XMP_Uns16 id, double* data ) const = 0;
 
 	virtual bool GetTag_ASCII ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_StringPtr* dataPtr, XMP_StringLen* dataLen ) const = 0;
-	
+
 	// ---------------------------------------------------------------------------------------------
 
 	void SetTag_Byte   ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns8 data );
@@ -549,18 +544,14 @@ public:
 	void SetTag_Double ( XMP_Uns8 ifd, XMP_Uns16 id, double data );
 
 	void SetTag_ASCII ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_StringPtr dataPtr );
-	
+
 	// ---------------------------------------------------------------------------------------------
 
 	virtual bool GetTag_EncodedString ( XMP_Uns8 ifd, XMP_Uns16 id, std::string* utf8Str ) const = 0;
 	virtual void SetTag_EncodedString ( XMP_Uns8 ifd, XMP_Uns16 id, const std::string& utf8Str, XMP_Uns8 encoding ) = 0;
-	
+
 	bool DecodeString ( const void * encodedPtr, size_t encodedLen, std::string* utf8Str ) const;
 	bool EncodeString ( const std::string& utf8Str, XMP_Uns8 encoding, std::string* encodedStr );
-	
-	// ---------------------------------------------------------------------------------------------
-	
-	bool GetTNailInfo ( XMP_ThumbnailInfo * tnailInfo ) const;
 
 	// ---------------------------------------------------------------------------------------------
 	// \c IsChanged returns true if a read-write stream has changes that need to be saved. This is
@@ -596,17 +587,17 @@ public:
 	// The condenseStream parameter to UpdateMemoryStream can be used to rewrite the full stream
 	// instead of appending. This will discard any MakerNote tags and risks breaking offsets that
 	// are hidden. This can be necessary though to try to make the TIFF fit in a JPEG file.
-	
+
 	virtual void ParseMemoryStream ( const void* data, XMP_Uns32 length, bool copyData = true ) = 0;
 	virtual void ParseFileStream   ( LFA_FileRef fileRef ) = 0;
-	
+
 	virtual void IntegrateFromPShop6 ( const void * buriedPtr, size_t buriedLen ) = 0;
-	
+
 	virtual XMP_Uns32 UpdateMemoryStream ( void** dataPtr, bool condenseStream = false ) = 0;
 	virtual void      UpdateFileStream   ( LFA_FileRef fileRef ) = 0;
-	
+
 	// ---------------------------------------------------------------------------------------------
-	
+
 	GetUns16_Proc  GetUns16;	// Get values from the TIFF stream.
 	GetUns32_Proc  GetUns32;	// Always native endian on the outside, stream endian in the stream.
 	GetFloat_Proc  GetFloat;
@@ -618,18 +609,13 @@ public:
 	PutDouble_Proc PutDouble;
 
 	virtual ~TIFF_Manager() {};
-	
-	// ! Hacks to help the reconciliation code accomodate Photoshop behavior:
-	bool xmpHadUserComment, xmpHadRelatedSoundFile;
 
 protected:
 
 	bool bigEndian, nativeEndian;
-	
-	XMP_Uns8 * jpegTNailPtr;
 
 	XMP_Uns32 CheckTIFFHeader ( const XMP_Uns8* tiffPtr, XMP_Uns32 length );
-	
+
 	TIFF_Manager();	// Force clients to use the reader or writer derived classes.
 
 	struct RawIFDEntry {
@@ -653,18 +639,17 @@ protected:
 class TIFF_MemoryReader : public TIFF_Manager {	// The derived class for memory-based read-only access.
 public:
 
-	bool HasThumbnailIFD() const { return (containedIFDs[kTIFF_TNailIFD].count != 0); };
 	bool HasExifIFD() const { return (containedIFDs[kTIFF_ExifIFD].count != 0); };
 	bool HasGPSInfoIFD() const { return (containedIFDs[kTIFF_GPSInfoIFD].count != 0); };
 
 	bool GetIFD ( XMP_Uns8 ifd, TagInfoMap* ifdMap ) const;
-	
+
 	bool GetTag ( XMP_Uns8 ifd, XMP_Uns16 id, TagInfo* info ) const;
 
 	void SetTag ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns16 type, XMP_Uns32 count, const void* dataPtr ) { NotAppropriate(); };
-	
+
 	void DeleteTag ( XMP_Uns8 ifd, XMP_Uns16 id ) { NotAppropriate(); };
-	
+
 	XMP_Uns32 GetValueOffset ( XMP_Uns8 ifd, XMP_Uns16 id ) const;
 
 	bool GetTag_Integer ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns32* data ) const;
@@ -687,19 +672,19 @@ public:
 	bool GetTag_EncodedString ( XMP_Uns8 ifd, XMP_Uns16 id, std::string* utf8Str ) const;
 
 	void SetTag_EncodedString ( XMP_Uns8 ifd, XMP_Uns16 id, const std::string& utf8Str, XMP_Uns8 encoding ) { NotAppropriate(); };
-	
+
 	bool IsChanged() { return false; };
 	bool IsLegacyChanged() { return false; };
-	
+
 	void ParseMemoryStream ( const void* data, XMP_Uns32 length, bool copyData = true );
 	void ParseFileStream   ( LFA_FileRef fileRef ) { NotAppropriate(); };
-	
+
 	void IntegrateFromPShop6 ( const void * buriedPtr, size_t buriedLen ) { NotAppropriate(); };
-	
+
 	XMP_Uns32 UpdateMemoryStream ( void** dataPtr, bool condenseStream = false ) { if ( dataPtr != 0 ) *dataPtr = tiffStream; return tiffLength; };
 	void      UpdateFileStream   ( LFA_FileRef fileRef ) { NotAppropriate(); };
-	
-	TIFF_MemoryReader() : ownedStream(false), tiffLength(0) { tiffStream = 0; };
+
+	TIFF_MemoryReader() : ownedStream(false), tiffStream(0), tiffLength(0) {};
 
 	virtual ~TIFF_MemoryReader() { if ( this->ownedStream ) free ( this->tiffStream ); };
 
@@ -722,26 +707,26 @@ private:
 		XMP_Uns32 dataOrPos;
 		TweakedIFDEntry() : id(0), type(0), bytes(0), dataOrPos(0) {};
 	};
-	
+
 	struct TweakedIFDInfo {
 		XMP_Uns16 count;
 		TweakedIFDEntry* entries;
 		TweakedIFDInfo() : count(0), entries(0) {};
 	};
-	
+
 	TweakedIFDInfo containedIFDs[kTIFF_KnownIFDCount];
 
 	static void SortIFD ( TweakedIFDInfo* thisIFD );
 
 	XMP_Uns32 ProcessOneIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd );
-	
+
 	const TweakedIFDEntry* FindTagInIFD ( XMP_Uns8 ifd, XMP_Uns16 id ) const;
-	
+
 	const inline void* GetDataPtr ( const TweakedIFDEntry* tifdEntry ) const
 		{ if ( tifdEntry->bytes <= 4 ) return &tifdEntry->dataOrPos; else return (this->tiffStream + tifdEntry->dataOrPos); };
 
 	static inline void NotAppropriate() { XMP_Throw ( "Not appropriate for TIFF_Reader", kXMPErr_InternalFailure ); };
-	
+
 };	// TIFF_MemoryReader
 
 
@@ -756,18 +741,17 @@ private:
 class TIFF_FileWriter : public TIFF_Manager {	// The derived class for file-based or read-write access.
 public:
 
-	bool HasThumbnailIFD() const { return this->containedIFDs[kTIFF_TNailIFD].tagMap.size() != 0; };
 	bool HasExifIFD() const { return this->containedIFDs[kTIFF_ExifIFD].tagMap.size() != 0; };
 	bool HasGPSInfoIFD() const { return this->containedIFDs[kTIFF_GPSInfoIFD].tagMap.size() != 0; };
 
 	bool GetIFD ( XMP_Uns8 ifd, TagInfoMap* ifdMap ) const;
-	
+
 	bool GetTag ( XMP_Uns8 ifd, XMP_Uns16 id, TagInfo* info ) const;
 
 	void SetTag ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns16 type, XMP_Uns32 count, const void* dataPtr );
-	
+
 	void DeleteTag ( XMP_Uns8 ifd, XMP_Uns16 id );
-	
+
 	XMP_Uns32 GetValueOffset ( XMP_Uns8 ifd, XMP_Uns16 id ) const;
 
 	bool GetTag_Integer ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns32* data ) const;
@@ -790,13 +774,13 @@ public:
 	bool GetTag_EncodedString ( XMP_Uns8 ifd, XMP_Uns16 id, std::string* utf8Str ) const;
 
 	void SetTag_EncodedString ( XMP_Uns8 ifd, XMP_Uns16 id, const std::string& utf8Str, XMP_Uns8 encoding );
-	
+
 	bool IsChanged() { return this->changed; };
-	
+
 	bool IsLegacyChanged();
-	
+
 	enum { kDoNotCopyData = false };
-	
+
 	void ParseMemoryStream ( const void* data, XMP_Uns32 length, bool copyData = true );
 	void ParseFileStream   ( LFA_FileRef fileRef );
 
@@ -824,13 +808,13 @@ private:
 	// the smallValue field for small values. This is also the usage when a tag is changed (for both
 	// memory and file cases), the dataPtr is a separate allocation for large values (over 4 bytes),
 	// and points to the smallValue field for small values.
-	
+
 	// ! The working data values are always stream endian, no matter where stored. They are flipped
 	// ! as necessary by GetTag and SetTag.
-	
+
 	static const bool kIsFileBased   = true;	// For use in the InternalTagInfo constructor.
 	static const bool kIsMemoryBased = false;
-	
+
 	class InternalTagInfo {
 	public:
 
@@ -875,9 +859,9 @@ private:
 			  origDataLen(0), origDataOffset(0), changed(false), fileBased(false) {};
 
 	};
-	
+
 	typedef std::map<XMP_Uns16,InternalTagInfo> InternalTagMap;
-	
+
 	struct InternalIFDInfo {
 		bool changed;
 		XMP_Uns16 origCount;		// Original number of IFD entries.
@@ -893,12 +877,12 @@ private:
 			this->tagMap.clear();
 		};
 	};
-	
+
 	InternalIFDInfo containedIFDs[kTIFF_KnownIFDCount];
-	
+
 	static XMP_Uns8 PickIFD ( XMP_Uns8 ifd, XMP_Uns16 id );
 	const InternalTagInfo* FindTagInIFD ( XMP_Uns8 ifd, XMP_Uns16 id ) const;
-	
+
 	void DeleteExistingInfo();
 
 	XMP_Uns32 ProcessMemoryIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd );
@@ -908,10 +892,8 @@ private:
 
 	void* CopyTagToMasterIFD ( const TagInfo& ps6Tag, InternalIFDInfo* masterIFD );
 	
-	void UpdateMemByAppend  ( XMP_Uns8** newStream_out, XMP_Uns32* newLength_out,
-							  bool appendAll = false, XMP_Uns32 extraSpace = 0 );
-	void UpdateMemByRewrite ( XMP_Uns8** newStream_out, XMP_Uns32* newLength_out );
-	
+	void PreflightIFDLinkage();
+
 	XMP_Uns32 DetermineVisibleLength();
 
 	XMP_Uns32 DetermineAppendInfo ( XMP_Uns32 appendedOrigin,
@@ -919,8 +901,12 @@ private:
 									XMP_Uns32 newIFDOffsets[kTIFF_KnownIFDCount],
 									bool      appendAll = false );
 
+	void UpdateMemByAppend  ( XMP_Uns8** newStream_out, XMP_Uns32* newLength_out,
+							  bool appendAll = false, XMP_Uns32 extraSpace = 0 );
+	void UpdateMemByRewrite ( XMP_Uns8** newStream_out, XMP_Uns32* newLength_out );
+
 	void WriteFileIFD ( LFA_FileRef fileRef, InternalIFDInfo & thisIFD );
-	
+
 };	// TIFF_FileWriter
 
 

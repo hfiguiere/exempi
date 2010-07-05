@@ -2,7 +2,7 @@
 #define __XMPUtils_hpp__
 
 // =================================================================================================
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2003 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:	Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -18,16 +18,6 @@
 
 // -------------------------------------------------------------------------------------------------
 
-extern XMP_VarString * sComposedPath;		// *** Only really need 1 string. Shrink periodically?
-extern XMP_VarString * sConvertedValue;
-extern XMP_VarString * sBase64Str;
-extern XMP_VarString * sCatenatedItems;
-extern XMP_VarString * sStandardXMP;
-extern XMP_VarString * sExtendedXMP;
-extern XMP_VarString * sExtendedDigest;
-
-// -------------------------------------------------------------------------------------------------
-
 class	XMPUtils {
 public:
 	
@@ -37,40 +27,33 @@ public:
 	static void
 	Terminate() RELEASE_NO_THROW;	// ! For internal use only!
 
-	static void
-	Unlock ( XMP_OptionBits options );
-
 	// ---------------------------------------------------------------------------------------------
 
 	static void
 	ComposeArrayItemPath ( XMP_StringPtr   schemaNS,
 						   XMP_StringPtr   arrayName,
 						   XMP_Index	   itemIndex,
-						   XMP_StringPtr * fullPath,
-						   XMP_StringLen * pathSize );
+						   XMP_VarString * fullPath );
 
 	static void
 	ComposeStructFieldPath ( XMP_StringPtr	 schemaNS,
 							 XMP_StringPtr	 structName,
 							 XMP_StringPtr	 fieldNS,
 							 XMP_StringPtr	 fieldName,
-							 XMP_StringPtr * fullPath,
-							 XMP_StringLen * pathSize );
+							 XMP_VarString * fullPath );
 
 	static void
 	ComposeQualifierPath ( XMP_StringPtr   schemaNS,
 						   XMP_StringPtr   propName,
 						   XMP_StringPtr   qualNS,
 						   XMP_StringPtr   qualName,
-						   XMP_StringPtr * fullPath,
-						   XMP_StringLen * pathSize );
+						   XMP_VarString * fullPath );
 
 	static void
-	ComposeLangSelector ( XMP_StringPtr		schemaNS,
-						  XMP_StringPtr		arrayName,
-						  XMP_StringPtr		langName,
-						  XMP_StringPtr *	fullPath,
-						  XMP_StringLen *	pathSize );
+	ComposeLangSelector ( XMP_StringPtr	  schemaNS,
+						  XMP_StringPtr	  arrayName,
+						  XMP_StringPtr	  langName,
+						  XMP_VarString * fullPath );
 
 	static void
 	ComposeFieldSelector ( XMP_StringPtr   schemaNS,
@@ -78,38 +61,32 @@ public:
 						   XMP_StringPtr   fieldNS,
 						   XMP_StringPtr   fieldName,
 						   XMP_StringPtr   fieldValue,
-						   XMP_StringPtr * fullPath,
-						   XMP_StringLen * pathSize );
+						   XMP_VarString * fullPath );
 
 	// ---------------------------------------------------------------------------------------------
 
 	static void
 	ConvertFromBool ( bool			  binValue,
-					  XMP_StringPtr * strValue,
-					  XMP_StringLen * strSize );
+					  XMP_VarString * strValue );
 
 	static void
 	ConvertFromInt ( XMP_Int32		 binValue,
 					 XMP_StringPtr	 format,
-					 XMP_StringPtr * strValue,
-					 XMP_StringLen * strSize );
+					 XMP_VarString * strValue );
 
 	static void
 	ConvertFromInt64 ( XMP_Int64	   binValue,
 					   XMP_StringPtr   format,
-					   XMP_StringPtr * strValue,
-					   XMP_StringLen * strSize );
+					   XMP_VarString * strValue );
 
 	static void
 	ConvertFromFloat ( double		   binValue,
 					   XMP_StringPtr   format,
-					   XMP_StringPtr * strValue,
-					   XMP_StringLen * strSize );
+					   XMP_VarString * strValue );
 
 	static void
 	ConvertFromDate ( const XMP_DateTime & binValue,
-					  XMP_StringPtr *	   strValue,
-					  XMP_StringLen *	   strSize );
+					  XMP_VarString *	   strValue );
 
 	// ---------------------------------------------------------------------------------------------
 
@@ -151,25 +128,20 @@ public:
 	static void
 	EncodeToBase64 ( XMP_StringPtr	 rawStr,
 					 XMP_StringLen	 rawLen,
-					 XMP_StringPtr * encodedStr,
-					 XMP_StringLen * encodedLen );
+					 XMP_VarString * encodedStr );
 
 	static void
 	DecodeFromBase64 ( XMP_StringPtr   encodedStr,
 					   XMP_StringLen   encodedLen,
-					   XMP_StringPtr * rawStr,
-					   XMP_StringLen * rawLen );
+					   XMP_VarString * rawStr );
 
 	// ---------------------------------------------------------------------------------------------
 
 	static void
 	PackageForJPEG ( const XMPMeta & xmpObj,
-					 XMP_StringPtr * stdStr,
-					 XMP_StringLen * stdLen,
-					 XMP_StringPtr * extStr,
-					 XMP_StringLen * extLen,
-					 XMP_StringPtr * digestStr,
-					 XMP_StringLen * digestLen );
+					 XMP_VarString * stdStr,
+					 XMP_VarString * extStr,
+					 XMP_VarString * digestStr );
 
 	static void
 	MergeFromJPEG ( XMPMeta *       fullXMP,
@@ -184,8 +156,7 @@ public:
 						 XMP_StringPtr	 separator,
 						 XMP_StringPtr	 quotes,
 						 XMP_OptionBits	 options,
-						 XMP_StringPtr * catedStr,
-						 XMP_StringLen * catedLen );
+						 XMP_VarString * catedStr );
 
 	static void
 	SeparateArrayItems ( XMPMeta *		xmpObj,
@@ -195,15 +166,15 @@ public:
 						 XMP_StringPtr	catedStr );
 
 	static void
+	ApplyTemplate ( XMPMeta *	    workingXMP,
+					const XMPMeta & templateXMP,
+					XMP_OptionBits  actions );
+
+	static void
 	RemoveProperties ( XMPMeta *	  xmpObj,
 					   XMP_StringPtr  schemaNS,
 					   XMP_StringPtr  propName,
 					   XMP_OptionBits options );
-
-	static void
-	AppendProperties ( const XMPMeta & source,
-					   XMPMeta *	   dest,
-					   XMP_OptionBits  options );
 
 	static void
 	DuplicateSubtree ( const XMPMeta & source,

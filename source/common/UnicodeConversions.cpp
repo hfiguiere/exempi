@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2004-2007 Adobe Systems Incorporated
+// Copyright 2004 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -221,41 +221,29 @@ void InitializeUnicodeConversions()
 
 // =================================================================================================
 
-#if XMP_MacBuild && __MWERKS__ 
+static inline UTF16Unit UTF16InSwap ( const UTF16Unit * inPtr )
+{
+	UTF16Unit inUnit = *inPtr;
+	return (inUnit << 8) | (inUnit >> 8);
+}
 
-	#define UTF16InSwap(inPtr)	UTF16Unit ( __lhbrx ( (void*)(inPtr), 0 ) )
-	#define UTF32InSwap(inPtr)	UTF32Unit ( __lwbrx ( (void*)(inPtr), 0 ) )
-	
-	#define UTF16OutSwap(outPtr,value)	__sthbrx ( value, (void*)(outPtr), 0 )
-	#define UTF32OutSwap(outPtr,value)	__stwbrx ( value, (void*)(outPtr), 0 )
+static inline UTF32Unit UTF32InSwap ( const UTF32Unit * inPtr )
+{
+	UTF32Unit inUnit = *inPtr;
+	return (inUnit << 24) | ((inUnit << 8) & 0x00FF0000) | ((inUnit >> 8) & 0x0000FF00) | (inUnit >> 24);
+}
 
-#else
+static inline void UTF16OutSwap ( UTF16Unit * outPtr, const UTF16Unit value )
+{
+	UTF16Unit outUnit = (value << 8) | (value >> 8);
+	*outPtr = outUnit;
+}
 
-	static inline UTF16Unit UTF16InSwap ( const UTF16Unit * inPtr )
-	{
-		UTF16Unit inUnit = *inPtr;
-		return (inUnit << 8) | (inUnit >> 8);
-	}
-
-	static inline UTF32Unit UTF32InSwap ( const UTF32Unit * inPtr )
-	{
-		UTF32Unit inUnit = *inPtr;
-		return (inUnit << 24) | ((inUnit << 8) & 0x00FF0000) | ((inUnit >> 8) & 0x0000FF00) | (inUnit >> 24);
-	}
-
-	static inline void UTF16OutSwap ( UTF16Unit * outPtr, const UTF16Unit value )
-	{
-		UTF16Unit outUnit = (value << 8) | (value >> 8);
-		*outPtr = outUnit;
-	}
-
-	static inline void UTF32OutSwap ( UTF32Unit * outPtr, const UTF32Unit value )
-	{
-		UTF32Unit outUnit = (value << 24) | ((value << 8) & 0x00FF0000) | ((value >> 8) & 0x0000FF00) | (value >> 24);
-		*outPtr = outUnit;
-	}
-
-#endif
+static inline void UTF32OutSwap ( UTF32Unit * outPtr, const UTF32Unit value )
+{
+	UTF32Unit outUnit = (value << 24) | ((value << 8) & 0x00FF0000) | ((value >> 8) & 0x0000FF00) | (value >> 24);
+	*outPtr = outUnit;
+}
 
 // =================================================================================================
 

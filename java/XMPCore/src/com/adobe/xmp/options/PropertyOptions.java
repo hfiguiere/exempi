@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -43,8 +43,6 @@ public final class PropertyOptions extends Options
 	public static final int ARRAY_ALTERNATE = 0x00000800;
 	/** */
 	public static final int ARRAY_ALT_TEXT = 0x00001000;
-	/** */
-	public static final int COMPACT = 0x00002000;
 	/** */
 	public static final int SCHEMA_NODE = 0x80000000;
 	/** may be used in the future */
@@ -277,26 +275,6 @@ public final class PropertyOptions extends Options
 	}
 	
 
-	/** 
-	 * @return Return whether the value is a compact struct or array. 
-	 */
-	public boolean isCompact()
-	{
-		return getOption(COMPACT);
-	}
-
-	
-	/**
-	 * @param value the value to set
-	 * @return Returns this to enable cascaded options.
-	 */
-	public PropertyOptions setCompact(boolean value)
-	{
-		setOption(COMPACT, value);
-		return this;
-	}
-	
-
 	/**
 	 * @param value the value to set
 	 * @return Returns this to enable cascaded options.
@@ -401,7 +379,6 @@ public final class PropertyOptions extends Options
 			ARRAY_ORDERED |
 			ARRAY_ALTERNATE |
 			ARRAY_ALT_TEXT |
-			COMPACT |
 			SCHEMA_NODE;			
 	}
 
@@ -413,19 +390,18 @@ public final class PropertyOptions extends Options
 	{
 		switch (option)
 		{
-			case URI : 			return "URI";
+			case URI : 				return "URI";
 			case HAS_QUALIFIERS :	return "HAS_QUALIFIER";
 			case QUALIFIER :		return "QUALIFIER";
-			case HAS_LANGUAGE :	return "HAS_LANGUAGE";
-			case HAS_TYPE:		return "HAS_TYPE";
+			case HAS_LANGUAGE :		return "HAS_LANGUAGE";
+			case HAS_TYPE:			return "HAS_TYPE";
 			case STRUCT :			return "STRUCT";
 			case ARRAY :			return "ARRAY";
 			case ARRAY_ORDERED :	return "ARRAY_ORDERED";
 			case ARRAY_ALTERNATE :	return "ARRAY_ALTERNATE";
 			case ARRAY_ALT_TEXT : 	return "ARRAY_ALT_TEXT";
-			case COMPACT : 		return "COMPACT";
-			case SCHEMA_NODE : 			return "SCHEMA_NODE";
-			default: 					return null;
+			case SCHEMA_NODE : 		return "SCHEMA_NODE";
+			default: 				return null;
 		}
 	}
 

@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2007 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -16,33 +16,30 @@
 #if XMP_WinBuild
 #elif XMP_MacBuild
 	#include "UnicodeConverter.h"
-#elif XMP_UNIXBuild
-  #include <stdlib.h>
-  #include <iconv.h>
 #endif
 
 // =================================================================================================
 /// \file Reconcile_Impl.cpp
-/// \brief Implementation utilities for the legacy metadata reconciliation support.
+/// \brief Implementation utilities for the photo metadata reconciliation support.
 ///
 // =================================================================================================
 
 // =================================================================================================
-// IsASCII
-// =======
+// ReconcileUtils::IsASCII
+// =======================
 //
 // See if a string is 7 bit ASCII.
 
-static inline bool IsASCII ( const void * strPtr, size_t strLen )
+bool ReconcileUtils::IsASCII ( const void * textPtr, size_t textLen )
 {
 	
-	for ( const XMP_Uns8 * strPos = (XMP_Uns8*)strPtr; strLen > 0; --strLen, ++strPos ) {
-		if ( *strPos >= 0x80 ) return false;
+	for ( const XMP_Uns8 * textPos = (XMP_Uns8*)textPtr; textLen > 0; --textLen, ++textPos ) {
+		if ( *textPos >= 0x80 ) return false;
 	}
 	
 	return true;
 
-}	// IsASCII
+}	// ReconcileUtils::IsASCII
 
 // =================================================================================================
 // ReconcileUtils::IsUTF8
@@ -52,16 +49,16 @@ static inline bool IsASCII ( const void * strPtr, size_t strLen )
 // strings. We don't use CodePoint_from_UTF8_Multi in UnicodeConversions because it throws an
 // exception for non-Unicode and we don't need to actually compute the code points.
 
-bool ReconcileUtils::IsUTF8 ( const void * utf8Ptr, size_t utf8Len )
+bool ReconcileUtils::IsUTF8 ( const void * textPtr, size_t textLen )
 {
-	const XMP_Uns8 * utf8Pos = (XMP_Uns8*)utf8Ptr;
-	const XMP_Uns8 * utf8End = utf8Pos + utf8Len;
+	const XMP_Uns8 * textPos = (XMP_Uns8*)textPtr;
+	const XMP_Uns8 * textEnd = textPos + textLen;
 	
-	while ( utf8Pos < utf8End ) {
+	while ( textPos < textEnd ) {
 	
-		if ( *utf8Pos < 0x80 ) {
+		if ( *textPos < 0x80 ) {
 		
-			++utf8Pos;	// ASCII is UTF-8, tolerate nuls.
+			++textPos;	// ASCII is UTF-8, tolerate nuls.
 		
 		} else {
 		
@@ -71,26 +68,26 @@ bool ReconcileUtils::IsUTF8 ( const void * utf8Ptr, size_t utf8Len )
 	
 			#if 0	// *** This might be a more effcient way to count the bytes.
 				static XMP_Uns8 kByteCounts[16] = { 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 2, 2, 3, 4 };
-				size_t bytesNeeded = kByteCounts [ *utf8Pos >> 4 ];
-				if ( (bytesNeeded < 2) || ((bytesNeeded == 4) && ((*utf8Pos & 0x08) != 0)) ) return false;
-				if ( (utf8Pos + bytesNeeded) > utf8End ) return false;
+				size_t bytesNeeded = kByteCounts [ *textPos >> 4 ];
+				if ( (bytesNeeded < 2) || ((bytesNeeded == 4) && ((*textPos & 0x08) != 0)) ) return false;
+				if ( (textPos + bytesNeeded) > textEnd ) return false;
 			#endif
 		
 			size_t bytesNeeded = 0;	// Count the high order 1 bits in the first byte.
-			for ( XMP_Uns8 temp = *utf8Pos; temp > 0x7F; temp = temp << 1 ) ++bytesNeeded;
+			for ( XMP_Uns8 temp = *textPos; temp > 0x7F; temp = temp << 1 ) ++bytesNeeded;
 				// *** Consider CPU-specific assembly inline, e.g. cntlzw on PowerPC.
 			
-			if ( (bytesNeeded < 2) || (bytesNeeded > 4) || ((utf8Pos+bytesNeeded) > utf8End) ) return false;
+			if ( (bytesNeeded < 2) || (bytesNeeded > 4) || ((textPos+bytesNeeded) > textEnd) ) return false;
 			
-			for ( --bytesNeeded, ++utf8Pos; bytesNeeded > 0; --bytesNeeded, ++utf8Pos ) {
-				if ( (*utf8Pos >> 6) != 2 ) return false;
+			for ( --bytesNeeded, ++textPos; bytesNeeded > 0; --bytesNeeded, ++textPos ) {
+				if ( (*textPos >> 6) != 2 ) return false;
 			}
 		
 		}
 	
 	}
 	
-	return true;
+	return true;	// ! Returns true for empty strings.
 
 }	// ReconcileUtils::IsUTF8
 
@@ -100,8 +97,7 @@ bool ReconcileUtils::IsUTF8 ( const void * utf8Ptr, size_t utf8Len )
 
 #if XMP_WinBuild
 
-	static void UTF8ToWinEncoding ( UINT codePage,
-									const XMP_Uns8 * utf8Ptr, size_t utf8Len, std::string * host )
+	void ReconcileUtils::UTF8ToWinEncoding ( UINT codePage, const XMP_Uns8 * utf8Ptr, size_t utf8Len, std::string * host )
 	{
 	
 		std::string utf16;	// WideCharToMultiByte wants native UTF-16.
@@ -120,10 +116,14 @@ bool ReconcileUtils::IsUTF8 ( const void * utf8Ptr, size_t utf8Len )
 
 #elif XMP_MacBuild
 
-	static void UTF8ToMacEncoding ( TextEncoding & destEncoding,
-									const XMP_Uns8 * utf8Ptr, size_t utf8Len, std::string * host )
+	void ReconcileUtils::UTF8ToMacEncoding ( XMP_Uns16 macScript, XMP_Uns16 macLang, const XMP_Uns8 * utf8Ptr, size_t utf8Len, std::string * host )
 	{
 		OSStatus err;
+		
+		TextEncoding destEncoding;
+		if ( macLang == langUnspecified ) macLang = kTextLanguageDontCare;
+		err = UpgradeScriptInfoToTextEncoding ( macScript, macLang, kTextRegionDontCare, 0, &destEncoding );
+		if ( err != noErr ) XMP_Throw ( "UpgradeScriptInfoToTextEncoding failed", kXMPErr_ExternalFailure );
 		
 		UnicodeMapping mappingInfo;
 		mappingInfo.mappingVersion  = kUnicodeUseLatestMapping;
@@ -170,10 +170,7 @@ bool ReconcileUtils::IsUTF8 ( const void * utf8Ptr, size_t utf8Len )
 
 #elif XMP_UNIXBuild
 
-// use UTF-8 instead
-//#error "UTF8ToHostEncoding is not implemented for UNIX"
-	// *** A nice definition of Windows 1252 is at http://www.microsoft.com/globaldev/reference/sbcs/1252.mspx
-	// *** We should code our own conversions for this, and use it for UNIX - unless better POSIX routines exist.
+	// ! Does not exist, must not be called, for Generic UNIX builds.
 
 #endif
 
@@ -187,7 +184,7 @@ void ReconcileUtils::UTF8ToLocal ( const void * _utf8Ptr, size_t utf8Len, std::s
 
 	local->erase();
 	
-	if ( IsASCII ( utf8Ptr, utf8Len ) ) {
+	if ( ReconcileUtils::IsASCII ( utf8Ptr, utf8Len ) ) {
 		local->assign ( (const char *)utf8Ptr, utf8Len );
 		return;
 	}
@@ -198,19 +195,11 @@ void ReconcileUtils::UTF8ToLocal ( const void * _utf8Ptr, size_t utf8Len, std::s
 	
 	#elif XMP_MacBuild
 	
-		OSStatus err;
-		
-		TextEncoding localEncoding;
-		err = UpgradeScriptInfoToTextEncoding ( smSystemScript,
-												kTextLanguageDontCare, kTextRegionDontCare, 0, &localEncoding );
-		if ( err != noErr ) XMP_Throw ( "UpgradeScriptInfoToTextEncoding failed", kXMPErr_ExternalFailure );
-		
-		UTF8ToMacEncoding ( localEncoding, utf8Ptr, utf8Len, local );
+		UTF8ToMacEncoding ( smSystemScript, kTextLanguageDontCare, utf8Ptr, utf8Len, local );
 	
 	#elif XMP_UNIXBuild
-
-		// we assume UTF-8 on UNIX.
-		local->assign ( (const char *)utf8Ptr, utf8Len );
+	
+		XMP_Throw ( "Generic UNIX does not have conversions between local and Unicode", kXMPErr_Unavailable );
 	
 	#endif
 
@@ -219,52 +208,66 @@ void ReconcileUtils::UTF8ToLocal ( const void * _utf8Ptr, size_t utf8Len, std::s
 // =================================================================================================
 // ReconcileUtils::UTF8ToLatin1
 // ============================
-//
-// Actually to the Windows code page 1252 superset of 8859-1.
-
 
 void ReconcileUtils::UTF8ToLatin1 ( const void * _utf8Ptr, size_t utf8Len, std::string * latin1 )
 {
 	const XMP_Uns8* utf8Ptr = (XMP_Uns8*)_utf8Ptr;
+	const XMP_Uns8* utf8End = utf8Ptr + utf8Len;
 
 	latin1->erase();
+	latin1->reserve ( utf8Len );	// As good a guess as any, at least enough, exact for ASCII.
 	
-	if ( IsASCII ( utf8Ptr, utf8Len ) ) {
-		latin1->assign ( (const char *)utf8Ptr, utf8Len );
-		return;
+	bool inBadRun = false;
+	
+	while ( utf8Ptr < utf8End ) {
+	
+		if ( *utf8Ptr <= 0x7F ) {
+
+			(*latin1) += (char)*utf8Ptr;	// Have an ASCII character.
+			inBadRun = false;
+			++utf8Ptr;
+
+		} else if ( utf8Ptr == (utf8End - 1) ) {
+
+			inBadRun = false;
+			++utf8Ptr;	// Ignore a bad end to the UTF-8.
+
+		} else {
+
+			XMP_Assert ( (utf8End - utf8Ptr) >= 2 );
+			XMP_Uns16 ch16 = GetUns16BE ( utf8Ptr );	// A Latin-1 80..FF is 2 UTF-8 bytes.
+
+			if ( (0xC280 <= ch16) && (ch16 <= 0xC2BF) ) {
+
+				(*latin1) += (char)(ch16 & 0xFF);	// UTF-8 C280..C2BF are Latin-1 80..BF.
+				inBadRun = false;
+				utf8Ptr += 2;
+
+			} else if ( (0xC380 <= ch16) && (ch16 <= 0xC3BF) ) {
+
+				(*latin1) += (char)((ch16 & 0xFF) + 0x40);	// UTF-8 C380..C3BF are Latin-1 C0..FF.
+				inBadRun = false;
+				utf8Ptr += 2;
+
+			} else {
+
+				if ( ! inBadRun ) {
+					inBadRun = true;
+					(*latin1) += "(?)";	// Mark the run of out of scope UTF-8.
+				}
+				
+				++utf8Ptr;	// Skip the presumably well-formed UTF-8 character.
+				while ( (utf8Ptr < utf8End) && ((*utf8Ptr & 0xC0) == 0x80) ) ++utf8Ptr;
+
+			}
+
+		}
+	
 	}
 	
-	#if XMP_WinBuild
-	
-		UTF8ToWinEncoding ( 1252, utf8Ptr, utf8Len, latin1 );
-	
-	#elif XMP_MacBuild
-	
-		TextEncoding latin1Encoding;
-		latin1Encoding = CreateTextEncoding ( kTextEncodingWindowsLatin1,
-											  kTextEncodingDefaultVariant, kTextEncodingDefaultFormat );
-		
-		UTF8ToMacEncoding ( latin1Encoding, utf8Ptr, utf8Len, latin1 );
-	
-	#elif XMP_UNIXBuild
-	
-		iconv_t cd = iconv_open( "ISO8859-1", "UTF-8" );
-
-		ICONV_CONST char * in = (ICONV_CONST char *)utf8Ptr;
-		size_t inLen = utf8Len;
-		size_t outLen = utf8Len * 4;
-		char * buf = (char *)calloc( outLen, 1 );
-		char * out = buf;
-		size_t converted = iconv( cd, &in, &inLen, &out, &outLen );
-		iconv_close( cd );
-
-		latin1->assign ( (const char *)buf, outLen );
-		free( buf );
-	
-	#endif
+	XMP_Assert ( utf8Ptr == utf8End );
 
 }	// ReconcileUtils::UTF8ToLatin1
-
 
 // =================================================================================================
 // HostEncodingToUTF8
@@ -272,8 +275,7 @@ void ReconcileUtils::UTF8ToLatin1 ( const void * _utf8Ptr, size_t utf8Len, std::
 
 #if XMP_WinBuild
 
-	static void WinEncodingToUTF8 ( UINT codePage,
-									const XMP_Uns8 * hostPtr, size_t hostLen, std::string * utf8 )
+	void ReconcileUtils::WinEncodingToUTF8 ( UINT codePage, const XMP_Uns8 * hostPtr, size_t hostLen, std::string * utf8 )
 	{
 
 		int utf16Len = MultiByteToWideChar ( codePage, 0, (LPCSTR)hostPtr, (int)hostLen, 0, 0 );
@@ -286,10 +288,14 @@ void ReconcileUtils::UTF8ToLatin1 ( const void * _utf8Ptr, size_t utf8Len, std::
 
 #elif XMP_MacBuild
 
-	static void MacEncodingToUTF8 ( TextEncoding & srcEncoding,
-									const XMP_Uns8 * hostPtr, size_t hostLen, std::string * utf8 )
+	void ReconcileUtils::MacEncodingToUTF8 ( XMP_Uns16 macScript, XMP_Uns16 macLang, const XMP_Uns8 * hostPtr, size_t hostLen, std::string * utf8 )
 	{
 		OSStatus err;
+		
+		TextEncoding srcEncoding;
+		if ( macLang == langUnspecified ) macLang = kTextLanguageDontCare;
+		err = UpgradeScriptInfoToTextEncoding ( macScript, macLang, kTextRegionDontCare, 0, &srcEncoding );
+		if ( err != noErr ) XMP_Throw ( "UpgradeScriptInfoToTextEncoding failed", kXMPErr_ExternalFailure );
 		
 		UnicodeMapping mappingInfo;
 		mappingInfo.mappingVersion  = kUnicodeUseLatestMapping;
@@ -334,6 +340,8 @@ void ReconcileUtils::UTF8ToLatin1 ( const void * _utf8Ptr, size_t utf8Len, std::
 
 #elif XMP_UNIXBuild
 
+	// ! Does not exist, must not be called, for Generic UNIX builds.
+
 #endif
 
 // =================================================================================================
@@ -346,7 +354,7 @@ void ReconcileUtils::LocalToUTF8 ( const void * _localPtr, size_t localLen, std:
 
 	utf8->erase();
 	
-	if ( IsASCII ( localPtr, localLen ) ) {
+	if ( ReconcileUtils::IsASCII ( localPtr, localLen ) ) {
 		utf8->assign ( (const char *)localPtr, localLen );
 		return;
 	} 
@@ -357,68 +365,42 @@ void ReconcileUtils::LocalToUTF8 ( const void * _localPtr, size_t localLen, std:
 		
 	#elif XMP_MacBuild
 	
-		OSStatus err;
-		
-		TextEncoding localEncoding;
-		err = UpgradeScriptInfoToTextEncoding ( smSystemScript, kTextLanguageDontCare, kTextRegionDontCare, 0, &localEncoding );
-		if ( err != noErr ) XMP_Throw ( "UpgradeScriptInfoToTextEncoding failed", kXMPErr_ExternalFailure );
-		
-		MacEncodingToUTF8 ( localEncoding, localPtr, localLen, utf8 );
+		MacEncodingToUTF8 ( smSystemScript, kTextLanguageDontCare, localPtr, localLen, utf8 );
 
 	#elif XMP_UNIXBuild
-
-		// assume local is UTF8
-		utf8->assign ( (const char *)_localPtr, localLen );
+	
+		XMP_Throw ( "Generic UNIX does not have conversions between local and Unicode", kXMPErr_Unavailable );
 	
 	#endif
 
 }	// ReconcileUtils::LocalToUTF8
 
-
 // =================================================================================================
 // ReconcileUtils::Latin1ToUTF8
 // ============================
-//
-// Actually from the Windows code page 1252 superset of 8859-1.
 
 void ReconcileUtils::Latin1ToUTF8 ( const void * _latin1Ptr, size_t latin1Len, std::string * utf8 )
 {
 	const XMP_Uns8* latin1Ptr = (XMP_Uns8*)_latin1Ptr;
+	const XMP_Uns8* latin1End = latin1Ptr + latin1Len;
 
 	utf8->erase();
+	utf8->reserve ( latin1Len );	// As good a guess as any, exact for ASCII.
 	
-	if ( IsASCII ( latin1Ptr, latin1Len ) ) {
-		utf8->assign ( (const char *)latin1Ptr, latin1Len );
-		return;
-	} 
-	
-	#if XMP_WinBuild
+	for ( ; latin1Ptr < latin1End; ++latin1Ptr ) {
 
-		WinEncodingToUTF8 ( 1252, latin1Ptr, latin1Len, utf8 );
+		XMP_Uns8 ch8 = *latin1Ptr;
 		
-	#elif XMP_MacBuild
+		if ( ch8 <= 0x7F ) {
+			(*utf8) += (char)ch8;	// Have an ASCII character.
+		} else if ( ch8 <= 0xBF ) {
+			(*utf8) += 0xC2;	// Latin-1 80..BF are UTF-8 C280..C2BF.
+			(*utf8) += (char)ch8;
+		} else {
+			(*utf8) += 0xC3;	// Latin-1 C0..FF are UTF-8 C380..C3BF.
+			(*utf8) += (char)(ch8 - 0x40);
+		}
 	
-		TextEncoding latin1Encoding;
-		latin1Encoding = CreateTextEncoding ( kTextEncodingWindowsLatin1,
-											  kTextEncodingDefaultVariant, kTextEncodingDefaultFormat );
-		
-		MacEncodingToUTF8 ( latin1Encoding, latin1Ptr, latin1Len, utf8 );
-
-	#elif XMP_UNIXBuild
+	}
 	
-		iconv_t cd = iconv_open( "UTF-8", "ISO8859-1" );
-
-		ICONV_CONST char * in = (ICONV_CONST char *)_latin1Ptr;
-		size_t inLen = latin1Len;
-		size_t outLen = latin1Len * 4;
-		char * buf = (char *)calloc( outLen, 1 );
-		char * out = buf;
-		size_t converted = iconv( cd, &in, &inLen, &out, &outLen );
-		iconv_close( cd );
-
-		utf8->assign ( (const char *)buf, outLen );
-		free( buf );
-	#endif
-
 }	// ReconcileUtils::Latin1ToUTF8
-

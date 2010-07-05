@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2004 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -490,30 +490,30 @@ AddQualifierNode ( XMP_Node * xmpParent, const XMP_VarString & name, const XMP_V
 
 	XMP_Node * newQual = 0;
 
-		newQual = new XMP_Node ( xmpParent, name, value, kXMP_PropIsQualifier );
+	newQual = new XMP_Node ( xmpParent, name, value, kXMP_PropIsQualifier );
 
-		if ( ! (isLang | isType) ) {
+	if ( ! (isLang | isType) ) {
+		xmpParent->qualifiers.push_back ( newQual );
+	} else if ( isLang ) {
+		if ( xmpParent->qualifiers.empty() ) {
 			xmpParent->qualifiers.push_back ( newQual );
-		} else if ( isLang ) {
-			if ( xmpParent->qualifiers.empty() ) {
-				xmpParent->qualifiers.push_back ( newQual );
-			} else {
-				xmpParent->qualifiers.insert ( xmpParent->qualifiers.begin(), newQual );
-			}
-			xmpParent->options |= kXMP_PropHasLang;
 		} else {
-			XMP_Assert ( isType );
-			if ( xmpParent->qualifiers.empty() ) {
-				xmpParent->qualifiers.push_back ( newQual );
-			} else {
-				size_t offset = 0;
-				if ( XMP_PropHasLang ( xmpParent->options ) ) offset = 1;
-				xmpParent->qualifiers.insert ( xmpParent->qualifiers.begin()+offset, newQual );
-			}
-			xmpParent->options |= kXMP_PropHasType;
+			xmpParent->qualifiers.insert ( xmpParent->qualifiers.begin(), newQual );
 		}
+		xmpParent->options |= kXMP_PropHasLang;
+	} else {
+		XMP_Assert ( isType );
+		if ( xmpParent->qualifiers.empty() ) {
+			xmpParent->qualifiers.push_back ( newQual );
+		} else {
+			size_t offset = 0;
+			if ( XMP_PropHasLang ( xmpParent->options ) ) offset = 1;
+			xmpParent->qualifiers.insert ( xmpParent->qualifiers.begin()+offset, newQual );
+		}
+		xmpParent->options |= kXMP_PropHasType;
+	}
 
-		xmpParent->options |= kXMP_PropHasQualifiers;
+	xmpParent->options |= kXMP_PropHasQualifiers;
 
 	return newQual;
 
@@ -608,26 +608,25 @@ FixupQualifiedNode ( XMP_Node * xmpParent )
 	for ( childNum = 1, childLim = xmpParent->children.size(); childNum != childLim; ++childNum ) {
 
 		XMP_Node * currQual = xmpParent->children[childNum];
-	
-			bool isLang = (currQual->name == "xml:lang");
-			
-			currQual->options |= kXMP_PropIsQualifier;
-			currQual->parent = xmpParent;
-
-			if ( isLang ) {
-				if ( xmpParent->options & kXMP_PropHasLang ) XMP_Throw ( "Duplicate xml:lang qualifier", kXMPErr_BadXMP );
-				xmpParent->options |= kXMP_PropHasLang;
-			} else if ( currQual->name == "rdf:type" ) {
-				xmpParent->options |= kXMP_PropHasType;
-			}
-
-			if ( (! isLang) || xmpParent->qualifiers.empty() ) {
-				xmpParent->qualifiers.push_back ( currQual );
-			} else {
-				xmpParent->qualifiers.insert ( xmpParent->qualifiers.begin(), currQual );
-			}
-			xmpParent->children[childNum] = 0;	// We just moved it to the qualifers.
+		bool isLang = (currQual->name == "xml:lang");
 		
+		currQual->options |= kXMP_PropIsQualifier;
+		currQual->parent = xmpParent;
+
+		if ( isLang ) {
+			if ( xmpParent->options & kXMP_PropHasLang ) XMP_Throw ( "Duplicate xml:lang qualifier", kXMPErr_BadXMP );
+			xmpParent->options |= kXMP_PropHasLang;
+		} else if ( currQual->name == "rdf:type" ) {
+			xmpParent->options |= kXMP_PropHasType;
+		}
+
+		if ( (! isLang) || xmpParent->qualifiers.empty() ) {
+			xmpParent->qualifiers.push_back ( currQual );
+		} else {
+			xmpParent->qualifiers.insert ( xmpParent->qualifiers.begin(), currQual );
+		}
+		xmpParent->children[childNum] = 0;	// We just moved it to the qualifers.
+
 	}
 	
 	if ( ! xmpParent->qualifiers.empty() ) xmpParent->options |= kXMP_PropHasQualifiers;

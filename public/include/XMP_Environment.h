@@ -11,7 +11,7 @@
 // =================================================================================================
 
 // =================================================================================================
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -97,7 +97,7 @@
 #endif
 
 #ifndef XMP_64
-	#if _WIN64
+	#if _WIN64 || defined(_LP64)
 		#define XMP_64 1
 	#else
 		#define XMP_64 0

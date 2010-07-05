@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -13,6 +13,7 @@
 #include "PSIR_Support.hpp"
 #include "IPTC_Support.hpp"
 #include "ReconcileLegacy.hpp"
+#include "Reconcile_Impl.hpp"
 
 #include "MD5.h"
 
@@ -42,19 +43,19 @@ bool TIFF_CheckFormat ( XMP_FileFormat format,
 {
 	IgnoreParam(format); IgnoreParam(filePath); IgnoreParam(parent);
 	XMP_Assert ( format == kXMP_TIFFFile );
-	
+
 	enum { kMinimalTIFFSize = 4+4+2+12+4 };	// Header plus IFD with 1 entry.
 
 	IOBuffer ioBuf;
-	
+
 	LFA_Seek ( fileRef, 0, SEEK_SET );
 	if ( ! CheckFileSpace ( fileRef, &ioBuf, kMinimalTIFFSize ) ) return false;
-	
+
 	bool leTIFF = CheckBytes ( ioBuf.ptr, "\x49\x49\x2A\x00", 4 );
 	bool beTIFF = CheckBytes ( ioBuf.ptr, "\x4D\x4D\x00\x2A", 4 );
-	
+
 	return (leTIFF | beTIFF);
-	
+
 }	// TIFF_CheckFormat
 
 // =================================================================================================
@@ -106,24 +107,24 @@ void TIFF_MetaHandler::CacheFileData()
 {
 	LFA_FileRef      fileRef    = this->parent->fileRef;
 	XMP_PacketInfo & packetInfo = this->packetInfo;
-	
+
 	XMP_AbortProc abortProc  = this->parent->abortProc;
 	void *        abortArg   = this->parent->abortArg;
 	const bool    checkAbort = (abortProc != 0);
-	
-	XMP_Assert ( (! this->containsXMP) && (! this->containsTNail) );
+
+	XMP_Assert ( ! this->containsXMP );
 	// Set containsXMP to true here only if the XMP tag is found.
-	
+
 	if ( checkAbort && abortProc(abortArg) ) {
 		XMP_Throw ( "TIFF_MetaHandler::CacheFileData - User abort", kXMPErr_UserAbort );
 	}
-	
+
 	this->tiffMgr.ParseFileStream ( fileRef );
-	
+
 	TIFF_Manager::TagInfo dngInfo;
 	if ( this->tiffMgr.GetTag ( kTIFF_PrimaryIFD, kTIFF_DNGVersion, &dngInfo ) ) {
 
-		// Reject DNG files that are version 2.0 or beyond, this is being written at the time of 
+		// Reject DNG files that are version 2.0 or beyond, this is being written at the time of
 		// DNG version 1.2. The DNG team says it is OK to use 2.0, not strictly 1.2. Use the
 		// DNGBackwardVersion if it is present, else the DNGVersion. Note that the version value is
 		// supposed to be type BYTE, so the file order is always essentially big endian.
@@ -135,10 +136,10 @@ void TIFF_MetaHandler::CacheFileData()
 		if ( majorVersion > 1 ) XMP_Throw ( "DNG version beyond 1.x", kXMPErr_BadTIFF );
 
 	}
-	
+
 	TIFF_Manager::TagInfo xmpInfo;
 	bool found = this->tiffMgr.GetTag ( kTIFF_PrimaryIFD, kTIFF_XMP, &xmpInfo );
-	
+
 	if ( found ) {
 
 		this->packetInfo.offset    = this->tiffMgr.GetValueOffset ( kTIFF_PrimaryIFD, kTIFF_XMP );
@@ -152,27 +153,8 @@ void TIFF_MetaHandler::CacheFileData()
 		this->containsXMP = true;
 
 	}
-	
+
 }	// TIFF_MetaHandler::CacheFileData
-
-// =================================================================================================
-// TIFF_MetaHandler::ProcessTNail
-// ==============================
-//
-// Do the same processing as JPEG, even though Exif says that uncompressed images can only have 
-// uncompressed thumbnails. Who know what someone might write?
-
-// *** Should extract this code into a utility shared with the JPEG handler.
-
-void TIFF_MetaHandler::ProcessTNail()
-{
-	this->processedTNail = true;	// Make sure we only come through here once.
-	this->containsTNail = false;	// Set it to true after all of the info is gathered.
-
-	this->containsTNail = this->tiffMgr.GetTNailInfo ( &this->tnailInfo );
-	if ( this->containsTNail ) this->tnailInfo.fileFormat = this->parent->format;
-
-}	// TIFF_MetaHandler::ProcessTNail
 
 // =================================================================================================
 // TIFF_MetaHandler::ProcessXMP
@@ -184,29 +166,19 @@ void TIFF_MetaHandler::ProcessTNail()
 
 void TIFF_MetaHandler::ProcessXMP()
 {
-	
+
 	this->processedXMP = true;	// Make sure we only come through here once.
 
 	// Set up everything for the legacy import, but don't do it yet. This lets us do a forced legacy
 	// import if the XMP packet gets parsing errors.
 
-	// Parse the IPTC and PSIR, determine the last-legacy priority. For TIFF files the relevant
-	// legacy priorities (ignoring Mac pnot and ANPA resources) are:
-	//	kLegacyJTP_TIFF_IPTC - highest
-	//	kLegacyJTP_TIFF_TIFF_Tags
-	//	kLegacyJTP_PSIR_OldCaption
-	//	kLegacyJTP_PSIR_IPTC - yes, a TIFF file can have the IPTC in 2 places
-	//	kLegacyJTP_None - lowest
-	
 	// ! Photoshop 6 wrote annoyingly wacky TIFF files. It buried a lot of the Exif metadata inside
 	// ! image resource 1058, itself inside of tag 34377 in the 0th IFD. Take care of this before
 	// ! doing any of the legacy metadata presence or priority analysis. Delete image resource 1058
 	// ! to get rid of the buried Exif, but don't mark the XMPFiles object as changed. This change
 	// ! should not trigger an update, but should be included as part of a normal update.
-	
-	bool found;
-	RecJTP_LegacyPriority lastLegacy = kLegacyJTP_None;
 
+	bool found;
 	bool readOnly = ((this->parent->openFlags & kXMPFiles_OpenForUpdate) == 0);
 
 	if ( readOnly ) {
@@ -214,24 +186,16 @@ void TIFF_MetaHandler::ProcessXMP()
 		this->iptcMgr = new IPTC_Reader();
 	} else {
 		this->psirMgr = new PSIR_FileWriter();
-		#if ! XMP_UNIXBuild
-			this->iptcMgr = new IPTC_Writer();	// ! Parse it later.
-		#else
-			// ! Hack until the legacy-as-local issues are resolved for generic UNIX.
-			this->iptcMgr = new IPTC_Reader();	// ! Import IPTC but don't export it.
-		#endif
+		this->iptcMgr = new IPTC_Writer();	// ! Parse it later.
 	}
 
 	TIFF_Manager & tiff = this->tiffMgr;	// Give the compiler help in recognizing non-aliases.
 	PSIR_Manager & psir = *this->psirMgr;
 	IPTC_Manager & iptc = *this->iptcMgr;
-	
+
 	TIFF_Manager::TagInfo psirInfo;
 	bool havePSIR = tiff.GetTag ( kTIFF_PrimaryIFD, kTIFF_PSIR, &psirInfo );
-	
-	TIFF_Manager::TagInfo iptcInfo;
-	bool haveIPTC = tiff.GetTag ( kTIFF_PrimaryIFD, kTIFF_IPTC, &iptcInfo );	// The TIFF IPTC tag.
-		
+
 	if ( havePSIR ) {	// ! Do the Photoshop 6 integration before other legacy analysis.
 		psir.ParseMemoryResources ( psirInfo.dataPtr, psirInfo.dataLen );
 		PSIR_Manager::ImgRsrcInfo buriedExif;
@@ -241,46 +205,51 @@ void TIFF_MetaHandler::ProcessXMP()
 			if ( ! readOnly ) psir.DeleteImgRsrc ( kPSIR_Exif );
 		}
 	}
+
+	TIFF_Manager::TagInfo iptcInfo;
+	bool haveIPTC = tiff.GetTag ( kTIFF_PrimaryIFD, kTIFF_IPTC, &iptcInfo );	// The TIFF IPTC tag.
+	int iptcDigestState = kDigestMatches;
+
+	if ( haveIPTC ) {
 		
-	if ( haveIPTC ) {	// At this point "haveIPTC" means from TIFF tag 33723.
-		iptc.ParseMemoryDataSets ( iptcInfo.dataPtr, iptcInfo.dataLen );
-		lastLegacy = kLegacyJTP_TIFF_IPTC;
-	}
-	
-	if ( lastLegacy < kLegacyJTP_TIFF_TIFF_Tags ) {
-		found = tiff.GetTag ( kTIFF_PrimaryIFD, kTIFF_ImageDescription, 0 );
-		if ( ! found ) found = tiff.GetTag ( kTIFF_PrimaryIFD, kTIFF_Artist, 0 );
-		if ( ! found ) found = tiff.GetTag ( kTIFF_PrimaryIFD, kTIFF_Copyright, 0 );
-		if ( found ) lastLegacy = kLegacyJTP_TIFF_TIFF_Tags;
-	}
-	
-	if ( havePSIR ) {
+		bool haveDigest = false;
+		PSIR_Manager::ImgRsrcInfo digestInfo;
+		if ( havePSIR ) haveDigest = psir.GetImgRsrc ( kPSIR_IPTCDigest, &digestInfo );
+		if ( digestInfo.dataLen != 16 ) haveDigest = false;
+		
+		if ( ! haveDigest ) {
+		
+			iptcDigestState = kDigestMissing;
+		
+		} else {
 
-		if ( lastLegacy < kLegacyJTP_PSIR_OldCaption ) {
-			found = psir.GetImgRsrc ( kPSIR_OldCaption, 0 );
-			if ( ! found ) found = psir.GetImgRsrc ( kPSIR_OldCaptionPStr, 0 );
-			if ( found ) lastLegacy = kLegacyJTP_PSIR_OldCaption;
-		}
+			// Older versions of Photoshop wrote tag 33723 with type LONG, but ignored the trailing
+			// zero padding for the IPTC digest. If the full digest differs, recheck without the padding.
 
-		if ( ! haveIPTC ) {
-			PSIR_Manager::ImgRsrcInfo iptcInfo;
-			haveIPTC = psir.GetImgRsrc ( kPSIR_IPTC, &iptcInfo );
-			if ( haveIPTC ) {
-				iptc.ParseMemoryDataSets ( iptcInfo.dataPtr, iptcInfo.dataLen );
-				if ( lastLegacy < kLegacyJTP_PSIR_IPTC ) lastLegacy = kLegacyJTP_PSIR_IPTC;
+			iptcDigestState = PhotoDataUtils::CheckIPTCDigest ( iptcInfo.dataPtr, iptcInfo.dataLen, digestInfo.dataPtr );
+			
+			if ( (iptcDigestState == kDigestDiffers) && (kTIFF_TypeSizes[iptcInfo.type] > 1) ) {
+				XMP_Uns8 * endPtr = (XMP_Uns8*)iptcInfo.dataPtr + iptcInfo.dataLen - 1;
+				XMP_Uns8 * minPtr = endPtr - kTIFF_TypeSizes[iptcInfo.type] + 1;
+				while ( (endPtr >= minPtr) && (*endPtr == 0) ) --endPtr;
+				XMP_Uns32 unpaddedLen = (XMP_Uns32) (endPtr - (XMP_Uns8*)iptcInfo.dataPtr + 1);
+				iptcDigestState = PhotoDataUtils::CheckIPTCDigest ( iptcInfo.dataPtr, unpaddedLen, digestInfo.dataPtr );
 			}
+
 		}
 
 	}
-		
+
 	XMP_OptionBits options = k2XMP_FileHadExif;	// TIFF files are presumed to have Exif legacy.
+	if ( haveIPTC ) options |= k2XMP_FileHadIPTC;
 	if ( this->containsXMP ) options |= k2XMP_FileHadXMP;
-	if ( haveIPTC || (lastLegacy == kLegacyJTP_PSIR_OldCaption) ) options |= k2XMP_FileHadIPTC;
 
 	// Process the XMP packet. If it fails to parse, do a forced legacy import but still throw an
 	// exception. This tells the caller that an error happened, but gives them recovered legacy
 	// should they want to proceed with that.
 
+	bool haveXMP = false;
+	
 	if ( ! this->xmpPacket.empty() ) {
 		XMP_Assert ( this->containsXMP );
 		// Common code takes care of packetInfo.charForm, .padSize, and .writeable.
@@ -288,16 +257,23 @@ void TIFF_MetaHandler::ProcessXMP()
 		XMP_StringLen packetLen = (XMP_StringLen)this->xmpPacket.size();
 		try {
 			this->xmpObj.ParseFromBuffer ( packetStr, packetLen );
+			haveXMP = true;
 		} catch ( ... ) {
 			XMP_ClearOption ( options, k2XMP_FileHadXMP );
-			ImportJTPtoXMP ( kXMP_TIFFFile, lastLegacy, &tiff, psir, &iptc, &this->xmpObj, options );
+			if ( haveIPTC ) iptc.ParseMemoryDataSets ( iptcInfo.dataPtr, iptcInfo.dataLen );
+			if ( iptcDigestState == kDigestMatches ) iptcDigestState = kDigestMissing;
+			ImportPhotoData ( tiff, iptc, psir, iptcDigestState, &this->xmpObj, options );
 			throw;	// ! Rethrow the exception, don't absorb it.
 		}
 	}
 
 	// Process the legacy metadata.
 
-	ImportJTPtoXMP ( kXMP_TIFFFile, lastLegacy, &tiff, psir, &iptc, &this->xmpObj, options );
+	if ( haveIPTC && (! haveXMP) && (iptcDigestState == kDigestMatches) ) iptcDigestState = kDigestMissing;
+	bool parseIPTC = (iptcDigestState != kDigestMatches) || (! readOnly);
+	if ( parseIPTC ) iptc.ParseMemoryDataSets ( iptcInfo.dataPtr, iptcInfo.dataLen );
+	ImportPhotoData ( tiff, iptc, psir, iptcDigestState, &this->xmpObj, options );
+
 	this->containsXMP = true;	// Assume we now have something in the XMP.
 
 }	// TIFF_MetaHandler::ProcessXMP
@@ -320,57 +296,63 @@ void TIFF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	XMP_AbortProc abortProc  = this->parent->abortProc;
 	void *        abortArg   = this->parent->abortArg;
 
+	XMP_Int64 oldPacketOffset = this->packetInfo.offset;
+	XMP_Int32 oldPacketLength = this->packetInfo.length;
+
+	if ( oldPacketOffset == kXMPFiles_UnknownOffset ) oldPacketOffset = 0;	// ! Simplify checks.
+	if ( oldPacketLength == kXMPFiles_UnknownLength ) oldPacketLength = 0;
+
+	bool fileHadXMP = ((oldPacketOffset != 0) && (oldPacketLength != 0));
+
+	// Update the IPTC-IIM and native TIFF/Exif metadata. ExportPhotoData also trips the tiff: and
+	// exif: copies from the XMP, so reserialize the now final XMP packet.
+	
+	ExportPhotoData ( kXMP_TIFFFile, &this->xmpObj, &this->tiffMgr, this->iptcMgr, this->psirMgr );
+	
+	try {
+		XMP_OptionBits options = kXMP_UseCompactFormat;
+		if ( fileHadXMP ) options |= kXMP_ExactPacketLength;
+		this->xmpObj.SerializeToBuffer ( &this->xmpPacket, options, oldPacketLength );
+	} catch ( ... ) {
+		this->xmpObj.SerializeToBuffer ( &this->xmpPacket, kXMP_UseCompactFormat );
+	}
+
 	// Decide whether to do an in-place update. This can only happen if all of the following are true:
 	//	- There is an XMP packet in the file.
 	//	- The are no changes to the legacy tags. (The IPTC and PSIR are in the TIFF tags.)
 	//	- The new XMP can fit in the old space.
-	
-	ExportXMPtoJTP ( kXMP_TIFFFile, &this->xmpObj, &this->tiffMgr, this->psirMgr, this->iptcMgr );
-	
-	XMP_Int64 oldPacketOffset = this->packetInfo.offset;
-	XMP_Int32 oldPacketLength = this->packetInfo.length;
-	
-	if ( oldPacketOffset == kXMPFiles_UnknownOffset ) oldPacketOffset = 0;	// ! Simplify checks.
-	if ( oldPacketLength == kXMPFiles_UnknownLength ) oldPacketLength = 0;
-	
-	bool doInPlace = (this->xmpPacket.size() <= (size_t)this->packetInfo.length);
+
+	bool doInPlace = (fileHadXMP && (this->xmpPacket.size() <= (size_t)oldPacketLength));
 	if ( this->tiffMgr.IsLegacyChanged() ) doInPlace = false;
 
-	if ( doInPlace ) {
+	if ( ! doInPlace ) {
+
+		#if GatherPerformanceData
+			sAPIPerf->back().extraInfo += ", TIFF append update";
+		#endif
+
+		this->tiffMgr.SetTag ( kTIFF_PrimaryIFD, kTIFF_XMP, kTIFF_UndefinedType, (XMP_Uns32)this->xmpPacket.size(), this->xmpPacket.c_str() );
+		this->tiffMgr.UpdateFileStream ( destRef );
+
+	} else {
 
 		#if GatherPerformanceData
 			sAPIPerf->back().extraInfo += ", TIFF in-place update";
 		#endif
-		
+
 		if ( this->xmpPacket.size() < (size_t)this->packetInfo.length ) {
 			// They ought to match, cheap to be sure.
 			size_t extraSpace = (size_t)this->packetInfo.length - this->xmpPacket.size();
 			this->xmpPacket.append ( extraSpace, ' ' );
 		}
-	
+
 		LFA_FileRef liveFile = this->parent->fileRef;
-	
+
 		XMP_Assert ( this->xmpPacket.size() == (size_t)oldPacketLength );	// ! Done by common PutXMP logic.
-		
+
 		LFA_Seek ( liveFile, oldPacketOffset, SEEK_SET );
 		LFA_Write ( liveFile, this->xmpPacket.c_str(), (XMP_Int32)this->xmpPacket.size() );
-	
-	} else {
 
-		#if GatherPerformanceData
-			sAPIPerf->back().extraInfo += ", TIFF append update";
-		#endif
-	
-		// Reserialize the XMP to get standard padding, PutXMP has probably done an in-place serialize.
-		this->xmpObj.SerializeToBuffer ( &this->xmpPacket, kXMP_UseCompactFormat );
-		this->packetInfo.offset = kXMPFiles_UnknownOffset;
-		this->packetInfo.length = (XMP_Int32)this->xmpPacket.size();
-		FillPacketInfo ( this->xmpPacket, &this->packetInfo );
-	
-		this->tiffMgr.SetTag ( kTIFF_PrimaryIFD, kTIFF_XMP, kTIFF_ByteType, (XMP_Uns32)this->xmpPacket.size(), this->xmpPacket.c_str() );
-		
-		this->tiffMgr.UpdateFileStream ( destRef );
-	
 	}
 
 	this->needsUpdate = false;
@@ -389,12 +371,12 @@ void TIFF_MetaHandler::WriteFile ( LFA_FileRef sourceRef, const std::string & so
 	LFA_FileRef   destRef    = this->parent->fileRef;
 	XMP_AbortProc abortProc  = this->parent->abortProc;
 	void *        abortArg   = this->parent->abortArg;
-	
+
 	XMP_Int64 fileLen = LFA_Measure ( sourceRef );
 	if ( fileLen > 0xFFFFFFFFLL ) {	// Check before making a copy of the file.
 		XMP_Throw ( "TIFF fles can't exceed 4GB", kXMPErr_BadTIFF );
 	}
-	
+
 	LFA_Seek ( sourceRef, 0, SEEK_SET );
 	LFA_Truncate ( destRef, 0 );
 	LFA_Copy ( sourceRef, destRef, fileLen, abortProc, abortArg );

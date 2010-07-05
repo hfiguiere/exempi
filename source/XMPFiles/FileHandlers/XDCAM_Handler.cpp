@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2007 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -23,25 +23,25 @@ using namespace std;
 /// well-defined layout and naming rules. There are 2 different layouts for XDCAM, called FAM and SAM.
 /// The FAM layout is used by "normal" XDCAM devices. The SAM layout is used by XDCAM-EX devices.
 ///
-/// A typical FAM layout looks like:
+/// A typical FAM layout looks like (note mixed case for General, Clip, Edit, and Sub folders):
 ///
 /// .../MyMovie/
 /// 	INDEX.XML
 /// 	DISCMETA.XML
 /// 	MEDIAPRO.XML
-/// 	GENERAL/
+/// 	General/
 /// 		unknown files
-/// 	CLIP/
+/// 	Clip/
 /// 		C0001.MXF
 /// 		C0001M01.XML
 /// 		C0001M01.XMP
 /// 		C0002.MXF
 /// 		C0002M01.XML
 /// 		C0002M01.XMP
-/// 	SUB/
+/// 	Sub/
 /// 		C0001S01.MXF
 /// 		C0002S01.MXF
-/// 	EDIT/
+/// 	Edit/
 /// 		E0001E01.SMI
 /// 		E0001M01.XML
 /// 		E0002E01.SMI
@@ -114,10 +114,10 @@ using namespace std;
 //   parentName - empty
 //   leafName   - "C0001"
 //
-// If the client passed a FAM file path, like ".../MyMovie/EDIT/E0001E01.SMI", they are:
+// If the client passed a FAM file path, like ".../MyMovie/Edit/E0001E01.SMI", they are:
 //   rootPath   - "..."
 //   gpName     - "MyMovie"
-//   parentName - "EDIT"
+//   parentName - "EDIT"	(common code has shifted the case)
 //   leafName   - "E0001E01"
 //
 // If the client passed a SAM file path, like ".../MyMovie/PROAV/CLPR/C0001/C0001A02.MXF", they are:
@@ -136,7 +136,7 @@ using namespace std;
 // ! folder, we will fail to do the leading 'E' to 'C' coercion. We might also erroneously remove a
 // ! suffix from a mapped essence file with a name like ClipX01.MXF.
 
-// ! The common code has shifted the gpName, parentName, and leafName strings to upper case. It has
+// ! The common code has shifted the gpName, parentName, and leafName strings to uppercase. It has
 // ! also made sure that for a logical clip path the rootPath is an existing folder, and that the
 // ! file exists for a full file path.
 
@@ -171,6 +171,7 @@ bool XDCAM_CheckFormat ( XMP_FileFormat format,
 		// This is the existing file case. See if this is FAM or SAM, tweak the clip name as needed.
 		
 		if ( (parentName == "CLIP") || (parentName == "EDIT") || (parentName == "SUB") ) {
+			// ! The standard says Clip/Edit/Sub, but the caller has already shifted to upper case.
 			isFAM = true;
 		} else if ( (gpName != "CLPR") && (gpName != "EDTR") ) {
 			return false;
@@ -217,7 +218,7 @@ bool XDCAM_CheckFormat ( XMP_FileFormat format,
 	
 	// Make sure the general XDCAM package structure is legit. Set tempPath as a bogus path of the
 	// form <root>/<FAM-or-SAM>/<clip>, e.g. ".../MyMovie/FAM/C0001". This is passed the handler via
-	// the handlerTemp hackery.
+	// the tempPtr hackery.
 	
 	if ( isFAM ) {
 	
@@ -230,7 +231,7 @@ bool XDCAM_CheckFormat ( XMP_FileFormat format,
 		if ( GetChildMode ( tempPath, "MEDIAPRO.XML" ) != kFMode_IsFile ) return false;
 		
 		tempPath += kDirChar;
-		tempPath += "CLIP";
+		tempPath += "Clip";	// ! Yes, mixed case.
 		tempPath += kDirChar;
 		tempPath += clipName;
 		tempPath += "M01.XML";
@@ -280,9 +281,9 @@ bool XDCAM_CheckFormat ( XMP_FileFormat format,
 	// from here to there.
 	
 	size_t pathLen = tempPath.size() + 1;	// Include a terminating nul.
-	parent->handlerTemp = malloc ( pathLen );
-	if ( parent->handlerTemp == 0 ) XMP_Throw ( "No memory for XDCAM clip info", kXMPErr_NoMemory );
-	memcpy ( parent->handlerTemp, tempPath.c_str(), pathLen );	// AUDIT: Safe, allocated above.
+	parent->tempPtr = malloc ( pathLen );
+	if ( parent->tempPtr == 0 ) XMP_Throw ( "No memory for XDCAM clip info", kXMPErr_NoMemory );
+	memcpy ( parent->tempPtr, tempPath.c_str(), pathLen );	// AUDIT: Safe, allocated above.
 	
 	return true;
 	
@@ -309,13 +310,13 @@ XDCAM_MetaHandler::XDCAM_MetaHandler ( XMPFiles * _parent ) : isFAM(false), expa
 	this->handlerFlags = kXDCAM_HandlerFlags;
 	this->stdCharForm  = kXMP_Char8Bit;
 	
-	// Extract the root path, clip name, and FAM/SAM flag from handlerTemp.
+	// Extract the root path, clip name, and FAM/SAM flag from tempPtr.
 	
-	XMP_Assert ( this->parent->handlerTemp != 0 );
+	XMP_Assert ( this->parent->tempPtr != 0 );
 	
-	this->rootPath.assign ( (char*) this->parent->handlerTemp );
-	free ( this->parent->handlerTemp );
-	this->parent->handlerTemp = 0;
+	this->rootPath.assign ( (char*) this->parent->tempPtr );
+	free ( this->parent->tempPtr );
+	this->parent->tempPtr = 0;
 
 	SplitLeafName ( &this->rootPath, &this->clipName );
 
@@ -335,9 +336,9 @@ XDCAM_MetaHandler::~XDCAM_MetaHandler()
 {
 
 	this->CleanupLegacyXML();
-	if ( this->parent->handlerTemp != 0 ) {
-		free ( this->parent->handlerTemp );
-		this->parent->handlerTemp = 0;
+	if ( this->parent->tempPtr != 0 ) {
+		free ( this->parent->tempPtr );
+		this->parent->tempPtr = 0;
 	}
 
 }	// XDCAM_MetaHandler::~XDCAM_MetaHandler
@@ -353,7 +354,7 @@ void XDCAM_MetaHandler::MakeClipFilePath ( std::string * path, XMP_StringPtr suf
 	*path += kDirChar;
 	
 	if ( this->isFAM ) {
-		*path += "CLIP";
+		*path += "Clip";	// ! Yes, mixed case.
 	} else {
 		*path += "PROAV";
 		*path += kDirChar;
@@ -429,11 +430,6 @@ void XDCAM_MetaHandler::MakeLegacyDigest ( std::string * digestStr )
 
 void XDCAM_MetaHandler::CleanupLegacyXML()
 {
-
-	if ( ! this->defaultNS.empty() ) {
-		SXMPMeta::DeleteNamespace ( this->defaultNS.c_str() );
-		this->defaultNS.erase();
-	}
 	
 	if ( this->expat != 0 ) { delete ( this->expat ); this->expat = 0; }
 	
@@ -447,7 +443,7 @@ void XDCAM_MetaHandler::CleanupLegacyXML()
 
 void XDCAM_MetaHandler::CacheFileData()
 {
-	XMP_Assert ( (! this->containsXMP) && (! this->containsTNail) );
+	XMP_Assert ( ! this->containsXMP );
 	
 	// See if the clip's .XMP file exists.
 	
@@ -517,17 +513,11 @@ void XDCAM_MetaHandler::ProcessXMP()
 	std::string xmlPath, umid;
 	this->MakeClipFilePath ( &xmlPath, "M01.XML" );
 	
-	// --------------------------------------------------------------
-	// *** This is a minimal Q&D example of legacy metadata handling.
-	// *** Hack: Special case trickery to detect and clean up default XML namespace usage.
-	
-	bool haveDefaultNS = SXMPMeta::GetNamespaceURI ( "_dflt_", 0 );	// Is there already a default namespace?
-	
 	AutoFile xmlFile;
 	xmlFile.fileRef = LFA_Open ( xmlPath.c_str(), 'r' );
 	if ( xmlFile.fileRef == 0 ) return;	// The open failed.
 	
-	this->expat = XMP_NewExpatAdapter();
+	this->expat = XMP_NewExpatAdapter ( ExpatAdapter::kUseLocalNamespaces );
 	if ( this->expat == 0 ) XMP_Throw ( "XDCAM_MetaHandler: Can't create Expat adapter", kXMPErr_NoMemory );
 	
 	XMP_Uns8 buffer [64*1024];
@@ -540,12 +530,6 @@ void XDCAM_MetaHandler::ProcessXMP()
 	
 	LFA_Close ( xmlFile.fileRef );
 	xmlFile.fileRef = 0;
-	
-	if ( ! haveDefaultNS ) {
-		// No prior default XML namespace. If there is one now, remember it and delete it when done.
-		haveDefaultNS = SXMPMeta::GetNamespaceURI ( "_dflt_", &this->defaultNS );
-		XMP_Assert ( haveDefaultNS == (! this->defaultNS.empty()) );
-	}
 	
 	// The root element should be NonRealTimeMeta in some namespace. Take whatever this file uses.
 

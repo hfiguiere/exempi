@@ -2,7 +2,7 @@
 #define __ExpatAdapter_hpp__
 
 // =================================================================================================
-// Copyright 2005-2008 Adobe Systems Incorporated
+// Copyright 2005 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -27,6 +27,7 @@ class ExpatAdapter : public XMLParserAdapter {
 public:
 
 	XML_Parser parser;
+	XMP_NamespaceTable * registeredNamespaces;
 	
 	#if BanAllEntityUsage
 		bool isAborted;
@@ -36,14 +37,21 @@ public:
 		size_t elemNesting;
 	#endif
 	
-	ExpatAdapter();
+	static const bool kUseGlobalNamespaces = true;
+	static const bool kUseLocalNamespaces  = false;
+	
+	ExpatAdapter ( bool useGlobalNamespaces );
 	virtual ~ExpatAdapter();
 	
 	void ParseBuffer ( const void * buffer, size_t length, bool last = true );
 
+private:
+
+	ExpatAdapter() : registeredNamespaces(0) {};	// ! Force use of constructor with namespace parameter.
+
 };
 
-extern "C" ExpatAdapter * XMP_NewExpatAdapter();
+extern "C" ExpatAdapter * XMP_NewExpatAdapter ( bool useGlobalNamespaces );
 
 // =================================================================================================
 

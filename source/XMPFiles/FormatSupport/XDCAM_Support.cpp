@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2006-2008 Adobe Systems Incorporated
+// Copyright 2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -94,7 +94,7 @@ bool GetLegacyMetaData ( SXMPMeta *		xmpObjPtr,
 	}
 
 	// Modify Date
-	if ( digestFound || (! xmpObjPtr->DoesPropertyExist ( kXMP_NS_XMP, "LastUpdate" )) ) {
+	if ( digestFound || (! xmpObjPtr->DoesPropertyExist ( kXMP_NS_XMP, "ModifyDate" )) ) {
 		legacyProp = rootElem->GetNamedElement ( legacyNS, "LastUpdate" );
 		if ( (legacyProp != 0) && legacyProp->IsEmptyLeafNode() ) {
 			XMP_StringPtr legacyValue = legacyProp->GetAttrValue ( "value" );
@@ -106,12 +106,24 @@ bool GetLegacyMetaData ( SXMPMeta *		xmpObjPtr,
 	}
 
 	// Metadata Modify Date
-	if ( digestFound || (! xmpObjPtr->DoesPropertyExist ( kXMP_NS_XMP, "lastUpdate" )) ) {
+	if ( digestFound || (! xmpObjPtr->DoesPropertyExist ( kXMP_NS_XMP, "MetadataDate" )) ) {
 		legacyProp = rootElem->GetNamedElement ( legacyNS, "lastUpdate" );
 		if ( (legacyProp != 0) && legacyProp->IsEmptyLeafNode() ) {
 			XMP_StringPtr legacyValue = legacyProp->GetAttrValue ( "value" );
 			if ( legacyValue != 0 ) {
 				xmpObjPtr->SetProperty ( kXMP_NS_XMP, "MetadataDate", legacyValue, kXMP_DeleteExisting );
+				containsXMP = true;
+			}
+		}
+	}
+
+	// Description
+	if ( digestFound || (! xmpObjPtr->DoesPropertyExist ( kXMP_NS_DC, "description" )) ) {
+		legacyProp = rootElem->GetNamedElement ( legacyNS, "Description" );
+		if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() ) {
+			XMP_StringPtr legacyValue = legacyProp->GetLeafContentValue();
+			if ( legacyValue != 0 ) {
+				xmpObjPtr->SetLocalizedText ( kXMP_NS_DC, "description", "", "x-default", legacyValue, kXMP_DeleteExisting );
 				containsXMP = true;
 			}
 		}
@@ -227,6 +239,54 @@ bool GetLegacyMetaData ( SXMPMeta *		xmpObjPtr,
 		}
 
 	}
+	
+	legacyContext = rootElem->GetNamedElement ( legacyNS, "Device" );
+	if ( legacyContext != 0 ) {
+
+		std::string model; 
+		  
+		// manufacturer string
+		XMP_StringPtr manufacturer = legacyContext->GetAttrValue ( "manufacturer" );
+		if ( manufacturer != 0 ) {
+			model += manufacturer;
+		}
+		
+		// model string
+		XMP_StringPtr modelName = legacyContext->GetAttrValue ( "modelName" );
+		if ( modelName != 0 ) {
+			if ( model.size() > 0 ) {
+				model += " ";
+			}
+			model += modelName;
+		}
+		
+
+		// For the dm::cameraModel property, concat the make and model.
+		if ( digestFound || (! xmpObjPtr->DoesPropertyExist ( kXMP_NS_DM, "cameraModel" )) ) {
+			if ( model.size() != 0 ) {
+				xmpObjPtr->SetProperty ( kXMP_NS_DM, "cameraModel", model, kXMP_DeleteExisting );
+				containsXMP = true;
+			}
+		}
+		
+		// EXIF Model
+		if ( digestFound || (! xmpObjPtr->DoesPropertyExist ( kXMP_NS_TIFF, "Model" )) ) {
+			xmpObjPtr->SetProperty ( kXMP_NS_TIFF, "Model", modelName, kXMP_DeleteExisting );
+		}
+	
+		// EXIF Make
+		if ( digestFound || (! xmpObjPtr->DoesPropertyExist ( kXMP_NS_TIFF, "Make" )) ) {
+			xmpObjPtr->SetProperty ( kXMP_NS_TIFF, "Make", manufacturer, kXMP_DeleteExisting );
+		}
+	
+		// EXIF-AUX Serial number
+		XMP_StringPtr serialNumber = legacyContext->GetAttrValue ( "serialNo" );
+		if ( serialNumber != 0 && (digestFound || (! xmpObjPtr->DoesPropertyExist ( kXMP_NS_EXIF_Aux, "SerialNumber" ))) ) {
+			xmpObjPtr->SetProperty ( kXMP_NS_EXIF_Aux, "SerialNumber", serialNumber, kXMP_DeleteExisting );
+		}
+	
+	}
+
 	
 	return containsXMP;
 

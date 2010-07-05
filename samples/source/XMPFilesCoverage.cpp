@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2002 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -143,7 +143,7 @@ static void OpenTestFile ( const char * fileName, XMP_OptionBits rwMode, SXMPMet
 	
 	static const char * charForms[] = { "UTF-8", "unknown char form", "UTF-16BE", "UTF-16LE", "UTF-32BE", "UTF-32LE" };
 
-	XMP_OptionBits smartFlags = rwMode | kXMPFiles_OpenUseSmartHandler | kXMPFiles_OpenCacheTNail;
+	XMP_OptionBits smartFlags = rwMode | kXMPFiles_OpenUseSmartHandler;
 	XMP_OptionBits scanFlags  = rwMode | kXMPFiles_OpenUsePacketScanning;
 	
 	ok = xmpFile->OpenFile ( fileName, kXMP_UnknownFile, smartFlags );
@@ -158,19 +158,6 @@ static void OpenTestFile ( const char * fileName, XMP_OptionBits rwMode, SXMPMet
 
 	fprintf ( sLogFile, "File info : format = \"%.4s\", handler flags = 0x%X, open flags = 0x%X (%s)\n",
 			  &format, handlerFlags, openFlags, (isUpdate ? "update" : "read-only") );
-	
-	XMP_ThumbnailInfo tnail;
-	ok = xmpFile->GetThumbnail ( &tnail );
-	if ( ! ok ) {
-		fprintf ( sLogFile, "No thumbnail\n" );
-	} else {
-		fprintf ( sLogFile, "Thumbnail info : file format = \"%.4s\", tnail format = %d, tnail size = %d\n",
-				  &tnail.fileFormat, tnail.tnailFormat, tnail.tnailSize );
-		fprintf ( sLogFile, "   Image width x height, orientation : %d x %d, %d\n",
-				  tnail.fullWidth, tnail.fullHeight, tnail.fullOrientation );
-		fprintf ( sLogFile, "   TNail width x height, orientation : %d x %d, %d\n",
-				  tnail.tnailWidth, tnail.tnailHeight, tnail.tnailOrientation );
-	}
 
 	ok = xmpFile->GetXMP ( xmpMeta, 0, &xmpPacket );
 	if ( ! ok ) {
@@ -301,7 +288,11 @@ extern "C" int main ( int argc, const char * argv[] )
 			fprintf ( sLogFile, "## XMPMeta::Initialize failed!\n" );
 			return -1;
 		}
-		if ( ! SXMPFiles::Initialize() ) {
+		XMP_OptionBits options = 0;
+		#if UNIX_ENV
+			options |= kXMPFiles_ServerMode;
+		#endif
+		if ( ! SXMPFiles::Initialize ( options ) ) {
 			fprintf ( sLogFile, "## SXMPFiles::Initialize failed!\n" );
 			return -1;
 		}

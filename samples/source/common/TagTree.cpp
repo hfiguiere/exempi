@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2005-2008 Adobe Systems Incorporated
+// Copyright 2008 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -23,6 +23,8 @@
 #include "TagTree.h"
 #include <stdarg.h>
 
+// silent by default
+bool TagTree::verbose = false;
 
 #if WIN_ENV
 	//should preferably be within a #if XMP_WinBuild, not doable here... 
@@ -58,24 +60,40 @@ TagTree::TagTree()
 	rootNode.key="rootkey";		//all never seen
 	rootNode.value="rootvalue";
 	rootNode.comment="rootcomment";
-	tagMap.clear();		// making extra sure it's clear, avoid OS X std:: issues
-	nodeStack.clear();
-	nodeStack.push_back(&rootNode);
-	lastNode=NULL;
+	reset();
 }
 
 TagTree::~TagTree()
 {
-	tagMap.clear();
-	nodeStack.clear();
-	nodeStack.push_back(&rootNode);
-	//any further cleanup needed?
+
 }
 
-void TagTree::setKeyValue(const std::string key,const std::string value, const std::string comment)
+void TagTree::reset()
+{
+	tagMap.clear();
+	nodeStack.clear();
+	rootNode.children.clear();
+	nodeStack.push_back(&rootNode);
+	lastNode = NULL;
+}
+
+
+// verbosity control:
+void TagTree::setMute()
+{
+	TagTree::verbose = false;
+}
+
+void TagTree::setVerbose()
+{
+	TagTree::verbose = true;
+}
+
+
+void TagTree::setKeyValue(const std::string key,const std::string value, const std::string _comment)
 {
 	Node* pCurNode=*nodeStack.rbegin(); //current Node
-	pCurNode->children.push_back(Node(key,value,comment));
+	pCurNode->children.push_back(Node(key,value, _comment));
 
 	if(key.size()==0) {		 // standalone comment?
 		if (value.size()!=0) // must have no value
@@ -95,6 +113,9 @@ void TagTree::setKeyValue(const std::string key,const std::string value, const s
 	//add to Map -----------------------------------
 	lastNode=&*(pCurNode->children.rbegin());
 	tagMap[extkey]=lastNode;
+
+	if ( verbose )
+		Log::info( "    setKeyValue( %s |-> %s) [%s]", key.c_str(), value.c_str(), _comment.c_str() );
 }
 
 void TagTree::digest(LFA_FileRef file,const std::string key /*=NULL*/,
@@ -115,7 +136,8 @@ void TagTree::digest(LFA_FileRef file,const std::string key /*=NULL*/,
 	else
 		value=new char[numOfBytes+1];
 
-	if (numOfBytes != LFA_Read ( file, value, numOfBytes, true))	// saying 1,4 guarantes read as ordered (4,1 would not)
+										// require all == false => leave the throwing to this routine
+	if (numOfBytes != LFA_Read ( file, value, numOfBytes, false))	// saying 1,4 guarantes read as ordered (4,1 would not)
 		Log::error("could not read %d number of files (End of File reached?)",numOfBytes);
 
 	char* out=new char[2 + numOfBytes*3 + 5]; //'0x12 34 45 78 '   length formula: 2 ("0x") + numOfBytes x 3 + 5 (padding)
@@ -125,7 +147,7 @@ void TagTree::digest(LFA_FileRef file,const std::string key /*=NULL*/,
 		XMP_Int64 i; // *)
 		for (i=0; i < numOfBytes; i++)
 			snprintf(&out[2+i*3],4,"%.2X ",value[i]); //always must allow that extra 0-byte on mac (overwritten again and again)
-		snprintf(&out[2+i*3],1,"\0"); // *) using i one more time (needed while bug 1613297 regarding snprintf not fixed)
+		snprintf(&out[2+i*3],1,"%c",'\0'); // *) using i one more time (needed while bug 1613297 regarding snprintf not fixed)
 		setKeyValue(key,out);
 	}
 
@@ -139,14 +161,14 @@ void TagTree::digest(LFA_FileRef file,const std::string key /*=NULL*/,
 XMP_Int64 TagTree::digest64s(LFA_FileRef file,const std::string key /* ="" */ , bool BigEndian /*=false*/ )
 {
 	XMP_Int64 r;
-	if (8 != LFA_Read ( file, &r, 8, true))
+	if (8 != LFA_Read ( file, &r, 8, false)) // require all == false => leave the throwing to this routine
 		Log::error("could not read 8-byte value from file (end of file?)");
 	if ( ((kBigEndianHost==1) &&  !BigEndian ) ||  ((kBigEndianHost==0) && BigEndian ))  // "XOR"
 		Flip8(&r);
 
 	if (!key.empty()) {
 		char out[25]; //longest is "18446744073709551615", 21 chars ==> 25
-		snprintf(out,24,"%d",r); //signed, mind the trailing \0 on Mac btw
+		snprintf(out,24,"%lld",r); //signed, mind the trailing \0 on Mac btw
 		setKeyValue(key,out);
 	}
 	return r;
@@ -155,7 +177,7 @@ XMP_Int64 TagTree::digest64s(LFA_FileRef file,const std::string key /* ="" */ , 
 XMP_Uns64 TagTree::digest64u(LFA_FileRef file,const std::string key /* ="" */, bool BigEndian /*=false*/,bool hexDisplay /*=false*/ )
 {
 	XMP_Uns64 r;
-	if (8 != LFA_Read ( file, &r, 8, true))
+	if (8 != LFA_Read ( file, &r, 8, false)) // require all == false => leave the throwing to this routine
 		Log::error("could not read 8-byte value from file (end of file?)");
 	if ( ((kBigEndianHost==1) &&  !BigEndian ) ||  ((kBigEndianHost==0) && BigEndian ))  // "XOR"
 		Flip8(&r);
@@ -168,16 +190,16 @@ XMP_Uns64 TagTree::digest64u(LFA_FileRef file,const std::string key /* ="" */, b
 				snprintf(out , 24 , "%I64u" , r);
 			#else 
 				// MAC, UNIX
-				snprintf(out , 24 , "%0xllu" , r);
+				snprintf(out , 24 , "%llu" , r);
 			#endif
 		}
 		else
 		{	
 			//not working, upper 32 bit empty:  			
 			#if WIN_ENV
-				snprintf( out , 24 , "0x%I64.16X" , r );
+				snprintf( out , 24 , "0x%.16I64X" , r );
 			#else
-				snprintf( out , 24 , "0x%ll.16X" , r );
+				snprintf( out , 24 , "0x%.16llX" , r );
 			#endif
 		}
 		setKeyValue(key,out);
@@ -189,7 +211,7 @@ XMP_Uns64 TagTree::digest64u(LFA_FileRef file,const std::string key /* ="" */, b
 XMP_Int32 TagTree::digest32s(LFA_FileRef file,const std::string key /* ="" */ , bool BigEndian /*=false*/ )
 {
 	XMP_Int32 r;
-	if (4 != LFA_Read ( file, &r, 4, true))
+	if (4 != LFA_Read ( file, &r, 4, false)) // require all == false => leave the throwing to this routine
 		Log::error("could not read 4-byte value from file (end of file?)");
 	if ( ((kBigEndianHost==1) &&  !BigEndian ) ||  ((kBigEndianHost==0) && BigEndian ))  // "XOR"
 		Flip4(&r);
@@ -204,7 +226,7 @@ XMP_Int32 TagTree::digest32s(LFA_FileRef file,const std::string key /* ="" */ , 
 XMP_Uns32 TagTree::digest32u(LFA_FileRef file,const std::string key /* ="" */, bool BigEndian /*=false*/,bool hexDisplay /*=false*/ )
 {
 	XMP_Uns32 r;
-	if (4 != LFA_Read ( file, &r, 4, true))
+	if (4 != LFA_Read ( file, &r, 4, false)) // require all == false => leave the throwing to this routine
 		Log::error("could not read 4-byte value from file (end of file?)");
 	if ( ((kBigEndianHost==1) &&  !BigEndian ) ||  ((kBigEndianHost==0) && BigEndian ))  // "XOR"
 		Flip4(&r);
@@ -222,7 +244,7 @@ XMP_Uns32 TagTree::digest32u(LFA_FileRef file,const std::string key /* ="" */, b
 XMP_Int16 TagTree::digest16s(LFA_FileRef file,const std::string key /* ="" */ , bool BigEndian /*=false*/ )
 {
 	XMP_Int16 r;
-	if (2 != LFA_Read ( file, &r, 2, true))
+	if (2 != LFA_Read ( file, &r, 2, false)) // require all == false => leave the throwing to this routine
 		Log::error("could not read 2-byte value from file (end of file?)");
 	if ( ((kBigEndianHost==1) &&  !BigEndian ) ||  ((kBigEndianHost==0) && BigEndian ))  // "XOR"
 		Flip2(&r);
@@ -237,7 +259,7 @@ XMP_Int16 TagTree::digest16s(LFA_FileRef file,const std::string key /* ="" */ , 
 XMP_Uns16 TagTree::digest16u(LFA_FileRef file,const std::string key /* ="" */, bool BigEndian /*=false*/,bool hexDisplay /*=false*/ )
 {
 	XMP_Uns16 r;
-	if (2 != LFA_Read ( file, &r, 2, true))
+	if (2 != LFA_Read ( file, &r, 2, false)) // require all == false => leave the throwing to this routine
 		Log::error("could not read 2-byte value from file (end of file?)");
 	if ( ((kBigEndianHost==1) &&  !BigEndian ) ||  ((kBigEndianHost==0) && BigEndian ))  // "XOR"
 		Flip2(&r);
@@ -340,7 +362,7 @@ void TagTree::digest16u(XMP_Uns16* returnValue, LFA_FileRef file,const std::stri
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-std::string TagTree::digestString(LFA_FileRef file,const std::string key /*=""*/, size_t length /* =0 */, bool verifyZeroTerm /* =false */)
+std::string TagTree::digestString(LFA_FileRef file,const std::string key /*=""*/, size_t length /* =0 */, bool verifyZeroTerm /* =false */, bool allowEarlyZeroTerm /* =false */ )
 {
 	std::string r(256,'\0');	//give some room in advance (performance)
 	r.clear();					// safety measure (may be needed on mac)
@@ -350,6 +372,15 @@ std::string TagTree::digestString(LFA_FileRef file,const std::string key /*=""*/
 	for ( XMP_Uns32 i = 0; ( i<length ) || (length==0) ; i++ )
 	{
 		XMP_Uns8 ch = (XMP_Uns8)LFA_GetChar(file);
+
+		// allow early zero termination (useful for fixed length field that may or may not end prematurely)
+		if ( allowEarlyZeroTerm && ( ch == 0 ) && ( length != 0 ) )
+		{
+			i++;
+			LFA_Seek( file, length - i, SEEK_CUR ); // compensate for skipped bytes
+			break;
+		}
+
 		if ( (0x20 <= ch) && (ch <= 0x7E) ) 
 		{	//outside-case
 			if ( outside )
@@ -357,13 +388,13 @@ std::string TagTree::digestString(LFA_FileRef file,const std::string key /*=""*/
 			r.push_back(ch);
 			outside = false;
 		} else {
+			if ( (length==0) && (ch == '\0' ) )
+				break; // lenght zero => watch for zero termination...
 			if ( !outside ) 
 				r.push_back('<');	//first inside
 			else if (!((length==0) && (ch =='\0')))
 				r.push_back(' ');	//further inside (except very last)
 			outside = true;
-			if ( (length==0) && (ch == '\0' ) )
-				break; // lenght zero => watch for zero termination...
 			char tmp[4];
 			sprintf(tmp, "%.2X", ch ); 
 			r+=tmp;			
@@ -386,9 +417,9 @@ std::string TagTree::digestString(LFA_FileRef file,const std::string key /*=""*/
 	return r;
 }
 
-void TagTree::comment(const std::string comment)
+void TagTree::comment(const std::string _comment)
 {
-	setKeyValue("","",comment);
+	setKeyValue("","", _comment);
 }
 
 void TagTree::comment(const char* format, ...)
@@ -411,6 +442,9 @@ void TagTree::pushNode(const std::string key)
 	//_and_ push reference to that one on stack
 	Node* pCurNode=*nodeStack.rbegin();
 	nodeStack.push_back( &*pCurNode->children.rbegin() );
+
+	if ( verbose )
+		Log::info( "pushing %d: %s",nodeStack.size(), key.c_str() );
 }
 
 //formatstring wrapper
@@ -439,6 +473,8 @@ void TagTree::addOffset(LFA_FileRef file)
 // - addTag()'s will now go to the prior Node
 void TagTree::popNode()
 {
+	// FOR DEBUGGING Log::info( "pop %d",nodeStack.size() );
+
 	if (nodeStack.size() <= 1)
 		Log::error("nodeStack underflow: %d",nodeStack.size());
 	nodeStack.pop_back();
@@ -473,13 +509,16 @@ void TagTree::changeValue(const char* format, ...)
 }
 
 
-void TagTree::addComment(const std::string comment)
+void TagTree::addComment(const std::string _comment)
 {
 	if (!lastNode)
 		Log::error("lastnode NULL");
 	lastNode->comment=lastNode->comment +
 		( (lastNode->comment.size())?",":"") //only add comma, if there already is...
-		+comment;
+		+ _comment;
+
+	if ( verbose )
+		Log::info( "    addComment: %s", _comment.c_str() );
 }
 
 void TagTree::addComment(const char* format, ...)
@@ -516,13 +555,16 @@ void TagTree::dumpTree(bool commentsFlag /*true*/,Node* pNode /*null*/ ,unsigned
 	std::string indent(depth*2,' ');	//read: tab 4
 
 	if (commentsFlag) {
-		Log::info( "%s%s%s%s%s%s%s%s%s",	//fancy formatting  foo='bar' [re,do]
+		Log::info( "%s%s%s%s%s%s%s%s%s%s",	//fancy formatting  foo='bar' [re,do]
 						indent.c_str(),
 						pNode->key.c_str(),
 						pNode->value.size()?" = '":"",
 						pNode->value.c_str(),
 						pNode->value.size()?"'":"",
 						( pNode->key.size() + pNode->value.size() > 0 ) ? " ":"",
+						// standalong comments don't need extra indentation:
+						pNode->comment.size() && ( pNode->key.size() || pNode->value.size() )?
+							((std::string("\n    ")+indent).c_str()) : "",
 						pNode->comment.size() && ( pNode->key.size() || pNode->value.size() )   ?"[":"", 
 							//standalone comments don't need brackets
 						pNode->comment.c_str(),
@@ -605,6 +647,47 @@ std::string TagTree::getComment(const std::string key)
 		Log::error("key %s does not exist",key.c_str());
 	return tagMap[key]->comment;
 }
+
+unsigned int TagTree::getSubNodePos( const std::string nodeKey, const std::string parentKey, int skip )
+{
+	Node* parent = NULL;
+
+	if( parentKey.empty() )
+	{
+		parent = &rootNode.children.front();
+	}
+	else
+	{
+		if ( ! hasNode( parentKey ) )
+			Log::error( "parent key %s does not exist", parentKey.c_str() );
+
+		parent = tagMap[parentKey];
+	}
+
+	unsigned int pos = 1;
+	NodeListIter iter;
+	for( iter = parent->children.begin(); 
+		iter != parent->children.end() && ( !( (iter->key == (parentKey.empty() ? nodeKey : parentKey + nodeKey)) && skip--<=0 )) ;
+		iter++, pos++ );
+
+	if( iter == parent->children.end() ) 
+		pos = 0;
+
+	return pos;
+}
+
+
+XMP_Int64 TagTree::getNodeSize( const std::string nodeKey )
+{
+	string tmp = tagMap[nodeKey]->comment;
+	size_t startpos = tmp.find( "size" ) + 5;
+	if( startpos == string::npos )
+		return 0;
+	tmp = tmp.substr( startpos, tmp.find_first_of( ",", startpos ) );
+	
+	return strtol( tmp.c_str(), NULL, 0 );
+}
+
 
 bool TagTree::hasNode(const std::string key)
 {

@@ -7,7 +7,7 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2002 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -71,8 +71,6 @@
 ///   \li \c #kXMP_IterJustLeafNodes - Visit just the leaf property nodes and their qualifiers.
 ///   \li \c #kXMP_IterJustLeafName - Return just the leaf component of the node names. The default
 ///   is to return the full path name.
-///   \li \c #kXMP_IterIncludeAliases - Include aliases as part of the iteration. Since aliases are
-///   not actual nodes the default iteration does not visit them.
 ///   \li \c #kXMP_IterOmitQualifiers - Do not visit the qualifiers of a node.
 // =================================================================================================
 
@@ -227,6 +225,8 @@ private:
     XMPIteratorRef  iterRef;
 
     TXMPIterator();	// ! Hidden, must choose property or table iteration.
+
+	static void SetClientString ( void * clientPtr, XMP_StringPtr valuePtr, XMP_StringLen valueLen );
 
 };  // class TXMPIterator
 

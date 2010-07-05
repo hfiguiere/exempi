@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2004 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -55,15 +55,15 @@ bool PostScript_CheckFormat ( XMP_FileFormat format,
 
 	XMP_Int64 psOffset;
 	size_t    psLength;
-	long      temp1, temp2;
+	XMP_Uns32 temp1, temp2;
 	
 	// Check for the binary EPSF preview header.
 
 	LFA_Seek ( fileRef, 0, SEEK_SET );
 	if ( ! CheckFileSpace ( fileRef, &ioBuf, 4 ) ) return false;
 	temp1 = GetUns32BE ( ioBuf.ptr );
-	
-	if ( temp1 == (long)0xC5D0D3C6 ) {
+
+	if ( temp1 == 0xC5D0D3C6 ) {
 
 		if ( ! CheckFileSpace ( fileRef, &ioBuf, 30 ) ) return false;
 
@@ -88,13 +88,12 @@ bool PostScript_CheckFormat ( XMP_FileFormat format,
 	
 	// Check the PostScript DSC major version number.
 	
-	temp1 = LONG_MIN;	// Will safely overflow if there are digits, remain negative if there aren't.
+	temp1 = 0;
 	while ( (ioBuf.ptr < ioBuf.limit) && ('0' <= *ioBuf.ptr) && (*ioBuf.ptr <= '9') ) {
 		temp1 = (temp1 * 10) + (*ioBuf.ptr - '0');
-		if ( temp1 < 0 ) return false;	// Overflow.
+		if ( temp1 > 1000 ) return false;	// Overflow.
 		ioBuf.ptr += 1;
 	}
-	// if ( temp1 < 0 ) break;	*** Covered by 3.0 check.
 	if ( temp1 < 3 ) return false;	// The version must be at least 3.0.
 	
 	if ( ! CheckFileSpace ( fileRef, &ioBuf, 3 ) ) return false;
@@ -103,14 +102,13 @@ bool PostScript_CheckFormat ( XMP_FileFormat format,
 	
 	// Check the PostScript DSC minor version number.
 	
-	temp2 = LONG_MIN;	// Will safely overflow if there are digits, remain negative if there aren't.
+	temp2 = 0;
 	while ( (ioBuf.ptr < ioBuf.limit) && ('0' <= *ioBuf.ptr) && (*ioBuf.ptr <= '9') ) {
 		temp2 = (temp2 * 10) + (*ioBuf.ptr - '0');
-		if ( temp2 < 0 ) return false;	// Overflow.
+		if ( temp2 > 1000 ) return false;	// Overflow.
 		ioBuf.ptr += 1;
 	}
-	if ( temp2 < 0 ) return false;	// No digits or overflow.
-	// Note that we don't care about the actual minor version number.
+	// We don't care about the actual minor version number.
 	
 	if ( format == kXMP_PostScriptFile ) {
 	
@@ -130,13 +128,12 @@ bool PostScript_CheckFormat ( XMP_FileFormat format,
 	
 		// Check the EPS major version number.
 		
-		temp1 = LONG_MIN;	// Will safely overflow if there are digits, remain negative if there aren't.
+		temp1 = 0;
 		while ( (ioBuf.ptr < ioBuf.limit) && ('0' <= *ioBuf.ptr) && (*ioBuf.ptr <= '9') ) {
 			temp1 = (temp1 * 10) + (*ioBuf.ptr - '0');
-			if ( temp1 < 0 ) return false;	// Overflow.
+			if ( temp1 > 1000 ) return false;	// Overflow.
 			ioBuf.ptr += 1;
 		}
-		// if ( temp1 < 0 ) break;	*** Covered by 3.0 check.
 		if ( temp1 < 3 ) return false;	// The version must be at least 3.0.
 
 		if ( ! CheckFileSpace ( fileRef, &ioBuf, 3 ) ) return false;
@@ -145,14 +142,13 @@ bool PostScript_CheckFormat ( XMP_FileFormat format,
 		
 		// Check the EPS minor version number.
 		
-		temp2 = LONG_MIN;	// Will safely overflow if there are digits, remain negative if there aren't.
+		temp2 = 0;
 		while ( (ioBuf.ptr < ioBuf.limit) && ('0' <= *ioBuf.ptr) && (*ioBuf.ptr <= '9') ) {
 			temp2 = (temp2 * 10) + (*ioBuf.ptr - '0');
-			if ( temp2 < 0 ) return false;	// Overflow.
+			if ( temp2 > 1000 ) return false;	// Overflow.
 			ioBuf.ptr += 1;
 		}
-		if ( temp2 < 0 ) return false;	// No digits or overflow.
-		// Note that we don't care about the actual minor version number.
+		// We don't care about the actual minor version number.
 		
 		if ( ! CheckFileSpace ( fileRef, &ioBuf, 1 ) ) return false;
 		if ( (*ioBuf.ptr != kLF) && (*ioBuf.ptr != kCR) ) return false;
@@ -216,9 +212,9 @@ int PostScript_MetaHandler::FindPostScriptHint()
 
 	LFA_Seek ( fileRef, 0, SEEK_SET );
 	if ( ! CheckFileSpace ( fileRef, &ioBuf, 4 ) ) return false;
-	long temp1 = GetUns32BE ( ioBuf.ptr );
+	XMP_Uns32 temp1 = GetUns32BE ( ioBuf.ptr );
 	
-	if ( temp1 == (long)0xC5D0D3C6 ) {
+	if ( temp1 == 0xC5D0D3C6 ) {
 
 		if ( ! CheckFileSpace ( fileRef, &ioBuf, 30 ) ) return false;
 
@@ -444,7 +440,7 @@ bool PostScript_MetaHandler::FindLastPacket()
 	// -------------------------------
 	// Pick the last the valid packet.
 	
-	long snipCount = scanner.GetSnipCount();
+	int snipCount = scanner.GetSnipCount();
 	
 	XMPScanner::SnipInfoVector snips ( snipCount );
 	scanner.Report ( snips );

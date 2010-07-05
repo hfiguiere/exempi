@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2008 Adobe Systems Incorporated
+// Copyright 2006 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -112,17 +112,6 @@ void ASF_MetaHandler::CacheFileData()
 	}
 
 }	// ASF_MetaHandler::CacheFileData
-
-// =================================================================================================
-// ASF_MetaHandler::ProcessTNail
-// ==============================
-
-void ASF_MetaHandler::ProcessTNail()
-{
-
-	XMP_Throw ( "ASF_MetaHandler::ProcessTNail isn't implemented yet", kXMPErr_Unimplemented );
-
-}	// ASF_MetaHandler::ProcessTNail
 
 // =================================================================================================
 // ASF_MetaHandler::ProcessXMP
@@ -341,6 +330,7 @@ bool ASF_MetaHandler::SafeWriteFile ()
 		ret = true;
 	} catch ( ... ) {
 		LFA_Close ( updateRef );
+		LFA_Delete ( updatePath.c_str() );
 		this->parent->filePath = origPath;
 		this->parent->fileRef  = origRef;
 		throw;

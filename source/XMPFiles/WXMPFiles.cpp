@@ -1,6 +1,6 @@
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2004 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -34,33 +34,23 @@ static WXMP_Result voidResult;	// Used for functions that  don't use the normal 
 void WXMPFiles_GetVersionInfo_1 ( XMP_VersionInfo * versionInfo )
 {
 	WXMP_Result * wResult = &voidResult;	// ! Needed to "fool" the EnterWrapper macro.
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPFiles_GetVersionInfo_1" )
+	XMP_ENTER_NoLock ( "WXMPFiles_GetVersionInfo_1" )
 	
 		XMPFiles::GetVersionInfo ( versionInfo );
 	
-	XMP_EXIT_WRAPPER_NO_THROW
+	XMP_EXIT_NoThrow
 }
     
 // -------------------------------------------------------------------------------------------------
     
-void WXMPFiles_Initialize_1 ( WXMP_Result * wResult )
+void WXMPFiles_Initialize_1 ( XMP_OptionBits options,
+							  WXMP_Result *  wResult )
 {
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPFiles_Initialize_1" )
-	
-		wResult->int32Result = XMPFiles::Initialize ( 0 );
-	
-	XMP_EXIT_WRAPPER
-}
-    
-// -------------------------------------------------------------------------------------------------
-    
-void WXMPFiles_Initialize_2 ( XMP_OptionBits options, WXMP_Result * wResult )
-{
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPFiles_Initialize_1" )
+	XMP_ENTER_NoLock ( "WXMPFiles_Initialize_1" )
 	
 		wResult->int32Result = XMPFiles::Initialize ( options );
 	
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -68,79 +58,55 @@ void WXMPFiles_Initialize_2 ( XMP_OptionBits options, WXMP_Result * wResult )
 void WXMPFiles_Terminate_1()
 {
 	WXMP_Result * wResult = &voidResult;	// ! Needed to "fool" the EnterWrapper macro.
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPFiles_Terminate_1" )
+	XMP_ENTER_NoLock ( "WXMPFiles_Terminate_1" )
 	
 		XMPFiles::Terminate();
 	
-	XMP_EXIT_WRAPPER_NO_THROW
+	XMP_EXIT_NoThrow
 }
 
 // =================================================================================================
     
 void WXMPFiles_CTor_1 ( WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPFiles_CTor_1" )
+	XMP_ENTER_Static ( "WXMPFiles_CTor_1" )	// No lib object yet, use the static entry.
 	
 		XMPFiles * newObj = new XMPFiles();
 		++newObj->clientRefs;
 		XMP_Assert ( newObj->clientRefs == 1 );
 		wResult->ptrResult = newObj;
 	
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // -------------------------------------------------------------------------------------------------
 
-void WXMPFiles_UnlockLib_1()
-{
-	WXMP_Result * wResult = &voidResult;	// ! Needed to fool the EnterWrapper macro.
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPFiles_UnlockLib_1" )
-	
-		XMPFiles::UnlockLib();
-	
-	XMP_EXIT_WRAPPER_NO_THROW
-}
-
-// -------------------------------------------------------------------------------------------------
-
-void WXMPFiles_UnlockObj_1 ( XMPFilesRef xmpFilesRef )
-{
-	WXMP_Result * wResult = &voidResult;	// ! Needed to fool the EnterWrapper macro.
-	XMP_ENTER_WRAPPER_NO_LOCK ( "WXMPFiles_UnlockObj_1" )
-	
-		XMPFiles * thiz = (XMPFiles*)xmpFilesRef;
-		thiz->UnlockObj();
-	
-	XMP_EXIT_WRAPPER_NO_THROW
-}
-
-// -------------------------------------------------------------------------------------------------
-
-void WXMPFiles_IncrementRefCount_1 ( XMPFilesRef xmpFilesRef )
+void WXMPFiles_IncrementRefCount_1 ( XMPFilesRef xmpObjRef )
 {
 	WXMP_Result * wResult = &voidResult;	// ! Needed to "fool" the EnterWrapper macro.
-	XMP_ENTER_WRAPPER ( "WXMPFiles_IncrementRefCount_1" )
+	XMP_ENTER_ObjWrite ( XMPFiles, "WXMPFiles_IncrementRefCount_1" )
 	
-		XMPFiles * thiz = (XMPFiles*)xmpFilesRef;
 		++thiz->clientRefs;
 		XMP_Assert ( thiz->clientRefs > 0 );
 	
-	XMP_EXIT_WRAPPER_NO_THROW
+	XMP_EXIT_NoThrow
 }
 
 // -------------------------------------------------------------------------------------------------
 
-void WXMPFiles_DecrementRefCount_1 ( XMPFilesRef xmpFilesRef )
+void WXMPFiles_DecrementRefCount_1 ( XMPFilesRef xmpObjRef )
 {
 	WXMP_Result * wResult = &voidResult;	// ! Needed to "fool" the EnterWrapper macro.
-	XMP_ENTER_WRAPPER ( "WXMPFiles_DecrementRefCount_1" )
+	XMP_ENTER_ObjWrite ( XMPFiles, "WXMPFiles_DecrementRefCount_1" )
 	
-		XMPFiles * thiz = (XMPFiles*)xmpFilesRef;
 		XMP_Assert ( thiz->clientRefs > 0 );
 		--thiz->clientRefs;
-		if ( thiz->clientRefs <= 0 ) delete ( thiz );
+		if ( thiz->clientRefs <= 0 ) {
+			objLock.Release();
+			delete ( thiz );
+		}
 	
-	XMP_EXIT_WRAPPER_NO_THROW
+	XMP_EXIT_NoThrow
 }
 
 // =================================================================================================
@@ -149,11 +115,11 @@ void WXMPFiles_GetFormatInfo_1 ( XMP_FileFormat   format,
                                  XMP_OptionBits * flags,
                                  WXMP_Result *    wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPFiles_GetFormatInfo_1" )
+	XMP_ENTER_Static ( "WXMPFiles_GetFormatInfo_1" )
 	
 		wResult->int32Result = XMPFiles::GetFormatInfo ( format, flags );
 	
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // =================================================================================================
@@ -161,11 +127,11 @@ void WXMPFiles_GetFormatInfo_1 ( XMP_FileFormat   format,
 void WXMPFiles_CheckFileFormat_1 ( XMP_StringPtr filePath,
 								   WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPFiles_CheckFileFormat_1" )
+	XMP_ENTER_Static ( "WXMPFiles_CheckFileFormat_1" )
 	
 		wResult->int32Result = XMPFiles::CheckFileFormat ( filePath );
 	
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // =================================================================================================
@@ -173,138 +139,123 @@ void WXMPFiles_CheckFileFormat_1 ( XMP_StringPtr filePath,
 void WXMPFiles_CheckPackageFormat_1 ( XMP_StringPtr folderPath,
                        				  WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPFiles_CheckPackageFormat_1" )
+	XMP_ENTER_Static ( "WXMPFiles_CheckPackageFormat_1" )
 	
 		wResult->int32Result = XMPFiles::CheckPackageFormat ( folderPath );
 	
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // =================================================================================================
 
-void WXMPFiles_OpenFile_1 ( XMPFilesRef    xmpFilesRef,
+void WXMPFiles_OpenFile_1 ( XMPFilesRef    xmpObjRef,
                             XMP_StringPtr  filePath,
 			                XMP_FileFormat format,
 			                XMP_OptionBits openFlags,
                             WXMP_Result *  wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPFiles_OpenFile_1" )
+	XMP_ENTER_ObjWrite ( XMPFiles, "WXMPFiles_OpenFile_1" )
 		StartPerfCheck ( kAPIPerf_OpenFile, filePath );
 	
-		XMPFiles * thiz = (XMPFiles*)xmpFilesRef;
 		bool ok = thiz->OpenFile ( filePath, format, openFlags );
 		wResult->int32Result = ok;
 	
 		EndPerfCheck ( kAPIPerf_OpenFile );
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
     
 // -------------------------------------------------------------------------------------------------
 
-void WXMPFiles_CloseFile_1 ( XMPFilesRef    xmpFilesRef,
+void WXMPFiles_CloseFile_1 ( XMPFilesRef    xmpObjRef,
                              XMP_OptionBits closeFlags,
                              WXMP_Result *  wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPFiles_CloseFile_1" )
+	XMP_ENTER_ObjWrite ( XMPFiles, "WXMPFiles_CloseFile_1" )
 		StartPerfCheck ( kAPIPerf_CloseFile, "" );
 	
-		XMPFiles * thiz = (XMPFiles*)xmpFilesRef;
 		thiz->CloseFile ( closeFlags );
 	
 		EndPerfCheck ( kAPIPerf_CloseFile );
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 	
 // -------------------------------------------------------------------------------------------------
 
-void WXMPFiles_GetFileInfo_1 ( XMPFilesRef      xmpFilesRef,
-                               XMP_StringPtr *  filePath,
-                               XMP_StringLen *  filePathLen,
+void WXMPFiles_GetFileInfo_1 ( XMPFilesRef      xmpObjRef,
+                               void *           clientPath,
 			                   XMP_OptionBits * openFlags,
 			                   XMP_FileFormat * format,
 			                   XMP_OptionBits * handlerFlags,
+			                   SetClientStringProc SetClientString,
                                WXMP_Result *    wResult )
 {
-	bool isOpen = false;
-	XMP_ENTER_WRAPPER ( "WXMPFiles_GetFileInfo_1" )
+	XMP_ENTER_ObjRead ( XMPFiles, "WXMPFiles_GetFileInfo_1" )
 	
-		XMPFiles * thiz = (XMPFiles*)xmpFilesRef;
-		isOpen = thiz->GetFileInfo ( filePath, filePathLen, openFlags, format, handlerFlags );
+		XMP_StringPtr pathStr;
+		XMP_StringLen pathLen;
+
+		bool isOpen = thiz.GetFileInfo ( &pathStr, &pathLen, openFlags, format, handlerFlags );
+		if ( isOpen && (clientPath != 0) ) (*SetClientString) ( clientPath, pathStr, pathLen );
 		wResult->int32Result = isOpen;
 	
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( isOpen )
+	XMP_EXIT
 }
     
 // -------------------------------------------------------------------------------------------------
 
-void WXMPFiles_SetAbortProc_1 ( XMPFilesRef   xmpFilesRef,
+void WXMPFiles_SetAbortProc_1 ( XMPFilesRef   xmpObjRef,
                          	    XMP_AbortProc abortProc,
 							    void *        abortArg,
 							    WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPFiles_SetAbortProc_1" )
+	XMP_ENTER_ObjWrite ( XMPFiles, "WXMPFiles_SetAbortProc_1" )
 	
-		XMPFiles * thiz = (XMPFiles*)xmpFilesRef;
 		thiz->SetAbortProc ( abortProc, abortArg );
 	
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
     
 // -------------------------------------------------------------------------------------------------
 
-void WXMPFiles_GetXMP_1 ( XMPFilesRef      xmpFilesRef,
+void WXMPFiles_GetXMP_1 ( XMPFilesRef      xmpObjRef,
                           XMPMetaRef       xmpRef,
-		                  XMP_StringPtr *  xmpPacket,
-		                  XMP_StringLen *  xmpPacketLen,
+		                  void *           clientPacket,
 		                  XMP_PacketInfo * packetInfo,
+		                  SetClientStringProc SetClientString,
                           WXMP_Result *    wResult )
 {
-	bool hasXMP = false;
-	XMP_ENTER_WRAPPER ( "WXMPFiles_GetXMP_1" )
+	XMP_ENTER_ObjWrite ( XMPFiles, "WXMPFiles_GetXMP_1" )
 		StartPerfCheck ( kAPIPerf_GetXMP, "" );
 
-		XMPFiles * thiz = (XMPFiles*)xmpFilesRef;
+		bool hasXMP = false;
+		XMP_StringPtr packetStr;
+		XMP_StringLen packetLen;
+
 		if ( xmpRef == 0 ) {
-			hasXMP = thiz->GetXMP ( 0, xmpPacket, xmpPacketLen, packetInfo );
+			hasXMP = thiz->GetXMP ( 0, &packetStr, &packetLen, packetInfo );
 		} else {
 			SXMPMeta xmpObj ( xmpRef );
-			hasXMP = thiz->GetXMP ( &xmpObj, xmpPacket, xmpPacketLen, packetInfo );
+			hasXMP = thiz->GetXMP ( &xmpObj, &packetStr, &packetLen, packetInfo );
 		}
+		
+		if ( hasXMP && (clientPacket != 0) ) (*SetClientString) ( clientPacket, packetStr, packetLen );
 		wResult->int32Result = hasXMP;
 	
 		EndPerfCheck ( kAPIPerf_GetXMP );
-	XMP_EXIT_WRAPPER_KEEP_LOCK ( hasXMP )
+	XMP_EXIT
 }
     
 // -------------------------------------------------------------------------------------------------
 
-void WXMPFiles_GetThumbnail_1 ( XMPFilesRef         xmpFilesRef,
-    			                XMP_ThumbnailInfo * tnailInfo,	// ! Can be null.
-                                WXMP_Result *       wResult )
-{
-	XMP_ENTER_WRAPPER ( "WXMPFiles_GetThumbnail_1" )
-		StartPerfCheck ( kAPIPerf_GetThumbnail, "" );
-
-		XMPFiles * thiz = (XMPFiles*)xmpFilesRef;
-		bool hasTNail = thiz->GetThumbnail ( tnailInfo );
-		wResult->int32Result = hasTNail;
-	
-		EndPerfCheck ( kAPIPerf_GetThumbnail );
-	XMP_EXIT_WRAPPER	// ! No need to keep the lock, the tnail info won't change.
-}
-    
-// -------------------------------------------------------------------------------------------------
-
-void WXMPFiles_PutXMP_1 ( XMPFilesRef   xmpFilesRef,
+void WXMPFiles_PutXMP_1 ( XMPFilesRef   xmpObjRef,
                           XMPMetaRef    xmpRef,	// ! Only one of the XMP object or packet are passed.
                           XMP_StringPtr xmpPacket,
                           XMP_StringLen xmpPacketLen,
                           WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPFiles_PutXMP_1" )
+	XMP_ENTER_ObjWrite ( XMPFiles, "WXMPFiles_PutXMP_1" )
 		StartPerfCheck ( kAPIPerf_PutXMP, "" );
 	
-		XMPFiles * thiz = (XMPFiles*)xmpFilesRef;
 		if ( xmpRef != 0 ) {
 			thiz->PutXMP ( xmpRef );
 		} else {
@@ -312,21 +263,20 @@ void WXMPFiles_PutXMP_1 ( XMPFilesRef   xmpFilesRef,
 		}
 	
 		EndPerfCheck ( kAPIPerf_PutXMP );
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
     
 // -------------------------------------------------------------------------------------------------
 
-void WXMPFiles_CanPutXMP_1 ( XMPFilesRef   xmpFilesRef,
+void WXMPFiles_CanPutXMP_1 ( XMPFilesRef   xmpObjRef,
                              XMPMetaRef    xmpRef,	// ! Only one of the XMP object or packet are passed.
                              XMP_StringPtr xmpPacket,
                              XMP_StringLen xmpPacketLen,
                              WXMP_Result * wResult )
 {
-	XMP_ENTER_WRAPPER ( "WXMPFiles_CanPutXMP_1" )
+	XMP_ENTER_ObjWrite ( XMPFiles, "WXMPFiles_CanPutXMP_1" )
 		StartPerfCheck ( kAPIPerf_CanPutXMP, "" );
 	
-		XMPFiles * thiz = (XMPFiles*)xmpFilesRef;
 		if ( xmpRef != 0 ) {
 			wResult->int32Result = thiz->CanPutXMP ( xmpRef );
 		} else {
@@ -334,7 +284,7 @@ void WXMPFiles_CanPutXMP_1 ( XMPFilesRef   xmpFilesRef,
 		}
 	
 		EndPerfCheck ( kAPIPerf_CanPutXMP );
-	XMP_EXIT_WRAPPER
+	XMP_EXIT
 }
 
 // =================================================================================================
