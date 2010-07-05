@@ -274,7 +274,7 @@ namespace ID3_Support
 		/**
 		* a mere empty hull for reading in frames.
 		*/
-		ID3v2Frame():id(0),content(0),contentSize(0),flags(0),active(true),changed(false)
+		ID3v2Frame():id(0),flags(0),active(true),changed(false),content(0),contentSize(0)
 		{	
 			memset(fields, 0, FIXED_SIZE);
 		}
@@ -282,7 +282,7 @@ namespace ID3_Support
 		/**
 		*	frame constructor 
 		*/
-		ID3v2Frame( XMP_Uns32 id ):id(0),content(0),contentSize(0),flags(0),active(true),changed(false)
+		ID3v2Frame( XMP_Uns32 id ):id(0),flags(0),active(true),changed(false),content(0),contentSize(0)
 		{
 			memset(fields, 0, FIXED_SIZE);
 

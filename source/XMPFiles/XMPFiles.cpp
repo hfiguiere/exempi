@@ -872,11 +872,11 @@ XMPFiles::XMPFiles() :
 	format(kXMP_UnknownFile),
 	fileRef(0),
 	openFlags(0),
-	abortProc(0),
-	abortArg(0),
 	handler(0),
 	tempPtr(0),
-	tempUI32(0)
+	tempUI32(0),
+	abortProc(0),
+	abortArg(0)
 {
 	// Nothing more to do, clientRefs is incremented in wrapper.
 
