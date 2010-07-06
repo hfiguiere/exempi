@@ -19,13 +19,20 @@
 
 	#ifdef WIN_ENV
 		#define XMPQE_LITTLE_ENDIAN 1
-	#elif (defined(MAC_ENV) || defined(UNIX_ENV))
+	#elif defined(MAC_ENV)
 		#if __BIG_ENDIAN__
 			#define XMPQE_BIG_ENDIAN 1
 		#elif __LITTLE_ENDIAN__
 			#define XMPQE_LITTLE_ENDIAN 1
 		#else
 			#error "Neither __BIG_ENDIAN__ nor __LITTLE_ENDIAN__ is set"
+		#endif
+	#elif defined(UNIX_ENV)
+		#include "XMP_UnixEndian.h"
+		#if kBigEndianHost
+			#define XMPQE_BIG_ENDIAN 1
+		#else
+			#define XMPQE_BIG_ENDIAN 0
 		#endif
 	#else
 		#error "Unknown build environment, neither WIN_ENV nor MAC_ENV nor UNIX_ENV"

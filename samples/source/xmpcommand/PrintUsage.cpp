@@ -14,7 +14,7 @@ using namespace std;
 
 namespace XMPQE {
 
-	void PrintUsageShort(char* exename) {
+	void PrintUsageShort(const char* exename) {
 		Log::info("%s -version",exename);
 		Log::info("    Print version information for this utility");
 		Log::info("");
@@ -28,7 +28,7 @@ namespace XMPQE {
 		Log::info("");
 	}
 
-	void PrintUsageLong(char* exename) {
+	void PrintUsageLong(const char* exename) {
 		Log::info("%s -version",exename);
 		Log::info("    Print version information for this utility");
 		Log::info("%s -help",exename);
@@ -64,7 +64,7 @@ namespace XMPQE {
 		Log::info("            					into the specified mediafile.");
 		Log::info("  get <mediafile> Retrieves the XMP Packet contained in the specified mediafile.");
 		Log::info("  dump <mediafile> Prints the XMP Packet contained in the specified mediafile to standard output. ");
-		Log::info("                <<??>> USE dump ONLY for known-good-output tests, do not use get. <<??>> ");
+		Log::info("                << ?? >> USE dump ONLY for known-good-output tests, do not use get. << ?? >> ");
 		Log::info("");
 		Log::info("Examples:");
 		Log::info("%s info Sample.jpg",exename);

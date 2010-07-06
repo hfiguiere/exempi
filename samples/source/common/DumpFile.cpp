@@ -29,6 +29,8 @@
 // DumpFile does depend on XMPCore and the packetscanner from XMPFiles. 
 
 #include <stdarg.h>
+#include <cstring>
+#include <cstdlib>
 #include "globals.h"
 #include "DumpFile.h"
 #include "LargeFileAccess.hpp"

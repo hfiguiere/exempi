@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <cstring>
 #include "Log.h"
 
 using namespace std;

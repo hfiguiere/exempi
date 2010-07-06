@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <cstring>
 
 //some global constants / sanity checking
 #include "globals.h"

@@ -9,6 +9,11 @@
 #ifndef __ACTIONS_h__
 #define __ACTIONS_h__ 1
 
+// Hack because of the defines.
+#ifdef VERSION
+#undef VERSION
+#endif
+
 class Actions {
 	public:
 		enum ACTION_TYPE { NONE, VERSION, INFO, PUT, GET, DUMP };

@@ -10,8 +10,8 @@
 #define __XMPQE_PRINT_USAGE_h__ 1
 
 namespace XMPQE {
-	void PrintUsageShort(char* exename);
-	void PrintUsageLong(char* exename);
+	void PrintUsageShort(const char* exename);
+	void PrintUsageLong(const char* exename);
 }
 
 #endif

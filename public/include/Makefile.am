@@ -44,4 +44,6 @@ noinst_HEADERS = TXMPFiles.hpp  TXMPIterator.hpp \
 	TXMPMeta.hpp  TXMPUtils.hpp \
 	XMP.hpp  XMP_Version.h\
 	XMP.incl_cpp\
-	XMP_Const.h XMP_Environment.h
+	XMP_Const.h XMP_Environment.h \
+	XMP_UnixEndian.h \
+	$(NULL)
