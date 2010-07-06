@@ -173,7 +173,7 @@ case $build_vendor in
 	apple)
 		EXEMPI_PLATFORM_DEF=MAC_ENV
 		CPPFLAGS="$CPPFLAGS -I/Developer/Headers/FlatCarbon"
-		LDFLAGS="$LDFLAGS -framework CoreServices -framework QuickTime"
+		LDFLAGS="$LDFLAGS -framework CoreServices"
 		;;
 	*)
 		EXEMPI_PLATFORM_DEF=UNIX_ENV
