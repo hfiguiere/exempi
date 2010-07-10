@@ -184,7 +184,9 @@ int xmp_get_error()
 bool xmp_init()
 {
 	// no need to initialize anything else.
-	return SXMPFiles::Initialize();
+	// XMP SDK 5.2.2 needs this because it has been lobotomized of local text conversion
+	// the one that was done in Exempi with libiconv.
+	return SXMPFiles::Initialize(kXMPFiles_IgnoreLocalText);
 }
 
 
