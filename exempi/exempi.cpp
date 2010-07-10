@@ -183,13 +183,21 @@ int xmp_get_error()
 
 bool xmp_init()
 {
-	// no need to initialize anything else.
-	return SXMPFiles::Initialize();
+	RESET_ERROR;
+	try {
+		// no need to initialize anything else.
+		return SXMPFiles::Initialize();
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	return false;
 }
 
 
 void xmp_terminate()
 {
+	RESET_ERROR;
 	SXMPFiles::Terminate();
 }
 
