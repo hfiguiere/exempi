@@ -125,7 +125,7 @@ int test_main(int argc, char *argv[])
 	BOOST_CHECK(xmp_get_property(xmp, NS_EXIF, "DateTimeOriginal", 
 								 the_prop, NULL));
 	BOOST_CHECK(xmp_get_error() == 0);
-	BOOST_CHECK(strcmp("2005-12-25T12:42:42Z", 
+	BOOST_CHECK(strcmp("2005-12-25T12:42:42", 
 							 xmp_string_cstr(the_prop)) == 0); 	
 
 	XmpDateTime the_dt2;

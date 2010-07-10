@@ -109,20 +109,33 @@ int test_main(int argc, char *argv[])
 									   NULL, "x-default", 
 									   the_lang, the_prop, &bits));
 	BOOST_CHECK(strcmp("x-default", xmp_string_cstr(the_lang)) == 0); 
+	BOOST_CHECK(strcmp("2006, Hubert Figuiere", xmp_string_cstr(the_prop)) == 0);
+
+	// This will modify the default property.
 	BOOST_CHECK(xmp_set_localized_text(xmp, NS_DC, "rights",
 									   "en", "en-CA", 
-									   xmp_string_cstr(the_prop), 0));	
+									   "Foo Bar", 0));
+	// Ask for the en_US alternative.							
 	BOOST_CHECK(xmp_get_localized_text(xmp, NS_DC, "rights",
 									   "en", "en-US", 
 									   the_lang, the_prop, &bits));
+	// And we only got the "en-CA" as the only "en"
 	BOOST_CHECK(strcmp("en-US", xmp_string_cstr(the_lang)) != 0); 
 	BOOST_CHECK(strcmp("en-CA", xmp_string_cstr(the_lang)) == 0); 
+	// Check its value
+	BOOST_CHECK(strcmp("Foo Bar", xmp_string_cstr(the_prop)) == 0);
+	// The default property is supposed to have been changed too.
+	BOOST_CHECK(xmp_get_localized_text(xmp, NS_DC, "rights",
+									   NULL, "x-default", 
+									   the_lang, the_prop, &bits));
+	BOOST_CHECK(strcmp("Foo Bar", xmp_string_cstr(the_prop)) == 0);
 
+	// This should also remove the property x-default. (SDK 5.2.2)
 	BOOST_CHECK(xmp_delete_localized_text(xmp, NS_DC, "rights",
 										  "en", "en-CA"));
-	BOOST_CHECK(xmp_has_property(xmp, NS_DC, "rights[1]"));
+
+	BOOST_CHECK(!xmp_has_property(xmp, NS_DC, "rights[1]"));
 	BOOST_CHECK(!xmp_has_property(xmp, NS_DC, "rights[2]"));
-	
 
 	xmp_string_free(the_lang);
 

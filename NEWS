@@ -1,13 +1,13 @@
 2.2.0 - 2010/07/04
 
 - Upgrade XMPCore to Adobe XMP 5.1.2
-  - Quicktime support now works
-  - Reconciliation with ID3v2
-  - "Blessed" 64-bits support (we already had it)
+  - Quicktime support now works without Quicktime.
+  - Reconciliation with ID3v2.
+  - "Blessed" 64-bits support (we already had it in exempi).
   - Slight change in the way XMP are written for MWG compliance.
-  - Fixed a serious bug with RIFF
+  - Fixed a serious bug with RIFF.
   - Change in the way local text encoding is dealt with.
-- 
+- Update unit tests.
 
 2.1.1 - 2009/06/30
 
