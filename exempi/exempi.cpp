@@ -183,15 +183,23 @@ int xmp_get_error()
 
 bool xmp_init()
 {
-	// no need to initialize anything else.
-	// XMP SDK 5.2.2 needs this because it has been lobotomized of local text conversion
-	// the one that was done in Exempi with libiconv.
-	return SXMPFiles::Initialize(kXMPFiles_IgnoreLocalText);
+	RESET_ERROR;
+	try {
+		// no need to initialize anything else.
+		// XMP SDK 5.2.2 needs this because it has been lobotomized of local text conversion
+		// the one that was done in Exempi with libiconv.
+		return SXMPFiles::Initialize(kXMPFiles_IgnoreLocalText);
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	return false;
 }
 
 
 void xmp_terminate()
 {
+	RESET_ERROR;
 	SXMPFiles::Terminate();
 }
 
