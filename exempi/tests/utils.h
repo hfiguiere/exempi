@@ -1,7 +1,7 @@
 /*
  * exempi - utils.h
  *
- * Copyright (C) 2007 Hubert Figuiere
+ * Copyright (C) 2007,2010 Hubert Figuiere
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,8 @@ extern std::string g_testfile;
 extern std::string g_src_testdir;
 
 void prepare_test(int argc, char * argv[], const char * filename);
+
+bool copy_file(const std::string & source, const std::string & dest);
 
 class LeakTracker
 {

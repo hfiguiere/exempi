@@ -1,7 +1,7 @@
 /*
  * exempi - test-xmpfile-write.cpp
  *
- * Copyright (C) 2007-2008 Hubert Figuiere
+ * Copyright (C) 2007-2008,2010 Hubert Figuiere
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,9 +69,8 @@ int test_main(int argc, char *argv[])
 
 	BOOST_CHECK(xmp_files_free(f));
 
-	char buf[1024];
-	snprintf(buf, 1024, "cp %s test.jpg ; chmod u+w test.jpg", g_testfile.c_str());
-	BOOST_CHECK(system(buf) != -1);
+	BOOST_CHECK(copy_file(g_testfile, "test.jpg"));
+	BOOST_CHECK(chmod("test.jpg", S_IRUSR|S_IWUSR) == 0);
 	
 	f = xmp_files_open_new("test.jpg", XMP_OPEN_FORUPDATE);
 

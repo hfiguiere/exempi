@@ -1,7 +1,7 @@
 /*
  * exempi - utils.cpp
  *
- * Copyright (C) 2007 Hubert Figuiere
+ * Copyright (C) 2007,2010 Hubert Figuiere
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,8 @@
  */
 
 #include <cstdio>
-
+#include <cstdlib>
+     
 #include <boost/test/unit_test.hpp>
 
 #include "utils.h"
@@ -60,6 +61,13 @@ void prepare_test(int argc, char * argv[], const char *filename)
 	}
 }
 
+
+bool copy_file(const std::string & source, const std::string & dest)
+{
+	std::string command = "cp ";
+	command += source + " " + dest;
+	return (system(command.c_str()) >= 0);
+}
 
 
 #ifdef HAVE_VALGRIND_MEMCHECK_H

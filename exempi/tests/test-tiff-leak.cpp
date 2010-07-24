@@ -1,7 +1,7 @@
 /*
  * exempi - test-tiff-leak.cpp
  *
- * Copyright (C) 2007-2008 Hubert Figuiere
+ * Copyright (C) 2007-2008,2010 Hubert Figuiere
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,9 +57,7 @@ int test_main(int argc, char *argv[])
 
 	std::string orig_tiff_file = g_src_testdir 
 		+ "../../samples/testfiles/BlueSquare.tif";
-	std::string command = "cp ";
-	command += orig_tiff_file + " test.tif";
-	BOOST_CHECK(system(command.c_str()) >= 0);
+	BOOST_CHECK(copy_file(orig_tiff_file, "test.tif"));
 	BOOST_CHECK(chmod("test.tif", S_IRUSR|S_IWUSR) == 0);
 	BOOST_CHECK(xmp_init());
 

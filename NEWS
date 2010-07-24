@@ -8,6 +8,7 @@
   - Fixed a serious bug with RIFF.
   - Change in the way local text encoding is dealt with.
 - Update unit tests.
+  - Refactor the fixtures.
 
 2.1.1 - 2009/06/30
 
