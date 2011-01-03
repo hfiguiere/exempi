@@ -34,6 +34,7 @@ exempi/tests/test2
 exempi/tests/test3
 exempi/tests/testinit
 exempi/tests/testfdo18635
+exempi/tests/testcpp
 exempi/doc/Doxyfile
 samples/source/dumpmainxmp
 samples/source/dumpxmp

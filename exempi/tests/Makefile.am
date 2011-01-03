@@ -1,7 +1,7 @@
 #
 # exempi - Makefile.am
 #
-# Copyright (C) 2007-2008 Hubert Figuiere
+# Copyright (C) 2007-2011 Hubert Figuiere
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,14 +35,14 @@
 #
 
 
-INCLUDES = -I$(srcdir)/.. -I$(top_srcdir)/public/include
+INCLUDES = -I$(srcdir)/.. -I$(top_srcdir)/public/include -I$(top_srcdir)
 if WITH_UNIT_TEST
 check_PROGRAMS = testexempicore testserialise testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
-	test3 testinit testfdo18635
+	test3 testinit testfdo18635 testcpp
 TESTS = testcore.sh testinit testexempicore testserialise testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
-	test3 testfdo18635
+	test3 testfdo18635 testcpp
 TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) BOOST_TEST_CATCH_SYSTEM_ERRORS=no @VALGRIND@
 endif
 check_SCRIPTS = testcore.sh
@@ -90,3 +90,7 @@ test3_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
 testfdo18635_SOURCES = test-bgo.cpp utils.cpp
 testfdo18635_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
 testfdo18635_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
+
+testcpp_SOURCES = testcpp.cpp utils.cpp
+testcpp_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+testcpp_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
