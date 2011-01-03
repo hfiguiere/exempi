@@ -40,6 +40,7 @@
 #include <string>
 
 #include <exempi/xmp.h>
+#include <exempi/xmp++.hpp>
 
 
 enum {
@@ -167,12 +168,11 @@ int main(int argc, char **argv)
 /** Helper to get the XMP for the file */
 static XmpPtr get_xmp_from_file(const char * filename, bool no_reconcile)
 {
-	XmpFilePtr f = xmp_files_open_new(filename, 
-					(XmpOpenFileOptions)(XMP_OPEN_READ | (no_reconcile ? XMP_OPEN_ONLYXMP : 0)));
+	xmp::ScopedPtr<XmpFilePtr> f(xmp_files_open_new(filename, 
+					(XmpOpenFileOptions)(XMP_OPEN_READ | (no_reconcile ? XMP_OPEN_ONLYXMP : 0))));
 	if(f) {
 		XmpPtr xmp = xmp_files_get_new_xmp(f);
 		xmp_files_close(f, XMP_CLOSE_NOOPTION);
-		xmp_files_free(f);
 		return xmp;
 	}
 	return NULL;
@@ -182,25 +182,21 @@ static XmpPtr get_xmp_from_file(const char * filename, bool no_reconcile)
 static void dump_xmp(const char *filename, bool no_reconcile, FILE *outio)
 {
 	printf("dump_xmp for file %s\n", filename);
-	XmpPtr xmp = get_xmp_from_file(filename, no_reconcile);
+	xmp::ScopedPtr<XmpPtr> xmp(get_xmp_from_file(filename, no_reconcile));
 	
-	XmpStringPtr output = xmp_string_new();
+	xmp::ScopedPtr<XmpStringPtr> output(xmp_string_new());
 
 	xmp_serialize_and_format(xmp, output, 
 							 XMP_SERIAL_OMITPACKETWRAPPER, 
 							 0, "\n", " ", 0);
 							 
 	fprintf(outio, "%s", xmp_string_cstr(output));
-		
-	xmp_string_free(output);
-
-	xmp_free(xmp);
 }
 
 /** get an xmp prop and dump it to the output IO */
 static void get_xmp_prop(const char * filename, const std::string & value_name, bool no_reconcile, FILE *outio)
 {
-	XmpPtr xmp = get_xmp_from_file(filename, no_reconcile);
+	xmp::ScopedPtr<XmpPtr> xmp(get_xmp_from_file(filename, no_reconcile));
 		
 	std::string prefix;
 	size_t idx = value_name.find(':');
@@ -208,22 +204,18 @@ static void get_xmp_prop(const char * filename, const std::string & value_name, 
 		prefix = std::string(value_name, 0, idx);
 	}
 			
-	XmpStringPtr property = xmp_string_new();
-	XmpStringPtr ns = xmp_string_new();
+	xmp::ScopedPtr<XmpStringPtr> property(xmp_string_new());
+	xmp::ScopedPtr<XmpStringPtr> ns(xmp_string_new());
 	xmp_prefix_namespace_uri(prefix.c_str(), ns);
 	xmp_get_property(xmp, xmp_string_cstr(ns), value_name.c_str(), property, NULL);
 	fprintf(outio, "%s\n", xmp_string_cstr(property));
-	xmp_string_free(ns);
-	xmp_string_free(property);
-
-	xmp_free(xmp);
 }
 
 
 static void set_xmp_prop(const char * filename, const std::string & value_name, const std::string & prop_value,
 	bool no_reconcile, bool write_in_place, FILE *outio)
 {
-	XmpPtr xmp = get_xmp_from_file(filename, no_reconcile);
+	xmp::ScopedPtr<XmpPtr> xmp(get_xmp_from_file(filename, no_reconcile));
 	
 	std::string prefix;
 	size_t idx = value_name.find(':');
@@ -231,18 +223,16 @@ static void set_xmp_prop(const char * filename, const std::string & value_name, 
 		prefix = std::string(value_name, 0, idx);
 	}
 
-	XmpStringPtr ns = xmp_string_new();
+	xmp::ScopedPtr<XmpStringPtr> ns(xmp_string_new());
 	xmp_prefix_namespace_uri(prefix.c_str(), ns);
 	if(!xmp_set_property(xmp, xmp_string_cstr(ns), value_name.c_str() + idx + 1, prop_value.c_str(), 0)) {
 		fprintf(stderr, "set error = %d\n", xmp_get_error());
 	}
 
-	xmp_string_free(ns);
-
 	if(write_in_place) {
-		XmpFilePtr f = xmp_files_open_new(filename, 
+		xmp::ScopedPtr<XmpFilePtr> f(xmp_files_open_new(filename, 
 						(XmpOpenFileOptions)(XMP_OPEN_FORUPDATE 
-							| (no_reconcile ? XMP_OPEN_ONLYXMP : 0)));
+							| (no_reconcile ? XMP_OPEN_ONLYXMP : 0))));
 	
 		if(!xmp_files_can_put_xmp(f, xmp)) {
 			fprintf(stderr, "can put xmp error = %d\n", xmp_get_error());		 				
@@ -253,9 +243,7 @@ static void set_xmp_prop(const char * filename, const std::string & value_name, 
 		if(!xmp_files_close(f, XMP_CLOSE_SAFEUPDATE)) {
 			fprintf(stderr, "close error = %d\n", xmp_get_error());
 		}
-		xmp_files_free(f);
 	}		
-	xmp_free(xmp);
 }
 
 
