@@ -40,6 +40,12 @@ DIST_SUBDIRS = tests doc
 exempidir = $(includedir)/@EXEMPI_INCLUDE_BASE@/exempi
 exempi_HEADERS = xmp.h xmpconsts.h xmperrors.h xmp++.hpp
 
+bin_PROGRAMS = exempi
+
+exempi_SOURCES = main.cpp
+exempi_CPPFLAGS = -I$(srcdir)/..
+exempi_LDADD = libexempi.la
+
 INCLUDES = -I$(top_srcdir)/public/include
 
 AM_CPPFLAGS = -Wall -D@EXEMPI_PLATFORM_DEF@=1

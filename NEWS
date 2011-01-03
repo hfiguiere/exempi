@@ -1,4 +1,6 @@
-2.2.0 - 2010/07/04
+2.2.0 - 2011/01/02
+
+- New 'exempi' command line tool.
 
 - Upgrade XMPCore to Adobe XMP 5.1.2
   - Quicktime support now works without Quicktime.

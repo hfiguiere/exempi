@@ -1,6 +1,6 @@
 exempi is a port of Adobe XMP SDK to work on UNIX and to be build with 
 GNU automake.
-It includes XMPCore and XMPFiles, and exempi, a C-based API.
+It includes XMPCore and XMPFiles, libexempi, a C-based API and exempi a command line tool.
 
 It is maintained by Hubert Figuiere <hub@figuiere.net>
 

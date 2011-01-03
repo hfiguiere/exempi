@@ -23,6 +23,7 @@ shave-libtool
 .deps
 libtool
 exempi/exempi-2.0.pc
+exempi/exempi
 exempi/tests/test.jpg
 exempi/tests/testexempicore
 exempi/tests/testserialise
