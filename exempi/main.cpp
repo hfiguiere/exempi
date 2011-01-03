@@ -48,11 +48,12 @@ enum {
 	ACTION_GET
 };
 
-void process_file(const char * filename, bool no_reconcile, bool dump_xml, bool write_in_place,
+static void process_file(const char * filename, bool no_reconcile, bool dump_xml, bool write_in_place,
 	int action, const std::string & value_name, const std::string & prop_value, const std::string & output);
 
 
-void fatal_error(const char * error)
+/** fatal error in argument. Display and quit. */
+static void fatal_error(const char * error)
 {
 	fprintf(stderr, "ERROR: %s\n", error);
 	exit(128);
@@ -61,7 +62,7 @@ void fatal_error(const char * error)
 
 /** Print the usage, and quit. Exit code is 255.
  */
-void usage()
+static void usage()
 {
 	fprintf(stderr, "Exempi version %s\n", VERSION);
 	fprintf(stderr, "exempi { -h | [ -R ] [ -x ] [ { -w | -o <file> } ] [ { -g <prop_name> | -s <prop_name> -v <value> }  ] } <files>\n");
@@ -163,104 +164,103 @@ int main(int argc, char **argv)
 }
 
 
-/** dump the XMP xml to the output IO */
-void dump_xmp(const char *filename, bool no_reconcile, FILE *outio)
+/** Helper to get the XMP for the file */
+static XmpPtr get_xmp_from_file(const char * filename, bool no_reconcile)
 {
-	printf("dump_xmp for file %s\n", filename);
 	XmpFilePtr f = xmp_files_open_new(filename, 
 					(XmpOpenFileOptions)(XMP_OPEN_READ | (no_reconcile ? XMP_OPEN_ONLYXMP : 0)));
 	if(f) {
-		XmpPtr xmp = xmp_new_empty();
-		xmp_files_get_xmp(f, xmp);
-	
-		XmpStringPtr output = xmp_string_new();
-	
-		xmp_serialize_and_format(xmp, output, 
-								 XMP_SERIAL_OMITPACKETWRAPPER, 
-								 0, "\n", " ", 0);
-								 
-		fprintf(outio, "%s", xmp_string_cstr(output));
-			
-		xmp_string_free(output);
-		xmp_free(xmp);
+		XmpPtr xmp = xmp_files_get_new_xmp(f);
 		xmp_files_close(f, XMP_CLOSE_NOOPTION);
 		xmp_files_free(f);
+		return xmp;
 	}
+	return NULL;
+}
+
+/** dump the XMP xml to the output IO */
+static void dump_xmp(const char *filename, bool no_reconcile, FILE *outio)
+{
+	printf("dump_xmp for file %s\n", filename);
+	XmpPtr xmp = get_xmp_from_file(filename, no_reconcile);
+	
+	XmpStringPtr output = xmp_string_new();
+
+	xmp_serialize_and_format(xmp, output, 
+							 XMP_SERIAL_OMITPACKETWRAPPER, 
+							 0, "\n", " ", 0);
+							 
+	fprintf(outio, "%s", xmp_string_cstr(output));
+		
+	xmp_string_free(output);
+
+	xmp_free(xmp);
 }
 
 /** get an xmp prop and dump it to the output IO */
-void get_xmp_prop(const char * filename, const std::string & value_name, bool no_reconcile, FILE *outio)
+static void get_xmp_prop(const char * filename, const std::string & value_name, bool no_reconcile, FILE *outio)
 {
-	XmpFilePtr f = xmp_files_open_new(filename, 
-					(XmpOpenFileOptions)(XMP_OPEN_READ | (no_reconcile ? XMP_OPEN_ONLYXMP : 0)));
-	if(f) {
-		XmpPtr xmp = xmp_new_empty();
-		xmp_files_get_xmp(f, xmp);
-
-		uint32_t prop_bits;
+	XmpPtr xmp = get_xmp_from_file(filename, no_reconcile);
 		
-		std::string prefix;
-		size_t idx = value_name.find(':');
-		if(idx != std::string::npos) {
-			prefix = std::string(value_name, 0, idx);
-		}
-				
-		XmpStringPtr property = xmp_string_new();
-		XmpStringPtr ns = xmp_string_new();
-		xmp_prefix_namespace_uri(prefix.c_str(), ns);
-		xmp_get_property(xmp, xmp_string_cstr(ns), value_name.c_str(), property, &prop_bits);
-		fprintf(outio, "%s\n", xmp_string_cstr(property));
-		xmp_string_free(ns);
-		xmp_string_free(property);
-
-		xmp_free(xmp);
-		xmp_files_close(f, XMP_CLOSE_NOOPTION);
-		xmp_files_free(f);
+	std::string prefix;
+	size_t idx = value_name.find(':');
+	if(idx != std::string::npos) {
+		prefix = std::string(value_name, 0, idx);
 	}
+			
+	XmpStringPtr property = xmp_string_new();
+	XmpStringPtr ns = xmp_string_new();
+	xmp_prefix_namespace_uri(prefix.c_str(), ns);
+	xmp_get_property(xmp, xmp_string_cstr(ns), value_name.c_str(), property, NULL);
+	fprintf(outio, "%s\n", xmp_string_cstr(property));
+	xmp_string_free(ns);
+	xmp_string_free(property);
+
+	xmp_free(xmp);
 }
 
 
-void set_xmp_prop(const char * filename, const std::string & value_name, const std::string & prop_value,
+static void set_xmp_prop(const char * filename, const std::string & value_name, const std::string & prop_value,
 	bool no_reconcile, bool write_in_place, FILE *outio)
 {
-	XmpFilePtr f = xmp_files_open_new(filename, 
-					(XmpOpenFileOptions)((write_in_place ? XMP_OPEN_FORUPDATE : XMP_OPEN_READ) 
-						| (no_reconcile ? XMP_OPEN_ONLYXMP : 0)));
-	if(f) {
-		XmpPtr xmp = xmp_files_get_new_xmp(f);
-
-		std::string prefix;
-		size_t idx = value_name.find(':');
-		if(idx != std::string::npos) {
-			prefix = std::string(value_name, 0, idx);
-		}
-
-		XmpStringPtr ns = xmp_string_new();
-		xmp_prefix_namespace_uri(prefix.c_str(), ns);
-		if(!xmp_set_property(xmp, xmp_string_cstr(ns), value_name.c_str() + idx + 1, prop_value.c_str(), 0)) {
-			fprintf(stderr, "set error = %d\n", xmp_get_error());
-		}
-
-		xmp_string_free(ns);
-
-		if(write_in_place) {
-			if(!xmp_files_can_put_xmp(f, xmp)) {
-				fprintf(stderr, "can put xmp error = %d\n", xmp_get_error());		 				
-			}
-		 	if(!xmp_files_put_xmp(f, xmp)) {
-				fprintf(stderr, "put xmp error = %d\n", xmp_get_error());		 	
-		 	}
-			if(!xmp_files_close(f, XMP_CLOSE_SAFEUPDATE)) {
-				fprintf(stderr, "close error = %d\n", xmp_get_error());
-			}
-		}		
-		xmp_free(xmp);
-		xmp_files_free(f);
+	XmpPtr xmp = get_xmp_from_file(filename, no_reconcile);
+	
+	std::string prefix;
+	size_t idx = value_name.find(':');
+	if(idx != std::string::npos) {
+		prefix = std::string(value_name, 0, idx);
 	}
+
+	XmpStringPtr ns = xmp_string_new();
+	xmp_prefix_namespace_uri(prefix.c_str(), ns);
+	if(!xmp_set_property(xmp, xmp_string_cstr(ns), value_name.c_str() + idx + 1, prop_value.c_str(), 0)) {
+		fprintf(stderr, "set error = %d\n", xmp_get_error());
+	}
+
+	xmp_string_free(ns);
+
+	if(write_in_place) {
+		XmpFilePtr f = xmp_files_open_new(filename, 
+						(XmpOpenFileOptions)(XMP_OPEN_FORUPDATE 
+							| (no_reconcile ? XMP_OPEN_ONLYXMP : 0)));
+	
+		if(!xmp_files_can_put_xmp(f, xmp)) {
+			fprintf(stderr, "can put xmp error = %d\n", xmp_get_error());		 				
+		}
+		if(!xmp_files_put_xmp(f, xmp)) {
+			fprintf(stderr, "put xmp error = %d\n", xmp_get_error());		 	
+		}
+		if(!xmp_files_close(f, XMP_CLOSE_SAFEUPDATE)) {
+			fprintf(stderr, "close error = %d\n", xmp_get_error());
+		}
+		xmp_files_free(f);
+	}		
+	xmp_free(xmp);
 }
 
 
-void process_file(const char * filename, bool no_reconcile, bool write_in_place, bool dump_xml,
+/** process a file with all the options */
+static void process_file(const char * filename, bool no_reconcile, bool write_in_place, bool dump_xml,
 	int action, const std::string & value_name, const std::string & prop_value,
 	const std::string & output)
 {
