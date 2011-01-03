@@ -358,12 +358,16 @@ bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp);
 bool xmp_files_can_put_xmp(XmpFilePtr xf, XmpPtr xmp);
 bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp);
 
-/** Get the format info 
- * @param format type identifier
- * @param option the options for the file format handler
- * @return false on error
+/** Get the file info from the open file
+ * @param xf the file object
+ * @param[out] filePath the file path object to store the path in. Pass NULL if not needed.
+ * @param[out] options the options for open. Pass NULL if not needed.
+ * @param[out] file_format the detected file format. Pass NULL if not needed.
+ * @param[out] handler_flags the format options like from %xmp_files_get_format_info.
+ * @return false in case of error.
  */
-bool xmp_files_get_format_info(XmpFileType format, XmpFileFormatOptions * options);
+bool xmp_files_get_file_info(XmpFilePtr xf, XmpStringPtr filePath, XmpOpenFileOptions *options,
+	XmpFileType * file_format, XmpFileFormatOptions *handler_flags);
 
 /** Free a XmpFilePtr
  * @param xf the file ptr. Cannot be NULL
@@ -372,6 +376,18 @@ bool xmp_files_get_format_info(XmpFileType format, XmpFileFormatOptions * option
  */
 bool xmp_files_free(XmpFilePtr xf);
 
+/** Get the format info 
+ * @param format type identifier
+ * @param option the options for the file format handler
+ * @return false on error
+ */
+bool xmp_files_get_format_info(XmpFileType format, XmpFileFormatOptions * options);
+
+/** Check the file format of a file. Use the same logic as in xmp_files_open()
+ * @param filePath the path to the file
+ * @return XMP_FT_UNKNOWN on error or if the file type is unknown
+ */
+XmpFileType xmp_files_check_file_format(const char *filePath);
 
 /** Register a new namespace to add properties to
  *  This is done automatically when reading the metadata block

@@ -385,21 +385,25 @@ bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp)
 	return true;
 }
 
-bool xmp_files_get_format_info(XmpFileType format, XmpFileFormatOptions * options)
+bool xmp_files_get_file_info(XmpFilePtr xf, XmpStringPtr filePath, XmpOpenFileOptions *options,
+	XmpFileType * file_format, XmpFileFormatOptions *handler_flags)
 {
+	CHECK_PTR(xf, false);
 	RESET_ERROR;
-
-	bool result = false;
+	
+	bool result = false;	
+	SXMPFiles *txf = (SXMPFiles*)xf;
 	try {
-		result = SXMPFiles::GetFormatInfo(format, (XMP_OptionBits*)options);	
+		result = txf->GetFileInfo(STRING(filePath), (XMP_OptionBits *)options, 
+			(XMP_FileFormat *)file_format, (XMP_OptionBits *)handler_flags);
 	}
 	catch(const XMP_Error & e) {
 		set_error(e);
 		return false;
 	}
-	return result;	
+	
+	return result;
 }
-
 
 bool xmp_files_free(XmpFilePtr xf)
 {
@@ -416,6 +420,36 @@ bool xmp_files_free(XmpFilePtr xf)
 	return true;
 }
 
+bool xmp_files_get_format_info(XmpFileType format, XmpFileFormatOptions * options)
+{
+	RESET_ERROR;
+
+	bool result = false;
+	try {
+		result = SXMPFiles::GetFormatInfo(format, (XMP_OptionBits*)options);	
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+		return false;
+	}
+	return result;	
+}
+
+XmpFileType xmp_files_check_file_format(const char *filePath)
+{
+	CHECK_PTR(filePath, XMP_FT_UNKNOWN);
+	RESET_ERROR;
+
+	XmpFileType file_type = XMP_FT_UNKNOWN;
+	try {
+		file_type = (XmpFileType)SXMPFiles::CheckFileFormat(filePath);	
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+		return XMP_FT_UNKNOWN;
+	}
+	return file_type;
+}
 
 XmpPtr xmp_new_empty()
 {

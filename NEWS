@@ -10,6 +10,8 @@
 - Update unit tests.
   - Refactor the fixtures.
 - New: API xmp_files_get_format_info().
+- New: API xmp_files_check_file_format().
+- New: API xmp_files_get_file_info().
 
 2.1.1 - 2009/06/30
 

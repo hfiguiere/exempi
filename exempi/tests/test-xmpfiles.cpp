@@ -65,6 +65,20 @@ int test_main(int argc, char * argv[])
 		exit(128);
 	}
 
+	BOOST_CHECK(xmp_files_check_file_format(g_testfile.c_str()) == XMP_FT_JPEG);
+
+	XmpStringPtr file_path = xmp_string_new();
+	XmpOpenFileOptions options;
+	XmpFileType file_format;
+	XmpFileFormatOptions handler_flags;
+	BOOST_CHECK(xmp_files_get_file_info(f, file_path, &options, &file_format, &handler_flags));
+	BOOST_CHECK(options == XMP_OPEN_READ);
+	BOOST_CHECK(file_format == XMP_FT_JPEG);
+	// the value check might break at each SDK update. You have been warned.
+	BOOST_CHECK(handler_flags == 0x27f);
+	BOOST_CHECK(g_testfile == xmp_string_cstr(file_path));
+	xmp_string_free(file_path);
+
 	XmpPtr xmp = xmp_new_empty();
 
 	BOOST_CHECK(xmp != NULL);
