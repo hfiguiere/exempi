@@ -80,8 +80,19 @@ int test_main(int argc, char * argv[])
 	BOOST_CHECK(xmp_free(xmp));
 
 	BOOST_CHECK(xmp_files_free(f));
-	xmp_terminate();
 
+	XmpFileFormatOptions formatOptions;
+	
+	// the value check might break at each SDK update. You have been warned.
+	BOOST_CHECK(xmp_files_get_format_info(XMP_FT_JPEG, &formatOptions));
+	BOOST_CHECK(formatOptions == 0x27f);
+	BOOST_CHECK(xmp_files_get_format_info(XMP_FT_GIF, &formatOptions));
+	BOOST_CHECK(formatOptions == 0x46b);
+	BOOST_CHECK(xmp_files_get_format_info(XMP_FT_PNG, &formatOptions));
+	BOOST_CHECK(formatOptions == 0x46b);
+
+	xmp_terminate();
+	
 	BOOST_CHECK(!g_lt->check_leaks());
 	BOOST_CHECK(!g_lt->check_errors());
 	return 0;

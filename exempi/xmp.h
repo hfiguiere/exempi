@@ -72,6 +72,8 @@ typedef enum {
 											  * don't use a smart handler. */
 	XMP_OPEN_LIMITSCANNING  = 0x00000080, /**< Only packet scan files "known" 
 										   * to need scanning. */
+	XMP_OPEN_REPAIR_FILE    = 0x00000100, /**< Attempt to repair a file opened for update, 
+										   * default is to not open (throw an exception). */
 	XMP_OPEN_INBACKGROUND   = 0x10000000  /**< Set if calling from background 
 										   * thread. */
 } XmpOpenFileOptions;
@@ -142,6 +144,24 @@ typedef enum {
 	XMP_FT_UNKNOWN  = 0x20202020UL   /* '    ' */
 } XmpFileType;
 
+
+typedef enum {
+
+	XMP_FMT_CAN_INJECT_XMP = 0x00000001,
+	XMP_FMT_CAN_EXPAND = 0x00000002,
+	XMP_FMT_CAN_REWRITE = 0x00000004,
+	XMP_FMT_PREFERS_IN_PLACE = 0x00000008,
+	XMP_FMT_CAN_RECONCILE = 0x00000010,
+	XMP_FMT_ALLOWS_ONLY_XMP = 0x00000020,
+	XMP_FMT_RETURNS_RAW_PACKET = 0x00000040,
+	XMP_FMT_HANDLER_OWNS_FILE = 0x00000100,
+	XMP_FMT_ALLOW_SAFE_UPDATE = 0x00000200,
+	XMP_FMT_NEEDS_READONLY_PACKET = 0x00000400,
+	XMP_FMT_USE_SIDECAR_XMP = 0x00000800,
+	XMP_FMT_FOLDER_BASED_FORMAT = 0x00001000,
+
+	_XMP_FMT_LAST
+} XmpFileFormatOptions;
 
 
 
@@ -337,6 +357,13 @@ bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp);
 
 bool xmp_files_can_put_xmp(XmpFilePtr xf, XmpPtr xmp);
 bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp);
+
+/** Get the format info 
+ * @param format type identifier
+ * @param option the options for the file format handler
+ * @return false on error
+ */
+bool xmp_files_get_format_info(XmpFileType format, XmpFileFormatOptions * options);
 
 /** Free a XmpFilePtr
  * @param xf the file ptr. Cannot be NULL

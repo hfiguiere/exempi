@@ -186,7 +186,7 @@ bool xmp_init()
 	RESET_ERROR;
 	try {
 		// no need to initialize anything else.
-		// XMP SDK 5.2.2 needs this because it has been lobotomized of local text conversion
+		// XMP SDK 5.1.2 needs this because it has been lobotomized of local text conversion
 		// the one that was done in Exempi with libiconv.
 		return SXMPFiles::Initialize(kXMPFiles_IgnoreLocalText);
 	}
@@ -223,6 +223,8 @@ bool xmp_register_namespace(const char *namespaceURI,
 
 bool xmp_namespace_prefix(const char *ns, XmpStringPtr prefix)
 {
+	CHECK_PTR(ns, false);
+	RESET_ERROR;
 	try {
 		return SXMPMeta::GetNamespacePrefix(ns,
 											STRING(prefix));
@@ -236,6 +238,8 @@ bool xmp_namespace_prefix(const char *ns, XmpStringPtr prefix)
 
 bool xmp_prefix_namespace_uri(const char *prefix, XmpStringPtr ns)
 {
+	CHECK_PTR(prefix, false);
+	RESET_ERROR;
 	try {
 		return SXMPMeta::GetNamespaceURI(prefix, STRING(ns));
 	}
@@ -379,6 +383,21 @@ bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp)
 		return false;
 	}
 	return true;
+}
+
+bool xmp_files_get_format_info(XmpFileType format, XmpFileFormatOptions * options)
+{
+	RESET_ERROR;
+
+	bool result = false;
+	try {
+		result = SXMPFiles::GetFormatInfo(format, (XMP_OptionBits*)options);	
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+		return false;
+	}
+	return result;	
 }
 
 
