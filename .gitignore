@@ -44,4 +44,5 @@ samples/source/xmpfilescoverage
 samples/source/customschema
 samples/source/modifyingxmp
 samples/source/readingxmp
+samples/source/xmpcommandtool
 samples/source/xmpcoverageLog.txt
