@@ -16,6 +16,11 @@
 - New: API xmp_files_get_file_info().
 - New: C++ helpers in xmp++.hpp.
 
+Bug fixes:
+
+- Bug #37747: mismatch delete/delete[] and new/new[] (from Meego 
+  https://bugs.meego.com/show_bug.cgi?id=14661)
+
 2.1.1 - 2009/06/30
 
 New features:

@@ -231,8 +231,8 @@ private:
 			//TODO intergrate in clear()
 			void release() // avoid terminus free() since subject to a #define (mem-leak-check)
 			{
-				if (filename)	delete filename;
-				if (extraField)	delete extraField;
+				if (filename)	delete [] filename;
+				if (extraField)	delete [] extraField;
 				filename=0;
 				extraField=0;
 			}
@@ -373,9 +373,9 @@ private:
 		private:
 			void release()  //*** needed or can go?
 			{
-				if (filename)	delete filename;
-				if (extraField)	delete extraField;
-				if (comment)	delete comment;
+				if (filename)	delete [] filename;
+				if (extraField)	delete [] extraField;
+				if (comment)	delete [] comment;
 				filename=0; filenameLen=0;
 				extraField=0; extraFieldLen=0;
 				comment=0; commentLen=0;
@@ -541,7 +541,7 @@ private:
 			{
 				//// WRITE BACK REAL 64 BIT VALUES, CREATE EXTRA FIELD ///////////////
 				//may only wipe extra field after obtaining all Info from it
-				if (extraField)	delete extraField; 
+				if (extraField)	delete [] extraField; 
 					extraFieldLen=0;
 
 				if ( ( sizeUncompressed  > 0xffffffff ) ||
@@ -592,7 +592,7 @@ private:
 
 			void setXMPFilename()
 			{	
-				if (filename) delete filename;
+				if (filename) delete [] filename;
 				filenameLen = xmpFilenameLen;
 				filename = new char[xmpFilenameLen];
 				PutUns16LE(filenameLen,	&fields[CDFileHeader::o_fileNameLength] );
@@ -624,7 +624,7 @@ private:
 		const static XMP_Uns32 SIG = 0x06054b50;
 		void UCFECD_Free()
 		{
-			if(commentLen) delete comment;
+			if(commentLen) delete [] comment;
 			commentLen = 0;	
 		}
 	public:		
@@ -672,7 +672,7 @@ private:
 
 		~EndOfCD()
 		{
-			if (comment)	delete comment;
+			if (comment)	delete [] comment;
 		};
 	}; //class EndOfCD
 
