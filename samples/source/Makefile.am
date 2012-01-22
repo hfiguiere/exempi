@@ -43,7 +43,7 @@ noinst_PROGRAMS = xmpcoverage xmpfilescoverage dumpxmp dumpmainxmp\
 	$(NULL)
 
 AM_CXXFLAGS = -fexceptions -funsigned-char -fPIC \
-	-Wno-multichar -Wno-implicit -Wno-ctor-dtor-privacy
+	-Wno-multichar -Wno-ctor-dtor-privacy
 
 AM_CPPFLAGS = -D@EXEMPI_PLATFORM_DEF@=1 -D_FILE_OFFSET_BITS=64
 XMPLIBS = $(top_builddir)/source/XMPCore/libXMPCore.la \

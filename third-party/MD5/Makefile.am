@@ -41,7 +41,7 @@ INCLUDES = -I$(top_srcdir)/public/include \
 	-I$(top_srcdir)/source/common/ \
 	-I$(top_srcdir)/third-party/MD5
 
-AM_CXXFLAGS = -Wno-multichar -Wno-implicit -Wno-ctor-dtor-privacy \
+AM_CXXFLAGS = -Wno-multichar -Wno-ctor-dtor-privacy \
 	-funsigned-char -fexceptions
 AM_CPPFLAGS = -Wall \
 	-D@EXEMPI_PLATFORM_DEF@=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \

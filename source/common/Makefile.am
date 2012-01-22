@@ -41,7 +41,7 @@ noinst_LTLIBRARIES = libxmpcommon.la
 INCLUDES = -I$(top_srcdir)/public/include \
 	-I$(top_srcdir)/public/include/client-glue
 
-AM_CXXFLAGS = -Wno-multichar -Wno-implicit -Wno-ctor-dtor-privacy \
+AM_CXXFLAGS = -Wno-multichar -Wno-ctor-dtor-privacy \
 	-funsigned-char -fexceptions
 AM_CPPFLAGS = \
 	-D@EXEMPI_PLATFORM_DEF@=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
