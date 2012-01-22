@@ -1,7 +1,7 @@
 /*
  * exempi - xmp.h
  *
- * Copyright (C) 2007-2008 Hubert Figuiere
+ * Copyright (C) 2007-2008,2012 Hubert Figuiere
  * Copyright 2002-2007 Adobe Systems Incorporated
  * All rights reserved.
  *
@@ -207,25 +207,25 @@ typedef enum {
 	XMP_PROP_HAS_LANG         = 0x00000040UL, /**< Implies XMP_PropHasQualifiers, 
 											   * property has xml:lang. */
 	XMP_PROP_HAS_TYPE         = 0x00000080UL, /**< Implies XMP_PropHasQualifiers, 
-											   * property has rdf:type. */
+						   * property has rdf:type. */
 	
 	/* Options relating to the data structure form. */
 	XMP_PROP_VALUE_IS_STRUCT = 0x00000100UL,  /**< The value is a structure 
-											   * with nested fields. */
+						   * with nested fields. */
 	XMP_PROP_VALUE_IS_ARRAY  = 0x00000200UL,  /**< The value is an array 
-											   * (RDF alt/bag/seq). */
+						   * (RDF alt/bag/seq). */
 	XMP_PROP_ARRAY_IS_UNORDERED = XMP_PROP_VALUE_IS_ARRAY,  /**< The item order 
-															 * does not matter.*/
+								 * does not matter.*/
 	XMP_PROP_ARRAY_IS_ORDERED = 0x00000400UL, /**< Implies XMP_PropValueIsArray,
-											   * item order matters. */
+						   * item order matters. */
 	XMP_PROP_ARRAY_IS_ALT    = 0x00000800UL,  /**< Implies XMP_PropArrayIsOrdered,
-											   * items are alternates. */
+						   * items are alternates. */
 	
 	/** Additional struct and array options. */
 	XMP_PROP_ARRAY_IS_ALTTEXT = 0x00001000UL,  /**< Implies kXMP_PropArrayIsAlternate,
-												* items are localized text. */
-	/* kXMP_InsertBeforeItem  = 0x00004000UL,  ! Used by SetXyz functions. */
-	/* kXMP_InsertAfterItem   = 0x00008000UL,  ! Used by SetXyz functions. */
+						    * items are localized text. */
+	XMP_PROP_ARRAY_INSERT_BEFORE = 0x00004000UL, /**< Used by array functions. */
+	XMP_PROP_ARRAY_INSERT_AFTER = 0x00008000UL,  /**< Used by array functions. */
 	
 	/* Other miscellaneous options. */
 	XMP_PROP_IS_ALIAS         = 0x00010000UL,  /**< This property is an alias name for another property. */
