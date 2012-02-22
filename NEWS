@@ -1,4 +1,4 @@
-2.2.0 - 2012/01/21
+2.2.0 - 2012/02/21
 
 - New 'exempi' command line tool.
 - Upgrade XMPCore to Adobe XMP 5.1.2
@@ -10,6 +10,7 @@
   - Change in the way local text encoding is dealt with.
   - Alternative languages behave slightly differently by changing
     how the default language property is managed.
+  - Probably a bunch of bugs fixed that I don't know about.
 - Update unit tests.
   - Refactor the fixtures.
 - Use automake silent rules instead of shave. (build only)
