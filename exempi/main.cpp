@@ -33,6 +33,8 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,8 +51,10 @@ enum {
 	ACTION_GET
 };
 
-static void process_file(const char * filename, bool no_reconcile, bool dump_xml, bool write_in_place,
-	int action, const std::string & value_name, const std::string & prop_value, const std::string & output);
+static void process_file(const char * filename, bool no_reconcile, bool is_an_xmp,
+			 bool dump_xml, bool write_in_place,
+			 int action, const std::string & value_name, 
+			 const std::string & prop_value, const std::string & output);
 
 
 /** fatal error in argument. Display and quit. */
@@ -70,6 +74,7 @@ static void usage()
 	fprintf(stderr, "\t-h: show this help\n");
 	fprintf(stderr, "\t-R: don't reconcile\n");
 	fprintf(stderr, "\t-x: dump XML\n");
+	fprintf(stderr, "\t-X: file(s) is XMP\n");
 	fprintf(stderr, "\t-w: write in place. Only for -s. Not compatible with -o.\n");
 	fprintf(stderr, "\t-o <file>: file to write the output to.\n");
 	fprintf(stderr, "\t-g <prop_name>: retrieve the value with prop_name.\n");
@@ -87,11 +92,12 @@ int main(int argc, char **argv)
 	bool dont_reconcile = false;
 	bool write_in_place = false;
 	bool dump_xml = false;
+	bool is_an_xmp = false;
 	std::string output_file;
 	std::string value_name;
 	std::string prop_value;
 	
-	while((ch = getopt(argc, argv, "hRo:wxg:s:v:")) != -1) {
+	while((ch = getopt(argc, argv, "hRo:wxXg:s:v:")) != -1) {
 		switch(ch) {
 		
 		case 'R':
@@ -105,6 +111,9 @@ int main(int argc, char **argv)
 			break;
 		case 'x':
 			dump_xml = true;
+			break;
+		case 'X':
+			is_an_xmp = true;
 			break;
 		case 'g':
 			if(!value_name.empty()) {
@@ -154,7 +163,7 @@ int main(int argc, char **argv)
 	xmp_init();
 	while(argc) {
 	
-		process_file(*argv, dont_reconcile, write_in_place, dump_xml, action, value_name, prop_value, output_file);
+		process_file(*argv, dont_reconcile, is_an_xmp, write_in_place, dump_xml, action, value_name, prop_value, output_file);
 	
 		argc--;
 		argv++;
@@ -164,10 +173,42 @@ int main(int argc, char **argv)
     return 0;
 }
 
+static XmpPtr get_xmp_from_sidecar(const char * filename, bool is_an_xmp)
+{
+	struct stat s;
+	
+	if (stat(filename, &s) == -1) {
+		perror("exempi:");
+		return NULL;
+	}
+	
+	off_t size = s.st_size;
+	FILE* file = fopen(filename, "r");
+	if (!file) {
+		perror("exempi:");
+		return NULL;
+	}
+	
+	char *buffer = (char*)malloc(size);
+	size_t len = fread(buffer, 1, size, file);
+	
+	XmpPtr xmp = xmp_new_empty();
+	if(!xmp_parse(xmp, buffer, len)) {
+		xmp_free(xmp);
+		xmp = NULL;
+	}
+	free(buffer);
+	fclose(file);
+	return xmp;
+}
 
 /** Helper to get the XMP for the file */
-static XmpPtr get_xmp_from_file(const char * filename, bool no_reconcile)
+static XmpPtr get_xmp_from_file(const char * filename, bool no_reconcile, bool is_an_xmp)
 {
+	if (is_an_xmp) {
+		return get_xmp_from_sidecar(filename, is_an_xmp);
+	}
+
 	xmp::ScopedPtr<XmpFilePtr> f(xmp_files_open_new(filename, 
 					(XmpOpenFileOptions)(XMP_OPEN_READ | (no_reconcile ? XMP_OPEN_ONLYXMP : 0))));
 	if(f) {
@@ -179,10 +220,11 @@ static XmpPtr get_xmp_from_file(const char * filename, bool no_reconcile)
 }
 
 /** dump the XMP xml to the output IO */
-static void dump_xmp(const char *filename, bool no_reconcile, FILE *outio)
+static void dump_xmp(const char *filename, bool no_reconcile, 
+		     bool is_an_xmp, FILE *outio)
 {
 	printf("dump_xmp for file %s\n", filename);
-	xmp::ScopedPtr<XmpPtr> xmp(get_xmp_from_file(filename, no_reconcile));
+	xmp::ScopedPtr<XmpPtr> xmp(get_xmp_from_file(filename, no_reconcile, is_an_xmp));
 	
 	xmp::ScopedPtr<XmpStringPtr> output(xmp_string_new());
 
@@ -194,9 +236,9 @@ static void dump_xmp(const char *filename, bool no_reconcile, FILE *outio)
 }
 
 /** get an xmp prop and dump it to the output IO */
-static void get_xmp_prop(const char * filename, const std::string & value_name, bool no_reconcile, FILE *outio)
+static void get_xmp_prop(const char * filename, const std::string & value_name, bool no_reconcile, bool is_an_xmp, FILE *outio)
 {
-	xmp::ScopedPtr<XmpPtr> xmp(get_xmp_from_file(filename, no_reconcile));
+	xmp::ScopedPtr<XmpPtr> xmp(get_xmp_from_file(filename, no_reconcile, is_an_xmp));
 		
 	std::string prefix;
 	size_t idx = value_name.find(':');
@@ -212,10 +254,11 @@ static void get_xmp_prop(const char * filename, const std::string & value_name, 
 }
 
 
-static void set_xmp_prop(const char * filename, const std::string & value_name, const std::string & prop_value,
-	bool no_reconcile, bool write_in_place, FILE *outio)
+static void set_xmp_prop(const char * filename, const std::string & value_name, 
+			 const std::string & prop_value,
+			 bool no_reconcile, bool is_an_xmp, bool write_in_place, FILE *outio)
 {
-	xmp::ScopedPtr<XmpPtr> xmp(get_xmp_from_file(filename, no_reconcile));
+	xmp::ScopedPtr<XmpPtr> xmp(get_xmp_from_file(filename, no_reconcile, is_an_xmp));
 	
 	std::string prefix;
 	size_t idx = value_name.find(':');
@@ -248,9 +291,10 @@ static void set_xmp_prop(const char * filename, const std::string & value_name, 
 
 
 /** process a file with all the options */
-static void process_file(const char * filename, bool no_reconcile, bool write_in_place, bool dump_xml,
-	int action, const std::string & value_name, const std::string & prop_value,
-	const std::string & output)
+static void process_file(const char * filename, bool no_reconcile, bool is_an_xmp,
+			 bool write_in_place, bool dump_xml,
+			 int action, const std::string & value_name, 
+			 const std::string & prop_value, const std::string & output)
 {
 	printf("processing file %s\n", filename);
 
@@ -265,14 +309,15 @@ static void process_file(const char * filename, bool no_reconcile, bool write_in
 	switch (action) {
 	case ACTION_NONE:
 		if(dump_xml) {
-			dump_xmp(filename, no_reconcile, outio);
+			dump_xmp(filename, no_reconcile, is_an_xmp, outio);
 		}
 		break;	
 	case ACTION_SET:
-		set_xmp_prop(filename, value_name, prop_value, no_reconcile, write_in_place, outio);
+		set_xmp_prop(filename, value_name, prop_value, no_reconcile, is_an_xmp,
+			     write_in_place, outio);
 		break;
 	case ACTION_GET:
-		get_xmp_prop(filename, value_name, no_reconcile, outio);
+		get_xmp_prop(filename, value_name, no_reconcile, is_an_xmp, outio);
 		break;
 	default:
 		break;
