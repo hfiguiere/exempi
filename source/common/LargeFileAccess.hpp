@@ -18,7 +18,7 @@
 	#include <Windows.h>
 	#define snprintf _snprintf
 #else
-	#if XMP_MacBuild
+	#if 0 // No longer needed, but retained to avoid merge conflicts
 		#include <Files.h>
 	#endif
 	// POSIX headers for both Mac and generic UNIX.
@@ -45,7 +45,7 @@ enum { // Used by LFA_Throw, re-route to whatever you need.
 
 extern void LFA_Throw ( const char* msg, int id );	// Function needed for reuse of LFA code in various projects.
 
-#if ! XMP_UNIXBuild
+#if ! (XMP_UNIXBuild | XMP_MacBuild)
 	typedef void * LFA_FileRef;
 #else
 	typedef XMP_Int32 LFA_FileRef;

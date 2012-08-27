@@ -235,7 +235,7 @@ static bool CreateNewFile ( const char * newPath, const char * origPath, size_t 
 
 		// *** Don't handle Windows specific info yet.
 
-	#elif XMP_MacBuild
+	#elif 0 // This Mac-specific code is no longer used, but retained to make merges easier
 
 		IgnoreParam(filePos);
 
@@ -286,10 +286,13 @@ static bool CreateNewFile ( const char * newPath, const char * origPath, size_t 
 		}
 		
 
-	#elif XMP_UNIXBuild
+	#elif XMP_UNIXBuild | XMP_MacBuild
 	
-		IgnoreParam(filePos); IgnoreParam(copyMacRsrc);
-		// *** Can't use on Mac because of frigging CW POSIX header problems!
+		IgnoreParam(filePos);
+
+		#if XMP_UNIXBuild
+			IgnoreParam(copyMacRsrc);
+		#endif
 
 		// *** Don't handle UNIX specific info yet.
 		
@@ -299,6 +302,28 @@ static bool CreateNewFile ( const char * newPath, const char * origPath, size_t 
 		if ( err != 0 ) XMP_Throw ( "CreateNewFile: stat failure", kXMPErr_ExternalFailure );
 		
 		(void) chmod ( newPath, origInfo.st_mode );	// Ignore errors.
+
+		#if XMP_MacBuild
+			if ( copyMacRsrc ) {	// Copy the resource fork as a byte stream
+				LFA_FileRef origRsrcRef = 0;
+				LFA_FileRef copyRsrcRef = 0;
+				try {
+					origRsrcRef = LFA_OpenRsrc ( origPath, 'r' );
+					XMP_Int64 rsrcSize = LFA_Measure ( origRsrcRef );
+					if ( rsrcSize > 0 ) {
+						copyRsrcRef = LFA_OpenRsrc ( newPath, 'w' );
+						// ! Resource fork small enough to not need abort checking.
+						LFA_Copy ( origRsrcRef, copyRsrcRef, rsrcSize, 0, 0 );
+						LFA_Close ( copyRsrcRef );
+					}
+					LFA_Close ( origRsrcRef );
+				} catch ( ... ) {
+					if ( origRsrcRef != 0 ) LFA_Close ( origRsrcRef );
+					if ( copyRsrcRef != 0 ) LFA_Close ( copyRsrcRef );
+					throw;
+				}
+			}
+		#endif
 	
 	#endif
 	

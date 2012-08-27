@@ -34,7 +34,7 @@
 #if XMP_WinBuild
 	#define snprintf _snprintf
 #else
-	#if XMP_MacBuild
+	#if 0 // No longer needed, but retained to avoid merge conflicts
 		#include <Files.h>
 	#endif
 	// POSIX headers for both Mac and generic UNIX.

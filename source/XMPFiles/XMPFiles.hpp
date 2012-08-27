@@ -15,7 +15,7 @@
 #define TXMP_STRING_TYPE std::string
 #include "XMP.hpp"
 
-#if ! UNIX_ENV
+#if ! (UNIX_ENV | MAC_ENV)
 	typedef void * LFA_FileRef;
 #else
 	typedef XMP_Int32 LFA_FileRef;
