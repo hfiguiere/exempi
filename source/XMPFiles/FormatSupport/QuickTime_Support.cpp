@@ -10,7 +10,7 @@
 #include "XMP_Environment.h"
 
 #if XMP_MacBuild
-	#include "Script.h"
+	#include <CoreServices/CoreServices.h>
 #else
 	#include "MacScriptExtracts.h"
 #endif

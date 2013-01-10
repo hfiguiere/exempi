@@ -15,7 +15,7 @@
 
 #if XMP_WinBuild
 #elif XMP_MacBuild
-	#include "UnicodeConverter.h"
+	#include <CoreServices/CoreServices.h>
 #endif
 
 // =================================================================================================
