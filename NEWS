@@ -1,3 +1,8 @@
+2.2.1
+
+- Bug #54011: Use POSIX API for files on MacOS. (Misty De Meo)
+- Bug #58175: Replace OS X FlatCarbon headers. (Misty De Meo)
+
 2.2.0 - 2012/02/21
 
 - New 'exempi' command line tool.
