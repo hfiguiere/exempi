@@ -40,6 +40,7 @@
 #include <stdlib.h>
 
 #include <string>
+#include <vector>
 
 #include <exempi/xmp.h>
 #include <exempi/xmp++.hpp>
@@ -77,6 +78,7 @@ static void usage()
 	fprintf(stderr, "\t-X: file(s) is XMP\n");
 	fprintf(stderr, "\t-w: write in place. Only for -s. Not compatible with -o.\n");
 	fprintf(stderr, "\t-o <file>: file to write the output to.\n");
+	fprintf(stderr, "\t-n <uri> <prefix>: create a new namespace.\n");
 	fprintf(stderr, "\t-g <prop_name>: retrieve the value with prop_name.\n");
 	fprintf(stderr, "\t-s <prop_name> -v <value>: retrieve or get the value.\n");
 	fprintf(stderr, "\t<files> the files to read from.\n");
@@ -96,8 +98,9 @@ int main(int argc, char **argv)
 	std::string output_file;
 	std::string value_name;
 	std::string prop_value;
-	
-	while((ch = getopt(argc, argv, "hRo:wxXg:s:v:")) != -1) {
+	std::vector<std::pair<std::string, std::string> > namespaces;
+
+	while((ch = getopt(argc, argv, "hRo:wxXn:g:s:v:")) != -1) {
 		switch(ch) {
 		
 		case 'R':
@@ -122,6 +125,16 @@ int main(int argc, char **argv)
 			action = ACTION_GET;
 			value_name = optarg;
 			break;
+		case 'n':
+		{
+			std::string ns = optarg;
+			std::string prefix = argv[optind];
+			if (prefix[0] && prefix[0] != '-') {
+				namespaces.push_back(make_pair(ns, prefix));
+				optind++;
+			}
+			break;
+		}
 		case 's':
 			if(!value_name.empty()) {
 				usage();
@@ -141,34 +154,42 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
-	
+
 	argc -= optind;
-    argv += optind;
-    
-    if(optind == 1 || argc == 0) {
-		fatal_error("Missing input.");
-    	return 1;
-    }
-    
-    if(write_in_place && (!output_file.empty() || action != ACTION_SET)) {
-    	fatal_error("Need to write in place and output file are mutually exclusive.");
-    	return 1;
-    }
-    
+  argv += optind;
+
+  if(optind == 1 || argc == 0) {
+    fatal_error("Missing input.");
+    return 1;
+  }
+
+  if(write_in_place && (!output_file.empty() || action != ACTION_SET)) {
+    fatal_error("Need to write in place and output file are mutually exclusive.");
+    return 1;
+  }
+
     if(action == ACTION_SET && (!write_in_place && argc > 1)) {
     	fatal_error("Need to write in place for more than one file.");
     	return 1;
     }
 
 	xmp_init();
+	if(!namespaces.empty()) {
+          for (std::vector<std::pair<std::string, std::string> >::const_iterator iter
+                       = namespaces.begin(); iter != namespaces.end();
+               ++iter) {
+			xmp_register_namespace(iter->first.c_str(),
+					       iter->second.c_str(), NULL);
+		}
+	}
 	while(argc) {
-	
+
 		process_file(*argv, dont_reconcile, is_an_xmp, write_in_place, dump_xml, action, value_name, prop_value, output_file);
-	
+
 		argc--;
 		argv++;
 	}
-    
+
     xmp_terminate();
     return 0;
 }
