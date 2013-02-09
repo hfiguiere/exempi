@@ -1,0 +1,40 @@
+.TH exempi 1 "February 10 2013"
+
+.SH NAME
+
+exempi - command line tool to manipulate XMP metadata
+
+.SH SYNTAX
+
+exempi { -h | [ -R ] [ -x ] [ { -w | -o <file> } ] [ { -g <prop_name> | -s <prop_name> -v <value> }  ] } <files>
+
+.SH OPTIONS
+
+.IP "-h: show this help"
+.IP "-R: don't reconcile"
+.IP "-x: dump XML"
+.IP "-X: file(s) is XMP"
+.IP "-w: write in place. Only for -s. Not compatible with -o."
+.IP "-o <file>: file to write the output to."
+.IP "-n <ns> <prefix>: set the prefix for a namespace."
+.IP "-g <prop_name>: retrieve the value with prop_name."
+.IP "-s <prop_name> -v <value>: retrieve or get the value."
+.IP "<files> the files to read from."
+
+.SH SECURITY
+
+The source code hasn't been audited for security. The command line tool doesn't have a strong input sanity checking easier.
+.P
+Be careful not to run the tool as super-user. Be careful if you decide to use it in an online (web) application.
+.P
+Patches and suggestions welcome.
+
+.SH AUHTORS
+
+Exempi is written by Hubert Figuiere
+.P
+It contains the XMP SDK written by Adobe Systems Inc.
+
+.SH LICENSE
+
+Exempi is licensed under the BSD license.
