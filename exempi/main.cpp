@@ -1,7 +1,8 @@
+/* -*- tab-width:2; c-basic-offset:2; indent-tabs-mode:nil; c-file-style:"stroustrup" -*- */
 /*
  * exempi - exempi.cpp
  *
- * Copyright (C) 2011 Hubert Figuiere
+ * Copyright (C) 2011-2013 Hubert Figuiere
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -52,10 +53,12 @@ enum {
 	ACTION_GET
 };
 
-static void process_file(const char * filename, bool no_reconcile, bool is_an_xmp,
-			 bool dump_xml, bool write_in_place,
-			 int action, const std::string & value_name, 
-			 const std::string & prop_value, const std::string & output);
+static void process_file(const char * filename, bool no_reconcile,
+                         bool is_an_xmp,
+                         bool dump_xml, bool write_in_place,
+                         int action, const std::string & value_name,
+                         const std::string & prop_value, 
+                         const std::string & output);
 
 
 /** fatal error in argument. Display and quit. */
@@ -74,7 +77,7 @@ static void usage()
 	fprintf(stderr, "exempi { -h | [ -R ] [ -x ] [ { -w | -o <file> } ] [ { -g <prop_name> | -s <prop_name> -v <value> }  ] } <files>\n");
 	fprintf(stderr, "\t-h: show this help\n");
 	fprintf(stderr, "\t-R: don't reconcile\n");
-	fprintf(stderr, "\t-x: dump XML\n");
+	fprintf(stderr, "\t-x: dump XML packet.\n");
 	fprintf(stderr, "\t-X: file(s) is XMP\n");
 	fprintf(stderr, "\t-w: write in place. Only for -s. Not compatible with -o.\n");
 	fprintf(stderr, "\t-o <file>: file to write the output to.\n");
@@ -82,14 +85,14 @@ static void usage()
 	fprintf(stderr, "\t-g <prop_name>: retrieve the value with prop_name.\n");
 	fprintf(stderr, "\t-s <prop_name> -v <value>: retrieve or get the value.\n");
 	fprintf(stderr, "\t<files> the files to read from.\n");
-	
+
 	exit(255);
 }
 
 int main(int argc, char **argv)
 {
 	int ch;
-	
+
 	int action = ACTION_NONE;
 	bool dont_reconcile = false;
 	bool write_in_place = false;
@@ -102,7 +105,7 @@ int main(int argc, char **argv)
 
 	while((ch = getopt(argc, argv, "hRo:wxXn:g:s:v:")) != -1) {
 		switch(ch) {
-		
+
 		case 'R':
 			dont_reconcile = true;
 			break;
@@ -168,51 +171,51 @@ int main(int argc, char **argv)
     return 1;
   }
 
-    if(action == ACTION_SET && (!write_in_place && argc > 1)) {
-    	fatal_error("Need to write in place for more than one file.");
-    	return 1;
-    }
+  if(action == ACTION_SET && (!write_in_place && argc > 1)) {
+    fatal_error("Need to write in place for more than one file.");
+    return 1;
+  }
 
 	xmp_init();
 	if(!namespaces.empty()) {
-          for (std::vector<std::pair<std::string, std::string> >::const_iterator iter
-                       = namespaces.begin(); iter != namespaces.end();
-               ++iter) {
+    for (std::vector<std::pair<std::string, std::string> >::const_iterator iter
+           = namespaces.begin(); iter != namespaces.end();
+         ++iter) {
 			xmp_register_namespace(iter->first.c_str(),
-					       iter->second.c_str(), NULL);
+                             iter->second.c_str(), NULL);
 		}
 	}
 	while(argc) {
 
-		process_file(*argv, dont_reconcile, is_an_xmp, write_in_place, dump_xml, action, value_name, prop_value, output_file);
-
+		process_file(*argv, dont_reconcile, is_an_xmp, write_in_place,
+                 dump_xml, action, value_name, prop_value, output_file);
 		argc--;
 		argv++;
 	}
 
-    xmp_terminate();
-    return 0;
+  xmp_terminate();
+  return 0;
 }
 
 static XmpPtr get_xmp_from_sidecar(const char * filename, bool is_an_xmp)
 {
 	struct stat s;
-	
+
 	if (stat(filename, &s) == -1) {
 		perror("exempi:");
 		return NULL;
 	}
-	
+
 	off_t size = s.st_size;
 	FILE* file = fopen(filename, "r");
 	if (!file) {
 		perror("exempi:");
 		return NULL;
 	}
-	
+
 	char *buffer = (char*)malloc(size);
 	size_t len = fread(buffer, 1, size, file);
-	
+
 	XmpPtr xmp = xmp_new_empty();
 	if(!xmp_parse(xmp, buffer, len)) {
 		xmp_free(xmp);
@@ -230,7 +233,7 @@ static XmpPtr get_xmp_from_file(const char * filename, bool no_reconcile, bool i
 		return get_xmp_from_sidecar(filename, is_an_xmp);
 	}
 
-	xmp::ScopedPtr<XmpFilePtr> f(xmp_files_open_new(filename, 
+	xmp::ScopedPtr<XmpFilePtr> f(xmp_files_open_new(filename,
 					(XmpOpenFileOptions)(XMP_OPEN_READ | (no_reconcile ? XMP_OPEN_ONLYXMP : 0))));
 	if(f) {
 		XmpPtr xmp = xmp_files_get_new_xmp(f);
@@ -241,32 +244,33 @@ static XmpPtr get_xmp_from_file(const char * filename, bool no_reconcile, bool i
 }
 
 /** dump the XMP xml to the output IO */
-static void dump_xmp(const char *filename, bool no_reconcile, 
+static void dump_xmp(const char *filename, bool no_reconcile,
 		     bool is_an_xmp, FILE *outio)
 {
 	printf("dump_xmp for file %s\n", filename);
 	xmp::ScopedPtr<XmpPtr> xmp(get_xmp_from_file(filename, no_reconcile, is_an_xmp));
-	
+
 	xmp::ScopedPtr<XmpStringPtr> output(xmp_string_new());
 
-	xmp_serialize_and_format(xmp, output, 
-							 XMP_SERIAL_OMITPACKETWRAPPER, 
+	xmp_serialize_and_format(xmp, output,
+							 XMP_SERIAL_OMITPACKETWRAPPER,
 							 0, "\n", " ", 0);
-							 
+
 	fprintf(outio, "%s", xmp_string_cstr(output));
 }
 
 /** get an xmp prop and dump it to the output IO */
-static void get_xmp_prop(const char * filename, const std::string & value_name, bool no_reconcile, bool is_an_xmp, FILE *outio)
+static void get_xmp_prop(const char * filename, const std::string & value_name,
+                         bool no_reconcile, bool is_an_xmp, FILE *outio)
 {
 	xmp::ScopedPtr<XmpPtr> xmp(get_xmp_from_file(filename, no_reconcile, is_an_xmp));
-		
+
 	std::string prefix;
 	size_t idx = value_name.find(':');
 	if(idx != std::string::npos) {
 		prefix = std::string(value_name, 0, idx);
 	}
-			
+
 	xmp::ScopedPtr<XmpStringPtr> property(xmp_string_new());
 	xmp::ScopedPtr<XmpStringPtr> ns(xmp_string_new());
 	xmp_prefix_namespace_uri(prefix.c_str(), ns);
@@ -280,7 +284,7 @@ static void set_xmp_prop(const char * filename, const std::string & value_name,
 			 bool no_reconcile, bool is_an_xmp, bool write_in_place, FILE *outio)
 {
 	xmp::ScopedPtr<XmpPtr> xmp(get_xmp_from_file(filename, no_reconcile, is_an_xmp));
-	
+
 	std::string prefix;
 	size_t idx = value_name.find(':');
 	if(idx != std::string::npos) {
@@ -294,45 +298,45 @@ static void set_xmp_prop(const char * filename, const std::string & value_name,
 	}
 
 	if(write_in_place) {
-		xmp::ScopedPtr<XmpFilePtr> f(xmp_files_open_new(filename, 
-						(XmpOpenFileOptions)(XMP_OPEN_FORUPDATE 
+		xmp::ScopedPtr<XmpFilePtr> f(xmp_files_open_new(filename,
+						(XmpOpenFileOptions)(XMP_OPEN_FORUPDATE
 							| (no_reconcile ? XMP_OPEN_ONLYXMP : 0))));
-	
+
 		if(!xmp_files_can_put_xmp(f, xmp)) {
-			fprintf(stderr, "can put xmp error = %d\n", xmp_get_error());		 				
+			fprintf(stderr, "can put xmp error = %d\n", xmp_get_error());
 		}
 		if(!xmp_files_put_xmp(f, xmp)) {
-			fprintf(stderr, "put xmp error = %d\n", xmp_get_error());		 	
+			fprintf(stderr, "put xmp error = %d\n", xmp_get_error());
 		}
 		if(!xmp_files_close(f, XMP_CLOSE_SAFEUPDATE)) {
 			fprintf(stderr, "close error = %d\n", xmp_get_error());
 		}
-	}		
+	}
 }
 
 
 /** process a file with all the options */
 static void process_file(const char * filename, bool no_reconcile, bool is_an_xmp,
 			 bool write_in_place, bool dump_xml,
-			 int action, const std::string & value_name, 
+			 int action, const std::string & value_name,
 			 const std::string & prop_value, const std::string & output)
 {
 	printf("processing file %s\n", filename);
 
 	FILE *outio = stdout;
-	
+
 	bool needclose = false;
 	if(!output.empty()) {
 		outio = fopen(output.c_str(), "a+");
 		needclose = true;
 	}
-	
+
 	switch (action) {
 	case ACTION_NONE:
 		if(dump_xml) {
 			dump_xmp(filename, no_reconcile, is_an_xmp, outio);
 		}
-		break;	
+		break;
 	case ACTION_SET:
 		set_xmp_prop(filename, value_name, prop_value, no_reconcile, is_an_xmp,
 			     write_in_place, outio);
