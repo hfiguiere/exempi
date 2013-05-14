@@ -55,11 +55,11 @@ pkgconfig_DATA = exempi-@EXEMPI_MAJOR_VERSION@.pc
 
 libexempi_la_SOURCES = exempi.cpp
 
-libexempi_la_LIBADD = $(top_builddir)/source/common/libxmpcommon.la \
-	$(top_builddir)/source/XMPCore/libXMPCore.la \
-	$(top_builddir)/source/XMPFiles/libXMPFiles.la \
-	$(top_builddir)/third-party/MD5/libmd5.la \
-	-lexpat -lz
+libexempi_la_LIBADD = $(top_builddir)/source/libxmpcommon.la \
+	$(top_builddir)/XMPCore/source/libXMPCore.la \
+	$(top_builddir)/XMPFiles/source/libXMPFiles.la \
+	$(top_builddir)/third-party/zuid/interfaces/libmd5.la \
+	-lexpat -lz -ldl
 libexempi_la_LDFLAGS = -version-info @EXEMPI_VERSION_INFO@
 
 if HAVE_SYMBOLS_FILE

@@ -1,7 +1,7 @@
 #
 # exempi - Makefile.am
 #
-# Copyright (C) 2007 Hubert Figuiere
+# Copyright (C) 2007-2013 Hubert Figuiere
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = third-party source samples exempi
+SUBDIRS = third-party source XMPCore/source XMPFiles/source samples exempi
 DIST_SUBDIRS = build third-party source samples exempi public
 
 EXTRA_DIST = autogen.sh

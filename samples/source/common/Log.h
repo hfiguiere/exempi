@@ -10,7 +10,7 @@
 #ifndef __Log_h__
 #define __Log_h__ 1
 
-#include "XMP_Environment.h"
+#include "public/include/XMP_Environment.h"
 
 #include <stdexcept> // (xcode needs stdexcept to accept class declaration below )
 #include <string>

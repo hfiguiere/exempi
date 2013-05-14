@@ -50,7 +50,7 @@ extern "C" {
     typedef uint32_t XMP_Uns32;
     typedef uint64_t XMP_Uns64;
 
-#elif XMP_WinBuild 
+#elif XMP_WinBuild
 
     typedef signed char XMP_Int8;
     typedef signed short XMP_Int16;
@@ -63,7 +63,9 @@ extern "C" {
     typedef unsigned long long XMP_Uns64;
 
 #elif XMP_UNIXBuild
+
 	#if ! XMP_64
+
 		typedef signed char XMP_Int8;
 		typedef signed short XMP_Int16;
 		typedef signed long XMP_Int32;
@@ -73,7 +75,9 @@ extern "C" {
 		typedef unsigned short XMP_Uns16;
 		typedef unsigned long XMP_Uns32;
 		typedef unsigned long long XMP_Uns64;
+
 	#else
+
 		typedef signed char XMP_Int8;
 		typedef signed short XMP_Int16;
 		typedef signed int XMP_Int32;
@@ -83,6 +87,7 @@ extern "C" {
 		typedef unsigned short XMP_Uns16;
 		typedef unsigned int XMP_Uns32;
 		typedef unsigned long long XMP_Uns64;
+
 	#endif
 
 #else
@@ -206,20 +211,20 @@ struct XMP_DateTime {
 
 	/// The second in the range 0..59.
     XMP_Int32 second;
-    
+
     /// Is the date portion meaningful?
     XMP_Bool hasDate;
-    
+
     /// Is the time portion meaningful?
     XMP_Bool hasTime;
-    
+
     /// Is the time zone meaningful?
     XMP_Bool hasTimeZone;
 
 	/// The "sign" of the time zone, \c #kXMP_TimeIsUTC (0) means UTC, \c #kXMP_TimeWestOfUTC (-1)
 	/// is west, \c #kXMP_TimeEastOfUTC (+1) is east.
     XMP_Int8 tzSign;
-    
+
 	/// The time zone hour in the range 0..23.
     XMP_Int32 tzHour;
 
@@ -312,11 +317,15 @@ enum {
 #define kXMP_NS_ASF        "http://ns.adobe.com/asf/1.0/"
 #define kXMP_NS_WAV        "http://ns.adobe.com/xmp/wav/1.0/"
 #define kXMP_NS_BWF        "http://ns.adobe.com/bwf/bext/1.0/"
+#define kXMP_NS_AEScart    "http://ns.adobe.com/aes/cart/"
+#define kXMP_NS_RIFFINFO   "http://ns.adobe.com/riff/info/"
 
 #define kXMP_NS_XMP_Note   "http://ns.adobe.com/xmp/note/"
 
 #define kXMP_NS_AdobeStockPhoto "http://ns.adobe.com/StockPhoto/1.0/"
 #define kXMP_NS_CreatorAtom "http://ns.adobe.com/creatorAtom/1.0/"
+
+#define kXMP_NS_ExifEX		"http://cipa.jp/exif/1.0/"
 
 /// \name XML namespace constants for qualifiers and structured property fields.
 /// @{
@@ -371,6 +380,9 @@ enum {
 /// \def kXMP_NS_IPTCCore
 /// \brief The XML namespace for the IPTC Core schema.
 ///
+/// \def kXMP_NS_IPTCExt
+/// \brief The XML namespace for the IPTC Extension schema.
+///
 /// \def kXMP_NS_RDF
 /// \brief The XML namespace for RDF.
 ///
@@ -379,11 +391,14 @@ enum {
 ///
 /// @}
 
-#define kXMP_NS_DC              "http://purl.org/dc/elements/1.1/"
+#define kXMP_NS_DC             "http://purl.org/dc/elements/1.1/"
 
 #define kXMP_NS_IPTCCore       "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/"
+#define kXMP_NS_IPTCExt        "http://iptc.org/std/Iptc4xmpExt/2008-02-29/"
 
 #define kXMP_NS_DICOM          "http://ns.adobe.com/DICOM/"
+
+#define kXMP_NS_PLUS           "http://ns.useplus.org/ldf/xmp/1.0/"
 
 #define kXMP_NS_PDFA_Schema    "http://www.aiim.org/pdfa/ns/schema#"
 #define kXMP_NS_PDFA_Property  "http://www.aiim.org/pdfa/ns/property#"
@@ -680,6 +695,9 @@ enum {
 	/// Use a compact form of RDF.
     kXMP_UseCompactFormat    = 0x0040UL,
 
+	/// Use a canonical form of RDF.
+    kXMP_UseCanonicalFormat    = 0x0080UL,
+
 	/// Include a padding allowance for a thumbnail image.
     kXMP_IncludeThumbnailPad = 0x0100UL,
 
@@ -688,7 +706,7 @@ enum {
 
 	/// Omit all formatting whitespace.
     kXMP_OmitAllFormatting   = 0x0800UL,
-    
+
     /// Omit the x:xmpmeta element surrounding the rdf:RDF element.
     kXMP_OmitXMPMetaElement  = 0x1000UL,
 
@@ -763,7 +781,7 @@ enum {
 /// Option bit flags for \c TXMPUtils::CatenateArrayItems() and \c TXMPUtils::SeparateArrayItems().
 /// These option bits are shared with the accessor functions:
 ///   \li \c #kXMP_PropValueIsArray,
-///   \li \c #kXMP_PropArrayIsOrdered, 
+///   \li \c #kXMP_PropArrayIsOrdered,
 ///   \li \c #kXMP_PropArrayIsAlternate,
 ///   \li \c #kXMP_PropArrayIsAltText
 enum {
@@ -814,9 +832,12 @@ enum {
 // Types and Constants for XMPFiles
 // ================================
 
+/// Seek mode constants for use with XMP_IO and inside XMPFiles library code.
+enum SeekMode { kXMP_SeekFromStart, kXMP_SeekFromCurrent, kXMP_SeekFromEnd };
+
 /// File format constants for use with XMPFiles.
 enum {
-    
+
     // ! Hex used to avoid gcc warnings. Leave the constants so the text reads big endian. There
     // ! seems to be no decent way on UNIX to determine the target endianness at compile time.
     // ! Forcing it on the client isn't acceptable.
@@ -869,6 +890,8 @@ enum {
     kXMP_MPEG2File           = 0x4D503220UL,
 	/// Public file format constant: 'MP4 ', ISO 14494-12 and -14
     kXMP_MPEG4File           = 0x4D503420UL,
+	/// Public file format constant: 'MXF '
+    kXMP_MXFFile             = 0x4D584620UL,
 	/// Public file format constant: 'WMAV', Windows Media Audio and Video
     kXMP_WMAVFile            = 0x574D4156UL,
 	/// Public file format constant:  'AIFF'
@@ -885,6 +908,8 @@ enum {
     kXMP_AVCHDFile           = 0x41564844UL,
 	/// Public file format constant:  'SHDV', a collection not really a single file
     kXMP_SonyHDVFile         = 0x53484456UL,
+	/// Public file format constant:  'CNXF', a collection not really a single file
+    kXMP_CanonXFFile         = 0x434E5846UL,
 
 	/// Public file format constant: 'HTML'
     kXMP_HTMLFile            = 0x48544D4CUL,
@@ -1097,6 +1122,9 @@ enum {
 	/// Only the XMP is wanted, allows space/time optimizations.
     kXMPFiles_OpenOnlyXMP           = 0x00000004,
 
+	/// Force use of the given handler (format), do not even verify the format.
+    kXMPFiles_ForceGivenHandler     = 0x00000008,
+	
 	/// Be strict about only attempting to use the designated file handler, no fallback to other handlers.
     kXMPFiles_OpenStrictly          = 0x00000010,
 
@@ -1108,10 +1136,10 @@ enum {
 
 	/// Only packet scan files "known" to need scanning.
     kXMPFiles_OpenLimitedScanning   = 0x00000080,
-    
+
     /// Attempt to repair a file opened for update, default is to not open (throw an exception).
     kXMPFiles_OpenRepairFile        = 0x00000100
-   
+
 };
 
 /// Option bit flags for \c TXMPFiles::CloseFile().
@@ -1169,7 +1197,10 @@ enum {
 
 	// --------------------
     // Generic error codes.
-   
+
+	/// No error
+	kXMPErr_NoError      =  -1,
+
 	/// Generic unknown error
     kXMPErr_Unknown          =   0,
 	/// Generic undefined error

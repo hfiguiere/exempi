@@ -58,6 +58,11 @@
 // =================================================================================================
 
 
+#if XMP_StaticBuild	// ! Client XMP_IO objects can only be used in static builds.
+	#include "XMP_IO.hpp"
+#endif
+
+
 template <class tStringObj>
 class TXMPFiles {
 
@@ -107,6 +112,47 @@ public:
     /// @return True on success.
 
 	static bool Initialize ( XMP_OptionBits options );
+
+    // ---------------------------------------------------------------------------------------------
+    /// @brief Initializes the XMPFiles library; must be called before creating an \c SXMPFiles object.
+    ///
+    /// This overload of TXMPFiles::Initialize() accepts plugin directory and name of the plug-ins 
+    /// as a comma separated list to load the file handler plug-ins. If plugins == NULL, then all
+    /// plug-ins present in the plug-in directory will be loaded.
+    ///
+    /// The main action is to activate the available smart file handlers. Must be called before
+    /// using any methods except \c GetVersionInfo().
+    ///
+    /// This function is static; make the call directly from the concrete class (\c SXMPFiles).
+    ///
+    /// @param pluginFolder Pugin directorty to load the file handler plug-ins.
+    /// @param plugins Comma sepearted list of plug-ins which should be loaded from the plug-in directory. 
+    /// If plugin == NULL, then all plug-ins availbale in the plug-in directory will be loaded.
+    ///
+    /// @return True on success.
+
+	static bool Initialize ( const char* pluginFolder, const char* plugins = NULL );
+
+    // ---------------------------------------------------------------------------------------------
+    /// @brief Initializes the XMPFiles library; must be called before creating an \c SXMPFiles object.
+    ///
+    /// This overload of TXMPFiles::Initialize( XMP_OptionBits options ) accepts plugin directory and 
+    /// name of the plug-ins as a comma separated list to load the file handler plug-ins. 
+    /// If plugins == NULL, then all plug-ins present in the plug-in directory will be loaded.
+    ///
+    /// The main action is to activate the available smart file handlers. Must be called before
+    /// using any methods except \c GetVersionInfo().
+    ///
+    /// This function is static; make the call directly from the concrete class (\c SXMPFiles).
+    ///
+    /// @param options Option flags to control the initialization actions.
+    /// @param pluginFolder Pugin directorty to load the file handler plug-ins.
+    /// @param plugins Comma sepearted list of plug-ins which should be loaded from the plug-in directory. 
+    /// If plugin == NULL, then all plug-ins availbale in the plug-in directory will be loaded.
+    ///
+    /// @return True on success.
+
+	static bool Initialize ( XMP_OptionBits options, const char* pluginFolder, const char* plugins = NULL );
 
     // ---------------------------------------------------------------------------------------------
     /// @brief Terminates use of the XMPFiles library.
@@ -310,6 +356,31 @@ public:
     static XMP_FileFormat CheckPackageFormat ( XMP_StringPtr folderPath );
 
     // ---------------------------------------------------------------------------------------------
+    /// @brief \c GetFileModDate() returns the most recent modification date of a file containing metadata.
+    ///
+    /// Tries to return the most recent O/S file modification date for associated metadata. In the
+    /// typical case of a single file containing embedded XMP and non-XMP this is the modification
+    /// date of that file. For a simple sidecar, such as MPEG-2, this is the modification date of
+    /// the sidecar and not the media file. For a video package such as P2 this is the XMP file, the
+    /// XML file, and any media file that might be read for metadata.
+    ///
+    /// @param filePath The path for the file, appropriate for the local operating system. Passed as
+    /// a nul-terminated UTF-8 string. The path is the same as would be passed to \c OpenFile.
+    ///
+    /// @param modDate A required pointer to return the modification date.
+    ///
+    /// @param format An optional in/out pointer to a file format. Used on input as a hint for the
+    /// handler to select, on output as the handler chosen.
+    ///
+    /// @param options An optional set of option flags. The only defined one is \c kXMPFiles_ForceGivenHandler,
+    /// used to shortcut the handler selection logic if the caller is certain of the format.
+    ///
+    /// @return True if a modification date could be determined, false if there is no smart file handler.
+
+    static bool GetFileModDate ( XMP_StringPtr filePath, XMP_DateTime * modDate,
+                                 XMP_FileFormat * format = 0, XMP_OptionBits options = 0 );
+
+    // ---------------------------------------------------------------------------------------------
     /// @brief \c OpenFile() opens a file for metadata access.
     ///
     /// Opens a file for the requested forms of metadata access. Opening the file at a minimum
@@ -371,12 +442,25 @@ public:
     // ---------------------------------------------------------------------------------------------
     /// @brief \c OpenFile() opens a file for metadata access, using a string object
     ///
-    /// Overloads the basic form of the function, allowing you to pass a string object
-	/// for the file path. It is otherwise identical; see details in the canonical form.
+    /// Overloads the basic form of the function, allowing you to pass a string object for the file
+	/// path. It is otherwise identical; see details in the canonical form.
 
 	bool OpenFile ( const tStringObj & filePath,
 				    XMP_FileFormat     format = kXMP_UnknownFile,
 				    XMP_OptionBits     openFlags = 0 );
+
+	#if XMP_StaticBuild	// ! Client XMP_IO objects can only be used in static builds.
+    // ---------------------------------------------------------------------------------------------
+    /// @brief \c OpenFile() opens a client-provided XMP_IO object for metadata access.
+    ///
+    /// Alternative to the basic form of the function, allowing you to pass an XMP_IO object for
+    /// client-managed I/O.
+	///
+
+	bool OpenFile ( XMP_IO *       clientIO,
+				    XMP_FileFormat format = kXMP_UnknownFile,
+				    XMP_OptionBits openFlags = 0 );
+	#endif
 
     // ---------------------------------------------------------------------------------------------
     /// @brief CloseFile() explicitly closes an opened file.

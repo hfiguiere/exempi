@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-<title>XMP-Toolkit-SDK-5.1.2: XMP_Const.h File Reference</title>
+<title>XMP-Toolkit-SDK-CS6: XMP_Const.h File Reference</title>
 <link href="xmp.css" rel="stylesheet" type="text/css">
 <link href="tabs.css" rel="stylesheet" type="text/css">
 </head><body>
@@ -170,6 +170,9 @@ Include dependency graph for XMP_Const.h:</div>
 <tr><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab794d3d798daf75a963398347dcbb79b"></a><!-- doxytag: member="XMP_Const.h::kXMP_NS_IPTCCore" ref="ab794d3d798daf75a963398347dcbb79b" args="" -->
 #define&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#ab794d3d798daf75a963398347dcbb79b">kXMP_NS_IPTCCore</a>&nbsp;&nbsp;&nbsp;&quot;http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/&quot;</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The XML namespace for the IPTC Core schema. <br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a12ca045d4c12992ec8f6c1003523de20"></a><!-- doxytag: member="XMP_Const.h::kXMP_NS_IPTCExt" ref="a12ca045d4c12992ec8f6c1003523de20" args="" -->
+#define&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#a12ca045d4c12992ec8f6c1003523de20">kXMP_NS_IPTCExt</a>&nbsp;&nbsp;&nbsp;&quot;http://iptc.org/std/Iptc4xmpExt/2008-02-29/&quot;</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The XML namespace for the IPTC Extension schema. <br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a276fac0f70893607afa3f09030ad84c7"></a><!-- doxytag: member="XMP_Const.h::kXMP_NS_RDF" ref="a276fac0f70893607afa3f09030ad84c7" args="" -->
 #define&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#a276fac0f70893607afa3f09030ad84c7">kXMP_NS_RDF</a>&nbsp;&nbsp;&nbsp;&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot;</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The XML namespace for RDF. <br/></td></tr>
@@ -332,6 +335,8 @@ typedef struct <a class="el" href="structXMP__VersionInfo.html">XMP_VersionInfo<
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a61dadd085c1777f559549e05962b2c9ea041dc6b7b8684be7112ae40f5f259ebb">kXMP_UseCompactFormat</a> =  0x0040UL, 
 <br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a61dadd085c1777f559549e05962b2c9ea15e3fb0e64614c574ed554f2f72c0a5d">kXMP_UseCanonicalFormat</a> =  0x0080UL, 
+<br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a61dadd085c1777f559549e05962b2c9ea0b659b3b544c7a5a076fbd3132cd7f7a">kXMP_IncludeThumbnailPad</a> =  0x0100UL, 
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a61dadd085c1777f559549e05962b2c9eadb35599da481cc22ea6342b7b4de6bc6">kXMP_ExactPacketLength</a> =  0x0200UL, 
@@ -411,6 +416,9 @@ typedef struct <a class="el" href="structXMP__VersionInfo.html">XMP_VersionInfo<
  }</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><p>Option bit flags for <code><a class="el" href="classTXMPUtils.html#a40c645803530662e08d042b4b7c6190d" title="RemoveProperties() removes multiple properties from an XMP object.">TXMPUtils::RemoveProperties()</a></code> and <code>TXMPUtils::AppendProperties()</code>. </p>
  <a href="XMP__Const_8h.html#a385c44f6fb256e5716a2302a5b940388">More...</a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">enum &nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#a84d76d32dd4ef90e5a90cf759b7e563f">SeekMode</a> </td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><p>Seek mode constants for use with XMP_IO and inside XMPFiles library code. </p>
+<br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">enum &nbsp;</td><td class="memItemRight" valign="bottom">{ <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035da17ab6d429c1550eb3cc16d2e544b78eb">kXMP_PDFFile</a> =  0x50444620UL, 
 <br/>
@@ -454,6 +462,8 @@ typedef struct <a class="el" href="structXMP__VersionInfo.html">XMP_VersionInfo<
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035da89e6282c3f0c8966d788500f5d8eaa91">kXMP_MPEG4File</a> =  0x4D503420UL, 
 <br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035da4b3477bdc53fae1511104fc54f88d134">kXMP_MXFFile</a> =  0x4D584620UL, 
+<br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035da78c62f7c10b16b1a862d93f6226a4622">kXMP_WMAVFile</a> =  0x574D4156UL, 
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035daf093d01e7e9cc55a7d1e204498521fc3">kXMP_AIFFFile</a> =  0x41494646UL, 
@@ -469,6 +479,8 @@ typedef struct <a class="el" href="structXMP__VersionInfo.html">XMP_VersionInfo<
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035dafc5ff976e78df2d79d651de818b011f2">kXMP_AVCHDFile</a> =  0x41564844UL, 
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035daa0edb070c11f87c3dad9f8f7a83b9b5e">kXMP_SonyHDVFile</a> =  0x53484456UL, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035dafa11d905db1236494e555956cb2f90ef">kXMP_CanonXFFile</a> =  0x434E5846UL, 
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035da542634e6051139c44fd7b92d08c64760">kXMP_HTMLFile</a> =  0x48544D4CUL, 
 <br/>
@@ -567,6 +579,8 @@ typedef struct <a class="el" href="structXMP__VersionInfo.html">XMP_VersionInfo<
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a80155586fa275b28773c9b203f52cabaaa58279b2b1311242e7374117f455bb96">kXMPFiles_OpenOnlyXMP</a> =  0x00000004, 
 <br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a80155586fa275b28773c9b203f52cabaab8cbbeef0e99d246907a4375766e21a2">kXMPFiles_ForceGivenHandler</a> =  0x00000008, 
+<br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a80155586fa275b28773c9b203f52cabaa0bef4db2ecdaf82a85df9e9d417aab18">kXMPFiles_OpenStrictly</a> =  0x00000010, 
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a80155586fa275b28773c9b203f52cabaaf6332435c7fc89cb0b7381e13fe43646">kXMPFiles_OpenUseSmartHandler</a> =  0x00000020, 
@@ -590,6 +604,8 @@ typedef struct <a class="el" href="structXMP__VersionInfo.html">XMP_VersionInfo<
 <dl class="note"><dt><b>Note:</b></dt><dd>The explanation string is for debugging use only. It must not be shown to users in a final product. It is written for developers not users, and never localized. </dd></dl>
 </div></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">enum &nbsp;</td><td class="memItemRight" valign="bottom">{ <br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960ae2aec0f3b8db282cbba40e4bcf746ba9">kXMPErr_NoError</a> =  -1, 
+<br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a14813595824de97382fffeae7b6fe581">kXMPErr_Unknown</a> =  0, 
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960acd9fa1b621efafd5b218e3a785cbeda1">kXMPErr_TBD</a> =  1, 
@@ -1669,6 +1685,9 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 <tr><td valign="top"><em><a class="anchor" id="abc5c98fcc1211af2b80116dd6e0a035da89e6282c3f0c8966d788500f5d8eaa91"></a><!-- doxytag: member="kXMP_MPEG4File" ref="abc5c98fcc1211af2b80116dd6e0a035da89e6282c3f0c8966d788500f5d8eaa91" args="" -->kXMP_MPEG4File</em>&nbsp;</td><td>
 <p>Public file format constant: 'MP4 ', ISO 14494-12 and -14. </p>
 </td></tr>
+<tr><td valign="top"><em><a class="anchor" id="abc5c98fcc1211af2b80116dd6e0a035da4b3477bdc53fae1511104fc54f88d134"></a><!-- doxytag: member="kXMP_MXFFile" ref="abc5c98fcc1211af2b80116dd6e0a035da4b3477bdc53fae1511104fc54f88d134" args="" -->kXMP_MXFFile</em>&nbsp;</td><td>
+<p>Public file format constant: 'MXF '. </p>
+</td></tr>
 <tr><td valign="top"><em><a class="anchor" id="abc5c98fcc1211af2b80116dd6e0a035da78c62f7c10b16b1a862d93f6226a4622"></a><!-- doxytag: member="kXMP_WMAVFile" ref="abc5c98fcc1211af2b80116dd6e0a035da78c62f7c10b16b1a862d93f6226a4622" args="" -->kXMP_WMAVFile</em>&nbsp;</td><td>
 <p>Public file format constant: 'WMAV', Windows Media Audio and Video. </p>
 </td></tr>
@@ -1692,6 +1711,9 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 </td></tr>
 <tr><td valign="top"><em><a class="anchor" id="abc5c98fcc1211af2b80116dd6e0a035daa0edb070c11f87c3dad9f8f7a83b9b5e"></a><!-- doxytag: member="kXMP_SonyHDVFile" ref="abc5c98fcc1211af2b80116dd6e0a035daa0edb070c11f87c3dad9f8f7a83b9b5e" args="" -->kXMP_SonyHDVFile</em>&nbsp;</td><td>
 <p>Public file format constant: 'SHDV', a collection not really a single file. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="abc5c98fcc1211af2b80116dd6e0a035dafa11d905db1236494e555956cb2f90ef"></a><!-- doxytag: member="kXMP_CanonXFFile" ref="abc5c98fcc1211af2b80116dd6e0a035dafa11d905db1236494e555956cb2f90ef" args="" -->kXMP_CanonXFFile</em>&nbsp;</td><td>
+<p>Public file format constant: 'CNXF', a collection not really a single file. </p>
 </td></tr>
 <tr><td valign="top"><em><a class="anchor" id="abc5c98fcc1211af2b80116dd6e0a035da542634e6051139c44fd7b92d08c64760"></a><!-- doxytag: member="kXMP_HTMLFile" ref="abc5c98fcc1211af2b80116dd6e0a035da542634e6051139c44fd7b92d08c64760" args="" -->kXMP_HTMLFile</em>&nbsp;</td><td>
 <p>Public file format constant: 'HTML'. </p>
@@ -1902,6 +1924,9 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 <tr><td valign="top"><em><a class="anchor" id="a80155586fa275b28773c9b203f52cabaaa58279b2b1311242e7374117f455bb96"></a><!-- doxytag: member="kXMPFiles_OpenOnlyXMP" ref="a80155586fa275b28773c9b203f52cabaaa58279b2b1311242e7374117f455bb96" args="" -->kXMPFiles_OpenOnlyXMP</em>&nbsp;</td><td>
 <p>Only the XMP is wanted, allows space/time optimizations. </p>
 </td></tr>
+<tr><td valign="top"><em><a class="anchor" id="a80155586fa275b28773c9b203f52cabaab8cbbeef0e99d246907a4375766e21a2"></a><!-- doxytag: member="kXMPFiles_ForceGivenHandler" ref="a80155586fa275b28773c9b203f52cabaab8cbbeef0e99d246907a4375766e21a2" args="" -->kXMPFiles_ForceGivenHandler</em>&nbsp;</td><td>
+<p>Force use of the given handler (format), do not even verify the format. </p>
+</td></tr>
 <tr><td valign="top"><em><a class="anchor" id="a80155586fa275b28773c9b203f52cabaa0bef4db2ecdaf82a85df9e9d417aab18"></a><!-- doxytag: member="kXMPFiles_OpenStrictly" ref="a80155586fa275b28773c9b203f52cabaa0bef4db2ecdaf82a85df9e9d417aab18" args="" -->kXMPFiles_OpenStrictly</em>&nbsp;</td><td>
 <p>Be strict about only attempting to use the designated file handler, no fallback to other handlers. </p>
 </td></tr>
@@ -1958,6 +1983,9 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 
 <p>Exception code constants. </p>
 <dl><dt><b>Enumerator: </b></dt><dd><table border="0" cellspacing="2" cellpadding="0">
+<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960ae2aec0f3b8db282cbba40e4bcf746ba9"></a><!-- doxytag: member="kXMPErr_NoError" ref="af9bdc3014f3d54c426b6d2df10de4960ae2aec0f3b8db282cbba40e4bcf746ba9" args="" -->kXMPErr_NoError</em>&nbsp;</td><td>
+<p>No error. </p>
+</td></tr>
 <tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a14813595824de97382fffeae7b6fe581"></a><!-- doxytag: member="kXMPErr_Unknown" ref="af9bdc3014f3d54c426b6d2df10de4960a14813595824de97382fffeae7b6fe581" args="" -->kXMPErr_Unknown</em>&nbsp;</td><td>
 <p>Generic unknown error. </p>
 </td></tr>
@@ -2242,6 +2270,9 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 <tr><td valign="top"><em><a class="anchor" id="a61dadd085c1777f559549e05962b2c9ea041dc6b7b8684be7112ae40f5f259ebb"></a><!-- doxytag: member="kXMP_UseCompactFormat" ref="a61dadd085c1777f559549e05962b2c9ea041dc6b7b8684be7112ae40f5f259ebb" args="" -->kXMP_UseCompactFormat</em>&nbsp;</td><td>
 <p>Use a compact form of RDF. </p>
 </td></tr>
+<tr><td valign="top"><em><a class="anchor" id="a61dadd085c1777f559549e05962b2c9ea15e3fb0e64614c574ed554f2f72c0a5d"></a><!-- doxytag: member="kXMP_UseCanonicalFormat" ref="a61dadd085c1777f559549e05962b2c9ea15e3fb0e64614c574ed554f2f72c0a5d" args="" -->kXMP_UseCanonicalFormat</em>&nbsp;</td><td>
+<p>Use a canonical form of RDF. </p>
+</td></tr>
 <tr><td valign="top"><em><a class="anchor" id="a61dadd085c1777f559549e05962b2c9ea0b659b3b544c7a5a076fbd3132cd7f7a"></a><!-- doxytag: member="kXMP_IncludeThumbnailPad" ref="a61dadd085c1777f559549e05962b2c9ea0b659b3b544c7a5a076fbd3132cd7f7a" args="" -->kXMP_IncludeThumbnailPad</em>&nbsp;</td><td>
 <p>Include a padding allowance for a thumbnail image. </p>
 </td></tr>
@@ -2409,6 +2440,6 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 </div>
 </div>
 <hr size="1"><address style="text-align: right;"><small>
-XMP-Toolkit-SDK-5.1.2 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
+XMP-Toolkit-SDK-CS6 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
 </body>
 </html>

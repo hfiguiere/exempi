@@ -1,7 +1,7 @@
 #
 # exempi - Makefile.am
 #
-# Copyright (C) 2007 Hubert Figuiere
+# Copyright (C) 2007-2013 Hubert Figuiere
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,12 +46,13 @@ AM_CXXFLAGS = -fexceptions -funsigned-char -fPIC \
 	-Wno-multichar -Wno-ctor-dtor-privacy
 
 AM_CPPFLAGS = -D@EXEMPI_PLATFORM_DEF@=1 -D_FILE_OFFSET_BITS=64
-XMPLIBS = $(top_builddir)/source/XMPCore/libXMPCore.la \
-	$(top_builddir)/source/XMPFiles/libXMPFiles.la \
-	$(top_builddir)/source/common/libxmpcommon.la -lexpat -lz \
-	$(top_builddir)/third-party/MD5/libmd5.la
+XMPLIBS = $(top_builddir)/XMPCore/source/libXMPCore.la \
+	$(top_builddir)/XMPFiles/source/libXMPFiles.la \
+	$(top_builddir)/source/libxmpcommon.la -lexpat -lz \
+	$(top_builddir)/third-party/zuid/interfaces/libmd5.la \
+	-ldl
 
-INCLUDES = -I$(top_srcdir)/public/include -I$(srcdir)/common -I$(top_srcdir)/source/common -I$(top_srcdir)/source/XMPFiles/FormatSupport
+INCLUDES = -I$(top_srcdir)/public/include -I$(top_srcdir)
 
 noinst_LTLIBRARIES = libsamplescommon.la
 libsamplescommon_la_SOURCES = common/DumpFile.cpp common/DumpFile.h \

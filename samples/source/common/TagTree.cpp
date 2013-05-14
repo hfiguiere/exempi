@@ -20,7 +20,7 @@
 *
 */
 
-#include "TagTree.h"
+#include "samples/source/common/TagTree.h"
 #include <stdarg.h>
 #include <cstdlib>
 
@@ -697,3 +697,14 @@ bool TagTree::hasNode(const std::string key)
 	return true;
 }
 
+XMP_Int32 TagTree::getNodeCount(const std::string key)
+{
+	int count=1;
+	std::string extkey=key;
+	while( tagMap.count(extkey) )
+	{
+		count++;
+		extkey = key + "-" + itos(count);
+	}
+	return count-1;
+}

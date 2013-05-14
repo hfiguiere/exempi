@@ -1,2 +1,2 @@
 
-SUBDIRS = MD5
+SUBDIRS = zuid/interfaces

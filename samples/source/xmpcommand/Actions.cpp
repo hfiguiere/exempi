@@ -20,13 +20,12 @@ const char * XMP_EXE_VERSION= "4.4";
 //XMP related
 #define TXMP_STRING_TYPE std::string
 #define XMP_INCLUDE_XMPFILES 1
-#include "XMP.hpp"			//NB: no XMP.incl_cpp here on purpose, gets compiled in main...
-#include "XMP_Const.h"
+#include "public/include/XMP.hpp"			//NB: no XMP.incl_cpp here on purpose, gets compiled in main...
+#include "public/include/XMP_Const.h"
 
-#include "globals.h"
-#include "Log.h"
-
-#include "Actions.h" //must come after XMP.hpp/XMP_Const.h
+#include "samples/source/common/globals.h"
+#include "samples/source/common/Log.h"
+#include "samples/source/xmpcommand/Actions.h" //must come after XMP.hpp/XMP_Const.h
 
 // utility functions **************************************************************
 

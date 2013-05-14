@@ -26,9 +26,9 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <cstring>
-#include "Log.h"
 
+#include "samples/source/common/globals.h"
+#include "samples/source/common/Log.h"
 using namespace std;
 
 //static variables ////////////////////////////////////////////////////////////////////
@@ -47,7 +47,7 @@ std::string Log::skippedTestsUnix;
 /* standard log, use filename=NULL or filename="" or do not construct at all
  * for logging to stdout only
  * (otherwise stuff gets logged to stdout *and* to the logfile specified)
- */ 
+ */
 Log::Log(const char* filename)
 {
 	if (Log::logfile) { //enfore singleton
@@ -76,7 +76,7 @@ Log::~Log()
 	}
 }
 
-/* 
+/*
 * outputs to file and standardout
 * (Note: it would be wunderbar to group the essential output into one function,
 *  regretably that type for  "..."-paramter forwarding doesn't go down well with logging MACROS (__DATE etc...)
@@ -90,7 +90,7 @@ void Log::trace(const char* format, ...) {
 	vprintf( format, args);
 	printf( "\n");
 	//file
-	if(logfile) { 
+	if(logfile) {
 		vfprintf( logfile, format, args);
 		fprintf( logfile, "\n");
 	}
@@ -99,7 +99,7 @@ void Log::trace(const char* format, ...) {
 
 void Log::info(const char* format, ...) {
 	// experience from TagTree, not encountered in Log.
-	//note: format and ... are somehow "used up", i.e. dumping them 
+	//note: format and ... are somehow "used up", i.e. dumping them
 	//      via vsprintf _and_ via printf brought up errors on Mac (only)
 	//      i.e. %d %X stuff looking odd (roughly like signed vs unsigned...)
 	//      buffer reuse as in (2) is fine, just dont use format/... twice.
@@ -110,7 +110,7 @@ void Log::info(const char* format, ...) {
 	vprintf( format, args);
 	printf( "\n");
 	//file
-	if(logfile) { 
+	if(logfile) {
 		vfprintf( logfile, format, args);
 		fprintf( logfile, "\n");
 	}
@@ -123,7 +123,7 @@ void Log::important(const char* format, ...) {
 	vprintf( format, args);
 	printf( "\n");
 	//file
-	if(logfile) { 
+	if(logfile) {
 		vfprintf( logfile, format, args);
 		fprintf( logfile, "\n");
 	}
@@ -137,7 +137,7 @@ void Log::infoNoLF(const char* format, ...) {
 	//stdout
 	vprintf( format, args);
 	//file
-	if(logfile) { 
+	if(logfile) {
 		vfprintf( logfile, format, args);
 	}
 	va_end(args);
@@ -153,7 +153,7 @@ void Log::warn(const char* format, ...){
 	vprintf( format, args);
 	printf( "\n");
 	//file
-	if(logfile) { 
+	if(logfile) {
 		fprintf( logfile, "warning:");
 		vfprintf( logfile, format, args);
 		fprintf( logfile, "\n");
@@ -178,7 +178,7 @@ void Log::error(const char* format, ...){
 
 
 ///////////////////////////////////////////////////////////////////////////////
-//convenience overloads 
+//convenience overloads
 
 void Log::info(std::string s1)
 {
