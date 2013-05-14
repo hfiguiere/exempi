@@ -16,8 +16,7 @@
 // slightly more readible but in no way more sophisticated.
 
 //sanity check platform/endianess
-#include "globals.h"
-
+#include "samples/source/common/globals.h"
 #if XMP_WinBuild
 	#pragma warning ( disable : 4267 )	// suppress string conversion warning
 	//	#pragma warning ( disable : 1234 )	// say what you do here
@@ -37,55 +36,14 @@ const int DUMPFILEVERSION=2;
 
 //XMPCore (only!)
 #define TXMP_STRING_TYPE std::string
-#include "XMP.hpp"			//NB: no XMP.incl_cpp here on purpose, gets compiled in main...
-#include "XMP.incl_cpp"		//include in EXACTLY one source file (i.e. main, in Action gets you trouble...)
-#include "XMP_Const.h"
+#include "public/include/XMP.hpp"			//NB: no XMP.incl_cpp here on purpose, gets compiled in main...
+#include "public/include/XMP.incl_cpp"		//include in EXACTLY one source file (i.e. main, in Action gets you trouble...)
+#include "public/include/XMP_Const.h"
 
-//QE related
-#include "Log.h"
-
-#include "LargeFileAccess.hpp"
-
-//void LFA_Throw ( const char* msg, int id ) 
-//{
-	//switch(id)
-	//{
-	//	case kLFAErr_InternalFailure:
-	//		Log::error("LFA User Abort:%s", msg);
-	//		break;
-	//	case kLFAErr_ExternalFailure:
-	//		Log::error("LFA External Failure:%s", msg);
-	//		break;
-	//	case kLFAErr_UserAbort:
-	//		Log::error("LFA User Abort:%s", msg);
-	//		break;
-	//	default:
-	//		Log::error("LFA unknown error:%s", msg); //should not occur
-	//		break;
-	//}
-//}
-#define XMP_Throw(msg,id)	{ throw XMP_Error ( id, msg ); }
-void LFA_Throw ( const char* msg, int id )
-{
-	switch(id)
-	{
-		case kLFAErr_InternalFailure:
-			XMP_Throw(msg,kXMPErr_InternalFailure);
-			break;
-		case kLFAErr_ExternalFailure:
-			XMP_Throw(msg,kXMPErr_ExternalFailure);
-			break;
-		case kLFAErr_UserAbort:
-			XMP_Throw(msg,kXMPErr_UserAbort);
-			break;
-		default:
-			XMP_Throw(msg,kXMPErr_UnknownException);
-			break;
-	}
-}
-
-#include "DumpFile.h"
-
+//utils
+#include "samples/source/common/Log.h"
+#include "samples/source/common/LargeFileAccess.hpp"
+#include "samples/source/common/DumpFile.h"
 using namespace std;
 
 void printUsageShort() {

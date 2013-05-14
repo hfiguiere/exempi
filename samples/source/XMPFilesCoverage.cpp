@@ -19,8 +19,8 @@
 
 #define TXMP_STRING_TYPE std::string
 #define XMP_INCLUDE_XMPFILES 1
-#include "XMP.hpp"
-#include "XMP.incl_cpp"
+#include "public/include/XMP.hpp"
+#include "public/include/XMP.incl_cpp"
 
 using namespace std;
 

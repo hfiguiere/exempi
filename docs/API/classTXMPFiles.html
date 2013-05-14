@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-<title>XMP-Toolkit-SDK-5.1.2: TXMPFiles&lt; tStringObj &gt; Class Template Reference</title>
+<title>XMP-Toolkit-SDK-CS6: TXMPFiles&lt; tStringObj &gt; Class Template Reference</title>
 <link href="xmp.css" rel="stylesheet" type="text/css">
 <link href="tabs.css" rel="stylesheet" type="text/css">
 </head><body>
@@ -119,6 +119,10 @@ window.onload = initDynSections;
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Initializes the XMPFiles library; must be called before creating an <code>SXMPFiles</code> object.  <a href="#a0874bbbf41c9490abfb613bfe297327d"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">static bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a794e1830a84a6328eaa1995ba5aa6874">Initialize</a> (<a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a> options)</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Initializes the XMPFiles library; must be called before creating an <code>SXMPFiles</code> object.  <a href="#a794e1830a84a6328eaa1995ba5aa6874"></a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">static bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#abf0defebf7ca7d2cba7aed3c5dc107df">Initialize</a> (const char *pluginFolder, const char *plugins=NULL)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Initializes the XMPFiles library; must be called before creating an <code>SXMPFiles</code> object.  <a href="#abf0defebf7ca7d2cba7aed3c5dc107df"></a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">static bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#acc4b3bc2109fa98b4083df0d974f7dfb">Initialize</a> (<a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a> options, const char *pluginFolder, const char *plugins=NULL)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Initializes the XMPFiles library; must be called before creating an <code>SXMPFiles</code> object.  <a href="#acc4b3bc2109fa98b4083df0d974f7dfb"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">static void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a1e8de80c252b60b332dc4bc524139fd8">Terminate</a> ()</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Terminates use of the XMPFiles library.  <a href="#a1e8de80c252b60b332dc4bc524139fd8"></a><br/></td></tr>
 <tr><td colspan="2"><div class="groupHeader">File handler information</div></td></tr>
@@ -133,6 +137,8 @@ window.onload = initDynSections;
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#a07b7c4b44fb0e0a7d115ddd5ba22f926" title="CheckFileFormat() tries to determine the format of a file.">CheckFileFormat()</a></code> tries to determine the format of a file.  <a href="#a07b7c4b44fb0e0a7d115ddd5ba22f926"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">static <a class="el" href="XMP__Const_8h.html#a300d9a9189cb4ddb6970d05389f5c28e">XMP_FileFormat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a7f505664c41d7304fb757d6009b0751c">CheckPackageFormat</a> (<a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> folderPath)</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#a7f505664c41d7304fb757d6009b0751c" title="CheckPackageFormat() tries to determine the format of a &quot;package&quot; folder...">CheckPackageFormat()</a></code> tries to determine the format of a "package" folder.  <a href="#a7f505664c41d7304fb757d6009b0751c"></a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">static bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a0de588c4b98086206b3a5d737012106d">GetFileModDate</a> (<a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> filePath, <a class="el" href="structXMP__DateTime.html">XMP_DateTime</a> *modDate, <a class="el" href="XMP__Const_8h.html#a300d9a9189cb4ddb6970d05389f5c28e">XMP_FileFormat</a> *format=0, <a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a> options=0)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#a0de588c4b98086206b3a5d737012106d" title="GetFileModDate() returns the most recent modification date of a file containing metadata...">GetFileModDate()</a></code> returns the most recent modification date of a file containing metadata.  <a href="#a0de588c4b98086206b3a5d737012106d"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#afcd21cfe5d6f13c648c5541e161919cb">OpenFile</a> (<a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> filePath, <a class="el" href="XMP__Const_8h.html#a300d9a9189cb4ddb6970d05389f5c28e">XMP_FileFormat</a> format=kXMP_UnknownFile, <a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a> openFlags=0)</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#afcd21cfe5d6f13c648c5541e161919cb" title="OpenFile() opens a file for metadata access.">OpenFile()</a></code> opens a file for metadata access.  <a href="#afcd21cfe5d6f13c648c5541e161919cb"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#acfef1688f3a62e2f465bb3a27da7b4ac">OpenFile</a> (const tStringObj &amp;filePath, <a class="el" href="XMP__Const_8h.html#a300d9a9189cb4ddb6970d05389f5c28e">XMP_FileFormat</a> format=kXMP_UnknownFile, <a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a> openFlags=0)</td></tr>
@@ -591,6 +597,60 @@ template&lt;class tStringObj&gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="a0de588c4b98086206b3a5d737012106d"></a><!-- doxytag: member="TXMPFiles::GetFileModDate" ref="a0de588c4b98086206b3a5d737012106d" args="(XMP_StringPtr filePath, XMP_DateTime *modDate, XMP_FileFormat *format=0, XMP_OptionBits options=0)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">static bool <a class="el" href="classTXMPFiles.html">TXMPFiles</a>&lt; tStringObj &gt;::GetFileModDate </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a>&nbsp;</td>
+          <td class="paramname"> <em>filePath</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structXMP__DateTime.html">XMP_DateTime</a> *&nbsp;</td>
+          <td class="paramname"> <em>modDate</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#a300d9a9189cb4ddb6970d05389f5c28e">XMP_FileFormat</a> *&nbsp;</td>
+          <td class="paramname"> <em>format</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a>&nbsp;</td>
+          <td class="paramname"> <em>options</em> = <code>0</code></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td><code> [static]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p><code><a class="el" href="classTXMPFiles.html#a0de588c4b98086206b3a5d737012106d" title="GetFileModDate() returns the most recent modification date of a file containing metadata...">GetFileModDate()</a></code> returns the most recent modification date of a file containing metadata. </p>
+<p>Tries to return the most recent O/S file modification date for associated metadata. In the typical case of a single file containing embedded XMP and non-XMP this is the modification date of that file. For a simple sidecar, such as MPEG-2, this is the modification date of the sidecar and not the media file. For a video package such as P2 this is the XMP file, the XML file, and any media file that might be read for metadata.</p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>filePath</em>&nbsp;</td><td>The path for the file, appropriate for the local operating system. Passed as a nul-terminated UTF-8 string. The path is the same as would be passed to <code>OpenFile</code>.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>modDate</em>&nbsp;</td><td>A required pointer to return the modification date.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>format</em>&nbsp;</td><td>An optional in/out pointer to a file format. Used on input as a hint for the handler to select, on output as the handler chosen.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>options</em>&nbsp;</td><td>An optional set of option flags. The only defined one is <code>kXMPFiles_ForceGivenHandler</code>, used to shortcut the handler selection logic if the caller is certain of the format.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="return"><dt><b>Returns:</b></dt><dd>True if a modification date could be determined, false if there is no smart file handler. </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="acb9e16a1477ec67fa6da6d736a9bc131"></a><!-- doxytag: member="TXMPFiles::GetFormatInfo" ref="acb9e16a1477ec67fa6da6d736a9bc131" args="(XMP_FileFormat format, XMP_OptionBits *handlerFlags=0)" -->
 <div class="memitem">
 <div class="memproto">
@@ -738,6 +798,97 @@ template&lt;class tStringObj&gt; </div>
   </dd>
 </dl>
 <dl class="return"><dt><b>Returns:</b></dt><dd>True if the file has XMP, false otherwise. </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="acc4b3bc2109fa98b4083df0d974f7dfb"></a><!-- doxytag: member="TXMPFiles::Initialize" ref="acc4b3bc2109fa98b4083df0d974f7dfb" args="(XMP_OptionBits options, const char *pluginFolder, const char *plugins=NULL)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">static bool <a class="el" href="classTXMPFiles.html">TXMPFiles</a>&lt; tStringObj &gt;::Initialize </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a>&nbsp;</td>
+          <td class="paramname"> <em>options</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&nbsp;</td>
+          <td class="paramname"> <em>pluginFolder</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&nbsp;</td>
+          <td class="paramname"> <em>plugins</em> = <code>NULL</code></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td><code> [static]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>Initializes the XMPFiles library; must be called before creating an <code>SXMPFiles</code> object. </p>
+<p>This overload of <a class="el" href="classTXMPFiles.html#a794e1830a84a6328eaa1995ba5aa6874" title="Initializes the XMPFiles library; must be called before creating an SXMPFiles object...">TXMPFiles::Initialize( XMP_OptionBits options )</a> accepts plugin directory and name of the plug-ins as a comma separated list to load the file handler plug-ins. If plugins == NULL, then all plug-ins present in the plug-in directory will be loaded.</p>
+<p>The main action is to activate the available smart file handlers. Must be called before using any methods except <code><a class="el" href="classTXMPFiles.html#a6e521c034728b59ab55213a9d8203d1e" title="GetVersionInfo() retrieves version information for the XMPFiles component.">GetVersionInfo()</a></code>.</p>
+<p>This function is static; make the call directly from the concrete class (<code>SXMPFiles</code>).</p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>options</em>&nbsp;</td><td>Option flags to control the initialization actions. </td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>pluginFolder</em>&nbsp;</td><td>Pugin directorty to load the file handler plug-ins. </td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>plugins</em>&nbsp;</td><td>Comma sepearted list of plug-ins which should be loaded from the plug-in directory. If plugin == NULL, then all plug-ins availbale in the plug-in directory will be loaded.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="return"><dt><b>Returns:</b></dt><dd>True on success. </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="abf0defebf7ca7d2cba7aed3c5dc107df"></a><!-- doxytag: member="TXMPFiles::Initialize" ref="abf0defebf7ca7d2cba7aed3c5dc107df" args="(const char *pluginFolder, const char *plugins=NULL)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">static bool <a class="el" href="classTXMPFiles.html">TXMPFiles</a>&lt; tStringObj &gt;::Initialize </td>
+          <td>(</td>
+          <td class="paramtype">const char *&nbsp;</td>
+          <td class="paramname"> <em>pluginFolder</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&nbsp;</td>
+          <td class="paramname"> <em>plugins</em> = <code>NULL</code></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td><code> [static]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>Initializes the XMPFiles library; must be called before creating an <code>SXMPFiles</code> object. </p>
+<p>This overload of <a class="el" href="classTXMPFiles.html#a0874bbbf41c9490abfb613bfe297327d" title="Initializes the XMPFiles library; must be called before creating an SXMPFiles object...">TXMPFiles::Initialize()</a> accepts plugin directory and name of the plug-ins as a comma separated list to load the file handler plug-ins. If plugins == NULL, then all plug-ins present in the plug-in directory will be loaded.</p>
+<p>The main action is to activate the available smart file handlers. Must be called before using any methods except <code><a class="el" href="classTXMPFiles.html#a6e521c034728b59ab55213a9d8203d1e" title="GetVersionInfo() retrieves version information for the XMPFiles component.">GetVersionInfo()</a></code>.</p>
+<p>This function is static; make the call directly from the concrete class (<code>SXMPFiles</code>).</p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>pluginFolder</em>&nbsp;</td><td>Pugin directorty to load the file handler plug-ins. </td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>plugins</em>&nbsp;</td><td>Comma sepearted list of plug-ins which should be loaded from the plug-in directory. If plugin == NULL, then all plug-ins availbale in the plug-in directory will be loaded.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="return"><dt><b>Returns:</b></dt><dd>True on success. </dd></dl>
 
 </div>
 </div>
@@ -1086,6 +1237,6 @@ template&lt;class tStringObj&gt; </div>
 </ul>
 </div>
 <hr size="1"><address style="text-align: right;"><small>
-XMP-Toolkit-SDK-5.1.2 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
+XMP-Toolkit-SDK-CS6 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
 </body>
 </html>

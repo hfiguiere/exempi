@@ -6,9 +6,9 @@
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
 
-#include "globals.h"
-#include "PrintUsage.h"
-#include "Log.h"
+#include "samples/source/common/globals.h"
+#include "samples/source/common/Log.h"
+#include "samples/source/xmpcommand/PrintUsage.h"
 
 using namespace std;
 

@@ -19,10 +19,10 @@
 #define XMP_INCLUDE_XMPFILES 1 
 
 // Ensure XMP templates are instantiated
-#include "XMP.incl_cpp"
+#include "public/include/XMP.incl_cpp"
 
 // Provide access to the API
-#include "XMP.hpp"
+#include "public/include/XMP.hpp"
 
 #include <iostream>
 

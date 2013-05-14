@@ -72,9 +72,27 @@ Initialize()
 // -------------------------------------------------------------------------------------------------
 
 XMP_MethodIntro(TXMPFiles,bool)::
+Initialize( const char* pluginFolder, const char* plugins )
+{
+	WrapCheckBool ( ok, zXMPFiles_Initialize_2 ( 0, pluginFolder, plugins ) );
+	return ok;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPFiles,bool)::
 Initialize ( XMP_OptionBits options )
 {
 	WrapCheckBool ( ok, zXMPFiles_Initialize_1 ( options ) );
+	return ok;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPFiles,bool)::
+Initialize ( XMP_OptionBits options, const char* pluginFolder, const char* plugins )
+{
+	WrapCheckBool ( ok, zXMPFiles_Initialize_2 ( options, pluginFolder, plugins ) );
 	return ok;
 }
 
@@ -230,6 +248,15 @@ CheckPackageFormat ( XMP_StringPtr folderPath )
 }
 
 // -------------------------------------------------------------------------------------------------
+	
+XMP_MethodIntro(TXMPFiles,bool)::
+GetFileModDate ( XMP_StringPtr filePath, XMP_DateTime * modDate, XMP_FileFormat * format, XMP_OptionBits options )
+{
+	WrapCheckBool ( ok, zXMPFiles_GetFileModDate_1 ( filePath, modDate, format, options ) );
+	return ok;
+}
+
+// -------------------------------------------------------------------------------------------------
 
 XMP_MethodIntro(TXMPFiles,bool)::
 OpenFile ( XMP_StringPtr  filePath,
@@ -249,6 +276,19 @@ OpenFile ( const tStringObj & filePath,
 {
 	return this->OpenFile ( filePath.c_str(), format, openFlags );
 }
+
+// -------------------------------------------------------------------------------------------------
+
+#if XMP_StaticBuild	// ! Client XMP_IO objects can only be used in static builds.
+XMP_MethodIntro(TXMPFiles,bool)::
+OpenFile ( XMP_IO *       clientIO,
+		   XMP_FileFormat format /* = kXMP_UnknownFile */,
+		   XMP_OptionBits openFlags /* =0 */ )
+{
+	WrapCheckBool ( ok, zXMPFiles_OpenFile_2 ( clientIO, format, openFlags ) );
+	return ok;
+}
+#endif
 
 // -------------------------------------------------------------------------------------------------
 
@@ -291,7 +331,7 @@ GetXMP ( SXMPMeta *       xmpObj /* = 0 */,
 		SXMPUtils::RemoveProperties ( xmpObj, 0, 0, kXMPUtil_DoAllProperties );	// *** Need an SXMPMeta::Clear method:
 		xmpRef = xmpObj->GetInternalRef();
 	}
-	
+
 	WrapCheckBool ( hasXMP, zXMPFiles_GetXMP_1 ( xmpRef, xmpPacket, packetInfo, SetClientString ) );
 	return hasXMP;
 }

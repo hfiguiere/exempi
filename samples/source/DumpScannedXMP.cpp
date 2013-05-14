@@ -26,11 +26,10 @@
 
 #define TXMP_STRING_TYPE	std::string
 
-#include "XMP.hpp"
-#include "XMP.incl_cpp"
+#include "public/include/XMP.hpp"
+#include "public/include/XMP.incl_cpp"
 
-#include "XMPScanner.hpp"
-
+#include "samples/source/common/XMPScanner.hpp"
 using namespace std;
 
 // =================================================================================================
