@@ -9,9 +9,6 @@
 #include "public/include/XMP_Environment.h"	// ! Must be the first #include!
 #include "source/XMLParserAdapter.hpp"
 
-#include <string.h>
-#include <cstring>
-#include <cstdio>
 #include <map>
 #include <cstring>
 #include <cstdio>

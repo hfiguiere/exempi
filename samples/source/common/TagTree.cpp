@@ -22,7 +22,6 @@
 
 #include "samples/source/common/TagTree.h"
 #include <stdarg.h>
-#include <cstdlib>
 
 // silent by default
 bool TagTree::verbose = false;

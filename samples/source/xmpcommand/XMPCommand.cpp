@@ -19,7 +19,6 @@
 #include <string>
 #include <vector>
 #include <sstream>
-#include <cstring>
 
 #include "samples/source/common/globals.h"
 #include "samples/source/common/Log.h"

@@ -31,7 +31,7 @@ void LFA_Throw ( const char* msg, int id )
 // LFA implementations for Macintosh
 // =================================
 
-#if 0 // This Mac-specific code is no longer used, but retained to make merges easier
+#if XMP_MacBuild
 
 	static bool FileExists ( const char * filePath )
 	{
@@ -523,7 +523,7 @@ void LFA_Throw ( const char* msg, int id )
 // LFA implementations for POSIX
 // =============================
 
-#if XMP_UNIXBuild | XMP_MacBuild
+#if XMP_UNIXBuild
 
 	// ---------------------------------------------------------------------------------------------
 
@@ -706,7 +706,7 @@ void LFA_Throw ( const char* msg, int id )
 
 	// ---------------------------------------------------------------------------------------------
 
-#endif	// XMP_UNIXBuild | XMP_MacBuild
+#endif	// XMP_UNIXBuild
 
 // =================================================================================================
 
@@ -816,7 +816,7 @@ XMP_Int64 LFA_Rewind( LFA_FileRef file)
 //*** kind of a hack, TOTEST
 bool LFA_isEof( LFA_FileRef file )
 {
-	#if 0 // This Mac-specific code is no longer used, but retained to make merges easier
+	#if XMP_MacBuild
 		long refNum = (long)file;	// ! Use long to avoid size warnings for SInt16 cast.
 
 		XMP_Int64 position, length;
@@ -842,7 +842,7 @@ bool LFA_isEof( LFA_FileRef file )
 
 		return filesize == filepos;
 	#endif
-	#if XMP_UNIXBuild | XMP_MacBuild
+	#if XMP_UNIXBuild
 		int descr = (int)file;
 
 		struct stat info;
@@ -860,34 +860,3 @@ char LFA_GetChar( LFA_FileRef file )
 	LFA_Read( file, &c, 1, true);
 	return c;
 }
-
-#if XMP_MacBuild
-
-	// ---------------------------------------------------------------------------------------------
-
-	// On Mac OS X, POSIX open() can access resource forks by appending
-	// "/..namedfork/rsrc" to the end of the actual path
-	LFA_FileRef LFA_OpenRsrc ( const char* filePath, char mode )
-	{
-		char suffix[18] = "/..namedfork/rsrc";
-		char* rsrc = (char*) malloc((strlen(filePath)+strlen(suffix)+2) * sizeof(char));
-		strcpy ( rsrc, filePath ) ;
-		strcat ( rsrc, suffix );
-
-		LFA_FileRef fileRef;
-		try {
-			// Once we assemble the name with resource fork, we can use
-			// the standard LFA_Open call to get it
-			fileRef = LFA_Open ( rsrc, mode );
-		} catch ( ... ) {
-			LFA_Throw ( "LFA_OpenRsrc: open failure", kLFAErr_ExternalFailure );
-		}
-
-		free ( rsrc );
-
-		return fileRef;
-	} // LFA_OpenRsrc
-
-	// ---------------------------------------------------------------------------------------------
-
-#endif // XMP_MacBuild

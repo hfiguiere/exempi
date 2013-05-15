@@ -740,7 +740,7 @@ private:
 
 	bool ownedStream;
 
-    XMP_Uns8* tiffStream;
+	XMP_Uns8* tiffStream;
 	XMP_Uns32 tiffLength;
 
 	// Memory usage notes: TIFF_MemoryReader is for memory-based read-only usage (both apply). There

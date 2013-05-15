@@ -236,7 +236,7 @@ struct XMP_DateTime {
 
 	#if __cplusplus
 		XMP_DateTime() : year(0), month(0), day(0), hour(0), minute(0), second(0),
-      hasDate(false), hasTime(false), hasTimeZone(false), tzSign(0), tzHour(0), tzMinute(0), nanoSecond(0) {};
+		                 hasDate(false), hasTime(false), hasTimeZone(false), tzSign(0), tzHour(0), tzMinute(0), nanoSecond(0) {};
 	#endif
 
 };

@@ -25,10 +25,9 @@
 // Provide access to the API
 #include "public/include/XMP.hpp"
 
-#include <string.h>
-
 #include <iostream>
 #include <fstream>
+#include <string.h>
 
 using namespace std; 
 

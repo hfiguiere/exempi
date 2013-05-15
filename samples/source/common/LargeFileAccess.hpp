@@ -46,7 +46,7 @@ enum { // Used by LFA_Throw, re-route to whatever you need.
 void LFA_Throw ( const char* msg, int id );	
 
 
-#if ! (XMP_UNIXBuild | XMP_MacBuild)
+#if ! XMP_UNIXBuild
 	typedef void * LFA_FileRef;
 #else
 	typedef XMP_Int32 LFA_FileRef;

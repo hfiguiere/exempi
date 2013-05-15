@@ -14,10 +14,10 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include <cstring>
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <time.h>
 

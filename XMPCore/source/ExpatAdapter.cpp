@@ -12,12 +12,7 @@
 #include "source/ExpatAdapter.hpp"
 #include "XMPCore/source/XMPMeta.hpp"
 
-#if 0
 #include "third-party/expat/lib/expat.h"
-#else
-// Exempi build: use system expat.
-#include <expat.h>
-#endif
 #include <string.h>
 
 using namespace std;
