@@ -547,7 +547,7 @@ private:
 			{
 				//// WRITE BACK REAL 64 BIT VALUES, CREATE EXTRA FIELD ///////////////
 				//may only wipe extra field after obtaining all Info from it
-				if (extraField)	delete extraField;
+				if (extraField)	delete [] extraField;
 					extraFieldLen=0;
 
 				if ( ( sizeUncompressed  > 0xffffffff ) ||
@@ -598,7 +598,7 @@ private:
 
 			void setXMPFilename()
 			{
-				if (filename) delete filename;
+				if (filename) delete [] filename;
 				filenameLen = xmpFilenameLen;
 				filename = new char[xmpFilenameLen];
 				PutUns16LE(filenameLen,	&fields[CDFileHeader::o_fileNameLength] );
@@ -630,8 +630,9 @@ private:
 		const static XMP_Uns32 SIG = 0x06054b50;
 		void UCFECD_Free()
 		{
-			if(commentLen) delete comment;
+			if(commentLen) delete [] comment;
 			commentLen = 0;
+			comment = 0;
 		}
 	public:
 		const static XMP_Int32 o_Sig = 0;
