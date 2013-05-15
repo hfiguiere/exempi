@@ -1,3 +1,11 @@
+2.3.0
+
+- Upgrade XMPCore to Adobe XMP CS6.
+  - Pluggable file handlers (not exposed)
+  - Support for Exif 2.3 properties
+  - New RIFF file handler
+  - Lot of bug fixes.
+
 2.2.1
 
 - Bug #54011: Use POSIX API for files on MacOS. (Misty De Meo)
