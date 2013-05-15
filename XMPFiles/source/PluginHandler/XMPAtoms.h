@@ -99,7 +99,7 @@ class ResourceParser
 {
 public:
 	ResourceParser(ModuleSharedPtr module)
-		: mModule(module), mFlags(0), mSerializeOption(0), mType(0), mVersion(0), mOverwriteHandler(false) {}
+		: mModule(module), mType(0), mFlags(0), mSerializeOption(0), mVersion(0), mOverwriteHandler(false) {}
 
 	/** 
 	 *  Initialize the XMPAtoms which will be used in parsing resource files.

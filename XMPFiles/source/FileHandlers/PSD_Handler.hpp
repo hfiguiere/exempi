@@ -57,7 +57,7 @@ public:
 
 private:
 
-	PSD_MetaHandler() : iptcMgr(0), exifMgr(0), skipReconcile(false) {};	// Hidden on purpose.
+	PSD_MetaHandler() : skipReconcile(false), iptcMgr(0), exifMgr(0) {}	// Hidden on purpose.
 
 	PSIR_FileWriter psirMgr;	// Don't need a pointer, the PSIR part is always file-based.
 	IPTC_Manager *  iptcMgr;	// Need to use pointers so we can properly select between read-only

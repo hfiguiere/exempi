@@ -277,10 +277,10 @@ private:
 				PutUns16LE(0x14,		&fields[FileHeader::o_extractVersion] );
 			}
 
-			FileHeader() : filename(0),filenameLen(0),extraField(0),extraFieldLen(0)
+			FileHeader() : filename(0),extraField(0),filenameLen(0),extraFieldLen(0)
 			{
 				clear();
-			};
+			}
 
 			// reads entire *FileHeader* structure from file (starting at current position)
 			void read(XMP_IO* file)
