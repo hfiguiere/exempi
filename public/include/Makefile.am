@@ -1,7 +1,7 @@
 #
 # exempi - Makefile.am
 #
-# Copyright (C) 2007 Hubert Figuiere
+# Copyright (C) 2007-2013 Hubert Figuiere
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,12 +38,13 @@
 DIST_SUBDIRS = client-glue
 
 xmpdir = $(includedir)/@EXEMPI_INCLUDE_BASE@
-xmp_HEADERS = 
+xmp_HEADERS =
 
 noinst_HEADERS = TXMPFiles.hpp  TXMPIterator.hpp \
 	TXMPMeta.hpp  TXMPUtils.hpp \
 	XMP.hpp  XMP_Version.h\
 	XMP.incl_cpp\
 	XMP_Const.h XMP_Environment.h \
+	XMP_IO.hpp \
 	XMP_UnixEndian.h \
 	$(NULL)

@@ -58,6 +58,8 @@ noinst_LTLIBRARIES = libsamplescommon.la
 libsamplescommon_la_SOURCES = common/DumpFile.cpp common/DumpFile.h \
 	common/Log.cpp common/Log.h \
 	common/TagTree.cpp common/TagTree.h \
+	common/LargeFileAccess.hpp \
+	common/XMPScanner.hpp \
 	common/globals.h \
 	$(NULL)
 

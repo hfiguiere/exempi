@@ -66,7 +66,7 @@ if HAVE_SYMBOLS_FILE
 libexempi_la_LDFLAGS += -Wl,--retain-symbols-file=$(srcdir)/libexempi.sym
 endif
 
-man_MANS = exempi.1
+dist_man1_MANS = exempi.1
 
 EXTRA_DIST = libexempi.sym
 

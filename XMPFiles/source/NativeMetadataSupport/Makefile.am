@@ -54,5 +54,3 @@ libnativemetadata_la_SOURCES = \
 	MetadataSet.cpp MetadataSet.h \
 	ValueObject.h \
 	$(NULL)
-
-EXTRA_DIST=OS_Utils_WIN.cpp OS_Utils_Mac.cpp
