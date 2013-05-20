@@ -51,11 +51,18 @@ noinst_HEADERS = UnicodeConversions.hpp ExpatAdapter.hpp EndianUtils.hpp\
 	XMLParserAdapter.hpp XMPFiles_IO.hpp Endian.h Host_IO.hpp XIO.hpp
 
 
+if MAC_ENV
+PLATFORM_IO=Host_IO-Mac.cpp
+else
+PLATFORM_IO=Host_IO-UNIX.cpp
+endif
+
 libxmpcommon_la_SOURCES = UnicodeInlines.incl_cpp UnicodeConversions.cpp\
 	XML_Node.cpp XMPFiles_IO.cpp \
 	XMP_LibUtils.hpp XMP_LibUtils.cpp \
-	Host_IO-UNIX.cpp XIO.cpp \
+	XIO.cpp \
+	$(PLATFORM_IO) \
 	$(NULL)
 
 
-EXTRA_DIST = Host_IO-Mac.cpp Host_IO-POSIX.cpp Host_IO-Win.cpp
+EXTRA_DIST = Host_IO-UNIX.cpp Host_IO-Mac.cpp Host_IO-POSIX.cpp Host_IO-Win.cpp

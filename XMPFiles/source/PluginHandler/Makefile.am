@@ -47,14 +47,19 @@ AM_CPPFLAGS = -Wall\
 	-D_FILE_OFFSET_BITS=64 -DHAVE_EXPAT_CONFIG_H=1 -DXML_STATIC=1 \
 	-DDISABLE_QUICKTIME
 
+if MAC_ENV
+PLATFORM_UTILS=OS_Utils_Mac.cpp
+else
+PLATFORM_UTILS=OS_Utils_Linux.cpp
+endif
 
 libpluginhandler_la_SOURCES = FileHandler.h \
 	FileHandlerInstance.cpp FileHandlerInstance.h \
 	HostAPIImpl.cpp \
 	Module.cpp Module.h ModuleUtils.h \
-	OS_Utils_Linux.cpp \
 	PluginManager.cpp PluginManager.h \
 	XMPAtoms.cpp XMPAtoms.h \
+	$(PLATFORM_UTILS) \
 	$(NULL)
 
-EXTRA_DIST=OS_Utils_WIN.cpp OS_Utils_Mac.cpp
+EXTRA_DIST=OS_Utils_Linux.cpp OS_Utils_WIN.cpp OS_Utils_Mac.cpp

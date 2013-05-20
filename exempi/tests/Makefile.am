@@ -54,6 +54,7 @@ noinst_HEADERS = utils.h
 EXTRA_DIST = $(check_DATA) $(check_SCRIPTS)
 CLEANFILES = test.jpg
 
+AM_CXXFLAGS = @BOOST_CPPFLAGS@
 
 testinit_SOURCES = testinit.cpp utils.cpp
 testinit_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
