@@ -1,7 +1,7 @@
 #
 # exempi - Makefile.am
 #
-# Copyright (C) 2007-2011 Hubert Figuiere
+# Copyright (C) 2007-2013 Hubert Figuiere
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -66,7 +66,7 @@ if HAVE_SYMBOLS_FILE
 libexempi_la_LDFLAGS += -Wl,--retain-symbols-file=$(srcdir)/libexempi.sym
 endif
 
-man_MANS = exempi.1
+dist_man1_MANS = exempi.1
 
 EXTRA_DIST = libexempi.sym
 
