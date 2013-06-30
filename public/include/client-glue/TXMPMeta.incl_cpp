@@ -108,7 +108,8 @@ Initialize()
 	XMP_TypeCheck ( (sizeof(XMP_Uns16) == 2), "Size wrong for critical type XMP_Uns16" );
 	XMP_TypeCheck ( (sizeof(XMP_Uns32) == 4), "Size wrong for critical type XMP_Uns32" );
 	XMP_TypeCheck ( (sizeof(XMP_Uns64) == 8), "Size wrong for critical type XMP_Uns64" );
-	
+	XMP_TypeCheck ( (sizeof(XMP_Bool)  == 1), "Size wrong for critical type XMP_Bool" );
+
 	#if XMP_TraceClientCallsToFile
 		xmpClientLog = fopen ( "XMPClientLog.txt", "w" );
 		if ( xmpClientLog == 0 ) xmpClientLog = stderr;
@@ -867,5 +868,33 @@ SerializeToBuffer ( tStringObj *   pktString,
 }
 
 // -------------------------------------------------------------------------------------------------
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPMeta,void)::
+SetDefaultErrorCallback ( XMPMeta_ErrorCallbackProc proc,
+						  void *    context /* = 0 */,
+						  XMP_Uns32 limit /* = 1 */ )
+{
+	WrapCheckVoid ( zXMPMeta_SetDefaultErrorCallback_1 ( proc, context, limit ) );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPMeta,void)::
+SetErrorCallback ( XMPMeta_ErrorCallbackProc proc,
+				   void *    context /* = 0 */,
+				   XMP_Uns32 limit /* = 1 */ )
+{
+	WrapCheckVoid ( zXMPMeta_SetErrorCallback_1 ( proc, context, limit ) );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPMeta,void)::
+ResetErrorCallbackLimit ( XMP_Uns32 limit /* = 1 */ )
+{
+	WrapCheckVoid ( zXMPMeta_ResetErrorCallbackLimit_1 ( limit ) );
+}
 
 // =================================================================================================

@@ -49,6 +49,9 @@ class SonyHDV_MetaHandler : public XMPFileHandler
 public:
 
 	bool GetFileModDate ( XMP_DateTime * modDate );
+	void FillMetadataFiles(std::vector<std::string>* metadataFiles );
+	void FillAssociatedResources ( std::vector<std::string> * resourceList );
+	bool IsMetadataWritable ( );
 
 	void CacheFileData();
 	void ProcessXMP();

@@ -29,7 +29,7 @@
 static bool sFirstCTor = true;
 
 TIFF_Manager::TIFF_Manager()
-	: bigEndian(false), nativeEndian(false),
+	: bigEndian(false), nativeEndian(false), errorCallbackPtr( NULL ),
 	  GetUns16(0), GetUns32(0), GetFloat(0), GetDouble(0),
 	  PutUns16(0), PutUns32(0), PutFloat(0), PutDouble(0)
 {
@@ -379,6 +379,13 @@ static void UTF8_to_UTF16 ( const UTF8Unit * utf8Ptr, size_t utf8Len, bool bigEn
 
 }	// UTF8_to_UTF16
 
+XMP_Bool IsOffsetValid( XMP_Uns32 offset, XMP_Uns32 lowerBound, XMP_Uns32 upperBound )
+{
+	if ( (lowerBound <= offset) && (offset < upperBound) )
+		return true;
+	return false;
+}
+
 // =================================================================================================
 // TIFF_Manager::EncodeString
 // ==========================
@@ -435,5 +442,15 @@ bool TIFF_Manager::EncodeString ( const std::string& utf8Str, XMP_Uns8 encoding,
 	return false;	// ! Should never get here.
 
 }	// TIFF_Manager::EncodeString
+
+void TIFF_Manager::NotifyClient( XMP_ErrorSeverity severity, XMP_Error & error )
+{
+	if (this->errorCallbackPtr)
+		this->errorCallbackPtr->NotifyClient( severity, error );
+	else {
+		if ( severity != kXMPErrSev_Recoverable )
+			throw error;
+	}
+}
 
 // =================================================================================================

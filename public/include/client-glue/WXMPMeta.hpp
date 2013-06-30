@@ -15,6 +15,22 @@
 extern "C" {
 #endif
 
+// =================================================================================================
+
+static XMP_Bool WrapErrorNotify ( XMPMeta_ErrorCallbackProc proc, void * context,
+							  XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr message )
+{
+	bool ok;
+	try {
+		ok = (*proc) ( context, severity, cause, message );
+	} catch ( ... ) {
+		ok = false;
+	}
+	return ConvertBoolToXMP_Bool( ok );
+}
+
+// =================================================================================================
+
 #define zXMPMeta_GetVersionInfo_1(info) \
     WXMPMeta_GetVersionInfo_1 ( info /* no wResult */ )
 
@@ -168,6 +184,15 @@ extern "C" {
 
 #define zXMPMeta_SerializeToBuffer_1(pktString,options,padding,newline,indent,baseIndent,SetClientString) \
     WXMPMeta_SerializeToBuffer_1 ( this->xmpRef, pktString, options, padding, newline, indent, baseIndent, SetClientString, &wResult )
+
+#define zXMPMeta_SetDefaultErrorCallback_1(proc,context,limit) \
+	WXMPMeta_SetDefaultErrorCallback_1 ( WrapErrorNotify, proc, context, limit, &wResult )
+	
+#define zXMPMeta_SetErrorCallback_1(proc,context,limit) \
+	WXMPMeta_SetErrorCallback_1 ( this->xmpRef, WrapErrorNotify, proc, context, limit, &wResult )
+
+#define zXMPMeta_ResetErrorCallbackLimit_1(limit) \
+	WXMPMeta_ResetErrorCallbackLimit_1 ( this->xmpRef, limit, &wResult )
 
 // =================================================================================================
 
@@ -564,6 +589,28 @@ WXMPMeta_SerializeToBuffer_1 ( XMPMetaRef     xmpRef,
                                XMP_Index      baseIndent,
                                SetClientStringProc SetClientString,
                                WXMP_Result *  wResult ) /* const */ ;
+
+// -------------------------------------------------------------------------------------------------
+
+extern void
+WXMPMeta_SetDefaultErrorCallback_1 ( XMPMeta_ErrorCallbackWrapper wrapperProc,
+									 XMPMeta_ErrorCallbackProc    clientProc,
+									 void *        context,
+									 XMP_Uns32     limit,
+                   					 WXMP_Result * wResult );
+
+extern void
+WXMPMeta_SetErrorCallback_1 ( XMPMetaRef    xmpRef,
+                              XMPMeta_ErrorCallbackWrapper wrapperProc,
+							  XMPMeta_ErrorCallbackProc    clientProc,
+							  void *        context,
+							  XMP_Uns32     limit,
+							  WXMP_Result * wResult );
+
+extern void
+WXMPMeta_ResetErrorCallbackLimit_1 ( XMPMetaRef    xmpRef,
+							  		 XMP_Uns32     limit,
+							  		 WXMP_Result * wResult );
 
 // =================================================================================================
 

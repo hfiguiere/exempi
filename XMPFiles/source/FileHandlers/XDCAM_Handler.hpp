@@ -50,6 +50,10 @@ public:
 
 	bool GetFileModDate ( XMP_DateTime * modDate );
 
+	void FillMetadataFiles ( std::vector<std::string> * metadataFiles );
+	void FillAssociatedResources ( std::vector<std::string> * resourceList );
+	bool IsMetadataWritable ( ) ;
+
 	void CacheFileData();
 	void ProcessXMP();
 
@@ -70,10 +74,21 @@ private:
 	bool MakeMediaproPath ( std::string * path, bool checkFile = false );
 	void MakeLegacyDigest ( std::string * digestStr );
 	void CleanupLegacyXML();
+	void SetSidecarPath();
+	
+	void readXMLFile( XMP_StringPtr filePath,ExpatAdapter* &expat );
+    bool GetClipUmid ( std::string &clipUmid ) ;
+	bool IsClipsPlanning ( std::string clipUmid , XMP_StringPtr planPath ) ;
+	bool RefersClipUmid ( std::string clipUmid , XMP_StringPtr editInfoPath )  ;
+	bool GetInfoFilesFAM ( std::vector<std::string> &InfoList, std::string pathToFolder) ;
+	bool GetPlanningFilesFAM ( std::vector<std::string> &planInfoList, std::string pathToFolder) ;
+	bool GetEditInfoFilesSAM ( std::vector<std::string> &editInfoList ) ;
+	void FillFAMAssociatedResources ( std::vector<std::string> * resourceList );
+	void FillSAMAssociatedResources ( std::vector<std::string> * resourceList );
 
 	bool GetMediaProMetadata ( SXMPMeta * xmpObjPtr, const std::string& clipUMID, bool digestFound );	
 
-	std::string rootPath, clipName, xdcNS, legacyNS;
+	std::string rootPath, clipName, xdcNS, legacyNS, sidecarPath;
 
 	bool isFAM;
 

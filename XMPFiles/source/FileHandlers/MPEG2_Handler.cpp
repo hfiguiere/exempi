@@ -19,9 +19,10 @@
 #include "XMPFiles/source/XMPFiles_Impl.hpp"
 #include "source/XMPFiles_IO.hpp"
 #include "source/XIO.hpp"
+#include "source/IOUtils.hpp"
 
 #include "XMPFiles/source/FileHandlers/MPEG2_Handler.hpp"
-
+#include "../FormatSupport/PackageFormat_Support.hpp"
 using namespace std;
 
 // =================================================================================================
@@ -96,6 +97,10 @@ MPEG2_MetaHandler::MPEG2_MetaHandler ( XMPFiles * _parent )
 	this->handlerFlags = kMPEG2_HandlerFlags;
 	this->stdCharForm  = kXMP_Char8Bit;
 
+	XMP_StringPtr filePath = this->parent->GetFilePath().c_str();
+	XMP_StringPtr extPtr = FindFileExtension ( filePath );
+	this->sidecarPath.assign ( filePath, (extPtr - filePath) );
+	this->sidecarPath += ".xmp";
 }	// MPEG2_MetaHandler::MPEG2_MetaHandler
 
 // =================================================================================================
@@ -114,16 +119,27 @@ MPEG2_MetaHandler::~MPEG2_MetaHandler()
 
 bool MPEG2_MetaHandler::GetFileModDate ( XMP_DateTime * modDate )
 {
-
-	XMP_StringPtr filePath = this->parent->filePath.c_str();
-	XMP_StringPtr extPtr = FindFileExtension ( filePath );
-	this->sidecarPath.assign ( filePath, (extPtr - filePath) );
-	this->sidecarPath += ".xmp";
-
 	if ( ! Host_IO::Exists ( this->sidecarPath.c_str() ) ) return false;
 	return Host_IO::GetModifyDate ( this->sidecarPath.c_str(), modDate );
 
 }	// MPEG2_MetaHandler::GetFileModDate
+
+// =================================================================================================
+// MPEG2_MetaHandler::FillAssociatedResources
+// =================================
+void MPEG2_MetaHandler::FillAssociatedResources ( std::vector<std::string> * resourceList )
+{
+	resourceList->push_back(this->parent->GetFilePath());
+	PackageFormat_Support::AddResourceIfExists(resourceList, this->sidecarPath);
+}	// MPEG2_MetaHandler::FillAssociatedResources
+
+// =================================================================================================
+// MPEG2_MetaHandler::IsMetadataWritable
+// =================================
+bool MPEG2_MetaHandler::IsMetadataWritable ( )
+{
+	return Host_IO::Writable( this->sidecarPath.c_str(), true );
+}	// MPEG2_MetaHandler::IsMetadataWritable
 
 // =================================================================================================
 // MPEG2_MetaHandler::CacheFileData
@@ -142,11 +158,6 @@ void MPEG2_MetaHandler::CacheFileData()
 
 	// Try to open the sidecar XMP file. Tolerate an open failure, there might not be any XMP.
 	// Note that MPEG2_CheckFormat can't save the sidecar path because the handler doesn't exist then.
-
-	XMP_StringPtr filePath = this->parent->filePath.c_str();
-	XMP_StringPtr extPtr = FindFileExtension ( filePath );
-	this->sidecarPath.assign ( filePath, (extPtr - filePath) );
-	this->sidecarPath += ".xmp";
 
 	if ( ! Host_IO::Exists ( this->sidecarPath.c_str() ) ) return;	// OK to not have XMP.
 

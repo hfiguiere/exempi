@@ -52,7 +52,8 @@ static const XMP_OptionBits kWAVE_HandlerFlags = (kXMPFiles_CanInjectXMP |
 												  kXMPFiles_PrefersInPlace |
 												  kXMPFiles_CanReconcile |
 												  kXMPFiles_ReturnsRawPacket |
-												  kXMPFiles_AllowsSafeUpdate
+												  kXMPFiles_AllowsSafeUpdate |
+												  kXMPFiles_CanNotifyProgress
 												 );
 
 /**

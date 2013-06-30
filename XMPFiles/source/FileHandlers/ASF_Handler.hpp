@@ -36,7 +36,8 @@ static const XMP_OptionBits kASF_HandlerFlags = ( kXMPFiles_CanInjectXMP |
                                                   kXMPFiles_CanReconcile |
 												  kXMPFiles_AllowsOnlyXMP |
 												  kXMPFiles_ReturnsRawPacket |
-												  kXMPFiles_NeedsReadOnlyPacket );
+												  kXMPFiles_NeedsReadOnlyPacket |
+												  kXMPFiles_CanNotifyProgress );
 
 class ASF_MetaHandler : public XMPFileHandler
 {

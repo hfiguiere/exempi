@@ -8,6 +8,8 @@
 // =================================================================================================
 
 #include "PluginBase.h"
+#include "source/XMP_LibUtils.hpp"
+#include "source/Host_IO.hpp"
 #include "XMP.incl_cpp"
 
 #if XMP_WinBuild
@@ -59,8 +61,104 @@ void PluginBase::writeTempFile( XMP_IORef srcFileRef, XMP_IORef tmpFileRef, XMP_
 	this->writeTempFile( srcFile, tmpFile, buffer );
 }
 
+void PluginBase::FillMetadataFiles( StringVectorRef metadataFiles, SetStringVectorProc SetStringVector )
+{
+	if ( metadataFiles == 0 ) 
+		XMP_Throw ( "A result file list vector must be provided", kXMPErr_BadParam );
+
+	std::vector<std::string> fileList;	// Pass a local vector, not the client's.
+	(*SetStringVector)( metadataFiles, 0, 0 );	// Clear the client's result vector.
+	FillMetadataFiles( &fileList );
+
+	// since we are dealing with STL ojbects across different DLL boundaries,
+	// we are extracting const char* to actual path strings, constructing a vector
+	// using these pointers and then passing the address of the underlying data
+	// to the clients procedure which will repopulate its own vector of strings
+	// using this information.
+	if ( ! fileList.empty() ) {
+		const size_t fileCount = fileList.size();
+		std::vector<XMP_StringPtr> ptrArray;
+		ptrArray.reserve ( fileCount );
+		for ( size_t i = 0; i < fileCount; ++i ) {
+			ptrArray.push_back ( fileList[i].c_str() );
+		}
+		(*SetStringVector) ( metadataFiles, ptrArray.data(), fileCount );
+	}
+}
+
+void PluginBase::FillMetadataFiles( std::vector<std::string> * metadataFiles )
+{
+	XMP_OptionBits flags = this->mHandlerFlags;
+	if ( (flags & kXMPFiles_UsesSidecarXMP) ||
+		(flags & kXMPFiles_FolderBasedFormat) ) {
+			XMP_Throw ( "Base implementation of FillMetadataFiles only for embedding handlers", kXMPErr_PluginFillMetadataFiles );
+	}
+
+	metadataFiles->push_back ( this->getPath() );
+}
+
+
+void PluginBase::FillAssociatedResources( StringVectorRef resourceList, SetStringVectorProc SetStringVector )
+{
+	if ( resourceList == 0 ) 
+		XMP_Throw ( "A result file list vector must be provided", kXMPErr_BadParam );
+
+	std::vector<std::string> resList;	// Pass a local vector, not the client's.
+	(*SetStringVector)( resourceList, 0, 0 );	// Clear the client's result vector.
+	FillAssociatedResources( &resList );
+
+	if ( ! resList.empty() ) {
+		const size_t fileCount = resList.size();
+		std::vector<XMP_StringPtr> ptrArray;
+		ptrArray.reserve ( fileCount );
+		for ( size_t i = 0; i < fileCount; ++i ) {
+			ptrArray.push_back ( resList[i].c_str() );
+		}
+		(*SetStringVector) ( resourceList, ptrArray.data(), fileCount );
+	}
+}
+
+
+void PluginBase::FillAssociatedResources( std::vector<std::string> * resourceList ) 
+{	
+	XMP_OptionBits flags = this->mHandlerFlags;
+	if ( (flags & kXMPFiles_HandlerOwnsFile) ||
+		 (flags & kXMPFiles_UsesSidecarXMP) ||
+		 (flags & kXMPFiles_FolderBasedFormat) ) {
+			XMP_Throw ( "GetAssociatedResources is not implemented for this file format", kXMPErr_PluginFillAssociatedResources );
+	}
+	resourceList->push_back ( this->getPath() );
+}
+
 // ============================================================================
 // ============================================================================
+// ============================================================================
+
+
+void PluginBase::importToXMP( XMP_StringPtr* xmpStr ) 
+{
+	// To be implemented by the Plug-In Developer
+	// Generally a Plugin developer should follow the following steps
+	// when implementing this function
+	// a) Create a XMP object from serialized XMP packet.
+	// b) Import the data from Non-XMP content to XMP object
+	// c) Serialize the XMP object to a dynamic buffer.
+	//    Dynamic buffer is allocated using HostAPI HostStringCreateBuffer
+	// d) Copy the dynamic buffer address to xmpStr
+}
+
+// ============================================================================
+
+void PluginBase::exportFromXMP( XMP_StringPtr xmpStr ) 
+{
+	// To be implemented by the Plug-In Developer
+	// Generally a Plugin developer should follow the following steps
+	// when implementing this function
+	// a) Create a XMP object from serialized XMP packet.
+	// b) Export the data from XMP object to non-XMP Content.
+}
+
+
 // ============================================================================
 
 bool PluginBase::getFileModDate ( XMP_DateTime * modDate )
@@ -79,6 +177,27 @@ bool PluginBase::getFileModDate ( XMP_DateTime * modDate )
 	return GetModifyDate ( filePath.c_str(), modDate );
 }
 
+bool PluginBase::IsMetadataWritable ( )
+{
+	XMP_OptionBits flags = this->getHandlerFlags();
+	const std::string & filePath = this->getPath();
+	
+	if ( (flags & kXMPFiles_HandlerOwnsFile)   ||
+		 (flags & kXMPFiles_UsesSidecarXMP)    ||
+		 (flags & kXMPFiles_FolderBasedFormat) ||
+		 filePath.empty() )
+	{
+		XMP_Throw ( "IsMetadataWritable is not implemented for this file format", kXMPErr_PluginIsMetadataWritable );
+	}
+
+	try {
+		return Host_IO::Writable( this->getPath().c_str() );
+	} catch ( ... ) {
+
+	}
+	return false;
+}
+
 // ============================================================================
 
 bool PluginBase::checkAbort( bool doAbort /*= false*/)
@@ -94,7 +213,26 @@ bool PluginBase::checkAbort( bool doAbort /*= false*/)
 }
 
 // ============================================================================
+
+
+bool PluginBase::checkFormatStandard( const std::string* path /*= NULL*/ )
+{
+	const StringPtr _path	= (const StringPtr)( path == NULL ? this->getPath().c_str() : path->c_str() );
+
+	return CheckFormatStandard( this, this->getFormat(), _path );
+}
+
 // ============================================================================
+
+bool PluginBase::getXMPStandard( std::string& xmpStr, const std::string* path /*= NULL*/, bool* containsXMP /*= NULL*/ )
+{
+	const StringPtr _path	= (const StringPtr)( path == NULL ? this->getPath().c_str() : path->c_str() );
+
+	bool ret = GetXMPStandard( this, this->getFormat(), _path, xmpStr, containsXMP );
+
+	return ret;
+}
+
 // ============================================================================
 
 #if XMP_WinBuild

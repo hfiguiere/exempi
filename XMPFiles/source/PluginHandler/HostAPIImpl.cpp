@@ -49,7 +49,7 @@ static void HandleException( WXMP_Error* wError )
 //		FileIO_API
 //
 
-static XMPErrorID FileSysRead( XMP_IORef io, void* buffer, XMP_Uns32 count, bool readAll, XMP_Uns32& byteRead, WXMP_Error * wError )
+static XMPErrorID FileSysRead( XMP_IORef io, void* buffer, XMP_Uns32 count, XMP_Bool readAll, XMP_Uns32& byteRead, WXMP_Error * wError )
 {
 	if( wError == NULL )	return kXMPErr_BadParam;
 
@@ -60,7 +60,7 @@ static XMPErrorID FileSysRead( XMP_IORef io, void* buffer, XMP_Uns32 count, bool
 		if( io != NULL )
 		{
 			::XMP_IO * thiz = (::XMP_IO*)io;
-			byteRead = thiz->Read( buffer, count, readAll );
+			byteRead = thiz->Read( buffer, count, ConvertXMP_BoolToBool( readAll ) );
 			wError->mErrorID = kXMPErr_NoError;
 		}
 	}
@@ -318,7 +318,7 @@ static void GetStringAPI( String_API* strAPI )
 //		Abort_API
 //
 
-static XMPErrorID CheckAbort( SessionRef session, bool* aborted, WXMP_Error* wError )
+static XMPErrorID CheckAbort( SessionRef session, XMP_Bool * aborted, WXMP_Error* wError )
 {
 	if( wError == NULL )	return kXMPErr_BadParam;
 
@@ -326,7 +326,7 @@ static XMPErrorID CheckAbort( SessionRef session, bool* aborted, WXMP_Error* wEr
 
 	if( aborted )
 	{
-		*aborted = false;
+		*aborted = kXMP_Bool_False;
 
 		//
 		// find FileHandlerInstance associated to session reference
@@ -346,7 +346,7 @@ static XMPErrorID CheckAbort( SessionRef session, bool* aborted, WXMP_Error* wEr
 			{
 				try
 				{
-					*aborted = proc( arg );
+					*aborted = ConvertBoolToXMP_Bool( proc( arg ) );
 				}
 				catch( ... )
 				{
@@ -376,7 +376,7 @@ static void GetAbortAPI( Abort_API* abortAPI )
 //		StandardHandler_API
 //
 
-static XMPErrorID CheckFormatStandardHandler( SessionRef session, XMP_FileFormat format, StringPtr path, bool& checkOK, WXMP_Error* wError )
+static XMPErrorID CheckFormatStandardHandler( SessionRef session, XMP_FileFormat format, StringPtr path, XMP_Bool & checkOK, WXMP_Error* wError )
 {
 	if( wError == NULL )	return kXMPErr_BadParam;
 
@@ -407,7 +407,7 @@ static XMPErrorID CheckFormatStandardHandler( SessionRef session, XMP_FileFormat
 					//
 					XMPFiles standardClient;
 					standardClient.format = format;
-					standardClient.filePath = std::string( path );
+					standardClient.SetFilePath( path );
 
 					if( hdlInfo->flags & kXMPFiles_FolderBasedFormat )
 					{
@@ -508,7 +508,7 @@ static XMPErrorID CheckFormatStandardHandler( SessionRef session, XMP_FileFormat
 	return wError->mErrorID;
 }
 
-static XMPErrorID GetXMPStandardHandler( SessionRef session, XMP_FileFormat format, StringPtr path, XMPMetaRef xmpRef, bool* xmpExists, WXMP_Error* wError )
+static XMPErrorID GetXMPStandardHandler( SessionRef session, XMP_FileFormat format, StringPtr path, XMPMetaRef xmpRef, XMP_Bool * xmpExists, WXMP_Error* wError )
 {
 	if( wError == NULL )	return kXMPErr_BadParam;
 
@@ -532,18 +532,18 @@ static XMPErrorID GetXMPStandardHandler( SessionRef session, XMP_FileFormat form
 			//
 			// check format first
 			//
-			bool suc = false;
+			XMP_Bool suc = kXMP_Bool_False;
 
 			XMPErrorID errorID = CheckFormatStandardHandler( session, format, path, suc, wError );
 
-			if( errorID == kXMPErr_NoError && suc )
+			if( errorID == kXMPErr_NoError && ConvertXMP_BoolToBool( suc ) )
 			{
 				//
 				// setup temporary XMPFiles instance
 				//
 				XMPFiles standardClient;
 				standardClient.format = format;
-				standardClient.filePath = std::string( path );
+				standardClient.SetFilePath( path );
 
 				SXMPMeta meta( xmpRef );
 			
@@ -601,6 +601,27 @@ static XMPErrorID GetXMPStandardHandler( SessionRef session, XMP_FileFormat form
 	return wError->mErrorID;
 }
 
+static XMPErrorID GetXMPStandardHandler_V2( SessionRef session, XMP_FileFormat format, StringPtr path, XMP_StringPtr* xmpStr, XMP_Bool * xmpExists, WXMP_Error* wError )
+{
+	SXMPMeta meta;
+    std::string xmp;
+	GetXMPStandardHandler( session, format, path, meta.GetInternalRef(),  xmpExists, wError ) ;
+	if( wError->mErrorID != kXMPErr_NoError ) 
+		return wError->mErrorID;
+
+	meta.SerializeToBuffer(&xmp, kXMP_NoOptions, 0);
+	XMP_Uns32 length = (XMP_Uns32)xmp.size() + 1 ;
+	StringPtr buffer = NULL;
+	CreateBuffer( &buffer,length ,wError);	
+	if( wError->mErrorID != kXMPErr_NoError ) 
+		return wError->mErrorID;
+
+	memcpy( buffer, xmp.c_str(), length );
+	*xmpStr = buffer; // callee function should free the memory.
+	return wError->mErrorID ;
+}
+
+
 static void GetStandardHandlerAPI( StandardHandler_API* standardHandlerAPI )
 {
 	if( standardHandlerAPI )
@@ -608,12 +629,59 @@ static void GetStandardHandlerAPI( StandardHandler_API* standardHandlerAPI )
 		standardHandlerAPI->mCheckFormatStandardHandler	= CheckFormatStandardHandler;
 		standardHandlerAPI->mGetXMPStandardHandler		= GetXMPStandardHandler;
 	}
+
 }
+
+
+static XMPErrorID RequestAPISuite( const char* apiName, XMP_Uns32 apiVersion, void** apiSuite, WXMP_Error* wError )
+{
+	if( wError == NULL )
+	{
+		return kXMPErr_BadParam;
+	}
+	
+	wError->mErrorID = kXMPErr_NoError;
+	
+	if( apiName == NULL
+	   || apiVersion == 0
+	   || apiSuite == NULL )
+	{
+		wError->mErrorID = kXMPErr_BadParam;
+		return kXMPErr_BadParam;
+	}
+	
+	// dummy suite used by unit test
+	if( strcmp( apiName, "testDummy" ) == 0 && apiVersion == 1 )
+	{
+		*apiSuite = (void*) &RequestAPISuite;
+	}
+	else if ( ! strcmp( apiName, "StandardHandler" ) && apiVersion == 2 ) 
+	{
+		static const StandardHandler_API_V2 standardHandlerAPI =
+		{
+			&CheckFormatStandardHandler,
+			&GetXMPStandardHandler_V2
+		};
+		*apiSuite=(void*)&standardHandlerAPI;
+	}
+	else
+	{
+		wError->mErrorID = kXMPErr_Unimplemented;
+	}
+	
+	return wError->mErrorID;
+}
+	
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 //		Init/Term Host APIs
 //
+
+// Because of changes to the plugin versioning strategy,
+// the host API version is no longer tied to the plugin version
+// and the host API struct is supposed to be frozen.
+// New host APIs can be requested through the new function mRequestAPISuite.
 
 void PluginManager::SetupHostAPI_V1( HostAPIRef hostAPI )
 {
@@ -632,6 +700,24 @@ void PluginManager::SetupHostAPI_V1( HostAPIRef hostAPI )
 	// Get standard handler APIs
 	hostAPI->mStandardHandlerAPI = new StandardHandler_API();
 	GetStandardHandlerAPI( hostAPI->mStandardHandlerAPI );
+
+	hostAPI->mRequestAPISuite = NULL;
+}
+
+void PluginManager::SetupHostAPI_V2( HostAPIRef hostAPI )
+{
+	SetupHostAPI_V1 ( hostAPI );
+}
+
+void PluginManager::SetupHostAPI_V3( HostAPIRef hostAPI )
+{
+	SetupHostAPI_V2 ( hostAPI );
+}
+
+void PluginManager::SetupHostAPI_V4( HostAPIRef hostAPI )
+{
+	SetupHostAPI_V3 ( hostAPI );
+	hostAPI->mRequestAPISuite = RequestAPISuite;
 }
 
 } //namespace XMP_PLUGIN

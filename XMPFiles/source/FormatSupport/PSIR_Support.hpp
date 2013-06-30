@@ -19,6 +19,7 @@
 #include "source/XMPFiles_IO.hpp"
 
 #include "source/EndianUtils.hpp"
+#include "source/XMP_ProgressTracker.hpp"
 
 #include <map>
 
@@ -140,8 +141,8 @@ public:
 
 	virtual XMP_Uns32 UpdateMemoryResources ( void** dataPtr ) = 0;
 	virtual XMP_Uns32 UpdateFileResources   ( XMP_IO* sourceRef, XMP_IO* destRef,
-											  void * _ioBuf, XMP_AbortProc abortProc, void * abortArg ) = 0;
-		// *** Temporary hack above, _ioBuf is IOBuffer* but don't want to include XIO.hpp.
+											  XMP_AbortProc abortProc, void * abortArg,
+											  XMP_ProgressTracker* progressTracker ) = 0;
 
 	// ---------------------------------------------------------------------------------------------
 
@@ -179,8 +180,8 @@ public:
 
 	XMP_Uns32 UpdateMemoryResources ( void** dataPtr ) { if ( dataPtr != 0 ) *dataPtr = psirContent; return psirLength; };
 	XMP_Uns32 UpdateFileResources ( XMP_IO* sourceRef, XMP_IO* destRef,
-									void * _ioBuf, XMP_AbortProc abortProc, void * abortArg ) { NotAppropriate(); return 0; };
-		// *** Temporary hack above, _ioBuf is IOBuffer* but don't want to include XIO.hpp.
+									XMP_AbortProc abortProc, void * abortArg,
+									XMP_ProgressTracker* progressTracker ) { NotAppropriate(); return 0; };
 
 	PSIR_MemoryReader() : ownedContent(false), psirLength(0), psirContent(0) {};
 
@@ -232,8 +233,8 @@ public:
 
 	XMP_Uns32 UpdateMemoryResources ( void** dataPtr );
 	XMP_Uns32 UpdateFileResources   ( XMP_IO* sourceRef, XMP_IO* destRef,
-									  void * _ioBuf, XMP_AbortProc abortProc, void * abortArg );
-		// *** Temporary hack above, _ioBuf is IOBuffer* but don't want to include XIO.hpp.
+									  XMP_AbortProc abortProc, void * abortArg,
+									  XMP_ProgressTracker* progressTracker );
 
 	PSIR_FileWriter() : changed(false), legacyDeleted(false), memParsed(false), fileParsed(false),
 						ownedContent(false), memLength(0), memContent(0) {};

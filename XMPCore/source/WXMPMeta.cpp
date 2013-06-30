@@ -1137,6 +1137,53 @@ WXMPMeta_SerializeToBuffer_1 ( XMPMetaRef	  xmpObjRef,
 	XMP_EXIT
 }
 
+// -------------------------------------------------------------------------------------------------
+
+void
+WXMPMeta_SetDefaultErrorCallback_1 ( XMPMeta_ErrorCallbackWrapper wrapperProc,
+									 XMPMeta_ErrorCallbackProc    clientProc,
+									 void *        context,
+									 XMP_Uns32     limit,
+									 WXMP_Result * wResult )
+{
+	XMP_ENTER_Static ( "WXMPMeta_SetDefaultErrorCallback_1" )
+
+		XMPMeta::SetDefaultErrorCallback ( wrapperProc, clientProc, context, limit );
+
+	XMP_EXIT
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void
+WXMPMeta_SetErrorCallback_1 ( XMPMetaRef    xmpObjRef,
+                              XMPMeta_ErrorCallbackWrapper wrapperProc,
+							  XMPMeta_ErrorCallbackProc    clientProc,
+							  void *        context,
+							  XMP_Uns32     limit,
+							  WXMP_Result * wResult )
+{
+	XMP_ENTER_ObjWrite ( XMPMeta, "WXMPMeta_SetErrorCallback_1" )
+
+		thiz->SetErrorCallback ( wrapperProc, clientProc, context, limit );
+
+	XMP_EXIT
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void
+WXMPMeta_ResetErrorCallbackLimit_1 ( XMPMetaRef    xmpObjRef,
+                          			 XMP_Uns32     limit,
+									 WXMP_Result * wResult )
+{
+	XMP_ENTER_ObjWrite ( XMPMeta, "WXMPMeta_ResetErrorCallbackLimit_1" )
+
+		thiz->ResetErrorCallbackLimit ( limit );
+
+	XMP_EXIT
+}
+
 // =================================================================================================
 
 #if __cplusplus

@@ -25,7 +25,7 @@ using namespace std;
 // *** Add debug codegen checks, e.g. that typical masking operations really work
 // *** Make option constants 0x...UL.
 
-// Internal code should be using #if with XMP_MacBuild, XMP_WinBuild, or XMP_UNIXBuild.
+// Internal code should be using #if with XMP_MacBuild, XMP_WinBuild, XMP_UNIXBuild or XMP_iOSBuild.
 // This is a sanity check in case of accidental use of *_ENV. Some clients use the poor
 // practice of defining the *_ENV macro with an empty value.
 #if defined ( MAC_ENV )
@@ -40,6 +40,10 @@ using namespace std;
 	#if ! UNIX_ENV
 		#error "UNIX_ENV must be defined so that \"#if UNIX_ENV\" is true"
 	#endif
+#elif defined ( IOS_ENV )
+    #if ! IOS_ENV
+        #error "IOS_ENV must be defined so that \"#if IOS_ENV\" is true"
+    #endif
 #endif
 
 // =================================================================================================

@@ -13,6 +13,7 @@
 #include "public/include/XMP_IO.hpp"
 
 #include "XMPFiles/source/XMPFiles_Impl.hpp"
+#include "XMPFiles/source/FormatSupport/Reconcile_Impl.hpp"
 #include "source/XMPFiles_IO.hpp"
 #include "source/XIO.hpp"
 
@@ -232,7 +233,7 @@ void MP3_MetaHandler::CacheFileData()
 		// No space for another frame? => assume into ID3v2.4 padding.
 		XMP_Int64 newPos = file->Offset();
 		XMP_Int64 spaceLeft = this->oldTagSize - newPos;	// Depends on first check below!
-		if ( (newPos > this->oldTagSize) || (spaceLeft < ID3Header::kID3_TagHeaderSize) ) break;
+		if ( (newPos > this->oldTagSize) || (spaceLeft < (XMP_Int64)ID3Header::kID3_TagHeaderSize) ) break;
 
 	}
 
@@ -309,8 +310,8 @@ void MP3_MetaHandler::ProcessXMP()
 
 				// go deal with it!
 				// get the property
-				std::string utf8string;
-				bool result = curFrame->getFrameValue ( this->majorVersion, logicalID, &utf8string );
+				std::string id3Text, xmpText;
+				bool result = curFrame->getFrameValue ( this->majorVersion, logicalID, &id3Text );
 				if ( ! result ) continue; //ignore but preserve this frame (i.e. not applicable COMM frame)
 
 				//////////////////////////////////////////////////////////////////////////////////
@@ -334,41 +335,19 @@ void MP3_MetaHandler::ProcessXMP()
 
 					this->xmpObj.SetProperty ( kXMP_NS_DM, "partOfCompilation", "true" );
 
-				} else if ( ! utf8string.empty() ) {
+				} else if ( ! id3Text.empty() ) {
 
 					switch ( logicalID ) {
 
 						case 0x54495432: // TIT2 -> title["x-default"]
 						case 0x54434F50: // TCOP -> rights["x-default"]
-							this->xmpObj.SetLocalizedText ( reconProps[r].ns, reconProps[r].prop,"", "x-default", utf8string );
+							this->xmpObj.SetLocalizedText ( reconProps[r].ns, reconProps[r].prop,"", "x-default", id3Text );
 							break;
 
-						case 0x54434F4E: // TCON -> genre ( might be numeric string. prior to 2.3 a one-byte numeric value? )
-							{
-								XMP_Int32 pos = 0; // going through input string
-								if ( utf8string[pos] == '(' ) { // number in brackets?
-									pos++;
-									XMP_Uns8 iGenre = (XMP_Uns8) atoi( &utf8string.c_str()[1] );
-									if ( iGenre < 127 ) {
-										utf8string.assign( Genres[iGenre] );
-									} else {
-										utf8string.assign( Genres[12] ); // "Other"
-									}
-								} else {
-									// Text, let's "try" to find it anyway (for best upper/lower casing)
-									int i;
-									const char* genreCString = utf8string.c_str();
-									for ( i = 0; i < 127; ++i ) {
-										if ( (strlen ( genreCString ) == strlen(Genres[i])) &&  //fixing buggy stricmp behaviour on PPC
-											 (stricmp ( genreCString, Genres[i] ) == 0 )) {
-											utf8string.assign ( Genres[i] ); // found, let's use the one in the list
-											break;
-										}
-									}
-									// otherwise (if for-loop runs through): leave as is
-								}
-								// write out property (derived or direct, but certainly non-numeric)
-								this->xmpObj.SetProperty ( reconProps[r].ns, reconProps[r].prop, utf8string );
+						case 0x54434F4E: // TCON -> genre
+							ID3_Support::GenreUtils::ConvertGenreToXMP ( id3Text.c_str(), &xmpText );
+							if ( ! xmpText.empty() ) {
+								this->xmpObj.SetProperty ( reconProps[r].ns, reconProps[r].prop, xmpText );
 							}
 							break;
 
@@ -376,7 +355,7 @@ void MP3_MetaHandler::ProcessXMP()
 							{
 								try {	// Don't let wrong dates in id3 stop import.
 									if ( ! hasTDRC ) {
-										newDateTime.year = SXMPUtils::ConvertToInt ( utf8string );
+										newDateTime.year = SXMPUtils::ConvertToInt ( id3Text );
 										newDateTime.hasDate = true;
 									}
 								} catch ( ... ) {
@@ -390,9 +369,9 @@ void MP3_MetaHandler::ProcessXMP()
 								try {	// Don't let wrong dates in id3 stop import.
 									// only if no TDRC has been found before
 									//&& must have the format DDMM
-									if ( (! hasTDRC) && (utf8string.length() == 4) ) {
-										newDateTime.day = SXMPUtils::ConvertToInt (utf8string.substr(0,2));
-										newDateTime.month = SXMPUtils::ConvertToInt ( utf8string.substr(2,2));
+									if ( (! hasTDRC) && (id3Text.length() == 4) ) {
+										newDateTime.day = SXMPUtils::ConvertToInt (id3Text.substr(0,2));
+										newDateTime.month = SXMPUtils::ConvertToInt ( id3Text.substr(2,2));
 										newDateTime.hasDate = true;
 									}
 								} catch ( ... ) {
@@ -406,9 +385,9 @@ void MP3_MetaHandler::ProcessXMP()
 								try {	// Don't let wrong dates in id3 stop import.
 									// only if no TDRC has been found before
 									// && must have the format HHMM
-									if ( (! hasTDRC) && (utf8string.length() == 4) ) {
-										newDateTime.hour = SXMPUtils::ConvertToInt (utf8string.substr(0,2));
-										newDateTime.minute = SXMPUtils::ConvertToInt ( utf8string.substr(2,2));
+									if ( (! hasTDRC) && (id3Text.length() == 4) ) {
+										newDateTime.hour = SXMPUtils::ConvertToInt (id3Text.substr(0,2));
+										newDateTime.minute = SXMPUtils::ConvertToInt ( id3Text.substr(2,2));
 										newDateTime.hasTime = true;
 									}
 								} catch ( ... ) {
@@ -422,7 +401,7 @@ void MP3_MetaHandler::ProcessXMP()
 								try {	// Don't let wrong dates in id3 stop import.
 									hasTDRC = true;
 									// This always wins over TYER, TDAT and TIME
-									SXMPUtils::ConvertToDate ( utf8string, &newDateTime );
+									SXMPUtils::ConvertToDate ( id3Text, &newDateTime );
 								} catch ( ... ) {
 									// Do nothing, let other imports proceed.
 								}
@@ -432,7 +411,7 @@ void MP3_MetaHandler::ProcessXMP()
 						default:
 							// NB: COMM/USLT need no special fork regarding language alternatives/multiple occurence.
 							//		relevant code forks are in ID3_Support::getFrameValue()
-							this->xmpObj.SetProperty ( reconProps[r].ns, reconProps[r].prop, utf8string );
+							this->xmpObj.SetProperty ( reconProps[r].ns, reconProps[r].prop, id3Text );
 							break;
 
 					}//switch
@@ -497,7 +476,6 @@ void MP3_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 		std::string value;
 		bool needDescriptor = false;
-		bool need16LE = true;
 		bool needEncodingByte = true;
 
 		XMP_Uns32 logicalID = GetUns32BE ( reconProps[r].mainID );
@@ -512,7 +490,6 @@ void MP3_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		switch ( logicalID ) {
 
 			case 0x54434D50: // TCMP if exists: part of compilation
-				need16LE = false;
 				if ( xmpObj.GetProperty( kXMP_NS_DM, "partOfCompilation", &value, 0 ) && ( 0 == stricmp( value.c_str(), "true" ) )) {
 					value = "1"; // set a TCMP frame of value 1
 				} else {
@@ -527,27 +504,14 @@ void MP3_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	
 			case 0x54434F4E: // TCON -> genre
 				{
-					if (! xmpObj.GetProperty( reconProps[r].ns, reconProps[r].prop, &value, 0 )) {	// nothing found? -> Erase string. (Leads to Unset below)
-						value.erase();
-						break;
+					bool found = xmpObj.GetProperty ( reconProps[r].ns, reconProps[r].prop, &value, 0 );
+					if ( found ) {
+						std::string xmpValue = value;
+						ID3_Support::GenreUtils::ConvertGenreToID3 ( xmpValue.c_str(), &value );
 					}
-					// genre: we need to get the number back, if possible
-					XMP_Int16 iFound = -1; // flag as "not found"
-					for ( int i=0; i < 127; ++i ) {
-						if ( (value.size() == strlen(Genres[i])) && (stricmp( value.c_str(), Genres[i] ) == 0) ) {
-							iFound = i; // Found
-							break;
-						}
-					}
-					if ( iFound == -1 ) break; // stick with the literal value (also for v2.3, since this is common practice!)
-	
-					need16LE = false; // no unicode need for (##)
-					char strGenre[64];
-					snprintf ( strGenre, sizeof(strGenre), "(%d)", iFound );	// AUDIT: Using sizeof(strGenre) is safe.
-					value.assign(strGenre);
 				}
 				break;
-	
+
 			case 0x434F4D4D: // COMM
 			case 0x55534C54: // USLT, both need descriptor.
 				needDescriptor = true;
@@ -617,13 +581,11 @@ void MP3_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	
 			case 0x57434F50: //WCOP
 				needEncodingByte = false;
-				need16LE = false;
 				if (! xmpObj.GetProperty( reconProps[r].ns, reconProps[r].prop, &value, 0 )) value.erase(); // if not, erase string
 				break;
 	
 			case 0x5452434B: // TRCK
 			case 0x54504F53: // TPOS
-				need16LE = false;
 				// no break, go on:
 	
 			default:
@@ -646,11 +608,13 @@ void MP3_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		}
 
 		// 3/4) no old value, create new value
+		bool needUTF16 = false;
+		if ( needEncodingByte ) needUTF16 = (! ReconcileUtils::IsASCII ( value.c_str(), value.size() ) );
 		if ( frame != 0 ) {
-			frame->setFrameValue( value, needDescriptor, need16LE, false, needEncodingByte );
+			frame->setFrameValue( value, needDescriptor, needUTF16, false, needEncodingByte );
 		} else {
 			ID3v2Frame* newFrame=new ID3v2Frame( storedID );
-			newFrame->setFrameValue( value, needDescriptor,  need16LE, false, needEncodingByte ); //always write as utf16-le incl. BOM
+			newFrame->setFrameValue( value, needDescriptor,  needUTF16, false, needEncodingByte ); //always write as utf16-le incl. BOM
 			framesVector.push_back( newFrame );
 			framesMap[ storedID ] = newFrame;
 			continue;
@@ -685,7 +649,7 @@ void MP3_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		if ( framesVector[i]->active ) newFramesSize += (frameHeaderSize + framesVector[i]->contentSize);
 	}
 
-	mustShift = (newFramesSize > (oldTagSize - ID3Header::kID3_TagHeaderSize)) ||
+	mustShift = (newFramesSize > (XMP_Int64)(oldTagSize - ID3Header::kID3_TagHeaderSize)) ||
 	//optimization: If more than 8K can be saved by rewriting the MP3, go do it:
 				((newFramesSize + 8*1024) < oldTagSize );
 

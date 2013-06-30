@@ -43,10 +43,10 @@ static const char * sBase64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqr
 // ANSI Time Functions
 // -------------------
 //
-// A bit of hackery to use the best available time functions. Mac and UNIX have thread safe versions
+// A bit of hackery to use the best available time functions. Mac, UNIX and iOS have thread safe versions
 // of gmtime and localtime.
 
-#if XMP_MacBuild | XMP_UNIXBuild
+#if XMP_MacBuild | XMP_UNIXBuild | XMP_iOSBuild
 
 	typedef time_t			ansi_tt;
 	typedef struct tm		ansi_tm;
@@ -1783,7 +1783,7 @@ XMPUtils::SetTimeZone ( XMP_DateTime * xmpTime )
 	if ( (ttx != -1) && (tty != -1) ) {
 		diffSecs = ansi_difftime ( ttx, tty );
 	} else {
-		#if XMP_MacBuild
+		#if XMP_MacBuild | XMP_iOSBuild
 			// Looks like Apple's mktime is buggy - see W1140533. But the offset is visible.
 			diffSecs = tmLocal.tm_gmtoff;
 		#else

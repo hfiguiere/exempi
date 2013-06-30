@@ -22,7 +22,11 @@ using namespace IFF_RIFF;
 
 // Types and globals for the stored form of the cart chunk.
 
+#if SUNOS_SPARC || SUNOS_X86
+#pragma pack ( 1 )
+#else
 #pragma pack ( push, 1 )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 
 struct StoredCartChunk {
 	char Version[4];	// All of the fixed size text fields are null-filled local text,
@@ -49,7 +53,11 @@ struct StoredCartChunk {
 
 static const size_t kMinimumCartChunkSize = sizeof(StoredCartChunk);
 
+#if SUNOS_SPARC || SUNOS_X86
+#pragma pack ( )
+#else
 #pragma pack ( pop )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 
 static const size_t kFixedTextCount = (CartMetadata::kLastFixedTextField - CartMetadata::kFirstFixedTextField + 1);
 

@@ -523,7 +523,7 @@ void LFA_Throw ( const char* msg, int id )
 // LFA implementations for POSIX
 // =============================
 
-#if XMP_UNIXBuild
+#if XMP_UNIXBuild || XMP_iOSBuild
 
 	// ---------------------------------------------------------------------------------------------
 
@@ -843,7 +843,7 @@ bool LFA_isEof( LFA_FileRef file )
 		return filesize == filepos;
 	#endif
 
-	#if XMP_UNIXBuild
+	#if XMP_UNIXBuild || XMP_iOSBuild
 		int descr = (int)file;
 
 		struct stat info;

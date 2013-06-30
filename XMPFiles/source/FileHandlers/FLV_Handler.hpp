@@ -40,7 +40,8 @@ static const XMP_OptionBits kFLV_HandlerFlags = ( kXMPFiles_CanInjectXMP |
 												  kXMPFiles_CanReconcile |
 												  kXMPFiles_AllowsOnlyXMP |
 												  kXMPFiles_ReturnsRawPacket |
-												  kXMPFiles_AllowsSafeUpdate
+												  kXMPFiles_AllowsSafeUpdate |
+												  kXMPFiles_CanNotifyProgress
 												);
 
 class FLV_MetaHandler : public XMPFileHandler

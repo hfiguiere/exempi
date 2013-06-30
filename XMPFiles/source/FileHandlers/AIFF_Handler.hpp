@@ -49,7 +49,8 @@ static const XMP_OptionBits kAIFF_HandlerFlags = (kXMPFiles_CanInjectXMP |
 												  kXMPFiles_CanExpand |
 												  kXMPFiles_PrefersInPlace |
 												  kXMPFiles_CanReconcile |
-												  kXMPFiles_AllowsSafeUpdate
+												  kXMPFiles_AllowsSafeUpdate |
+												  kXMPFiles_CanNotifyProgress
 												 );
 
 /**
@@ -98,7 +99,7 @@ private:
 	AIFF_MetaHandler (): mChunkController(NULL), mChunkBehavior(NULL),
 						mAiffMeta(), mXMPChunk(NULL),
 						mNameChunk(NULL), mAuthChunk(NULL),
-						mCprChunk(NULL), mAnnoChunk(NULL), mFileType(0) {};
+						mCprChunk(NULL), mAnnoChunk(NULL) {};
 
 
 	// ----- MEMBERS ----- //
@@ -119,7 +120,7 @@ private:
 	IChunkData *mAnnoChunk;
 
 	/** Type of the file, either AIFF or AIFC */
-	XMP_Uns32 mFileType;
+	//XMP_Uns32 mFileType;
 
 
 	// ----- CONSTANTS ----- //

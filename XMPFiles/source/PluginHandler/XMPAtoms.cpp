@@ -60,6 +60,7 @@ const XMPAtomMapping kXMPAtomVec[] =
 	{ "kXMPFiles_NeedsReadOnlyPacket",	kXMPFiles_NeedsReadOnlyPacket_K },
 	{ "kXMPFiles_UsesSidecarXMP",		kXMPFiles_UsesSidecarXMP_K },
 	{ "kXMPFiles_FolderBasedFormat",	kXMPFiles_FolderBasedFormat_K },
+	{ "kXMPFiles_NeedsPreloading",		kXMPFiles_NeedsPreloading_K },
 
 	// Serialize option
 	{ "kXMP_OmitPacketWrapper",			kXMP_OmitPacketWrapper_K },
@@ -88,7 +89,8 @@ void ResourceParser::clear()
 	mFormatIDs.clear();
 	mCheckFormat.clear();
 	mHandler = FileHandlerSharedPtr();
-	mFlags = mSerializeOption = mType = mVersion = 0;
+	mFlags = mSerializeOption = mType = 0;
+	mVersion = 0.0;
 }
 
 void ResourceParser::addHandler()
@@ -103,7 +105,10 @@ void ResourceParser::addHandler()
 		mHandler->setHandlerType( mType );
 		mHandler->setSerializeOption( mSerializeOption );
 		mHandler->setOverwriteHandler( mOverwriteHandler );
-		if( mVersion != 0) mHandler->setVersion( mVersion );
+		if( mVersion != 0.0)
+		{
+			mHandler->setVersion( mVersion );
+		}
 		
 		// A plugin could define the XMP_FileFormat value in manifest file through keyword "FormatID" and
 		// file extensions for NormalHandler and OwningHandler through keyword "Extension".
@@ -119,8 +124,6 @@ void ResourceParser::addHandler()
 
 bool ResourceParser::parseElementAttrs( const XML_Node * xmlNode, bool isTopLevel )
 {
-	XMP_OptionBits exclusiveAttrs = 0;	// Used to detect attributes that are mutually exclusive.
-
 	XMPAtom nodeAtom = getXMPAtomFromString( xmlNode->name );
 	if( nodeAtom == Handler_K )
 		this->clear();
@@ -144,7 +147,7 @@ bool ResourceParser::parseElementAttrs( const XML_Node * xmlNode, bool isTopLeve
 				mHandler = FileHandlerSharedPtr( new FileHandler( this->mUID, 0, 0, mModule ) );
 				break;
 			case Version_K:
-				this->mVersion = atoi( (*currAttr)->value.c_str() );
+				sscanf( (*currAttr)->value.c_str(), "%lf", &this->mVersion );
 				break;
 			case HandlerType_K:
 				this->mType = getXMPAtomFromString( (*currAttr)->value );
@@ -153,7 +156,9 @@ bool ResourceParser::parseElementAttrs( const XML_Node * xmlNode, bool isTopLeve
 				this->mOverwriteHandler = ( (*currAttr)->value == "true" );
 				break;
 			default:
-				XMP_Throw( "Invalid Attr in Handler encountered in resource file", kXMPErr_Unavailable );
+				//fix for bug 3565147: Plugin Architecture: If any unknown node is present in the Plugin Manifest then the Plugin is not loaded
+				//XMP_Throw( "Invalid Attr in Handler encountered in resource file", kXMPErr_Unavailable );
+				break;
 			}
 			break;
 		case CheckFormat_K:
@@ -169,7 +174,9 @@ bool ResourceParser::parseElementAttrs( const XML_Node * xmlNode, bool isTopLeve
 				this->mCheckFormat.mByteSeq = (*currAttr)->value;
 				break;
 			default:
-				XMP_Throw( "Invalid Attr in CheckFormat encountered in resource file", kXMPErr_Unavailable );
+				//fix for bug 3565147: Plugin Architecture: If any unknown node is present in the Plugin Manifest then the Plugin is not loaded
+				//XMP_Throw( "Invalid Attr in CheckFormat encountered in resource file", kXMPErr_Unavailable );
+				break;
 			}
 			break;
 		case Extension_K:
@@ -179,7 +186,9 @@ bool ResourceParser::parseElementAttrs( const XML_Node * xmlNode, bool isTopLeve
 				this->mFileExtensions.insert( HandlerRegistry::getInstance().getFileFormat( (*currAttr)->value, true) );
 				break;
 			default:
-				XMP_Throw( "Invalid Attr in Extension encountered in resource file", kXMPErr_Unavailable );
+				//fix for bug 3565147: Plugin Architecture: If any unknown node is present in the Plugin Manifest then the Plugin is not loaded
+				//XMP_Throw( "Invalid Attr in Extension encountered in resource file", kXMPErr_Unavailable );
+				break;
 			}
 			break;
 		case FormatID_K:
@@ -196,7 +205,9 @@ bool ResourceParser::parseElementAttrs( const XML_Node * xmlNode, bool isTopLeve
 				this->mFormatIDs.insert( formatID );
 				break;
 			default:
-				XMP_Throw( "Invalid Attr in FormatID encountered in resource file", kXMPErr_Unavailable );
+				//fix for bug 3565147: Plugin Architecture: If any unknown node is present in the Plugin Manifest then the Plugin is not loaded
+				//XMP_Throw( "Invalid Attr in FormatID encountered in resource file", kXMPErr_Unavailable );
+				break;
 			}
 			break;
 		case HandlerFlag_K:
@@ -204,12 +215,15 @@ bool ResourceParser::parseElementAttrs( const XML_Node * xmlNode, bool isTopLeve
 			{
 			case Name_K:
 				oneflag = getHandlerFlag( (*currAttr)->value );
-				if( 0 == oneflag )
-					XMP_Throw( "Invalid handler flag found in resource file...", kXMPErr_Unavailable );
+				//fix for bug 3565147: Plugin Architecture: If any unknown node is present in the Plugin Manifest then the Plugin is not loaded
+				//if( 0 == oneflag )
+				//	XMP_Throw( "Invalid handler flag found in resource file...", kXMPErr_Unavailable );
 				this->mFlags |= oneflag;
 				break;
 			default:
-				XMP_Throw( "Invalid handler flag found in resource file...", kXMPErr_Unavailable );
+				//fix for bug 3565147: Plugin Architecture: If any unknown node is present in the Plugin Manifest then the Plugin is not loaded
+				//XMP_Throw( "Invalid handler flag found in resource file...", kXMPErr_Unavailable );
+				break;
 			}
 			break;
 		case SerializeOption_K:
@@ -217,12 +231,15 @@ bool ResourceParser::parseElementAttrs( const XML_Node * xmlNode, bool isTopLeve
 			{
 			case Name_K:
 				oneflag = getSerializeOption( (*currAttr)->value );
-				if( 0 == oneflag )
-					XMP_Throw( "Invalid serialize option found in resource file...", kXMPErr_Unavailable );
+				//fix for bug 3565147: Plugin Architecture: If any unknown node is present in the Plugin Manifest then the Plugin is not loaded
+				//if( 0 == oneflag )
+				//	XMP_Throw( "Invalid serialize option found in resource file...", kXMPErr_Unavailable );
 				this->mSerializeOption |= oneflag;
 				break;
 			default:
-				XMP_Throw( "Invalid handler flag found in resource file...", kXMPErr_Unavailable );
+				//fix for bug 3565147: Plugin Architecture: If any unknown node is present in the Plugin Manifest then the Plugin is not loaded
+				//XMP_Throw( "Invalid handler flag found in resource file...", kXMPErr_Unavailable );
+				break;
 			}
 			break;
 		default:
@@ -330,8 +347,11 @@ XMP_OptionBits ResourceParser::getHandlerFlag( const std::string & stringAtom )
 		return kXMPFiles_UsesSidecarXMP;
 	case kXMPFiles_FolderBasedFormat_K:
 		return kXMPFiles_FolderBasedFormat;
+	case kXMPFiles_NeedsPreloading_K:
+		return kXMPFiles_NeedsPreloading;
 	default:
-		XMP_Throw( "Invalid PluginhandlerFlag ...", kXMPErr_Unavailable );
+		//fix for bug 3565147: Plugin Architecture: If any unknown node is present in the Plugin Manifest then the Plugin is not loaded
+		//XMP_Throw( "Invalid PluginhandlerFlag ...", kXMPErr_Unavailable );
 		return 0;
 	}
 }
@@ -375,7 +395,8 @@ XMP_OptionBits ResourceParser::getSerializeOption( const std::string & stringAto
     case kXMP_EncodeUTF32Little_K:
 		return kXMP_EncodeUTF32Little;
 	default:
-		XMP_Throw( "Invalid Serialize Option ...", kXMPErr_Unavailable );
+		//fix for bug 3565147: Plugin Architecture: If any unknown node is present in the Plugin Manifest then the Plugin is not loaded
+		//XMP_Throw( "Invalid Serialize Option ...", kXMPErr_Unavailable );
 		return 0;
 	}
 }

@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-<title>XMP-Toolkit-SDK-CS6: TXMPMeta&lt; tStringObj &gt; Class Template Reference</title>
+<title>XMP-Toolkit-SDK-CC201306: TXMPMeta&lt; tStringObj &gt; Class Template Reference</title>
 <link href="xmp.css" rel="stylesheet" type="text/css">
 <link href="tabs.css" rel="stylesheet" type="text/css">
 </head><body>
@@ -263,6 +263,17 @@ void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPMeta.html#aa20c84e7549d0a3252fa29a1e83a757a" title="GetNamespaceURI() obtains the URI for a registered namespace prefix, and reports...">GetNamespaceURI()</a></code> obtains the URI for a registered namespace prefix, and reports whether the prefix is registered.  <a href="#aa20c84e7549d0a3252fa29a1e83a757a"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">static void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPMeta.html#a3f989597e95db929676273cacd4ea09a">DeleteNamespace</a> (<a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> namespaceURI)</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Not implemented.  <a href="#a3f989597e95db929676273cacd4ea09a"></a><br/></td></tr>
+<tr><td colspan="2"><h2>Error notifications</h2></td></tr>
+<tr><td colspan="2"><p><a class="anchor" id="amgrpb9b1c1c0b1b4992a1cbdde7ae0d6e01a"></a> From the beginning through version 5.5, XMP Tookit errors result in throwing an <code><a class="el" href="classXMP__Error.html" title="XMP Toolkit error, associates an error code with a descriptive error string.">XMP_Error</a></code> exception. For the most part exceptions were thrown early and thus API calls aborted as soon as an error was detected. Starting in version 5.5, support has been added for notifications of errors arising in calls to <code><a class="el" href="classTXMPMeta.html" title="API for access to the XMP Toolkit core services.">TXMPMeta</a></code> functions.</p>
+<p>A client can register an error notification callback function for a <code><a class="el" href="classTXMPMeta.html" title="API for access to the XMP Toolkit core services.">TXMPMeta</a></code> object. This can be done as a global default or individually to each object. The global default applies to all objects created after it is registered. Within the object there is no difference between the global default or explicitly registered callback. The callback function returns a <code>bool</code> value indicating if recovery should be attempted (true) or an exception thrown (false). If no callback is registered, a best effort at recovery and continuation will be made with an exception thrown if recovery is not possible.</p>
+<p>The number of notifications delivered for a given <a class="el" href="classTXMPMeta.html" title="API for access to the XMP Toolkit core services.">TXMPMeta</a> object can be limited. This is intended to reduce chatter from multiple or cascading errors. The limit is set when the callback function is registered. This limits the number of notifications of the highest severity delivered or less. If a higher severity error occurs, the counting starts again. The limit and counting can be reset at any time, see <code>ResetErrorCallbackLimit</code>. </p>
+<br/><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">static void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPMeta.html#a1e90e0c8cd8c5670267bb693cf3660fe">SetDefaultErrorCallback</a> (<a class="el" href="XMP__Const_8h.html#a6027ee7b7d17a0fec636f812c5346af7">XMPMeta_ErrorCallbackProc</a> proc, void *context=0, XMP_Uns32 limit=1)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><a class="el" href="classTXMPMeta.html#a1e90e0c8cd8c5670267bb693cf3660fe" title="SetDefaultErrorCallback() registers a global default error notification callback...">SetDefaultErrorCallback()</a> registers a global default error notification callback.  <a href="#a1e90e0c8cd8c5670267bb693cf3660fe"></a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPMeta.html#aee41442af4f049c1d6698fc27ce854d0">SetErrorCallback</a> (<a class="el" href="XMP__Const_8h.html#a6027ee7b7d17a0fec636f812c5346af7">XMPMeta_ErrorCallbackProc</a> proc, void *context=0, XMP_Uns32 limit=1)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><a class="el" href="classTXMPMeta.html#aee41442af4f049c1d6698fc27ce854d0" title="SetErrorCallback() registers an error notification callback.">SetErrorCallback()</a> registers an error notification callback.  <a href="#aee41442af4f049c1d6698fc27ce854d0"></a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPMeta.html#a31c7ef089e8fadff122044afa27d200a">ResetErrorCallbackLimit</a> (XMP_Uns32 limit=1)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><a class="el" href="classTXMPMeta.html#a31c7ef089e8fadff122044afa27d200a" title="ResetErrorCallbackLimit() resets the error notification limit and counting. It has...">ResetErrorCallbackLimit()</a> resets the error notification limit and counting. It has no effect if an error notification callback function is not registered.  <a href="#a31c7ef089e8fadff122044afa27d200a"></a><br/></td></tr>
 </table>
 <hr/><a name="_details"></a><h2>Detailed Description</h2>
 <h3>template&lt;class tStringObj&gt;<br/>
@@ -2099,6 +2110,34 @@ template&lt;class tStringObj&gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="a31c7ef089e8fadff122044afa27d200a"></a><!-- doxytag: member="TXMPMeta::ResetErrorCallbackLimit" ref="a31c7ef089e8fadff122044afa27d200a" args="(XMP_Uns32 limit=1)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classTXMPMeta.html">TXMPMeta</a>&lt; tStringObj &gt;::ResetErrorCallbackLimit </td>
+          <td>(</td>
+          <td class="paramtype">XMP_Uns32&nbsp;</td>
+          <td class="paramname"> <em>limit</em> = <code>1</code></td>
+          <td>&nbsp;)&nbsp;</td>
+          <td></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p><a class="el" href="classTXMPMeta.html#a31c7ef089e8fadff122044afa27d200a" title="ResetErrorCallbackLimit() resets the error notification limit and counting. It has...">ResetErrorCallbackLimit()</a> resets the error notification limit and counting. It has no effect if an error notification callback function is not registered. </p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>limit</em>&nbsp;</td><td>A limit on the number of notifications to be delivered. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a class="anchor" id="a0d98bc15bdb0f45737b15fc6822f3bc6"></a><!-- doxytag: member="TXMPMeta::SerializeToBuffer" ref="a0d98bc15bdb0f45737b15fc6822f3bc6" args="(tStringObj *rdfString, XMP_OptionBits options=0, XMP_StringLen padding=0) const " -->
 <div class="memitem">
 <div class="memproto">
@@ -2353,6 +2392,96 @@ template&lt;class tStringObj&gt; </div>
   </dd>
 </dl>
 <p>To insert a new item before or after the specified index, set flag <code><a class="el" href="XMP__Const_8h.html#abc6126af1d45847bc59afa0aa3216b04a873411f673fc2a6337083fd024df727f" title="Option for array item location: Insert a new item before the given index.">kXMP_InsertBeforeItem</a></code> or <code><a class="el" href="XMP__Const_8h.html#abc6126af1d45847bc59afa0aa3216b04a98cedd5fa29d47abb2ac8903ac7f5a05" title="Option for array item location: Insert a new item after the given index.">kXMP_InsertAfterItem</a></code>. </p>
+
+</div>
+</div>
+<a class="anchor" id="a1e90e0c8cd8c5670267bb693cf3660fe"></a><!-- doxytag: member="TXMPMeta::SetDefaultErrorCallback" ref="a1e90e0c8cd8c5670267bb693cf3660fe" args="(XMPMeta_ErrorCallbackProc proc, void *context=0, XMP_Uns32 limit=1)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">static void <a class="el" href="classTXMPMeta.html">TXMPMeta</a>&lt; tStringObj &gt;::SetDefaultErrorCallback </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#a6027ee7b7d17a0fec636f812c5346af7">XMPMeta_ErrorCallbackProc</a>&nbsp;</td>
+          <td class="paramname"> <em>proc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&nbsp;</td>
+          <td class="paramname"> <em>context</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">XMP_Uns32&nbsp;</td>
+          <td class="paramname"> <em>limit</em> = <code>1</code></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td><code> [static]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p><a class="el" href="classTXMPMeta.html#a1e90e0c8cd8c5670267bb693cf3660fe" title="SetDefaultErrorCallback() registers a global default error notification callback...">SetDefaultErrorCallback()</a> registers a global default error notification callback. </p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>proc</em>&nbsp;</td><td>The client's callback function.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>context</em>&nbsp;</td><td>Client-provided context for the callback.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>limit</em>&nbsp;</td><td>A limit on the number of notifications to be delivered. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="aee41442af4f049c1d6698fc27ce854d0"></a><!-- doxytag: member="TXMPMeta::SetErrorCallback" ref="aee41442af4f049c1d6698fc27ce854d0" args="(XMPMeta_ErrorCallbackProc proc, void *context=0, XMP_Uns32 limit=1)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classTXMPMeta.html">TXMPMeta</a>&lt; tStringObj &gt;::SetErrorCallback </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#a6027ee7b7d17a0fec636f812c5346af7">XMPMeta_ErrorCallbackProc</a>&nbsp;</td>
+          <td class="paramname"> <em>proc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&nbsp;</td>
+          <td class="paramname"> <em>context</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">XMP_Uns32&nbsp;</td>
+          <td class="paramname"> <em>limit</em> = <code>1</code></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p><a class="el" href="classTXMPMeta.html#aee41442af4f049c1d6698fc27ce854d0" title="SetErrorCallback() registers an error notification callback.">SetErrorCallback()</a> registers an error notification callback. </p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>proc</em>&nbsp;</td><td>The client's callback function.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>context</em>&nbsp;</td><td>Client-provided context for the callback.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>limit</em>&nbsp;</td><td>A limit on the number of notifications to be delivered. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -3290,6 +3419,6 @@ template&lt;class tStringObj&gt; </div>
 </ul>
 </div>
 <hr size="1"><address style="text-align: right;"><small>
-XMP-Toolkit-SDK-CS6 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
+XMP-Toolkit-SDK-CC201306 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
 </body>
 </html>

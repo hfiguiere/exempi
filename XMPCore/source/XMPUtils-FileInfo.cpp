@@ -1348,7 +1348,7 @@ XMPUtils::DuplicateSubtree ( const XMPMeta & source,
 							 XMP_StringPtr	 destRoot,
 							 XMP_OptionBits	 options )
 {
-	options = options;	// Avoid unused parameter warning.
+	IgnoreParam(options);
 	
 	bool fullSourceTree = false;
 	bool fullDestTree   = false;

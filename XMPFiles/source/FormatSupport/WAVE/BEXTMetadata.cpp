@@ -26,7 +26,11 @@ static const XMP_Uns32 kSizeOriginationDate			= 10;
 static const XMP_Uns32 kSizeOriginationTime			= 8;
 
 // Needed to be able to memcpy directly to this struct.
+#if SUNOS_SPARC || SUNOS_X86
+#pragma pack ( 1 )
+#else
 #pragma pack ( push, 1 )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 	struct BEXT
 	{
 		char			mDescription[256];
@@ -40,7 +44,11 @@ static const XMP_Uns32 kSizeOriginationTime			= 8;
 		XMP_Uns8		mUMID[64];
 		XMP_Uns8		mReserved[190];
 	};
+#if SUNOS_SPARC || SUNOS_X86
+#pragma pack ( )
+#else
 #pragma pack ( pop )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 
 //-----------------------------------------------------------------------------
 // 

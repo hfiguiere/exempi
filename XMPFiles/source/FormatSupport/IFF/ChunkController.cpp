@@ -321,7 +321,7 @@ void ChunkController::parseFile( XMP_IO* stream, XMP_OptionBits* options /* = NU
 // Purpose: Called by the handler to write back the changes to the file.
 // 
 //-----------------------------------------------------------------------------
-void ChunkController::writeFile( XMP_IO* stream )
+void ChunkController::writeFile( XMP_IO* stream ,XMP_ProgressTracker * progressTracker )
 
 {
 	//
@@ -344,11 +344,27 @@ void ChunkController::writeFile( XMP_IO* stream )
 		// NOTE: the padding bytes can be ignored, as the top-level chunk is always a node, not a leaf.
 		Chunk* lastChild = mRoot->getChildAt(mRoot->numChildren() - 1);
 		XMP_Uns64 newFileSize = lastChild->getOffset() + lastChild->getSize(true);
+		if ( progressTracker != 0 ) 
+		{
+			float fileWriteSize=0.0f;
+			for( XMP_Uns32 i = 0; i < mRoot->numChildren(); i++ )
+			{
+				Chunk* child = mRoot->getChildAt(i);
+				fileWriteSize+=child->calculateWriteSize(  );
+			}
+			XMP_Assert ( progressTracker->WorkInProgress() );
+			progressTracker->AddTotalWork ( fileWriteSize );
+		}
 
 		// Move garbage tail after last top-level chunk,
 		// BEFORE the chunks are written -- in case the file shrinks
 		if (mTrailingGarbageSize > 0  &&  newFileSize != mTrailingGarbageOffset)
 		{
+			if ( progressTracker != 0 ) 
+			{
+				XMP_Assert ( progressTracker->WorkInProgress() );
+				progressTracker->AddTotalWork ( (float)mTrailingGarbageSize );
+			}
 			XIO::Move( stream, mTrailingGarbageOffset, stream, newFileSize, mTrailingGarbageSize );
 			newFileSize += mTrailingGarbageSize;
 		}

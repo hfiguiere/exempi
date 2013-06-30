@@ -336,6 +336,39 @@ public:
 						XMP_StringPtr	indent,
 						XMP_Index		baseIndent ) const;
 	
+	// ---------------------------------------------------------------------------------------------
+
+	static void
+	SetDefaultErrorCallback ( XMPMeta_ErrorCallbackWrapper wrapperProc,
+							  XMPMeta_ErrorCallbackProc    clientProc,
+							  void *    context,
+							  XMP_Uns32 limit );
+
+	void
+	SetErrorCallback ( XMPMeta_ErrorCallbackWrapper wrapperProc,
+					   XMPMeta_ErrorCallbackProc    clientProc,
+					   void *    context,
+					   XMP_Uns32 limit );
+
+	void
+	ResetErrorCallbackLimit ( XMP_Uns32 limit );
+	
+	class ErrorCallbackInfo : public GenericErrorCallback {
+	public:
+
+		XMPMeta_ErrorCallbackWrapper wrapperProc;
+		XMPMeta_ErrorCallbackProc    clientProc;
+		void * context;
+
+		ErrorCallbackInfo() : wrapperProc(0), clientProc(0), context(0) {};
+		
+		void Clear() { this->wrapperProc = 0; this->clientProc = 0; this->context = 0;
+					   GenericErrorCallback::Clear(); };
+
+		bool CanNotify() const;
+		bool ClientCallbackWrapper ( XMP_StringPtr filePath, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr messsage ) const;
+	};
+
 	// =============================================================================================
 
 	// ---------------------------------------------------------------------------------------------
@@ -368,10 +401,9 @@ public:
 
 	// ! Any data member changes must be propagted to the Clone function!
 
-	XMP_Int32 prevTkVer;	// Previous toolkit version as MMmmuubbb (major, minor, micro, build).
-	XMP_Node  tree;
-
+	XMP_Node tree;
 	XMLParserAdapter * xmlParser;
+	ErrorCallbackInfo errorCallback;
 	
 	friend class XMPIterator;
 	friend class XMPUtils;
@@ -379,13 +411,17 @@ public:
 private:
   
 	// ! These are hidden on purpose:
-	XMPMeta ( const XMPMeta & /* original */ ) : tree(XMP_Node(0,"",0)), clientRefs(0), prevTkVer(0), xmlParser(0)
+	XMPMeta ( const XMPMeta & /* original */ ) : tree(XMP_Node(0,"",0)), clientRefs(0), xmlParser(0)
 		{ XMP_Throw ( "Call to hidden constructor", kXMPErr_InternalFailure ); };
 	void operator= ( const XMPMeta & /* rhs */ )  
 		{ XMP_Throw ( "Call to hidden operator=", kXMPErr_InternalFailure ); };
 
-};	// class XMPMeta
+	// Special support routines for parsing, here to be able to access the errorCallback.
+	void ProcessXMLTree ( XMP_OptionBits options );
+	bool ProcessXMLBuffer ( XMP_StringPtr buffer, XMP_StringLen xmpSize, bool lastClientCall );
+	void ProcessRDF ( const XML_Node & xmlTree, XMP_OptionBits options );
 
+};	// class XMPMeta
 
 // =================================================================================================
 

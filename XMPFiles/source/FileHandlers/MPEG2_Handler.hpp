@@ -51,6 +51,8 @@ public:
 	~MPEG2_MetaHandler();
 
 	bool GetFileModDate ( XMP_DateTime * modDate );
+	void FillAssociatedResources ( std::vector<std::string> * resourceList );
+	bool IsMetadataWritable ( ) ;
 
 	void CacheFileData();
 

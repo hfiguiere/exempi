@@ -107,7 +107,7 @@ void XIO::SplitFileExtension ( std::string * leafName, std::string * fileExt )
 void XIO::ReplaceTextFile ( XMP_IO* textFile, const std::string & newContent, bool doSafeUpdate )
 {
 	XMP_Int64 newContentSize = (XMP_Int64)newContent.size();
-	XMP_Enforce ( newContentSize <= 0xFFFFFFFFUL );	// Make sure it fits in UInt32 for Write.
+	XMP_Enforce ( newContentSize <= (XMP_Int64)0xFFFFFFFFULL );	// Make sure it fits in UInt32 for Write.
 
 	if ( doSafeUpdate ) {
 	

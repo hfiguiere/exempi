@@ -11,7 +11,10 @@
 #include "public/include/XMP_Const.h"
 
 #include "XMPFiles/source/FormatSupport/TIFF_Support.hpp"
+
 #include "source/XIO.hpp"
+
+#include "source/EndianUtils.hpp"
 
 // =================================================================================================
 /// \file TIFF_FileWriter.cpp
@@ -586,15 +589,26 @@ void TIFF_FileWriter::ParseMemoryStream ( const void* data, XMP_Uns32 length, bo
 		memcpy ( this->memStream, data, length );	// AUDIT: Safe, malloc'ed length bytes above.
 		this->ownedStream = true;
 	}
-
+	
 	this->tiffLength = length;
 	XMP_Uns32 ifdLimit = this->tiffLength - 6;	// An IFD must start before this offset.
 
-	// Find and process the primary, Exif, GPS, and Interoperability IFDs.
+	// Find and process the primary, thumbnail, Exif, GPS, and Interoperability IFDs.
 
 	XMP_Uns32 primaryIFDOffset = this->CheckTIFFHeader ( this->memStream, length );
 
-	if ( primaryIFDOffset != 0 ) (void) this->ProcessMemoryIFD ( primaryIFDOffset, kTIFF_PrimaryIFD );
+	if ( primaryIFDOffset != 0 ) {
+		XMP_Uns32 tnailOffset = this->ProcessMemoryIFD ( primaryIFDOffset, kTIFF_PrimaryIFD );
+		if ( tnailOffset != 0 ) {
+			if ( IsOffsetValid ( tnailOffset, 8, ifdLimit ) ) {	// Remove a bad Thumbnail IFD Offset
+				( void ) this->ProcessMemoryIFD ( tnailOffset, kTIFF_TNailIFD );
+			} else {
+				XMP_Error error ( kXMPErr_BadTIFF, "Bad IFD offset" );
+				this->NotifyClient (kXMPErrSev_Recoverable, error );
+				this->DeleteTag ( kTIFF_PrimaryIFD, kTIFF_TNailIFD );
+			}
+		}
+	}
 
 	const InternalTagInfo* exifIFDTag = this->FindTagInIFD ( kTIFF_PrimaryIFD, kTIFF_ExifIFDPointer );
 	if ( (exifIFDTag != 0) && (exifIFDTag->type == kTIFF_LongType) && (exifIFDTag->dataLen == 4) ) {
@@ -605,9 +619,11 @@ void TIFF_FileWriter::ParseMemoryStream ( const void* data, XMP_Uns32 length, bo
 	const InternalTagInfo* gpsIFDTag = this->FindTagInIFD ( kTIFF_PrimaryIFD, kTIFF_GPSInfoIFDPointer );
 	if ( (gpsIFDTag != 0) && (gpsIFDTag->type == kTIFF_LongType) && (gpsIFDTag->dataLen == 4) ) {
 		XMP_Uns32 gpsOffset = this->GetUns32 ( gpsIFDTag->dataPtr );
-		if ( (8 <= gpsOffset) && (gpsOffset < ifdLimit) ) {	// Remove a bad GPS IFD offset.
+		if ( IsOffsetValid ( gpsOffset, 8, ifdLimit ) ) {	// Remove a bad GPS IFD offset.
 			(void) this->ProcessMemoryIFD ( gpsOffset, kTIFF_GPSInfoIFD );
 		} else {
+			XMP_Error error ( kXMPErr_BadTIFF, "Bad IFD offset" );
+			this->NotifyClient (kXMPErrSev_Recoverable, error );
 			this->DeleteTag ( kTIFF_PrimaryIFD, kTIFF_GPSInfoIFDPointer );
 		}
 	}
@@ -615,9 +631,11 @@ void TIFF_FileWriter::ParseMemoryStream ( const void* data, XMP_Uns32 length, bo
 	const InternalTagInfo* interopIFDTag = this->FindTagInIFD ( kTIFF_ExifIFD, kTIFF_InteroperabilityIFDPointer );
 	if ( (interopIFDTag != 0) && (interopIFDTag->type == kTIFF_LongType) && (interopIFDTag->dataLen == 4) ) {
 		XMP_Uns32 interopOffset = this->GetUns32 ( interopIFDTag->dataPtr );
-		if ( (8 <= interopOffset) && (interopOffset < ifdLimit) ) {	// Remove a bad Interoperability IFD offset.
+		if ( IsOffsetValid ( interopOffset, 8, ifdLimit ) ) {	// Remove a bad Interoperability IFD offset.
 			(void) this->ProcessMemoryIFD ( interopOffset, kTIFF_InteropIFD );
 		} else {
+			XMP_Error error ( kXMPErr_BadTIFF, "Bad IFD offset" );
+			this->NotifyClient (kXMPErrSev_Recoverable, error );
 			this->DeleteTag ( kTIFF_ExifIFD, kTIFF_InteroperabilityIFDPointer );
 		}
 	}
@@ -653,16 +671,22 @@ XMP_Uns32 TIFF_FileWriter::ProcessMemoryIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd 
 	InternalIFDInfo& ifdInfo ( this->containedIFDs[ifd] );
 
 	if ( (ifdOffset < 8) || (ifdOffset > (this->tiffLength - kEmptyIFDLength)) ) {
-		XMP_Throw ( "Bad IFD offset", kXMPErr_BadTIFF );
+		XMP_Error error ( kXMPErr_BadTIFF, "Bad IFD offset" );
+		this->NotifyClient ( kXMPErrSev_FileFatal, error );
 	}
 
 	XMP_Uns8* ifdPtr = this->memStream + ifdOffset;
 	XMP_Uns16 tagCount = this->GetUns16 ( ifdPtr );
 	RawIFDEntry* ifdEntries = (RawIFDEntry*)(ifdPtr+2);
 
-	if ( tagCount >= 0x8000 ) XMP_Throw ( "Outrageous IFD count", kXMPErr_BadTIFF );
+	if ( tagCount >= 0x8000 ) {
+		XMP_Error error ( kXMPErr_BadTIFF, "Outrageous IFD count" );
+		this->NotifyClient ( kXMPErrSev_FileFatal, error );
+	}
+
 	if ( (XMP_Uns32)(2 + tagCount*12 + 4) > (this->tiffLength - ifdOffset) ) {
-		XMP_Throw ( "Out of bounds IFD", kXMPErr_BadTIFF );
+		XMP_Error error ( kXMPErr_BadTIFF, "Out of bounds IFD" );
+		this->NotifyClient ( kXMPErrSev_FileFatal, error );
 	}
 
 	ifdInfo.origIFDOffset = ifdOffset;
@@ -682,7 +706,11 @@ XMP_Uns32 TIFF_FileWriter::ProcessMemoryIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd 
 		InternalTagInfo& mapTag = newPos->second;
 
 		mapTag.dataLen = mapTag.origDataLen = mapTag.count * (XMP_Uns32)kTIFF_TypeSizes[mapTag.type];
-		mapTag.smallValue = rawTag->dataOrOffset;	// Keep the value or offset in stream byte ordering.
+#if SUNOS_SPARC
+		mapTag.smallValue = IE.getUns32(&rawTag->dataOrOffset);
+#else
+		mapTag.smallValue = GetUns32AsIs ( &rawTag->dataOrOffset );	// Keep the value or offset in stream byte ordering.
+#endif //#if SUNOS_SPARC
 
 		if ( mapTag.dataLen <= 4 ) {
 			mapTag.origDataOffset = ifdOffset + 2 + (12 * (XMP_Uns32)i) + 8;	// Compute the data offset.
@@ -720,39 +748,50 @@ XMP_Uns32 TIFF_FileWriter::ProcessMemoryIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd 
 
 void TIFF_FileWriter::ParseFileStream ( XMP_IO* fileRef )
 {
-	bool ok;
-	IOBuffer  ioBuf;
 
 	this->DeleteExistingInfo();
 	this->fileParsed = true;
 	this->tiffLength = (XMP_Uns32) fileRef->Length();
-	if ( this->tiffLength == 0 ) return;
+	if ( this->tiffLength < 8 ) return;	// Ignore empty or impossibly short.
+	fileRef->Rewind ( );
 
 	XMP_Uns32 ifdLimit = this->tiffLength - 6;	// An IFD must start before this offset.
 
 	// Find and process the primary, Exif, GPS, and Interoperability IFDs.
 
-	ioBuf.filePos = 0;
-	fileRef->Rewind ( );
-	ok = CheckFileSpace ( fileRef, &ioBuf, 8 );
-	if ( ! ok ) XMP_Throw ( "TIFF too small", kXMPErr_BadTIFF );
+	XMP_Uns8 tiffHeader [8];
+	fileRef->ReadAll ( tiffHeader, sizeof(tiffHeader) );
+	XMP_Uns32 primaryIFDOffset = this->CheckTIFFHeader ( tiffHeader, this->tiffLength );
 
-	XMP_Uns32 primaryIFDOffset = this->CheckTIFFHeader ( ioBuf.ptr, this->tiffLength );
-
-	if ( primaryIFDOffset != 0 ) (void) this->ProcessFileIFD ( kTIFF_PrimaryIFD, primaryIFDOffset, fileRef, &ioBuf );
+	if ( primaryIFDOffset == 0 ) {
+		return;
+	} else {
+		XMP_Uns32 tnailOffset = this->ProcessFileIFD ( kTIFF_PrimaryIFD, primaryIFDOffset, fileRef );
+		if ( tnailOffset != 0 ) {
+			if ( IsOffsetValid ( tnailOffset, 8, ifdLimit ) ) {
+				( void ) this->ProcessFileIFD ( kTIFF_TNailIFD, tnailOffset, fileRef );
+			} else {
+				XMP_Error error ( kXMPErr_BadTIFF, "Bad IFD offset" );
+				this->NotifyClient ( kXMPErrSev_Recoverable, error );
+				this->DeleteTag( kTIFF_PrimaryIFD, kTIFF_TNailIFD );
+			}
+		}
+	}
 
 	const InternalTagInfo* exifIFDTag = this->FindTagInIFD ( kTIFF_PrimaryIFD, kTIFF_ExifIFDPointer );
 	if ( (exifIFDTag != 0) && (exifIFDTag->type == kTIFF_LongType) && (exifIFDTag->count == 1) ) {
 		XMP_Uns32 exifOffset = this->GetUns32 ( exifIFDTag->dataPtr );
-		(void) this->ProcessFileIFD ( kTIFF_ExifIFD, exifOffset, fileRef, &ioBuf );
+		(void) this->ProcessFileIFD ( kTIFF_ExifIFD, exifOffset, fileRef );
 	}
 
 	const InternalTagInfo* gpsIFDTag = this->FindTagInIFD ( kTIFF_PrimaryIFD, kTIFF_GPSInfoIFDPointer );
 	if ( (gpsIFDTag != 0) && (gpsIFDTag->type == kTIFF_LongType) && (gpsIFDTag->count == 1) ) {
 		XMP_Uns32 gpsOffset = this->GetUns32 ( gpsIFDTag->dataPtr );
-		if ( (8 <= gpsOffset) && (gpsOffset < ifdLimit) ) {	// Remove a bad GPS IFD offset.
-			(void) this->ProcessFileIFD ( kTIFF_GPSInfoIFD, gpsOffset, fileRef, &ioBuf );
+		if ( IsOffsetValid (gpsOffset, 8, ifdLimit ) ) {	// Remove a bad GPS IFD offset.
+			(void) this->ProcessFileIFD ( kTIFF_GPSInfoIFD, gpsOffset, fileRef );
 		} else {
+			XMP_Error error ( kXMPErr_BadTIFF, "Bad IFD offset" );
+			this->NotifyClient ( kXMPErrSev_Recoverable, error );
 			this->DeleteTag ( kTIFF_PrimaryIFD, kTIFF_GPSInfoIFDPointer );
 		}
 	}
@@ -760,9 +799,11 @@ void TIFF_FileWriter::ParseFileStream ( XMP_IO* fileRef )
 	const InternalTagInfo* interopIFDTag = this->FindTagInIFD ( kTIFF_ExifIFD, kTIFF_InteroperabilityIFDPointer );
 	if ( (interopIFDTag != 0) && (interopIFDTag->type == kTIFF_LongType) && (interopIFDTag->dataLen == 4) ) {
 		XMP_Uns32 interopOffset = this->GetUns32 ( interopIFDTag->dataPtr );
-		if ( (8 <= interopOffset) && (interopOffset < ifdLimit) ) {	// Remove a bad Interoperability IFD offset.
-			(void) this->ProcessFileIFD ( kTIFF_InteropIFD, interopOffset, fileRef, &ioBuf );
+		if ( IsOffsetValid (interopOffset, 8, ifdLimit ) ) {	// Remove a bad Interoperability IFD offset.
+			(void) this->ProcessFileIFD ( kTIFF_InteropIFD, interopOffset, fileRef );
 		} else {
+			XMP_Error error ( kXMPErr_BadTIFF, "Bad IFD offset" );
+			this->NotifyClient ( kXMPErrSev_Recoverable, error );
 			this->DeleteTag ( kTIFF_ExifIFD, kTIFF_InteroperabilityIFDPointer );
 		}
 	}
@@ -792,25 +833,36 @@ void TIFF_FileWriter::ParseFileStream ( XMP_IO* fileRef )
 // =================================================================================================
 // TIFF_FileWriter::ProcessFileIFD
 // ===============================
+//
+// Each IFD has a UInt16 count of IFD entries, a sequence of 12 byte IFD entries, then a UInt32
+// offset to the next IFD. The integer byte order is determined by the II or MM at the TIFF start.
 
-XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, XMP_IO* fileRef, void* _ioBuf )
+XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, XMP_IO* fileRef )
 {
-	IOBuffer* ioBuf = (IOBuffer*)_ioBuf;	// *** Temporary hack, _ioBuf is IOBuffer* but don't want to include XIO.hpp.
+	static const size_t ifdBufferSize = 12*65536;	// Enough for the largest possible IFD.
+    std::vector<XMP_Uns8> ifdBuffer(ifdBufferSize);
+	XMP_Uns8 intBuffer [4];	// For the IFD count and offset to next IFD.
+	
 	InternalIFDInfo& ifdInfo ( this->containedIFDs[ifd] );
 
 	if ( (ifdOffset < 8) || (ifdOffset > (this->tiffLength - kEmptyIFDLength)) ) {
 		XMP_Throw ( "Bad IFD offset", kXMPErr_BadTIFF );
 	}
 
-	MoveToOffset ( fileRef, ifdOffset, ioBuf );	// Move to the start of the IFD.
+	fileRef->Seek ( ifdOffset, kXMP_SeekFromStart );
+	if ( ! XIO::CheckFileSpace ( fileRef, 2 ) ) return 0;	// Bail for a truncated file.
+	fileRef->ReadAll ( intBuffer, 2 );
 
-	bool ok = CheckFileSpace ( fileRef, ioBuf, 2 );
-	if ( ! ok ) XMP_Throw ( "IFD count missing", kXMPErr_BadTIFF );
-	XMP_Uns16 tagCount = this->GetUns16 ( ioBuf->ptr );
+	XMP_Uns16 tagCount = this->GetUns16 ( intBuffer );
+	if ( tagCount >= 0x8000 ) return 0;	// Maybe wrong byte order.
+	if ( ! XIO::CheckFileSpace ( fileRef, 12*tagCount ) ) return 0;	// Bail for a truncated file.
+	fileRef->ReadAll ( &ifdBuffer[0], 12*tagCount );
 
-	if ( tagCount >= 0x8000 ) XMP_Throw ( "Outrageous IFD count", kXMPErr_BadTIFF );
-	if ( (XMP_Uns32)(2 + tagCount*12 + 4) > (this->tiffLength - ifdOffset) ) {
-		XMP_Throw ( "Out of bounds IFD", kXMPErr_BadTIFF );
+	if ( ! XIO::CheckFileSpace ( fileRef, 4 ) ) {
+        ifdInfo.origNextIFD = 0;	// Tolerate a trncated file, do the remaining processing.
+	} else {
+		fileRef->ReadAll ( intBuffer, 4 );
+        ifdInfo.origNextIFD = this->GetUns32 ( intBuffer );
 	}
 
 	ifdInfo.origIFDOffset = ifdOffset;
@@ -822,13 +874,11 @@ XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, X
 	// sorted output. Plus the "map[key] = value" assignment conveniently keeps the last encountered
 	// value, following Photoshop's behavior.
 
-	ioBuf->ptr += 2;	// Move to the first IFD entry.
+	XMP_Uns8* ifdPtr = &ifdBuffer[0];	// Move to the first IFD entry.
 
-	for ( XMP_Uns16 i = 0; i < tagCount; ++i, ioBuf->ptr += 12 ) {
+	for ( XMP_Uns16 i = 0; i < tagCount; ++i, ifdPtr += 12 ) {
 
-		if ( ! CheckFileSpace ( fileRef, ioBuf, 12 ) ) XMP_Throw ( "EOF within IFD", kXMPErr_BadTIFF );
-
-		RawIFDEntry* rawTag = (RawIFDEntry*)ioBuf->ptr;
+		RawIFDEntry* rawTag = (RawIFDEntry*)ifdPtr;
 		XMP_Uns16    tagType = this->GetUns16 ( &rawTag->type );
 		if ( (tagType < kTIFF_ByteType) || (tagType > kTIFF_LastType) ) continue;	// Bad type, skip this tag.
 
@@ -840,7 +890,7 @@ XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, X
 		InternalTagInfo& mapTag = newPos->second;
 
 		mapTag.dataLen = mapTag.origDataLen = mapTag.count * (XMP_Uns32)kTIFF_TypeSizes[mapTag.type];
-		mapTag.smallValue = rawTag->dataOrOffset;	// Keep the value or offset in stream byte ordering.
+		mapTag.smallValue = GetUns32AsIs ( &rawTag->dataOrOffset );	// Keep the value or offset in stream byte ordering.
 
 		if ( mapTag.dataLen <= 4 ) {
 			mapTag.dataPtr = (XMP_Uns8*) &mapTag.smallValue;
@@ -861,24 +911,13 @@ XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, X
 
 	}
 
-	if ( ! CheckFileSpace ( fileRef, ioBuf, 4 ) ) XMP_Throw ( "EOF at next IFD offset", kXMPErr_BadTIFF );
-	ifdInfo.origNextIFD = this->GetUns32 ( ioBuf->ptr );
-
-	// ---------------------------------------------------------------------------------------------
-	// Go back over the tag map and extract the data for large recognized tags. This is done in 2
-	// passes, in order to lessen the typical amount of I/O. On the first pass make sure we have at
-	// least 32K of data following the IFD in the buffer, and extract all of the values in that
-	// portion. This should cover an original file, or the appended values with an appended IFD.
-
-	if ( (ioBuf->limit - ioBuf->ptr) < 32*1024 ) RefillBuffer ( fileRef, ioBuf );
+	// ------------------------------------------------------------------------
+	// Go back over the tag map and extract the data for large recognized tags.
 
 	InternalTagMap::iterator tagPos = ifdInfo.tagMap.begin();
 	InternalTagMap::iterator tagEnd = ifdInfo.tagMap.end();
 
 	const XMP_Uns16* knownTagPtr = sKnownTags[ifd];	// Points into the ordered recognized tag list.
-
-	XMP_Uns32 bufBegin = (XMP_Uns32)ioBuf->filePos;	// TIFF stream bounds for the current buffer.
-	XMP_Uns32 bufEnd   = bufBegin + (XMP_Uns32)ioBuf->len;
 
 	for ( ; tagPos != tagEnd; ++tagPos ) {
 
@@ -889,46 +928,10 @@ XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, X
 		while ( *knownTagPtr < currTag->id ) ++knownTagPtr;
 		if ( *knownTagPtr != currTag->id ) continue;	// Skip unrecognized tags.
 
-		if ( (bufBegin <= currTag->origDataOffset) && ((currTag->origDataOffset + currTag->dataLen) <= bufEnd) ) {
-			// This value is already fully within the current I/O buffer, copy it.
-			MoveToOffset ( fileRef, currTag->origDataOffset, ioBuf );
-			currTag->dataPtr = (XMP_Uns8*) malloc ( currTag->dataLen );
-			if ( currTag->dataPtr == 0 ) XMP_Throw ( "No data block", kXMPErr_NoMemory );
-			memcpy ( currTag->dataPtr, ioBuf->ptr, currTag->dataLen );	// AUDIT: Safe, malloc'ed currTag->dataLen bytes above.
-		}
-
-	}
-
-	// ---------------------------------------------------------------------------------------------
-	// Now the second large value pass. This will reposition the I/O buffer as necessary. Hopefully
-	// just once, to pick up the span of data not covered in the first pass.
-
-	tagPos = ifdInfo.tagMap.begin();	// Reset both map/array positions.
-	knownTagPtr = sKnownTags[ifd];
-
-	for ( ; tagPos != tagEnd; ++tagPos ) {
-
-		InternalTagInfo* currTag = &tagPos->second;
-
-		if ( (currTag->dataLen <= 4) || (currTag->dataPtr != 0) ) continue;	// Done this tag?
-		while ( *knownTagPtr < currTag->id ) ++knownTagPtr;
-		if ( *knownTagPtr != currTag->id ) continue;	// Skip unrecognized tags.
-
+		fileRef->Seek ( currTag->origDataOffset, kXMP_SeekFromStart );
 		currTag->dataPtr = (XMP_Uns8*) malloc ( currTag->dataLen );
 		if ( currTag->dataPtr == 0 ) XMP_Throw ( "No data block", kXMPErr_NoMemory );
-
-		if ( currTag->dataLen > kIOBufferSize ) {
-			// This value is bigger than the I/O buffer, read it directly and restore the file position.
-			fileRef->Seek ( currTag->origDataOffset, kXMP_SeekFromStart  );
-			fileRef->ReadAll ( currTag->dataPtr, currTag->dataLen );
-			fileRef->Seek ( (ioBuf->filePos + ioBuf->len), kXMP_SeekFromStart  );
-		} else {
-			// This value can fit in the I/O buffer, so use that.
-			MoveToOffset ( fileRef, currTag->origDataOffset, ioBuf );
-			ok = CheckFileSpace ( fileRef, ioBuf, currTag->dataLen );
-			if ( ! ok ) XMP_Throw ( "EOF in data block", kXMPErr_BadTIFF );
-			memcpy ( currTag->dataPtr, ioBuf->ptr, currTag->dataLen );	// AUDIT: Safe, malloc'ed currTag->dataLen bytes above.
-		}
+		fileRef->ReadAll ( currTag->dataPtr, currTag->dataLen );
 
 	}
 
@@ -1262,6 +1265,9 @@ XMP_Uns32 TIFF_FileWriter::DetermineVisibleLength()
 	#define Trace_DetermineAppendInfo 0
 #endif
 
+// An IFD grows if it has more tags than before.
+#define DoesIFDGrow(ifd)	(this->containedIFDs[ifd].origCount < this->containedIFDs[ifd].tagMap.size())
+
 XMP_Uns32 TIFF_FileWriter::DetermineAppendInfo ( XMP_Uns32 appendedOrigin,
 												 bool      appendedIFDs[kTIFF_KnownIFDCount],
 												 XMP_Uns32 newIFDOffsets[kTIFF_KnownIFDCount],
@@ -1306,40 +1312,38 @@ XMP_Uns32 TIFF_FileWriter::DetermineAppendInfo ( XMP_Uns32 appendedOrigin,
 		for ( int i = 0; i < kTIFF_KnownIFDCount ;++i ) appendedIFDs[i] = (this->containedIFDs[i].tagMap.size() > 0);
 	}
 
-	appendedIFDs[kTIFF_InteropIFD] |= (this->containedIFDs[kTIFF_InteropIFD].origCount <
-									   this->containedIFDs[kTIFF_InteropIFD].tagMap.size());
+	appendedIFDs[kTIFF_InteropIFD] |= DoesIFDGrow ( kTIFF_InteropIFD );
 	if ( appendedIFDs[kTIFF_InteropIFD] ) {
 		this->SetTag_Long ( kTIFF_ExifIFD, kTIFF_InteroperabilityIFDPointer, 0xABADABAD );
 	}
 
-	appendedIFDs[kTIFF_GPSInfoIFD] |= (this->containedIFDs[kTIFF_GPSInfoIFD].origCount <
-									   this->containedIFDs[kTIFF_GPSInfoIFD].tagMap.size());
+	appendedIFDs[kTIFF_GPSInfoIFD] |= DoesIFDGrow ( kTIFF_GPSInfoIFD );
 	if ( appendedIFDs[kTIFF_GPSInfoIFD] ) {
 		this->SetTag_Long ( kTIFF_PrimaryIFD, kTIFF_GPSInfoIFDPointer, 0xABADABAD );
 	}
 
-	appendedIFDs[kTIFF_ExifIFD] |= (this->containedIFDs[kTIFF_ExifIFD].origCount <
-								    this->containedIFDs[kTIFF_ExifIFD].tagMap.size());
+	appendedIFDs[kTIFF_ExifIFD] |= DoesIFDGrow ( kTIFF_ExifIFD );
 	if ( appendedIFDs[kTIFF_ExifIFD] ) {
 		this->SetTag_Long ( kTIFF_PrimaryIFD, kTIFF_ExifIFDPointer, 0xABADABAD );
 	}
 
-	appendedIFDs[kTIFF_PrimaryIFD] |= (this->containedIFDs[kTIFF_PrimaryIFD].origCount <
-									   this->containedIFDs[kTIFF_PrimaryIFD].tagMap.size());
+	appendedIFDs[kTIFF_PrimaryIFD] |= DoesIFDGrow ( kTIFF_PrimaryIFD );
 
 	// The appended data (if any) will be a sequence of an IFD followed by its large values.
 	// Determine the new offsets for the appended IFDs and tag values, and the total amount of
-	// appended stuff.
+	// appended stuff. The final IFD offset is set in newIFDOffsets for all IFDs, changed or not.
+	// This makes it easier to set the offsets to the primary and thumbnail IFDs when writing.
 
 	for ( int ifd = 0; ifd < kTIFF_KnownIFDCount ;++ifd ) {
 
 		InternalIFDInfo& ifdInfo ( this->containedIFDs[ifd] );
 		size_t tagCount = ifdInfo.tagMap.size();
 
+		newIFDOffsets[ifd] = ifdInfo.origIFDOffset;	// Make the new offset valid for unchanged IFDs.
+
 		if ( ! (appendAll | ifdInfo.changed) ) continue;
 		if ( tagCount == 0 ) continue;
 
-		newIFDOffsets[ifd] = ifdInfo.origIFDOffset;
 		if ( appendedIFDs[ifd] ) {
 			newIFDOffsets[ifd] = appendedOrigin + appendedLength;
 			appendedLength += (XMP_Uns32)( 6 + (12 * tagCount) );
@@ -1488,7 +1492,7 @@ void TIFF_FileWriter::UpdateMemByAppend ( XMP_Uns8** newStream_out, XMP_Uns32* n
 				this->PutUns32 ( currTag.count, ifdPtr );
 				ifdPtr += 4;
 
-				*((XMP_Uns32*)ifdPtr) = currTag.smallValue;
+				PutUns32AsIs ( currTag.smallValue, ifdPtr );
 
 				if ( (appendAll | currTag.changed) && (currTag.dataLen > 4) ) {
 
@@ -1525,6 +1529,14 @@ void TIFF_FileWriter::UpdateMemByAppend ( XMP_Uns8** newStream_out, XMP_Uns32* n
 			this->PutUns32 ( newIFDOffsets[kTIFF_PrimaryIFD], (newStream + 4) );
 		}
 
+		if ( appendedIFDs[kTIFF_TNailIFD] ) {
+			size_t primaryTagCount = this->containedIFDs[kTIFF_PrimaryIFD].tagMap.size();
+			if ( primaryTagCount > 0 ) {
+				XMP_Uns32 tnailLinkOffset = newIFDOffsets[kTIFF_PrimaryIFD] + 2 + (12 * primaryTagCount);
+				this->PutUns32 ( newIFDOffsets[kTIFF_TNailIFD], (newStream + tnailLinkOffset) );
+			}
+		}
+
 	} catch ( ... ) {
 
 		free ( newStream );
@@ -1554,7 +1566,11 @@ void TIFF_FileWriter::UpdateMemByAppend ( XMP_Uns8** newStream_out, XMP_Uns32* n
 // We don't do most of the actual rewrite here. We set things up so that UpdateMemByAppend can be
 // called to append onto a bare TIFF header. Additional hidden offsets are then handled here.
 //
-// These tags are recognized as being hidden offsets when composing a condensed stream:
+// The hidden offsets for the Exif, GPS, and Interoperability IFDs (tags 34665, 34853, and 40965)
+// are handled by the code in DetermineAppendInfo, which is called from UpdateMemByAppend, which is
+// called from here.
+//
+// These other tags are recognized as being hidden offsets when composing a condensed stream:
 //    273 - StripOffsets, lengths in tag 279
 //    288 - FreeOffsets, lengths in tag 289
 //    324 - TileOffsets, lengths in tag 325
@@ -1563,11 +1579,11 @@ void TIFF_FileWriter::UpdateMemByAppend ( XMP_Uns8** newStream_out, XMP_Uns32* n
 //    519 - JPEGQTables, each table is 64 bytes
 //    520 - JPEGDCTables, lengths ???
 //    521 - JPEGACTables, lengths ???
-// Some of these will handled and kept, some will be thrown out, some will cause the rewrite to fail.
 //
-// The hidden offsets for the Exif, GPS, and Interoperability IFDs (tags 34665, 34853, and 40965)
-// are handled by the code in DetermineAppendInfo, which is called from UpdateMemByAppend, which is
-// called from here.
+// Some of these will handled and kept, some will be thrown out, some will cause the rewrite to fail.
+// At this time only the JPEG thumbnail tags, 513 and 514, contain hidden data that is kept. The
+// final stream layout is whatever UpdateMemByAppend does for the visible content, followed by the
+// hidden offset data. The Exif, GPS, and Interoperability IFDs are visible to UpdateMemByAppend.
 
 // ! So far, a memory-based TIFF rewrite would only be done for the Exif portion of a JPEG file.
 // ! In which case we're probably OK to handle JPEGInterchangeFormat (used for compressed thumbnails)
@@ -1653,7 +1669,7 @@ void TIFF_FileWriter::UpdateMemByRewrite ( XMP_Uns8** newStream_out, XMP_Uns32* 
 	}
 
 	// Determine the offsets and additional size for the hidden offset content. Set the offset tags
-	// to the new offset.
+	// to the new offset so that UpdateMemByAppend writes the new offsets.
 
 	XMP_Uns32 hiddenContentLength = 0;
 	XMP_Uns32 hiddenContentOrigin = this->DetermineVisibleLength();
@@ -1678,6 +1694,7 @@ void TIFF_FileWriter::UpdateMemByRewrite ( XMP_Uns8** newStream_out, XMP_Uns32* 
 	// Save any old memory stream for the content behind hidden offsets. Setup a bare TIFF header.
 
 	XMP_Uns8* oldStream = this->memStream;
+	bool ownedOldStream = this->ownedStream;
 
 	XMP_Uns8 bareTIFF [8];
 	if ( this->bigEndian ) {
@@ -1709,6 +1726,10 @@ void TIFF_FileWriter::UpdateMemByRewrite ( XMP_Uns8** newStream_out, XMP_Uns32* 
 		memcpy ( destPtr, srcPtr, hiddenLocations[i].length );	// AUDIT: Safe copy, not user data, computed length.
 
 	}
+	
+	// Delete the old stream if appropriate.
+	
+	if ( ownedOldStream ) delete ( oldStream );
 
 }	// TIFF_FileWriter::UpdateMemByRewrite
 
@@ -1730,6 +1751,7 @@ XMP_Uns32 TIFF_FileWriter::UpdateMemoryStream ( void** dataPtr, bool condenseStr
 {
 	if ( this->fileParsed ) XMP_Throw ( "Not memory based", kXMPErr_EnforceFailure );
 
+	this->changed |= condenseStream;	// Make sure a compaction request takes effect.
 	if ( ! this->changed ) {
 		if ( dataPtr != 0 ) *dataPtr = this->memStream;
 		return this->tiffLength;
@@ -1757,8 +1779,6 @@ XMP_Uns32 TIFF_FileWriter::UpdateMemoryStream ( void** dataPtr, bool condenseStr
 		if ( this->tiffLength == 0 ) {	// ! An empty parse does set this->memParsed.
 			condenseStream = true;		// Makes "conjured" TIFF take the full rewrite path.
 		}
-
-		if ( condenseStream ) this->changed = true;	// A prior regular call would have cleared this->changed.
 
 		if ( condenseStream ) {
 			this->UpdateMemByRewrite ( &newStream, &newLength );
@@ -1805,7 +1825,7 @@ XMP_Uns32 TIFF_FileWriter::UpdateMemoryStream ( void** dataPtr, bool condenseStr
 	#define Trace_UpdateFileStream 0
 #endif
 
-void TIFF_FileWriter::UpdateFileStream ( XMP_IO* fileRef )
+void TIFF_FileWriter::UpdateFileStream ( XMP_IO* fileRef, XMP_ProgressTracker* progressTracker )
 {
 	if ( this->memParsed ) XMP_Throw ( "Not file based", kXMPErr_EnforceFailure );
 	if ( ! this->changed ) return;
@@ -1831,6 +1851,33 @@ void TIFF_FileWriter::UpdateFileStream ( XMP_IO* fileRef )
 
 	XMP_Uns32 appendedLength = DetermineAppendInfo ( appendedOrigin, appendedIFDs, newIFDOffsets );
 	if ( appendedLength > (0xFFFFFFFFUL - appendedOrigin) ) XMP_Throw ( "TIFF files can't exceed 4GB", kXMPErr_BadTIFF );
+
+	if ( progressTracker != 0 ) {
+
+		float filesize=0;
+
+		for ( int ifd = 0; ifd < kTIFF_KnownIFDCount; ++ifd ) {
+
+			InternalIFDInfo & thisIFD = this->containedIFDs[ifd];
+			if ( ! thisIFD.changed ) continue;
+
+			filesize += (thisIFD.tagMap.size() * sizeof(RawIFDEntry) + 6);
+
+			InternalTagMap::iterator tagPos;
+			InternalTagMap::iterator tagEnd = thisIFD.tagMap.end();
+
+			for ( tagPos = thisIFD.tagMap.begin(); tagPos != tagEnd; ++tagPos ) {
+				InternalTagInfo & thisTag = tagPos->second;
+				if ( (! thisTag.changed) || (thisTag.dataLen <= 4)  ) continue;
+				filesize += (thisTag.dataLen) ;
+			}
+		}
+
+		if ( appendedIFDs[kTIFF_PrimaryIFD] ) filesize += 4;
+		XMP_Assert ( progressTracker->WorkInProgress() );
+		progressTracker->AddTotalWork ( filesize );
+
+	}
 
 	// Do the in-place update for the IFDs and tag values that fit. This part does separate seeks
 	// and writes for the IFDs and values. Things to be updated can be anywhere in the file.

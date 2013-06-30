@@ -17,13 +17,13 @@
 	#include <cstdio>
 
 	//sanity check platform/endianess
-	#if !defined(WIN_ENV) && !defined(MAC_ENV) && !defined(UNIX_ENV)
-		#error "XMP environment error - must define one of MAC_ENV, WIN_ENV, or UNIX_ENV"
+	#if !defined(WIN_ENV) && !defined(MAC_ENV) && !defined(UNIX_ENV) && !defined(IOS_ENV)
+		#error "XMP environment error - must define one of MAC_ENV, WIN_ENV, UNIX_ENV or IOS_ENV"
 	#endif
 
 	#ifdef WIN_ENV
 		#define XMPQE_LITTLE_ENDIAN 1
-	#elif (defined(MAC_ENV) || defined(UNIX_ENV))
+	#elif (defined(MAC_ENV) || defined(UNIX_ENV) || defined(IOS_ENV))
 		#if __BIG_ENDIAN__
 			#define XMPQE_BIG_ENDIAN 1
 		#elif __LITTLE_ENDIAN__

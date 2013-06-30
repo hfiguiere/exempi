@@ -33,7 +33,11 @@ class WAVEBehavior : public IChunkBehavior
 {
 // Internal structure to hold RF64 related data
 public:
+#if SUNOS_SPARC || SUNOS_X86
+#pragma pack ( 1 )
+#else
 #pragma pack ( push, 1 )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 	struct ChunkSize64
 	{
 		XMP_Uns64 size;
@@ -55,7 +59,11 @@ public:
 		// ctor
 		DS64(): riffSize(0), dataSize(0), sampleCount(0), tableLength(0), trailingBytes(0) {}
 	};
+#if SUNOS_SPARC || SUNOS_X86
+#pragma pack (  )
+#else
 #pragma pack ( pop )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 
 
 	/**

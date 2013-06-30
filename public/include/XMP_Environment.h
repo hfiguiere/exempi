@@ -22,7 +22,7 @@
 // Determine the Platform
 // ======================
 
-// One of MAC_ENV, WIN_ENV, or UNIX_ENV must be defined by the client. Since some other code
+// One of MAC_ENV, WIN_ENV, UNIX_ENV or IOS_ENV must be defined by the client. Since some other code
 // requires these to be defined without values, they are only used here to define XMP-specific
 // macros with 0 or 1 values.
 
@@ -35,13 +35,14 @@
 		#error "MAC_ENV must be defined so that \"#if MAC_ENV\" is true"
 	#endif
 	
-    #if defined ( WIN_ENV ) || defined ( UNIX_ENV )
-        #error "XMP environment error - must define only one of MAC_ENV, WIN_ENV, or UNIX_ENV"
+    #if defined ( WIN_ENV ) || defined ( UNIX_ENV ) || defined ( IOS_ENV )
+        #error "XMP environment error - must define only one of MAC_ENV, WIN_ENV, UNIX_ENV or IOS_ENV"
     #endif
 
     #define XMP_MacBuild  1
     #define XMP_WinBuild  0
     #define XMP_UNIXBuild 0
+	#define XMP_iOSBuild  0
 
 #elif defined ( WIN_ENV )
 
@@ -49,13 +50,14 @@
 		#error "WIN_ENV must be defined so that \"#if WIN_ENV\" is true"
 	#endif
 	
-    #if defined ( UNIX_ENV )
-        #error "XMP environment error - must define only one of MAC_ENV, WIN_ENV, or UNIX_ENV"
+    #if defined ( MAC_ENV ) || defined ( UNIX_ENV ) || defined ( IOS_ENV )
+		#error "XMP environment error - must define only one of MAC_ENV, WIN_ENV, UNIX_ENV or IOS_ENV"
     #endif
 
     #define XMP_MacBuild  0
     #define XMP_WinBuild  1
     #define XMP_UNIXBuild 0
+	#define XMP_iOSBuild  0
 
 #elif defined ( UNIX_ENV )
 
@@ -63,13 +65,33 @@
 		#error "UNIX_ENV must be defined so that \"#if UNIX_ENV\" is true"
 	#endif
 	
+	#if defined ( MAC_ENV ) || defined ( WIN_ENV ) || defined ( IOS_ENV )
+		#error "XMP environment error - must define only one of MAC_ENV, WIN_ENV, UNIX_ENV or IOS_ENV"
+	#endif
+
     #define XMP_MacBuild  0
     #define XMP_WinBuild  0
     #define XMP_UNIXBuild 1
+	#define XMP_iOSBuild  0
+
+#elif defined ( IOS_ENV )
+
+	#if 0	// ! maybe someday - ! IOS_ENV
+		#error "IOS_ENV must be defined so that \"#if IOS_ENV\" is true"
+	#endif
+
+	#if defined ( MAC_ENV ) || defined ( WIN_ENV ) || defined ( UNIX_ENV )
+		#error "XMP environment error - must define only one of MAC_ENV, WIN_ENV, UNIX_ENV or IOS_ENV"
+	#endif
+
+	#define XMP_MacBuild  0
+	#define XMP_WinBuild  0
+	#define XMP_UNIXBuild 0
+	#define XMP_iOSBuild  1
 
 #else
 
-    #error "XMP environment error - must define one of MAC_ENV, WIN_ENV, or UNIX_ENV"
+    #error "XMP environment error - must define one of MAC_ENV, WIN_ENV, UNIX_ENV or IOS_ENV"
 
 #endif
 
@@ -94,6 +116,10 @@
 
 #if XMP_DebugBuild
     #include <stdio.h>  // The assert macro needs printf.
+#endif
+
+#ifndef DISABLE_SERIALIZED_IMPORT_EXPORT 
+	#define DISABLE_SERIALIZED_IMPORT_EXPORT 0
 #endif
 
 #ifndef XMP_64

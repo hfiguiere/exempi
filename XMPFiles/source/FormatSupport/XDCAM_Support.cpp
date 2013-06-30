@@ -194,7 +194,7 @@ bool XDCAM_Support::GetLegacyMetadata ( SXMPMeta *		xmpObjPtr,
 	bool containsXMP = false;
 	
 	XML_NodePtr legacyContext = 0, legacyProp = 0;
-	XMP_StringPtr formatFPS;
+	XMP_StringPtr formatFPS = 0;
 	
 	// UMID
 	if ( digestFound || (! xmpObjPtr->DoesPropertyExist ( kXMP_NS_DC, "identifier" )) ) {
@@ -307,18 +307,20 @@ bool XDCAM_Support::GetLegacyMetadata ( SXMPMeta *		xmpObjPtr,
 			}
 		}
 	
-		// Frame rate
+		// Frame rate (always read, because its used later for the Duration
+        legacyProp = legacyContext->GetNamedElement ( legacyNS, "VideoFrame" );
+        if ( (legacyProp != 0) && legacyProp->IsEmptyLeafNode() ) {
+            formatFPS = legacyProp->GetAttrValue ( "formatFps" );
+        }
+        
+        // only write back to XMP if framerate is not set in XMP yet
 		if ( digestFound || (! xmpObjPtr->DoesPropertyExist ( kXMP_NS_DM, "videoFrameRate" )) ) {
-			legacyProp = legacyContext->GetNamedElement ( legacyNS, "VideoFrame" );
-			if ( (legacyProp != 0) && legacyProp->IsEmptyLeafNode() ) {
-				formatFPS = legacyProp->GetAttrValue ( "formatFps" );
-				if ( formatFPS != 0 ) {
-					xmpObjPtr->SetProperty ( kXMP_NS_DM, "videoFrameRate", formatFPS, kXMP_DeleteExisting );
-					containsXMP = true;
-				}
+            if ( formatFPS != 0 ) {
+                xmpObjPtr->SetProperty ( kXMP_NS_DM, "videoFrameRate", formatFPS, kXMP_DeleteExisting );
+                containsXMP = true;
 			}
 		}
-	
+
 		// Video codec
 		if ( digestFound || (! xmpObjPtr->DoesPropertyExist ( kXMP_NS_DM, "videoCompressor" )) ) {
 			legacyProp = legacyContext->GetNamedElement ( legacyNS, "VideoFrame" );
@@ -361,8 +363,12 @@ bool XDCAM_Support::GetLegacyMetadata ( SXMPMeta *		xmpObjPtr,
 			if ( durationValue != 0 ) durationFrames = durationValue;
 		}
 		
-		std::string timeScale = GetTimeScale ( formatFPS );
-
+		std::string timeScale;
+        if ( formatFPS ) {
+        
+            timeScale = GetTimeScale ( formatFPS );
+        }
+        
 		if ( (! timeScale.empty()) && (! durationFrames.empty()) ) {
 			xmpObjPtr->DeleteProperty ( kXMP_NS_DM, "duration" );
 			xmpObjPtr->SetStructField ( kXMP_NS_DM, "duration", kXMP_NS_DM, "value", durationFrames );

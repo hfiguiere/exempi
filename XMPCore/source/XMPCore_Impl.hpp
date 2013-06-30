@@ -14,6 +14,8 @@
 #include "build/XMP_BuildInfo.h"
 #include "source/XMP_LibUtils.hpp"
 
+// #include "XMPCore/source/XMPMeta.hpp"
+
 #include "public/include/client-glue/WXMP_Common.hpp"
 
 #include <vector>
@@ -384,8 +386,6 @@ public:
 	XMP_AutoNode ( XMP_Node * _parent, const XMP_VarString & _name, const XMP_VarString & _value, XMP_OptionBits _options )
 		: nodePtr ( new XMP_Node ( _parent, _name, _value, _options ) ) {};
 };
-
-extern void ProcessRDF ( XMP_Node * xmpTree, const XML_Node & xmlTree, XMP_OptionBits options );
 
 // =================================================================================================
 

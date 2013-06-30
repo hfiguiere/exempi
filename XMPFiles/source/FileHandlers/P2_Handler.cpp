@@ -15,9 +15,10 @@
 #include "XMPFiles/source/XMPFiles_Impl.hpp"
 #include "source/XMPFiles_IO.hpp"
 #include "source/XIO.hpp"
+#include "source/IOUtils.hpp"
 
 #include "XMPFiles/source/FileHandlers/P2_Handler.hpp"
-
+#include "XMPFiles/source/FormatSupport/PackageFormat_Support.hpp"
 #include "third-party/zuid/interfaces/MD5.h"
 
 #include <cmath>
@@ -273,7 +274,7 @@ P2_MetaHandler::P2_MetaHandler ( XMPFiles * _parent ) : expat(0), clipMetadata(0
 
 	if ( this->parent->tempPtr == 0 ) {
 		// The CheckFormat call might have been skipped.
-		this->parent->tempPtr = CreatePseudoClipPath ( this->parent->filePath );
+		this->parent->tempPtr = CreatePseudoClipPath ( this->parent->GetFilePath() );
 	}
 
 	this->rootPath.assign ( (char*) this->parent->tempPtr );
@@ -909,29 +910,47 @@ void P2_MetaHandler::SetAltitudeFromLegacyXML  ( XML_NodePtr legacyLocationConte
 // P2_MetaHandler::ForceChildElement
 // =================================
 
-XML_Node * P2_MetaHandler::ForceChildElement ( XML_Node * parent, XMP_StringPtr localName, int indent /* = 0 */ )
+XML_Node * P2_MetaHandler::ForceChildElement ( XML_Node * parent, XMP_StringPtr localName, XMP_Int32 indent , XMP_Bool insertAtFront  )
 {
-	XML_Node * wsNode;
+	XML_Node * wsNodeBefore, * wsNodeAfter;
 	XML_Node * childNode = parent->GetNamedElement ( this->p2NS.c_str(), localName );
+	//
 
 	if ( childNode == 0 ) {
 
 		// The indenting is a hack, assuming existing 2 spaces per level.
 
-		wsNode = new XML_Node ( parent, "", kCDataNode );
-		wsNode->value = "  ";	// Add 2 spaces to the existing WS before the parent's close tag.
-		parent->content.push_back ( wsNode );
+		wsNodeBefore = new XML_Node ( parent, "", kCDataNode );
+		wsNodeBefore->value = "  ";	// Add 2 spaces to the existing WS before the parent's close tag.
 
 		childNode = new XML_Node ( parent, localName, kElemNode );
 		childNode->ns = parent->ns;
 		childNode->nsPrefixLen = parent->nsPrefixLen;
 		childNode->name.insert ( 0, parent->name, 0, parent->nsPrefixLen );
-		parent->content.push_back ( childNode );
 
-		wsNode = new XML_Node ( parent, "", kCDataNode );
-		wsNode->value = '\n';
-		for ( ; indent > 1; --indent ) wsNode->value += "  ";	// Indent less 1, to "outdent" the parent's close.
-		parent->content.push_back ( wsNode );
+		wsNodeAfter = new XML_Node ( parent, "", kCDataNode );
+		wsNodeAfter->value = '\n';
+		for ( ; indent > 1; --indent ) wsNodeAfter->value += "  ";	// Indent less 1, to "outdent" the parent's close.
+
+		if(insertAtFront){
+			// we are asked to insert this child as the first child of it's parent.So if P is the parent and B,C are children
+			// already present. Then if we add a new child A as it's first child then we need to first add new line character right
+			// after "<P>" and then proper indentation to bring them on the level of other children.
+			//<P>
+			//	  <B>
+			//	  <C>
+			//</P>
+			std::vector<XML_Node *> indentedNode;
+			indentedNode.push_back(wsNodeAfter);
+			indentedNode.push_back(wsNodeBefore);
+			indentedNode.push_back(childNode);
+			parent->content.insert(parent->content.begin(), indentedNode.begin(), indentedNode.end());
+		}
+		else{
+			parent->content.push_back(wsNodeBefore);
+			parent->content.push_back(childNode);
+			parent->content.push_back(wsNodeAfter);
+		}
 
 	}
 
@@ -1086,6 +1105,103 @@ bool P2_MetaHandler::GetFileModDate ( XMP_DateTime * modDate )
 }	// P2_MetaHandler::GetFileModDate
 
 // =================================================================================================
+// P2_MetaHandler::FillMetadataFiles
+// =================================
+void P2_MetaHandler::FillMetadataFiles ( std::vector<std::string>* metadataFiles )
+{
+	std::string noExtPath, filePath;
+
+	noExtPath = rootPath + kDirChar + "CONTENTS" + kDirChar + "CLIP" + kDirChar + clipName;
+
+	filePath = noExtPath + ".XMP";
+	metadataFiles->push_back ( filePath );
+	filePath = noExtPath + ".XML";
+	metadataFiles->push_back ( filePath );
+
+}	// 	FillMetadataFiles_P2
+
+// =================================================================================================
+// P2_MetaHandler::IsMetadataWritable
+// =======================================
+
+bool P2_MetaHandler::IsMetadataWritable ( )
+{
+	std::vector<std::string> metadataFiles;
+	FillMetadataFiles(&metadataFiles);
+	std::vector<std::string>::iterator itr = metadataFiles.begin();
+	// Check whether sidecar is writable, if not then check if it can be created.
+	bool xmpWritable = Host_IO::Writable( itr->c_str(), true );
+	// Check if legacy XML is writable.
+	bool xmlWritable = Host_IO::Writable( (++itr)->c_str(), false );
+	return (xmlWritable && xmpWritable);
+}// P2_MetaHandler::IsMetadataWritable
+
+
+// =================================================================================================
+// P2_MetaHandler::FillAssociatedResources
+// ======================================
+void P2_MetaHandler::FillAssociatedResources ( std::vector<std::string> * resourceList )
+{
+	// The possible associated resources:
+	//	CONTENTS/
+	//		CLIP/
+	//			XXXXXX.XML			XXXXXX is clip name
+	//			XXXXXX.XMP
+	//		VIDEO/
+	//			XXXXXX.MXF
+	//		AUDIO/
+	//			XXXXXXNN.MXF	NN is a counter which can go from 00 to 15.
+	//		ICON/
+	//			XXXXXX.BMP
+	//		VOICE/
+	//			XXXXXXNN.WAV	NN is a counter which can go from 00 to 99.
+	//		PROXY/
+	//			XXXXXX.MP4
+	//			XXXXXX.BIN
+
+	XMP_VarString contentsPath = this->rootPath + kDirChar + "CONTENTS" + kDirChar;
+	XMP_VarString path;
+	
+	//Add RootPath
+	path = this->rootPath + kDirChar;
+	PackageFormat_Support::AddResourceIfExists(resourceList, path);
+
+	std::string clipPathNoExt = contentsPath + "CLIP" + kDirChar + this->clipName;
+	// Get the files present inside CLIP folder.
+	path = clipPathNoExt + ".XML";
+	PackageFormat_Support::AddResourceIfExists(resourceList, path);
+	path = clipPathNoExt + ".XMP";
+	PackageFormat_Support::AddResourceIfExists(resourceList, path);
+
+	// Get the files present inside VIDEO folder.
+	path = contentsPath + "VIDEO" + kDirChar + this->clipName + ".MXF";
+	PackageFormat_Support::AddResourceIfExists(resourceList, path);
+
+	// Get the files present inside AUDIO folder.
+	path = contentsPath + "AUDIO" + kDirChar;
+	XMP_VarString regExp;
+	regExp = "^" + this->clipName + "\\d\\d.MXF$";
+	IOUtils::GetMatchingChildren ( *resourceList, path, regExp, false, true, true );
+
+	// Get the files present inside ICON folder.
+	path = contentsPath + "ICON" + kDirChar + this->clipName + ".BMP";
+	PackageFormat_Support::AddResourceIfExists(resourceList, path);
+
+	// Get the files present inside VOICE folder.
+	path = contentsPath + "VOICE" + kDirChar;
+	regExp = "^" + clipName + "\\d\\d.WAV$";
+	IOUtils::GetMatchingChildren ( *resourceList, path, regExp, false, true, true );
+
+	// Get the files present inside PROXY folder.
+	std::string proxyPathNoExt = contentsPath + "PROXY" + kDirChar + this->clipName;
+
+	path = proxyPathNoExt + ".MP4";
+	PackageFormat_Support::AddResourceIfExists(resourceList, path);
+	path = proxyPathNoExt + ".BIN";
+	PackageFormat_Support::AddResourceIfExists(resourceList, path);
+}	// P2_MetaHandler::FillAssociatedResources
+
+// =================================================================================================
 // P2_MetaHandler::CacheFileData
 // =============================
 
@@ -1094,22 +1210,23 @@ void P2_MetaHandler::CacheFileData()
 	XMP_Assert ( ! this->containsXMP );
 
 	if ( this->parent->UsesClientIO() ) {
-		XMP_Throw ( "XDCAM cannot be used with client-managed I/O", kXMPErr_InternalFailure );
+		XMP_Throw ( "P2 cannot be used with client-managed I/O", kXMPErr_InternalFailure );
 	}
 
 	// Make sure the clip's .XMP file exists.
 
 	std::string xmpPath;
 	this->MakeClipFilePath ( &xmpPath, ".XMP" );
-	if ( Host_IO::GetFileMode ( xmpPath.c_str() ) != Host_IO::kFMode_IsFile ) return;	// No XMP.
+	if ( ! Host_IO::Exists ( xmpPath.c_str() ) ) return;	// No XMP.
 
-	// Read the entire .XMP file.
+	// Read the entire .XMP file. We know the XMP exists, New_XMPFiles_IO is supposed to return 0
+	// only if the file does not exist.
 
 	bool readOnly = XMP_OptionIsClear ( this->parent->openFlags, kXMPFiles_OpenForUpdate );
 
 	XMP_Assert ( this->parent->ioRef == 0 );
 	XMPFiles_IO* xmpFile =  XMPFiles_IO::New_XMPFiles_IO ( xmpPath.c_str(), readOnly );
-	if ( xmpFile == 0 ) return;	// The open failed.
+	if ( xmpFile == 0 ) XMP_Throw ( "P2 XMP file open failure", kXMPErr_InternalFailure );
 	this->parent->ioRef = xmpFile;
 
 	XMP_Int64 xmpLen = xmpFile->Length();
@@ -1289,6 +1406,23 @@ void P2_MetaHandler::ProcessXMP()
 
 }	// P2_MetaHandler::ProcessXMP
 
+// This function adds a dummy attribute to the clipContent/clipMetadata (whichever is non-null)
+// with empty value and namespace as xmlns:xsi=http://www.w3.org/2001/XMLSchema-instance
+static XML_Node* AddXSINamespace(XML_Node *clipContent, XML_Node *clipMetadata){
+
+	XML_Node *parent = clipContent ? clipContent : clipMetadata;
+	if(parent){
+		XML_Node *attrWithXSINamespace = new XML_Node ( parent, "xsi:", kCDataNode );
+		attrWithXSINamespace->value="";
+		attrWithXSINamespace->ns="http://www.w3.org/2001/XMLSchema-instance";
+		parent->attrs.push_back(attrWithXSINamespace);
+		return parent;
+	}
+
+	return NULL;
+
+}
+
 // =================================================================================================
 // P2_MetaHandler::UpdateFile
 // ==========================
@@ -1318,7 +1452,7 @@ void P2_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 		if ( xmpFound ) {
 
-			xmlNode = this->ForceChildElement ( this->clipContent, "ClipName", 3 );
+			xmlNode = this->ForceChildElement ( this->clipContent, "ClipName", 3, false );
 
 			if ( xmpValue != xmlNode->GetLeafContentValue() ) {
 				xmlNode->SetLeafContentValue ( xmpValue.c_str() );
@@ -1330,8 +1464,10 @@ void P2_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		xmpFound = this->xmpObj.GetArrayItem ( kXMP_NS_DC, "creator", 1, &xmpValue, 0 );
 
 		if ( xmpFound ) {
-			xmlNode = this->ForceChildElement ( this->clipMetadata, "Access", 3 );
-			xmlNode = this->ForceChildElement ( xmlNode, "Creator", 4 );
+			xmlNode = this->ForceChildElement ( this->clipMetadata, "Access", 3, false );
+
+			// "Creator" must be first child of "Access" node else Panasonic P2 Viewer gives an error.
+			xmlNode = this->ForceChildElement ( xmlNode, "Creator", 4 , true);
 			if ( xmpValue != xmlNode->GetLeafContentValue() ) {
 				xmlNode->SetLeafContentValue ( xmpValue.c_str() );
 				updateLegacyXML = true;
@@ -1370,7 +1506,20 @@ void P2_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	if ( updateLegacyXML ) {
 
 		std::string legacyXML, xmlPath;
+
+		/*bug # 3217688: xmlns:xsi=http://www.w3.org/2001/XMLSchema-instance namespace must be defined at the 
+		root node "P2Main" in legacy XML else Panasonic P2 Viewer gives an error. So we are adding a 
+		dummy attribute with this namespace to clipContent/clipMetadata (whichever is non-null) before
+		serializing the XML tree. We are also undoing it below after serialization.*/
+
+		XML_Node *parentNode = AddXSINamespace(this->clipContent, this->clipMetadata);
 		this->expat->tree.Serialize ( &legacyXML );
+		if(parentNode){
+			// Remove the dummy attribute added to clipContent/clipMetadata.
+			delete parentNode->attrs[parentNode->attrs.size()-1];
+			parentNode->attrs.pop_back();
+		}
+
 		this->MakeClipFilePath ( &xmlPath, ".XML" );
 
 		bool haveXML = Host_IO::Exists ( xmlPath.c_str() );

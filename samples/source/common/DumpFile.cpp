@@ -938,6 +938,9 @@ static const XMP_Int64 kASFMinSize = 16;	// ! Not really accurate, but covers th
 
 static const XMP_Int64 kRIFFMinSize = 12;
 
+static const XMP_Int64 kPostScriptMinSize = 49;
+
+
 static const XMP_Int64 kInDesignMinSize = 2 * kINDD_PageSize;	// Two master pages.
 
 static const XMP_Int64 kISOMediaMinSize = 16;	// At least a minimal file type box.
@@ -945,6 +948,7 @@ static const XMP_Uns8  kISOMediaFTyp[]  = { 0x66, 0x74, 0x79, 0x70 };	// "ftyp"
 static const XMP_Uns32 kISOTag_ftyp   = 0x66747970UL;
 static const XMP_Uns32 kISOBrand_mp41 = 0x6D703431UL;
 static const XMP_Uns32 kISOBrand_mp42 = 0x6D703432UL;
+static const XMP_Uns32 kISOBrand_avc1 = 0x61766331UL;
 static const XMP_Uns32 kISOBrand_f4v  = 0x66347620UL;
 
 static const XMP_Uns32 kQTTag_XMP_    = 0x584D505FUL;
@@ -952,6 +956,8 @@ static const XMP_Uns32 kQTTag_XMP_    = 0x584D505FUL;
 static const XMP_Int64 kSWFMinSize = (8+2+4 + 2);	// Header with minimal rectangle and an End tag.
 
 static const XMP_Int64 kFLVMinSize = 9;	// Header with zero length data.
+
+static const XMP_Uns8  kPostScriptStart[] = { 0xC5, 0xD0, 0xD3, 0xC6 };
 
 static XMP_FileFormat
 CheckFileFormat ( const char * filePath, XMP_Uns8 * fileContent, XMP_Int64 fileSize )
@@ -998,6 +1004,10 @@ CheckFileFormat ( const char * filePath, XMP_Uns8 * fileContent, XMP_Int64 fileS
 		if ( CheckBytes ( fileContent+8, "AIFC", 4 ) ) return kXMP_AIFFFile;
 	}
 
+	if ( (fileSize >= kPostScriptMinSize) && CheckBytes (fileContent, kPostScriptStart, 4) ) {
+		return kXMP_PostScriptFile;
+	}
+
 	if ( (fileSize >= kInDesignMinSize) && CheckBytes ( fileContent, kInDesign_MasterPageGUID, kInDesignGUIDSize ) ) {
 		return kXMP_InDesignFile;
 	}
@@ -1025,7 +1035,18 @@ CheckFileFormat ( const char * filePath, XMP_Uns8 * fileContent, XMP_Int64 fileS
 
 		for ( ; compatPtr < compatEnd; compatPtr += 4 ) {
 			XMP_Uns32 compatBrand = GetUns32BE (compatPtr);
-			if ( (compatBrand == kISOBrand_mp41) || (compatBrand == kISOBrand_mp42) ) return kXMP_MPEG4File;
+			switch ( compatBrand ) {
+			case kISOBrand_mp41:
+			case kISOBrand_mp42:
+			case kISOBrand_avc1:
+				return kXMP_MPEG4File;
+				break;
+
+			default:
+				break;
+
+			}
+
 		}
 
 	}
@@ -1856,8 +1877,13 @@ digestInternationalTextSequence ( LFA_FileRef file, std::string isoPath, XMP_Int
 	tree->digest16u(file,isoPath+"language code",true,true);
 	(*remainingSize) -= 4;
 	if ( (*remainingSize) != miniBoxStringSize )
+	{
 		tree->addComment("WARNING: boxSize and miniBoxSize differ!");
-	tree->digestString( file, isoPath+"value", miniBoxStringSize, false );
+	}
+	else
+	{
+		tree->digestString( file, isoPath+"value", miniBoxStringSize, false );
+	}
 }
 
 /**
@@ -1918,7 +1944,9 @@ DumpISOBoxes ( LFA_FileRef file, XMP_Uns32 maxBoxLen, std::string _isoPath )
 			break;
 		}
 
-		std::string boxString( fromArgs( "%.4s" , &boxType ) );
+                XMP_Uns32 tempBoxType = GetUns32LE(&boxType);
+                std::string boxString( fromArgs( "%.4s" , &tempBoxType) );
+
 		// substitute mac-copyright signs with an easier-to-handle "(c)"
 		if ( boxString.at(0) == 0xA9 )
 			boxString = std::string("(c)") + boxString.substr(1);
@@ -1982,6 +2010,10 @@ DumpISOBoxes ( LFA_FileRef file, XMP_Uns32 maxBoxLen, std::string _isoPath )
 				{
 					XMP_Uns32 majorBrand = LFA_ReadUns32_LE( file );
 					XMP_Uns32 minorVersion = LFA_ReadUns32_LE( file );
+
+                    //data has been read in LE make it in BE
+                    majorBrand = GetUns32LE(&majorBrand);
+                    minorVersion = GetUns32LE(&minorVersion);
 
 					//Log::info( fromArgs( "major Brand:   '%.4s' (0x%.8X)" , &majorBrand, MakeUns32BE(majorBrand) ));
 					//Log::info( fromArgs( "minor Version: 0x%.8X" , MakeUns32BE(minorVersion) ) );
@@ -2223,9 +2255,7 @@ DumpISOBoxes ( LFA_FileRef file, XMP_Uns32 maxBoxLen, std::string _isoPath )
 
 			// (c)-style quicktime boxes and boxes of no interest:
 			default:
-				if ( (boxType & 0xA9) == 0xA9) // (c)something
-				{
-					if ( 0 == isoPath.compare( 0 , 20, "moov/udta/meta/ilst/"))
+				    if ( 0 == isoPath.compare( 0 , 20, "moov/udta/meta/ilst/"))
 					{ // => iTunes metadata (hunt for data childs)
 						// a container box, hunt for 'data' atom by recursion:
 						bool ok;
@@ -2236,16 +2266,12 @@ DumpISOBoxes ( LFA_FileRef file, XMP_Uns32 maxBoxLen, std::string _isoPath )
 					}
 					else if ( 0 == isoPath.compare( 0 , 10, "moov/udta/" ))
 					{ // => Quicktime metadata "international text sequence" ( size, language code, value )
-						digestInternationalTextSequence( file, isoPath, &remainingSize );
+							digestInternationalTextSequence( file, isoPath, &remainingSize );
 					} else
 					{
 						tree->addComment("WARNING: unknown flavor of (c)*** boxes, neither QT nor iTunes");
 					}			
 					break;
-				}
-				//boxes of no interest:
-
-				break;
 		}
 
 		bool ok;
@@ -3488,6 +3514,128 @@ DumpPNGChunk ( LFA_FileRef file, XMP_Uns32 pngLen, XMP_Uns32 chunkOffset )
 	return (8 + chunkLen + 4);
 
 }	// DumpPNGChunk
+
+// =================================================================================================
+
+static void
+DumpPS ( LFA_FileRef file, XMP_Uns32 fileLen )
+{
+	XMP_Int32 psOffset;
+	size_t psLength;
+
+	LFA_Seek ( file, 4, SEEK_SET ); // skip fileheader bytes
+	LFA_Read ( file,  &psOffset, 4, true );
+	LFA_Read ( file,  &psLength, 4, true );
+
+	tree->addComment(" psOffset: %d, psLength: %d", psOffset, psLength);
+
+	// jump to psOffset
+	Skip(file, (psOffset - 12));
+	
+	// get the header (everything till first %
+	
+	XMP_Int64 offset =  LFA_Tell(file);
+	std::string key, value;
+	char byte = LFA_GetChar(file);
+	bool eof = false;
+	while ( !eof )
+	{
+		key.clear();
+		key += byte; // add the first %
+		byte = LFA_GetChar(file);
+
+		while (byte != ' ' && byte != '\r') // get everthing until next space or LF
+		{
+			key += byte;
+			byte = LFA_GetChar(file);
+
+		}
+
+		//if (CheckBytes( key.c_str(), "%%EOF", 5))
+		if (key == "%%EOF")
+		{
+			eof = true;
+		}
+		else
+		{
+			byte = LFA_GetChar(file);
+			value.clear();
+			while (byte != '%') // get everthing until next %
+			{
+				value += byte;
+				byte = LFA_GetChar(file);
+			}
+		}
+		tree->pushNode(key);
+		tree->addOffset( file );
+	
+		//for now only store value for header 
+		if ( key =="%!PS-Adobe-3.0" )
+		{
+			tree->changeValue(value);
+		}
+	
+		tree->addComment("offset: %d", offset );
+		tree->addComment("size: 0x%llX", LFA_Tell(file)-offset );
+		tree->popNode();
+		
+		offset =  LFA_Tell(file);		
+	}
+	// Now just get everything else and store all keys that start with %
+
+
+	// get the key 
+	// start of the PostScript DSC header comment
+	
+	/*XMP_Uns8 buffer [11];
+	LFA_Read ( file,  &buffer, sizeof(buffer), true );
+
+	if (!CheckBytes( buffer, "%!PS-Adobe-", 11))
+	{
+		tree->comment ( "** Invalid PS, unknown PS file tag." );
+		return;
+	}
+
+	// Check the PostScript DSC major version number.
+	XMP_Uns8 byte;
+	LFA_Read ( file,  &byte, sizeof(byte), true );
+
+	psMajorVer = 0;
+	while ( IsNumeric( byte ) ) 
+	{
+		psMajorVer = (psMajorVer * 10) + (byte - '0');
+		if ( psMajorVer > 1000 ) {
+			tree->comment ( "** Invalid PS, Overflow." );
+			return;
+		};	// Overflow.
+		LFA_Read ( file,  &byte, sizeof(byte), true );
+	}
+	if ( psMajorVer < 3 ){
+		tree->comment ( "** Invalid PS, The version must be at least 3.0." );
+		return;
+	};	// The version must be at least 3.0.
+
+	if ( byte != '.' ){
+		tree->comment ( "** Invalid PS, No minor number" );
+		return;
+	};	// No minor number.
+	LFA_Read ( file,  &byte, sizeof(byte), true );
+
+	// Check the PostScript DSC minor version number.
+
+	psMinorVer = 0;
+	while ( IsNumeric( byte ) ) 
+	{
+		psMinorVer = (psMinorVer * 10) + (byte - '0');
+		if ( psMinorVer > 1000 ) {
+			tree->comment ( "** Invalid PS, Overflow." );
+			return;
+		};	// Overflow.
+		LFA_Read ( file,  &byte, sizeof(byte), true );
+	}
+
+	tree->addComment(" psMajor Version: %d, psMinor Version: %d", psMajorVer, psMinorVer);*/
+}
 
 // =================================================================================================
 
@@ -4999,6 +5147,13 @@ void DumpFile::Scan (std::string filename, TagTree &tagTree, bool resetTree)
 	} else if ( format == kXMP_MPEGFile ) {
 
 		tagTree.comment ( "** Recognized MPEG-2 file type, but this is a pure sidecar solution. No legacy dump available at this time." );
+
+	} else if ( format == kXMP_PostScriptFile ) {
+
+		tagTree.pushNode ( "Dumping PostScript file" );
+		tagTree.addComment ( "size %lld (0x%llx)", fileLen, fileLen );	
+		DumpPS ( fileRef, fileLen );
+		tagTree.popNode();
 
 	} else if ( format == kXMP_UnknownFile ) {
 

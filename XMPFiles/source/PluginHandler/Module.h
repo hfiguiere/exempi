@@ -48,6 +48,17 @@ public:
 	void unload();
 
 private:
+
+	/************************************************************************/
+	/* Loads the module without acquiring the lock                        */
+	/************************************************************************/
+	bool loadInternal();
+
+	/************************************************************************/
+	/* Unloads the module without acquiring the lock                        */
+	/************************************************************************/
+	void unloadInternal();
+
 	typedef enum
 	{
 		kModuleNotLoaded = 0,
@@ -59,6 +70,7 @@ private:
 	OS_ModuleRef		mHandle;
 	PluginAPIRef		mPluginAPIs;
 	LoadStatus			mLoaded;
+	XMP_ReadWriteLock	mLoadingLock;
 };
 
 } //namespace XMP_PLUGIN

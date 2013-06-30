@@ -288,10 +288,16 @@ void TagTree::digest64u(XMP_Uns64 expected, LFA_FileRef file,const std::string k
 {
 	XMP_Uns64 tmp=digest64u( file,"",BigEndian, hexDisplay );
 	if (expected != tmp )
+	{
 		if (hexDisplay)
+		{
 			throw DumpFileException("'%s' was 0x%.16X, expected: 0x%.16X",key.c_str(),tmp,expected);
+		}
 		else
+		{
 			throw DumpFileException("'%s' was %d, expected: %d",key.c_str(),tmp,expected);
+		}
+	}
 }
 
 void TagTree::digest32s(XMP_Int32 expected, LFA_FileRef file,const std::string key /*=""*/, bool BigEndian /*=false*/ )
@@ -305,10 +311,16 @@ void TagTree::digest32u(XMP_Uns32 expected, LFA_FileRef file,const std::string k
 {
 	XMP_Uns32 tmp=digest32u( file,"",BigEndian, hexDisplay );
 	if (expected != tmp )
+	{
 		if (hexDisplay)
+		{
 			throw DumpFileException("'%s' was 0x%.8X, expected: 0x%.8X",key.c_str(),tmp,expected);
+		}
 		else
+		{
 			throw DumpFileException("'%s' was %d, expected: %d",key.c_str(),tmp,expected);
+		}
+	}
 }
 
 void TagTree::digest16s(XMP_Int16 expected, LFA_FileRef file,const std::string key /*=""*/, bool BigEndian /*=false*/ )
@@ -322,10 +334,16 @@ void TagTree::digest16u(XMP_Uns16 expected, LFA_FileRef file,const std::string k
 {
 	XMP_Uns16 tmp=digest16u( file,key,BigEndian, hexDisplay );
 	if (expected != tmp )
+	{
 		if (hexDisplay)
+		{
 			throw DumpFileException("'%s' was 0x%.4X, expected: 0x%.4X",key.c_str(),tmp,expected);
+		}
 		else
+		{
 			throw DumpFileException("'%s' was %d, expected: %d",key.c_str(),tmp,expected);
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

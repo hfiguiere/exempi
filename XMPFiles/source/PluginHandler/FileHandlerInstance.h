@@ -34,6 +34,9 @@ public:
 	//virtual XMP_OptionBits GetSerializeOptions(); //It should not be needed as its required only inside updateFile.
 	virtual void UpdateFile ( bool doSafeUpdate );
 	virtual void WriteTempFile ( XMP_IO* tempRef );
+	virtual void FillMetadataFiles ( std::vector<std::string> * metadataFiles );
+	virtual void FillAssociatedResources ( std::vector<std::string> * resourceList );
+	virtual bool IsMetadataWritable ( );
 
 	inline SessionRef				GetSession() const	{ return mObject; }
 	inline FileHandlerSharedPtr		GetHandlerInfo() const	{ return mHandler; }

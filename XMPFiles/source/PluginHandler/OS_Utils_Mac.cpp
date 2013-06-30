@@ -166,9 +166,6 @@ private:
 typedef AutoCFRef<CFURLRef>					AutoCFURL;
 typedef AutoCFRef<CFStringRef>				AutoCFString;
 
-typedef std::tr1::shared_ptr<FSIORefNum>	FilePtr;
-
-
 /** ************************************************************************************************************************
 ** Convert string into CFString
 */
@@ -176,85 +173,6 @@ static inline CFStringRef MakeCFString(const std::string& inString, CFStringEnco
 {
 	CFStringRef str = ::CFStringCreateWithCString( NULL, inString.c_str(), inEncoding );
 	return str;
-}
-
-/** ************************************************************************************************************************
-** Convert CFString into std::string
-*/
-static std::string MacToSTDString(CFStringRef inCFString)
-{
-	std::string result;
-
-	if (inCFString == NULL)
-	{
-		return result;
-	}
-
-	// The CFStringGetLength returns the length of the string in UTF-16 encoding units.
-	::CFIndex const stringUtf16Length = ::CFStringGetLength(inCFString);
-	if (stringUtf16Length == 0)
-	{
-		return result;
-	}
-
-	// Check if the CFStringRef can allow fast-return.
-	char const* ptr = ::CFStringGetCStringPtr(inCFString, kCFStringEncodingUTF8);
-	if (ptr != NULL)
-	{
-		result = std::string( ptr ); // This kind of assign expects '\0' termination.
-		return result;
-	}
-
-	// Since this is an encoding conversion, the converted string may not be the same length in bytes
-	// as the CFStringRef in UTF-16 encoding units.
-
-	::UInt8 const noLossByte = 0;
-	::Boolean const internalRepresentation = FALSE; // TRUE is external representation, with a BOM.  FALSE means no BOM.
-	::CFRange const range = ::CFRangeMake(0, stringUtf16Length); // [NOTE] length is in UTF-16 encoding units, not bytes.
-	::CFIndex const maxBufferLength = ::CFStringGetMaximumSizeForEncoding(stringUtf16Length, kCFStringEncodingUTF8); // Convert from UTF-16 encoding units to UTF-8 worst-case-scenario encoding units, in bytes.
-	::CFIndex usedBufferLength = 0; // In byte count.
-	char buffer[1024];
-	memset( buffer, 0, 1024 );
-	::CFIndex numberOfUtf16EncodingUnitsConverted = ::CFStringGetBytes(inCFString, range, ::kCFStringEncodingUTF8, noLossByte, internalRepresentation, (UInt8*)buffer, maxBufferLength, &usedBufferLength);
-	result = std::string( buffer );
-
-	return result;
-}
-
-
-static void CloseFile(	FSIORefNum* inFilePtr )
-{
-	FSCloseFork(*inFilePtr);
-	delete inFilePtr;
-}
-
-static FilePtr OpenResourceFile( OS_ModuleRef inOSModule, const std::string& inResourceName, const std::string& inResourceType, bool inSearchInSubFolderWithNameOfResourceType)
-{
-	FilePtr file;
-	if (inOSModule != nil)
-	{ 
-		AutoCFString resourceName( MakeCFString( inResourceName ) );
-		AutoCFString resourceType( MakeCFString( inResourceType ) );
-		AutoCFString subfolderName(inSearchInSubFolderWithNameOfResourceType ? MakeCFString( inResourceType ) : nil);
-
-		AutoCFURL url(
-			::CFBundleCopyResourceURL(inOSModule, *resourceName, *resourceType, *subfolderName));
-
-		FSRef fileReference;
-		if (!url.IsNull() && ::CFURLGetFSRef(*url, &fileReference))
-		{
-			HFSUniStr255 str;
-			if (::FSGetDataForkName(&str) == noErr)
-			{
-				FSIORefNum forkRef;
-				if (::FSOpenFork(&fileReference, str.length, str.unicode, fsRdPerm, &forkRef) == noErr)
-				{
-					file.reset(new FSIORefNum(forkRef), CloseFile);
-				}
-			}
-		}
-	}
-	return file;
 }
 
 bool IsValidLibrary( const std::string & inModulePath )
@@ -303,12 +221,11 @@ OS_ModuleRef LoadModule( const std::string & inModulePath, bool inOnlyResourceAc
 				loaded = ::CFBundleLoadExecutableAndReturnError(result, &errorRef);
 				if(!loaded || errorRef != NULL)
 				{
-					AutoCFString errorDescr(::CFErrorCopyDescription(errorRef));
-					throw XMP_Error( kXMPErr_InternalFailure, MacToSTDString(*errorDescr).c_str() );
 					::CFRelease(errorRef);
 					// release bundle and return NULL
 					::CFRelease(result);
 					result = NULL;
+					throw XMP_Error( kXMPErr_InternalFailure, "Failed to load module" );
 				}
 			}
 		}
@@ -341,26 +258,42 @@ bool GetResourceDataFromModule(
 	std::string & outBuffer)
 {
 	bool success = false;
-	
-	if (FilePtr file = OpenResourceFile(inOSModule, inResourceName, inResourceType, false))
+	bool inSearchInSubFolderWithNameOfResourceType = false;
+	AutoCFString resourceName( MakeCFString( inResourceName ) );
+	AutoCFString resourceType( MakeCFString( inResourceType ) );
+	AutoCFString subfolderName( inSearchInSubFolderWithNameOfResourceType ? MakeCFString( inResourceType ) : nil );
+
+	AutoCFURL url( ::CFBundleCopyResourceURL( inOSModule, *resourceName, *resourceType, *subfolderName ) );
+
+	if ( !url.IsNull() )
 	{
-		ByteCount	size = 0;
-		SInt64		fork_size = 0;
-		::FSGetForkSize(*file.get(), &fork_size);
-		// presumingly we don't want to load more than 2GByte at once (!)
-		if( fork_size < std::numeric_limits<XMP_Int32>::max() )
+		typedef AutoCFRef<CFDataRef> AutoCFData;
+		typedef AutoCFRef<CFNumberRef> AutoCFNumber;
+		AutoCFData resourceData;
+		SInt32 errorCode = 0;
+		AutoCFNumber length;
+		*length = reinterpret_cast<CFNumberRef> ( ::CFURLCreatePropertyFromResource( kCFAllocatorDefault, *url, kCFURLFileLength, &errorCode ) );
+
+		if ( !errorCode )
 		{
-			size = static_cast<ByteCount>(fork_size); 
-			if (size > 0)
+			SInt64 sizeOfFile = 0;
+			success = ::CFNumberGetValue( *length, kCFNumberSInt64Type, &sizeOfFile );
+			// presumingly we don't want to load more than 2GByte at once (!)
+			if ( success && sizeOfFile < std::numeric_limits<XMP_Int32>::max() )
 			{
-				outBuffer.resize(size);
-				::FSReadFork(*file.get(), fsFromStart, 0, size, (unsigned char*)&outBuffer[0], (ByteCount*)&size);
+				success = ::CFURLCreateDataAndPropertiesFromResource( kCFAllocatorDefault, *url, &(*resourceData), NULL, NULL, &errorCode );
+				if ( success && errorCode == 0 )
+				{
+					outBuffer.resize( sizeOfFile );
+					CFRange range = CFRangeMake (0, sizeOfFile );
+					::CFDataGetBytes( *resourceData, range, reinterpret_cast< UInt8 * > (&outBuffer[0]) );
+					return true;
+				}
 			}
-			success = true;
 		}
 	}
 
-	return success;
+	return false;
 }
 
 } //namespace XMP_PLUGIN

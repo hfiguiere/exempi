@@ -16,8 +16,10 @@
 
 #include <stdexcept>
 #include <iostream>
-#include <string>
+#include <cstdio>
 #include <vector>
+#include <string>
+#include <cstring>
 #include <sstream>
 
 #include "samples/source/common/globals.h"

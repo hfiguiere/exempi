@@ -10,15 +10,17 @@
 * Demonstrates syntax and usage by exercising most of the API functions of XMPCore Toolkit SDK component, 
 * using a sample XMP Packet that contains all of the different property and attribute types.
 */
+#include <cstdio>
+#include <vector>
 #include <string>
+#include <cstring>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <time.h>
+#include <cstdlib>
+#include <cerrno>
+#include <ctime>
 
 #define TXMP_STRING_TYPE	std::string
 

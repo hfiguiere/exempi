@@ -273,12 +273,6 @@ void PSIR_FileWriter::ParseMemoryResources ( const void* data, XMP_Uns32 length,
 
 void PSIR_FileWriter::ParseFileResources ( XMP_IO* fileRef, XMP_Uns32 length )
 {
-	bool ok;
-
-	this->DeleteExistingInfo();
-	this->fileParsed = true;
-	if ( length == 0 ) return;
-
 	// Parse the image resource block. We're using a map keyed by ID, so only one resource of each
 	// ID is recognized. Redundant resources are not legit, but have been seen in the field. In
 	// particular, one case has been seen of a duplicate IIM block with one empty. In general we
@@ -286,45 +280,54 @@ void PSIR_FileWriter::ParseFileResources ( XMP_IO* fileRef, XMP_Uns32 length )
 	// taken though if the current one is empty.
 	
 	// ! Don't use map[id] to lookup, that creates a default entry if none exists!
+	
+	// PSIR layout:
+	//	- Uns32 type, usually '8BIM'
+	//	- Uns16 ID
+	//	- PString name
+	//	- Uns8 optional pad for even alignment
+	//	- Uns32 data size
+	//	- data
+	//	- Uns8 optional pad for even alignment
 
-	IOBuffer ioBuf;
-	ioBuf.filePos = fileRef->Offset();
+	static const size_t kMinPSIRSize = 12;	// 4+2+1+1+4
+	
+	this->DeleteExistingInfo();
+	this->fileParsed = true;
+	if ( length == 0 ) return;
 
-	XMP_Int64 psirOrigin = ioBuf.filePos;	// Need this to determine the resource data offsets.
-	XMP_Int64 fileEnd = ioBuf.filePos + length;
+	XMP_Int64 psirOrigin = fileRef->Offset();	// Need this to determine the resource data offsets.
+	XMP_Int64 fileEnd = psirOrigin + length;
 
-	std::string rsrcPName;
+	char nameBuffer [260];	// The name is a PString, at 1+255+1 including length and pad.
 
-	while ( (ioBuf.filePos + (ioBuf.ptr - ioBuf.data)) < fileEnd ) {
+	while ( fileRef->Offset() < fileEnd ) {
 
-		ok = CheckFileSpace ( fileRef, &ioBuf, 12 );	// The minimal image resource takes 12 bytes.
-		if ( ! ok ) break;	// Bad image resource. Throw instead?
+		if ( ! XIO::CheckFileSpace ( fileRef, kMinPSIRSize ) ) break;	// Bad image resource.
 
-		XMP_Int64 thisRsrcPos = ioBuf.filePos + (ioBuf.ptr - ioBuf.data);
+		XMP_Int64 thisRsrcPos = fileRef->Offset();
 
-		XMP_Uns32 type = GetUns32BE(ioBuf.ptr);
-		XMP_Uns16 id   = GetUns16BE(ioBuf.ptr+4);
-		ioBuf.ptr += 6;	// Advance to the resource name.
+		XMP_Uns32 type = XIO::ReadUns32_BE ( fileRef );
+		XMP_Uns16 id   = XIO::ReadUns16_BE ( fileRef );
 
-		XMP_Uns16 nameLen = ioBuf.ptr[0];	// ! The length for the Pascal string.
+		XMP_Uns8 nameLen = XIO::ReadUns8 ( fileRef );	// ! The length for the Pascal string.
 		XMP_Uns16 paddedLen = (nameLen + 2) & 0xFFFE;	// ! Round up to an even total. Yes, +2!
-		ok = CheckFileSpace ( fileRef, &ioBuf, paddedLen+4 );	// Get the name text and the data length.
-		if ( ! ok ) break;	// Bad image resource. Throw instead?
+		if ( ! XIO::CheckFileSpace ( fileRef, paddedLen+4 ) ) break;	// Bad image resource.
 
-		if ( nameLen > 0 ) rsrcPName.assign ( (char*)(ioBuf.ptr), paddedLen );	// ! Include the length byte and pad.
+		nameBuffer[0] = nameLen;
+		fileRef->ReadAll ( &nameBuffer[1], paddedLen-1 );	// Include the pad byte, present for zero nameLen.
 
-		ioBuf.ptr += paddedLen;	// Move to the data length.
-		XMP_Uns32 dataLen   = GetUns32BE(ioBuf.ptr);
+		XMP_Uns32 dataLen   = XIO::ReadUns32_BE ( fileRef );
 		XMP_Uns32 dataTotal = ((dataLen + 1) & 0xFFFFFFFEUL);	// Round up to an even total.
-		ioBuf.ptr += 4;	// Advance to the resource data.
+		if ( ! XIO::CheckFileSpace ( fileRef, dataTotal ) ) break;	// Bad image resource.
 
-		XMP_Int64 thisDataPos = ioBuf.filePos + (ioBuf.ptr - ioBuf.data);
+		XMP_Int64 thisDataPos = fileRef->Offset();
 		XMP_Int64 nextRsrcPos = thisDataPos + dataTotal;
 
 		if ( type != k8BIM ) {
 			XMP_Uns32 fullRsrcLen = (XMP_Uns32) (nextRsrcPos - thisRsrcPos);
 			this->otherRsrcs.push_back ( OtherRsrcInfo ( (XMP_Uns32)thisRsrcPos, fullRsrcLen ) );
-			MoveToOffset ( fileRef, nextRsrcPos, &ioBuf );
+			fileRef->Seek ( nextRsrcPos, kXMP_SeekFromStart );
 			continue;
 		}
 
@@ -335,7 +338,7 @@ void PSIR_FileWriter::ParseFileResources ( XMP_IO* fileRef, XMP_Uns32 length )
 		} else if ( (rsrcPos->second.dataLen == 0) && (newInfo.dataLen != 0) ) {
 			rsrcPos->second = newInfo;
 		} else {
-			MoveToOffset ( fileRef, nextRsrcPos, &ioBuf );
+			fileRef->Seek ( nextRsrcPos, kXMP_SeekFromStart );
 			continue;
 		}
 		InternalRsrcInfo* rsrcPtr = &rsrcPos->second;
@@ -345,29 +348,17 @@ void PSIR_FileWriter::ParseFileResources ( XMP_IO* fileRef, XMP_Uns32 length )
 		if ( nameLen > 0 ) {
 			rsrcPtr->rsrcName = (XMP_Uns8*) malloc ( paddedLen );
 			if ( rsrcPtr->rsrcName == 0 ) XMP_Throw ( "Out of memory", kXMPErr_NoMemory );
-			memcpy ( (void*)rsrcPtr->rsrcName, rsrcPName.c_str(), paddedLen );	// AUDIT: Safe, allocated enough bytes above.
+			memcpy ( (void*)rsrcPtr->rsrcName, nameBuffer, paddedLen );	// AUDIT: Safe, allocated enough bytes above.
 		}
 
 		if ( ! IsMetadataImgRsrc ( id ) ) {
-			MoveToOffset ( fileRef, nextRsrcPos, &ioBuf );
+			fileRef->Seek ( nextRsrcPos, kXMP_SeekFromStart );
 			continue;
 		}
 
-		rsrcPtr->dataPtr = malloc ( dataLen );	// ! Allocate after the IsMetadataImgRsrc check.
+		rsrcPtr->dataPtr = malloc ( dataTotal );	// ! Allocate after the IsMetadataImgRsrc check.
 		if ( rsrcPtr->dataPtr == 0 ) XMP_Throw ( "Out of memory", kXMPErr_NoMemory );
-
-		if ( dataTotal <= kIOBufferSize ) {
-			// The image resource data fits within the I/O buffer.
-			ok = CheckFileSpace ( fileRef, &ioBuf, dataTotal );
-			if ( ! ok ) break;	// Bad image resource. Throw instead?
-			memcpy ( (void*)rsrcPtr->dataPtr, ioBuf.ptr, dataLen );	// AUDIT: Safe, malloc'ed dataLen bytes above.
-			ioBuf.ptr += dataTotal;	// ! Add the rounded length.
-		} else {
-			// The image resource data is bigger than the I/O buffer.
-			fileRef->Seek ( (ioBuf.filePos + (ioBuf.ptr - ioBuf.data)), kXMP_SeekFromStart  );
-			fileRef->ReadAll ( (void*)rsrcPtr->dataPtr, dataLen );
-			FillBuffer ( fileRef, nextRsrcPos, &ioBuf );
-		}
+		fileRef->ReadAll ( (void*)rsrcPtr->dataPtr, dataTotal );
 
 	}
 
@@ -492,11 +483,10 @@ XMP_Uns32 PSIR_FileWriter::UpdateMemoryResources ( void** dataPtr )
 // ====================================
 
 XMP_Uns32 PSIR_FileWriter::UpdateFileResources ( XMP_IO* sourceRef, XMP_IO* destRef,
-												 void * _ioBuf, XMP_AbortProc abortProc, void * abortArg )
+												 XMP_AbortProc abortProc, void * abortArg,
+												 XMP_ProgressTracker* progressTracker )
 {
-	IgnoreParam(_ioBuf);
 	const XMP_Uns32 zero32 = 0;
-
 	const bool checkAbort = (abortProc != 0);
 
 	struct RsrcHeader {
@@ -507,9 +497,29 @@ XMP_Uns32 PSIR_FileWriter::UpdateFileResources ( XMP_IO* sourceRef, XMP_IO* dest
 
 	if ( this->memParsed ) XMP_Throw ( "Not file based", kXMPErr_EnforceFailure );
 
-	XMP_Int64 destLenOffset = destRef->Offset();
-	XMP_Uns32 destLength = 0;
+	InternalRsrcMap::const_iterator rsrcPos;
+	InternalRsrcMap::const_iterator rsrcEnd = this->imgRsrcs.end();
 
+	if ( progressTracker != 0 ) {
+
+		float totalLength = 8;
+		for ( rsrcPos = this->imgRsrcs.begin(); rsrcPos != rsrcEnd; ++rsrcPos ) {
+			 const InternalRsrcInfo& currRsrc = rsrcPos->second;
+			totalLength += (currRsrc.dataLen + 12);
+		}
+
+		size_t sizeOtherRsrc = this->otherRsrcs.size();
+		for ( size_t i = 0; i < sizeOtherRsrc; ++i ) { 
+			totalLength += this->otherRsrcs[i].rsrcLength;	
+		}
+
+		XMP_Assert ( progressTracker->WorkInProgress() );
+		progressTracker->AddTotalWork ( totalLength );
+
+	}
+
+	XMP_Uns32 destLength = 0;
+	XMP_Int64 destLenOffset = destRef->Offset();
 	destRef->Write ( &destLength, 4 );	// Write a placeholder for the new PSIR section length.
 
 	#if 0
@@ -532,13 +542,10 @@ XMP_Uns32 PSIR_FileWriter::UpdateFileResources ( XMP_IO* sourceRef, XMP_IO* dest
 	RsrcHeader outHeader;
 	outHeader.type  = MakeUns32BE ( k8BIM );
 
-	InternalRsrcMap::iterator rsrcPos = this->imgRsrcs.begin();
-	InternalRsrcMap::iterator rsrcEnd = this->imgRsrcs.end();
-
 	// printf ( "\nPSIR_FileWriter::UpdateFileResources - 8BIM resources\n" );
-	for ( ; rsrcPos != rsrcEnd; ++rsrcPos ) {
+	for ( rsrcPos = this->imgRsrcs.begin(); rsrcPos != rsrcEnd; ++rsrcPos ) {
 
-		InternalRsrcInfo& currRsrc = rsrcPos->second;
+		const InternalRsrcInfo& currRsrc = rsrcPos->second;
 
 		outHeader.id = MakeUns16BE ( currRsrc.id );
 		destRef->Write ( &outHeader, 6 );

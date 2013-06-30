@@ -14,6 +14,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #if XMP_DebugBuild
 	#include <cassert>
@@ -46,8 +47,7 @@ typedef std::string XMP_VarString;
 extern "C" bool Initialize_LibUtils();
 extern "C" void Terminate_LibUtils();
 
-static void * ignorePtr = 0;
-#define IgnoreParam(p)	ignorePtr = (void*)&p
+#define IgnoreParam(p)	(void)p
 
 // The builtin offsetof macro sometimes violates C++ data member rules.
 #define XMP_OffsetOf(struct,field)	( (char*)(&((struct*)0x100)->field) - (char*)0x100 )
@@ -72,6 +72,34 @@ static void * ignorePtr = 0;
 	#define XMP_Throw_Verbose(msg,e,id) XMP_Throw(msg, id)
 #endif
 
+class GenericErrorCallback {
+public:
+	// Abstract base class for XMPCore and XMPFiles internal error notification support. Needed so
+	// that the XMLParserAdapter (used by both XMPCore and XMPFiles) can send error notifications,
+	// and so that utility parts of just XMPCore or XMPFiles can avoid dependence on XMPCore.hpp or
+	// XMPFiles.hpp if that is appropriate.
+
+	XMP_Uns32					limit;
+	mutable XMP_Uns32			notifications;
+	mutable XMP_ErrorSeverity	topSeverity;
+
+	GenericErrorCallback() : notifications(0), limit(1), topSeverity(kXMPErrSev_Recoverable) {};
+	virtual ~GenericErrorCallback() {};
+
+	void Clear() { this->notifications = 0; this->limit = 1; this->topSeverity = kXMPErrSev_Recoverable; };
+
+	bool CheckLimitAndSeverity (XMP_ErrorSeverity severity ) const;
+
+	// Const so they can be used with const XMPMeta and XMPFiles objects.
+	void NotifyClient ( XMP_ErrorSeverity severity, XMP_Error & error, XMP_StringPtr filePath = 0 ) const;
+
+	virtual bool CanNotify ( ) const = 0;
+	virtual bool ClientCallbackWrapper ( XMP_StringPtr filePath, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr messsage ) const = 0;
+
+};
+
+#define XMP_Error_Throw(error)	{ AnnounceThrow (error.GetErrMsg()); throw error; }
+
 
 // -------------------------------------------------------------------------------------------------
 
@@ -93,7 +121,6 @@ static void * ignorePtr = 0;
 #else
 	#define analysis_assume(c) ((void) 0)
 #endif
-
 
 #if ! XMP_DebugBuild
 	#define XMP_Assert(c)	((void) 0)
@@ -160,7 +187,7 @@ static void * ignorePtr = 0;
 	#define AcquireBasicMutex(mutex)	{ EnterCriticalSection ( &mutex ); }
 	#define ReleaseBasicMutex(mutex)	{ LeaveCriticalSection ( &mutex ); }
 
-#elif XMP_MacBuild
+#elif XMP_MacBuild | XMP_iOSBuild
 
 	#include <pthread.h>
 	#include <libkern/OSAtomic.h>
@@ -307,7 +334,7 @@ private:
 	#define XMP_BasicRWLock_ReleaseFromRead(lck)	lck.ReleaseFromRead()
 	#define XMP_BasicRWLock_ReleaseFromWrite(lck)	lck.ReleaseFromWrite()
 	
-	#if XMP_MacBuild | XMP_UNIXBuild
+	#if XMP_MacBuild | XMP_UNIXBuild | XMP_iOSBuild
 
 		#include <pthread.h>
 
@@ -516,6 +543,9 @@ void DumpClearString ( const XMP_VarString & value, XMP_TextOutputProc outProc, 
 // =================================================================================================
 // Namespace Tables
 // ================
+typedef std::vector <XMP_VarString> XMP_StringVector;
+typedef XMP_StringVector::iterator XMP_StringVectorPos;
+typedef XMP_StringVector::const_iterator XMP_StringVectorCPos;
 
 typedef std::pair < XMP_VarString, XMP_VarString >	XMP_StringPair;
 
@@ -543,6 +573,24 @@ private:
 	XMP_ReadWriteLock lock;
 	XMP_StringMap uriToPrefixMap, prefixToURIMap;
 
+};
+
+
+// Right now it supports only ^, $ and \d, in future we should use it as a wrapper over
+// regex object once mac and Linux compilers start supporting them.
+
+class XMP_RegExp {
+public:
+	XMP_RegExp ( XMP_StringPtr regExp )
+	{
+		if ( regExp )
+			regExpStr = regExp;
+	}
+
+	XMP_Bool Match ( XMP_StringPtr s );
+
+private:
+	XMP_VarString regExpStr;
 };
 
 // =================================================================================================

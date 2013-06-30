@@ -21,7 +21,7 @@
 #elif XMP_MacBuild
 	#include <CoreServices/CoreServices.h>
 	#include <dirent.h>	// Mac uses the POSIX folder functions.
-#elif XMP_UNIXBuild
+#elif XMP_UNIXBuild | XMP_iOSBuild
 	#include <dirent.h>
 #else
 	#error "Unknown host platform."
@@ -42,6 +42,10 @@ namespace Host_IO {
 	//
 	// Exists - Returns true if the path exists, whether as a file, folder, or anything else. Never
 	// throws an exception.
+	//
+	// Writable - Returns true 
+	//   a. In case checkCreationPossible is false check for existence and writable permissions.
+	//   b. In case checkCreationPossible is true and path is not existence, check permissions of parent folder.
 	//
 	// Create - Create a file if possible, return true if successful. Return false if the file
 	// already exists. Throw an XMP_Error exception if the file cannot be created or if the path
@@ -98,12 +102,13 @@ namespace Host_IO {
 	#elif XMP_MacBuild
 		typedef FSIORefNum FileRef;
 		static const FileRef noFileRef = -1;
-	#elif XMP_UNIXBuild
+	#elif XMP_UNIXBuild | XMP_iOSBuild
 		typedef int FileRef;
 		static const FileRef noFileRef = -1;
 	#endif
 
 	bool Exists ( const char* filePath );
+	bool Writable ( const char* path, bool checkCreationPossible = false);
 	bool Create ( const char* filePath );	// Returns true if file exists or was created.
 	
 	bool GetModifyDate ( const char* filePath, XMP_DateTime* modifyDate );
@@ -161,7 +166,7 @@ namespace Host_IO {
 	#elif XMP_MacBuild
 		typedef DIR* FolderRef;
 		static const FolderRef noFolderRef = 0;
-	#elif XMP_UNIXBuild
+	#elif XMP_UNIXBuild | XMP_iOSBuild
 		typedef DIR* FolderRef;
 		static const FolderRef noFolderRef = 0;
 	#endif

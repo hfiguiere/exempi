@@ -42,6 +42,12 @@ namespace XIO {
 					   XMP_IO* destFile, XMP_Int64 destOffset,
 					   XMP_Int64 length, XMP_AbortProc abortProc = 0, void* abortArg = 0 );
 
+	static inline bool CheckFileSpace ( XMP_IO* file, XMP_Int64 length )
+	{
+		XMP_Int64 remaining = file->Length() - file->Offset();
+		return (length <= remaining);
+	}
+	
 	// *** Need to absorb more of the utilities like FolderInfo, GetFileMode.
 
 	// =============================================================================================

@@ -11,13 +11,15 @@
 * serializes the XMP and writes it to log file.
 */
 
+#include <cstdio>
+#include <vector>
 #include <string>
-#include <time.h>
+#include <cstring>
+#include <ctime>
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <stdexcept>
-#include <errno.h>
+#include <cerrno>
 
 #if XMP_WinBuild
 	#pragma warning ( disable : 4127 )	// conditional expression is constant
@@ -61,10 +63,10 @@ ProcessPacket ( const char * fileName,
 	
 	char title [1000];
 	
-	sprintf ( title, "// Dumping raw input for \"%s\" (%d..%d)", fileName, offset, (offset + length - 1) );
+	sprintf ( title, "// Dumping raw input for \"%s\" (%lu..%lu)", fileName, offset, (offset + length - 1) );
 	printf ( "// " );
 	for ( size_t i = 3; i < strlen(title); ++i ) printf ( "=" );
-	printf ( "\n\n%s\n\n%.*s\n\n", title, length, xmlString.c_str() );
+	printf ( "\n\n%s\n\n%.*s\n\n", title, (int)length, xmlString.c_str() );
 	fflush ( stdout );
 	
 	SXMPMeta xmpObj;
@@ -80,11 +82,11 @@ ProcessPacket ( const char * fileName,
 	
 	string xmpString;
 	xmpObj.SerializeToBuffer ( &xmpString, kXMP_OmitPacketWrapper );
-	printf ( "\nPretty serialization, %d bytes :\n\n%s\n", xmpString.size(), xmpString.c_str() );
+	printf ( "\nPretty serialization, %lu bytes :\n\n%s\n", xmpString.size(), xmpString.c_str() );
 	fflush ( stdout );
 
 	xmpObj.SerializeToBuffer ( &xmpString, (kXMP_OmitPacketWrapper | kXMP_UseCompactFormat) );
-	printf ( "Compact serialization, %d bytes :\n\n%s\n", xmpString.size(), xmpString.c_str() );
+	printf ( "Compact serialization, %lu bytes :\n\n%s\n", xmpString.size(), xmpString.c_str() );
 	fflush ( stdout );
 
 }	// ProcessPacket

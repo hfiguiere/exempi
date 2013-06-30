@@ -11,6 +11,8 @@
 #define XMPQE_DUMPFILE_H
 
 #include "samples/source/common/TagTree.h"
+#define IsNumeric( ch ) (ch >='0' && ch<='9' )
+
 class DumpFile {
 public:
 	static void Scan( std::string filename, TagTree &tagTree, bool resetTree = true );

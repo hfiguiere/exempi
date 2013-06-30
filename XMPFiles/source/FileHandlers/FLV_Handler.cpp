@@ -551,9 +551,12 @@ void FLV_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	// Rewrite the packet in-place if it fits. Otherwise rewrite the whole file.
 
 	if ( this->xmpPacket.size() == (size_t)this->packetInfo.length ) {
-
+		XMP_ProgressTracker* progressTracker = this->parent->progressTracker;
+		if ( progressTracker != 0 ) progressTracker->BeginWork ( (float)this->xmpPacket.size() );
 		fileRef->Seek ( this->packetInfo.offset, kXMP_SeekFromStart );
 		fileRef->Write ( this->xmpPacket.data(), (XMP_Int32)this->xmpPacket.size() );
+		if ( progressTracker != 0 ) progressTracker->WorkComplete();
+
 
 	} else {
 
@@ -675,7 +678,29 @@ void FLV_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 	originalRef->Rewind();
 	tempRef->Rewind();
 	tempRef->Truncate ( 0 );
-
+	XMP_ProgressTracker* progressTracker = this->parent->progressTracker;
+	if ( progressTracker != 0 ) {
+		float fileSize=(float)(this->xmpPacket.size()+48);
+		if ( this->omdTagPos == 0 ) {
+			sourcePos=(this->flvHeaderLen+4);
+			fileSize+=sourcePos;
+		} else {
+			if ( this->xmpTagPos < this->omdTagPos ) {
+				fileSize+=this->xmpTagPos;
+			}
+			fileSize+=(this->omdTagPos + this->omdTagLen-
+				((this->xmpTagPos!=0 && this->xmpTagPos < this->omdTagPos)?
+				(this->xmpTagPos + this->xmpTagLen):0));
+			sourcePos =this->omdTagPos + this->omdTagLen;
+		}
+		if ( (this->xmpTagPos != 0) && (this->xmpTagPos >= sourcePos) ) {
+			fileSize+=(this->xmpTagPos - sourcePos);
+			sourcePos=this->xmpTagPos + this->xmpTagLen;
+		}
+		fileSize+=(sourceLen - sourcePos);
+		sourcePos=0;
+		progressTracker->BeginWork ( fileSize );
+	}
 	// First do whatever is needed to put the new XMP after any existing onMetaData tag, or as the
 	// first time 0 tag.
 
@@ -729,6 +754,8 @@ void FLV_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 	XIO::Copy ( originalRef, tempRef, (sourceLen - sourcePos), abortProc, abortArg );
 
 	this->needsUpdate = false;
+	
+	if (  progressTracker != 0  ) progressTracker->WorkComplete();
 
 }	// FLV_MetaHandler::WriteTempFile
 

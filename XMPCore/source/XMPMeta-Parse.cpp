@@ -105,6 +105,12 @@ static const char * kReplaceLatin1[128] =
 // -------------------------------------------------------------------------------------------------
 // PickBestRoot
 // ------------
+//
+// Pick the first x:xmpmeta among multiple root candidates. If there aren't any, pick the first bare
+// rdf:RDF if that is allowed. The returned root is the rdf:RDF child if an x:xmpmeta element was
+// chosen.  The search is breadth first, so a higher level candiate is chosen over a lower level one
+// that was textually earlier in the serialized XML.
+
 static const XML_Node * PickBestRoot ( const XML_Node & xmlParent, XMP_OptionBits options )
 {
 
@@ -145,71 +151,19 @@ static const XML_Node * PickBestRoot ( const XML_Node & xmlParent, XMP_OptionBit
 //
 // If there is a root node, try to extract the version of the previous XMP toolkit.
 
-static const XML_Node * FindRootNode ( XMPMeta * thiz, const XMLParserAdapter & xmlParser, XMP_OptionBits options )
+static const XML_Node * FindRootNode ( const XMLParserAdapter & xmlParser, XMP_OptionBits options )
 {
 	const XML_Node * rootNode = xmlParser.rootNode;
 	
 	if ( xmlParser.rootCount > 1 ) rootNode = PickBestRoot ( xmlParser.tree, options );
 	if ( rootNode == 0 ) return 0;
-	
-	// We have a root node. Try to extract previous toolkit version number.
-	
-	XMP_StringPtr verStr = "";
-	
+
 		XMP_Assert ( rootNode->name == "rdf:RDF" );
 	
 		if ( (options & kXMP_RequireXMPMeta) &&
 		     ((rootNode->parent == 0) ||
 		      ((rootNode->parent->name != "x:xmpmeta") && (rootNode->parent->name != "x:xapmeta"))) ) return 0;
-
-		for ( size_t attrNum = 0, attrLim = rootNode->parent->attrs.size(); attrNum < attrLim; ++attrNum ) {
-			const XML_Node * currAttr =rootNode->parent->attrs[attrNum];
-			if ( (currAttr->name == "x:xmptk") || (currAttr->name == "x:xaptk") ) {
-				verStr = currAttr->value.c_str();
-				break;
-			}
-		}
 		
-	// Decode the version number into MMmmuubbb digits. If any part is too big, peg it at 99 or 999.
-	
-	unsigned long part;
-	while ( (*verStr != 0) && ((*verStr < '0') || (*verStr > '9')) ) ++verStr;
-	
-	part = 0;
-	while ( (*verStr != 0) && ('0' <= *verStr) && (*verStr <= '9') ) {
-		part = (part * 10) + (*verStr - '0');
-		++verStr;
-	}
-	if ( part > 99 ) part = 99;
-	thiz->prevTkVer = part * 100*100*1000;
-	
-	part = 0;
-	if ( *verStr == '.' ) ++verStr;
-	while ( (*verStr != 0) && ('0' <= *verStr) && (*verStr <= '9') ) {
-		part = (part * 10) + (*verStr - '0');
-		++verStr;
-	}
-	if ( part > 99 ) part = 99;
-	thiz->prevTkVer += part * 100*1000;
-	
-	part = 0;
-	if ( *verStr == '.' ) ++verStr;
-	while ( (*verStr != 0) && ('0' <= *verStr) && (*verStr <= '9') ) {
-		part = (part * 10) + (*verStr - '0');
-		++verStr;
-	}
-	if ( part > 99 ) part = 99;
-	thiz->prevTkVer += part * 1000;
-	
-	part = 0;
-	if ( *verStr == '-' ) ++verStr;
-	while ( (*verStr != 0) && ('0' <= *verStr) && (*verStr <= '9') ) {
-		part = (part * 10) + (*verStr - '0');
-		++verStr;
-	}
-	if ( part > 999 ) part = 999;
-	thiz->prevTkVer += part;
-	
 	return rootNode;
 	
 }	// FindRootNode
@@ -294,32 +248,41 @@ NormalizeDCArrays ( XMP_Node * xmpTree )
 // *** aliases is a simple to x-default alias, the options and qualifiers obviously differ.
 
 static void
-CompareAliasedSubtrees ( XMP_Node * aliasNode, XMP_Node * baseNode, bool outerCall = true )
+CompareAliasedSubtrees ( XMP_Node * aliasNode, XMP_Node * baseNode,
+						 XMPMeta::ErrorCallbackInfo & errorCallback, bool outerCall = true )
 {
 	// ! The outermost call is special. The names almost certainly differ. The qualifiers (and
 	// ! hence options) will differ for an alias to the x-default item of a langAlt array.
+
 	if ( (aliasNode->value != baseNode->value) ||
 	     (aliasNode->children.size() != baseNode->children.size()) ) {
-		XMP_Throw ( "Mismatch between alias and base nodes", kXMPErr_BadXMP );
+	    // Keep things simple for now. Aliases are virtually unused, so this is very unlikely to
+	    // happen. Recovery can be added later if it becomes important.
+	    XMP_Error error(kXMPErr_BadXMP, "Mismatch between alias and base nodes");
+	    errorCallback.NotifyClient ( kXMPErrSev_OperationFatal, error );
 	}
+
 	if ( ! outerCall ) {
 		if ( (aliasNode->name != baseNode->name) ||
 		     (aliasNode->options != baseNode->options) ||
 		     (aliasNode->qualifiers.size() != baseNode->qualifiers.size()) ) {
-			XMP_Throw ( "Mismatch between alias and base nodes", kXMPErr_BadXMP );
+			// Keep things simple for now. Aliases are virtually unused, so this is very unlikely to
+			// happen. Recovery can be added later if it becomes important.
+			XMP_Error error(kXMPErr_BadXMP, "Mismatch between alias and base nodes");
+			errorCallback.NotifyClient ( kXMPErrSev_OperationFatal, error );
 		}
 	}
 	
 	for ( size_t childNum = 0, childLim = aliasNode->children.size(); childNum < childLim; ++childNum ) {
 		XMP_Node * aliasChild = aliasNode->children[childNum];
 		XMP_Node * baseChild  = baseNode->children[childNum];
-		CompareAliasedSubtrees ( aliasChild, baseChild, false );
+		CompareAliasedSubtrees ( aliasChild, baseChild, errorCallback, false );
 	}
 	
 	for ( size_t qualNum = 0, qualLim = aliasNode->qualifiers.size(); qualNum < qualLim; ++qualNum ) {
 		XMP_Node * aliasQual = aliasNode->qualifiers[qualNum];
 		XMP_Node * baseQual  = baseNode->qualifiers[qualNum];
-		CompareAliasedSubtrees ( aliasQual, baseQual, false );
+		CompareAliasedSubtrees ( aliasQual, baseQual, errorCallback, false );
 	}
 	
 }	// CompareAliasedSubtrees
@@ -330,13 +293,17 @@ CompareAliasedSubtrees ( XMP_Node * aliasNode, XMP_Node * baseNode, bool outerCa
 // ------------------------
 
 static void
-TransplantArrayItemAlias ( XMP_Node * oldParent, size_t oldNum, XMP_Node * newParent )
+TransplantArrayItemAlias ( XMP_Node * oldParent, size_t oldNum, XMP_Node * newParent,
+						   XMPMeta::ErrorCallbackInfo & errorCallback )
 {
 	XMP_Node * childNode = oldParent->children[oldNum];
 
 	if ( newParent->options & kXMP_PropArrayIsAltText ) {
 		if ( childNode->options & kXMP_PropHasLang ) {
-			XMP_Throw ( "Alias to x-default already has a language qualifier", kXMPErr_BadXMP );	// *** Allow x-default.
+		    // Keep things simple for now. Aliases are virtually unused, so this is very unlikely to
+		    // happen. Recovery can be added later if it becomes important.
+		    XMP_Error error(kXMPErr_BadXMP, "Alias to x-default already has a language qualifier");
+		    errorCallback.NotifyClient ( kXMPErrSev_OperationFatal, error );	// *** Allow x-default.
 		}
 		childNode->options |= (kXMP_PropHasQualifiers | kXMP_PropHasLang);
 		XMP_Node * langQual = new XMP_Node ( childNode, "xml:lang", "x-default", kXMP_PropIsQualifier );	// *** AddLangQual util?
@@ -381,7 +348,7 @@ TransplantNamedAlias ( XMP_Node * oldParent, size_t oldNum, XMP_Node * newParent
 // -------------------
 
 static void
-MoveExplicitAliases ( XMP_Node * tree, XMP_OptionBits parseOptions )
+MoveExplicitAliases ( XMP_Node * tree, XMP_OptionBits parseOptions, XMPMeta::ErrorCallbackInfo & errorCallback )
 {
 	tree->options ^= kXMP_PropHasAliases;
 	const bool strictAliasing = ((parseOptions & kXMP_StrictAliasing) != 0);
@@ -426,14 +393,14 @@ MoveExplicitAliases ( XMP_Node * tree, XMP_OptionBits parseOptions )
 					// An alias to an array item, create the array and transplant the property.
 					baseNode = new XMP_Node ( baseSchema, basePath[kRootPropStep].step.c_str(), arrayOptions );
 					baseSchema->children.push_back ( baseNode );
-					TransplantArrayItemAlias ( currSchema, propNum, baseNode );
+					TransplantArrayItemAlias ( currSchema, propNum, baseNode, errorCallback );
 				}
 			
 			} else if ( basePath.size() == 2 ) {
 			
 				// The base node does exist and this is a top-to-top alias. Check for conflicts if
 				// strict aliasing is on. Remove and delete the alias subtree.
-				if ( strictAliasing ) CompareAliasedSubtrees ( currProp, baseNode );
+				if ( strictAliasing ) CompareAliasedSubtrees ( currProp, baseNode, errorCallback );
 				currSchema->children.erase ( currSchema->children.begin() + propNum );
 				delete currProp;
 			
@@ -451,9 +418,9 @@ MoveExplicitAliases ( XMP_Node * tree, XMP_OptionBits parseOptions )
 				}
 				
 				if ( itemNode == 0 ) {
-					TransplantArrayItemAlias ( currSchema, propNum, baseNode );
+					TransplantArrayItemAlias ( currSchema, propNum, baseNode, errorCallback );
 				} else {
-					if ( strictAliasing ) CompareAliasedSubtrees ( currProp, itemNode );
+					if ( strictAliasing ) CompareAliasedSubtrees ( currProp, itemNode, errorCallback );
 					currSchema->children.erase ( currSchema->children.begin() + propNum );
 					delete currProp;
 				}
@@ -664,7 +631,7 @@ RepairAltText ( XMP_Node & tree, XMP_StringPtr schemaNS, XMP_StringPtr arrayName
 // ----------------
 
 static void
-TouchUpDataModel ( XMPMeta * xmp )
+TouchUpDataModel ( XMPMeta * xmp, XMPMeta::ErrorCallbackInfo & errorCallback )
 {
 	XMP_Node & tree = xmp->tree;
 	
@@ -1062,6 +1029,198 @@ ProcessUTF8Portion ( XMLParserAdapter * xmlParser,
 
 
 // -------------------------------------------------------------------------------------------------
+// ProcessXMLBuffer
+// ----------------
+//
+// Process one buffer of XML. Returns false if this input is put into the pending input buffer.
+
+bool XMPMeta::ProcessXMLBuffer ( XMP_StringPtr buffer, XMP_StringLen xmpSize, bool lastClientCall )
+{
+
+	// Determine the character encoding before doing any real parsing. This is needed to do the
+	// 8-bit special processing. This has to be checked on every call, not just the first, in
+	// order to handle the edge case of single byte buffers.
+
+	XMLParserAdapter & parser = *this->xmlParser;
+		
+	if ( parser.charEncoding == XMP_OptionBits(-1) ) {
+
+		if ( (parser.pendingCount == 0) && (xmpSize >= kXMLPendingInputMax) ) {
+
+			// This ought to be the common case, the first buffer is big enough.
+			parser.charEncoding = DetermineInputEncoding ( (XMP_Uns8*)buffer, xmpSize );
+
+		} else {
+		
+			// Try to fill the pendingInput buffer before calling DetermineInputEncoding.
+
+			size_t pendingOverlap = kXMLPendingInputMax - parser.pendingCount;
+			if ( pendingOverlap > xmpSize ) pendingOverlap = xmpSize;
+
+			memcpy ( &parser.pendingInput[parser.pendingCount], buffer, pendingOverlap );	// AUDIT: Count is safe.
+			buffer += pendingOverlap;
+			xmpSize -= pendingOverlap;
+			parser.pendingCount += pendingOverlap;
+
+			if ( (! lastClientCall) && (parser.pendingCount < kXMLPendingInputMax) ) return false;	// Wait for the next buffer.
+			parser.charEncoding = DetermineInputEncoding ( parser.pendingInput, parser.pendingCount );
+			
+			#if Trace_ParsingHackery
+				fprintf ( stderr, "XMP Character encoding is %d\n", parser.charEncoding );
+			#endif
+		
+		}
+
+	}
+	
+	// We have the character encoding. Process UTF-16 and UTF-32 as is. UTF-8 needs special
+	// handling to take care of things like ISO Latin-1 or unescaped ASCII controls.
+
+	XMP_Assert ( parser.charEncoding != XMP_OptionBits(-1) );
+
+	if ( parser.charEncoding != kXMP_EncodeUTF8 ) {
+	
+		if ( parser.pendingCount > 0 ) {
+			// Might have pendingInput from the above portion to determine the character encoding.
+			parser.ParseBuffer ( parser.pendingInput, parser.pendingCount, false );
+		}
+		parser.ParseBuffer ( buffer, xmpSize, lastClientCall );
+		
+	} else {
+
+		#if Trace_ParsingHackery
+			fprintf ( stderr, "Parsing %d bytes @ %.8X, %s, %d pending, context: %.8s\n",
+					  xmpSize, buffer, (lastClientCall ? "last" : "not last"), parser.pendingCount, buffer );
+		#endif
+
+		// The UTF-8 processing is a bit complex due to the need to tolerate ISO Latin-1 input.
+		// This is done by scanning the input for byte sequences that are not valid UTF-8,
+		// assuming they are Latin-1 characters in the range 0x80..0xFF. This requires saving a
+		// pending input buffer to handle partial UTF-8 sequences at the end of a buffer.
+		
+		while ( parser.pendingCount > 0 ) {
+		
+			// We've got some leftover input, process it first then continue with the current
+			// buffer. Try to fill the pendingInput buffer before parsing further. We use a loop
+			// for wierd edge cases like a 2 byte input buffer, using 1 byte for pendingInput,
+			// then having a partial UTF-8 end and need to absorb more.
+			
+			size_t pendingOverlap = kXMLPendingInputMax - parser.pendingCount;
+			if ( pendingOverlap > xmpSize ) pendingOverlap = xmpSize;
+			
+			memcpy ( &parser.pendingInput[parser.pendingCount], buffer, pendingOverlap );	// AUDIT: Count is safe.
+			parser.pendingCount += pendingOverlap;
+			buffer += pendingOverlap;
+			xmpSize -= pendingOverlap;
+
+			if ( (! lastClientCall) && (parser.pendingCount < kXMLPendingInputMax) ) return false;	// Wait for the next buffer.
+			size_t bytesDone = ProcessUTF8Portion ( xmlParser, parser.pendingInput, parser.pendingCount, lastClientCall );
+			size_t bytesLeft = parser.pendingCount - bytesDone;
+
+			#if Trace_ParsingHackery
+				fprintf ( stderr, "   ProcessUTF8Portion handled %d pending bytes\n", bytesDone );
+			#endif
+			
+			if ( bytesDone == parser.pendingCount ) {
+
+				// Done with all of the pending input, move on to the current buffer.
+				parser.pendingCount = 0;
+
+			} else if ( bytesLeft <= pendingOverlap ) {
+
+				// The leftover pending input all came from the current buffer. Exit this loop.
+				buffer -= bytesLeft;
+				xmpSize += bytesLeft;
+				parser.pendingCount = 0;
+
+			} else if ( xmpSize > 0 ) {
+
+				// Pull more of the current buffer into the pending input and try again.
+				// Backup by this pass's overlap so the loop entry code runs OK.
+				parser.pendingCount -= pendingOverlap;
+				buffer -= pendingOverlap;
+				xmpSize += pendingOverlap;
+
+			} else {
+
+				// There is no more of the current buffer. Wait for more. Partial sequences at
+				// the end of the last buffer should be treated as Latin-1 by ProcessUTF8Portion.
+				XMP_Assert ( ! lastClientCall );
+				parser.pendingCount = bytesLeft;
+				memcpy ( &parser.pendingInput[0], &parser.pendingInput[bytesDone], bytesLeft );	// AUDIT: Count is safe.
+				return false;	// Wait for the next buffer.
+
+			}
+		
+		}
+		
+		// Done with the pending input, process the current buffer.
+
+		size_t bytesDone = ProcessUTF8Portion ( xmlParser, (XMP_Uns8*)buffer, xmpSize, lastClientCall );
+
+		#if Trace_ParsingHackery
+			fprintf ( stderr, "   ProcessUTF8Portion handled %d additional bytes\n", bytesDone );
+		#endif
+		
+		if ( bytesDone < xmpSize ) {
+
+			XMP_Assert ( ! lastClientCall );
+			size_t bytesLeft = xmpSize - bytesDone;
+			if ( bytesLeft > kXMLPendingInputMax ) XMP_Throw ( "Parser bytesLeft too large", kXMPErr_InternalFailure );
+
+			memcpy ( parser.pendingInput, &buffer[bytesDone], bytesLeft );	// AUDIT: Count is safe.
+			parser.pendingCount = bytesLeft;
+			return false;	// Wait for the next buffer.
+
+		}
+
+	}
+	
+	return true;	// This buffer has been processed.
+
+}	// ProcessXMLBuffer
+
+
+// -------------------------------------------------------------------------------------------------
+// ProcessXMLTree
+// --------------
+
+void XMPMeta::ProcessXMLTree ( XMP_OptionBits options )
+{
+		
+	#if XMP_DebugBuild && DumpXMLParseTree
+		if ( this->xmlParser->parseLog == 0 ) this->xmlParser->parseLog = stdout;
+		DumpXMLTree ( this->xmlParser->parseLog, this->xmlParser->tree, 0 );
+	#endif
+
+	const XML_Node * xmlRoot = FindRootNode ( *this->xmlParser, options );
+
+	if ( xmlRoot != 0 ) {
+
+		this->ProcessRDF ( *xmlRoot, options );
+
+		NormalizeDCArrays ( &this->tree );
+		if ( this->tree.options & kXMP_PropHasAliases ) MoveExplicitAliases ( &this->tree, options, this->errorCallback );
+		TouchUpDataModel ( this, this->errorCallback );
+		
+		// Delete empty schema nodes. Do this last, other cleanup can make empty schema.
+		size_t schemaNum = 0;
+		while ( schemaNum < this->tree.children.size() ) {
+			XMP_Node * currSchema = this->tree.children[schemaNum];
+			if ( currSchema->children.size() > 0 ) {
+				++schemaNum;
+			} else {
+				delete this->tree.children[schemaNum];	// ! Delete the schema node itself.
+				this->tree.children.erase ( this->tree.children.begin() + schemaNum );
+			}
+		}
+		
+	}
+
+}	// ProcessXMLTree
+
+
+// -------------------------------------------------------------------------------------------------
 // ParseFromBuffer
 // ---------------
 //
@@ -1072,7 +1231,7 @@ ProcessUTF8Portion ( XMLParserAdapter * xmlParser,
 //
 // Both the 8-bit special cases and the encoding determination are easier to do with 8 bytes or more
 // of input. The XMLParserAdapter class has a pending-input buffer for this. At the start of parsing
-// we (moght) try to fill this buffer before determining the input character encoding. After that,
+// we (might) try to fill this buffer before determining the input character encoding. After that,
 // we (might) use this buffer with the current input to simplify the logic in Process8BitInput. The
 // "(might)" part means that we don't actually use the pending-input buffer unless we have to. In
 // particular, the common case of single-buffer parsing won't use it.
@@ -1087,204 +1246,28 @@ XMPMeta::ParseFromBuffer ( XMP_StringPtr  buffer,
 	
 	const bool lastClientCall = ((options & kXMP_ParseMoreBuffers) == 0);	// *** Could use FlagIsSet & FlagIsClear macros.
 	
-	this->tree.ClearNode();	// Make sure the target XMP object is totally empty.
-
 	if ( this->xmlParser == 0 ) {
+		this->tree.ClearNode();	// Make sure the target XMP object is totally empty.
 		if ( (xmpSize == 0) && lastClientCall ) return;	// Tolerate empty parse. Expat complains if there are no XML elements.
 		this->xmlParser = XMP_NewExpatAdapter ( ExpatAdapter::kUseGlobalNamespaces );
+		this->xmlParser->SetErrorCallback ( &this->errorCallback );
 	}
 	
-	XMLParserAdapter& parser = *this->xmlParser;
-	
-	#if 0	// XMP_DebugBuild
-		if ( parser.parseLog != 0 ) {
-			char message [200];	// AUDIT: Using sizeof(message) below for snprintf length is safe.
-			snprintf ( message, sizeof(message), "<!-- ParseFromBuffer, length = %d, options = %X%s -->",	// AUDIT: See above.
-					   xmpSize, options, (lastClientCall ? " (last)" : "") );
-			fwrite ( message, 1, strlen(message), parser.parseLog );
-			fflush ( parser.parseLog );
-		}
-	#endif
-		
 	try {	// Cleanup the tree and xmlParser if anything fails.
 	
-		// Determine the character encoding before doing any real parsing. This is needed to do the
-		// 8-bit special processing.
-		
-		if ( parser.charEncoding == XMP_OptionBits(-1) ) {
-
-			if ( (parser.pendingCount == 0) && (xmpSize >= kXMLPendingInputMax) ) {
-
-				// This ought to be the common case, the first buffer is big enough.
-				parser.charEncoding = DetermineInputEncoding ( (XMP_Uns8*)buffer, xmpSize );
-
-			} else {
-			
-				// Try to fill the pendingInput buffer before calling DetermineInputEncoding.
-
-				size_t pendingOverlap = kXMLPendingInputMax - parser.pendingCount;
-				if ( pendingOverlap > xmpSize ) pendingOverlap = xmpSize;
-
-				memcpy ( &parser.pendingInput[parser.pendingCount], buffer, pendingOverlap );	// AUDIT: Count is safe.
-				buffer += pendingOverlap;
-				xmpSize -= pendingOverlap;
-				parser.pendingCount += pendingOverlap;
-
-				if ( (! lastClientCall) && (parser.pendingCount < kXMLPendingInputMax) ) return;
-				parser.charEncoding = DetermineInputEncoding ( parser.pendingInput, parser.pendingCount );
-				
-				#if Trace_ParsingHackery
-					fprintf ( stderr, "XMP Character encoding is %d\n", parser.charEncoding );
-				#endif
-			
-			}
-
-		}
-		
-		// We have the character encoding. Process UTF-16 and UTF-32 as is. UTF-8 needs special
-		// handling to take care of things like ISO Latin-1 or unescaped ASCII controls.
-
-		XMP_Assert ( parser.charEncoding != XMP_OptionBits(-1) );
-
-		if ( parser.charEncoding != kXMP_EncodeUTF8 ) {
-		
-			if ( parser.pendingCount > 0 ) {
-				// Might have pendingInput from the above portion to determine the character encoding.
-				parser.ParseBuffer ( parser.pendingInput, parser.pendingCount, false );
-			}
-			parser.ParseBuffer ( buffer, xmpSize, lastClientCall );
-			
-		} else {
-
-			#if Trace_ParsingHackery
-				fprintf ( stderr, "Parsing %d bytes @ %.8X, %s, %d pending, context: %.8s\n",
-						  xmpSize, buffer, (lastClientCall ? "last" : "not last"), parser.pendingCount, buffer );
-			#endif
-
-			// The UTF-8 processing is a bit complex due to the need to tolerate ISO Latin-1 input.
-			// This is done by scanning the input for byte sequences that are not valid UTF-8,
-			// assuming they are Latin-1 characters in the range 0x80..0xFF. This requires saving a
-			// pending input buffer to handle partial UTF-8 sequences at the end of a buffer.
-			
-			while ( parser.pendingCount > 0 ) {
-			
-				// We've got some leftover input, process it first then continue with the current
-				// buffer. Try to fill the pendingInput buffer before parsing further. We use a loop
-				// for wierd edge cases like a 2 byte input buffer, using 1 byte for pendingInput,
-				// then having a partial UTF-8 end and need to absorb more.
-				
-				size_t pendingOverlap = kXMLPendingInputMax - parser.pendingCount;
-				if ( pendingOverlap > xmpSize ) pendingOverlap = xmpSize;
-				
-				memcpy ( &parser.pendingInput[parser.pendingCount], buffer, pendingOverlap );	// AUDIT: Count is safe.
-				parser.pendingCount += pendingOverlap;
-				buffer += pendingOverlap;
-				xmpSize -= pendingOverlap;
-
-				if ( (! lastClientCall) && (parser.pendingCount < kXMLPendingInputMax) ) return;
-				size_t bytesDone = ProcessUTF8Portion ( &parser, parser.pendingInput, parser.pendingCount, lastClientCall );
-				size_t bytesLeft = parser.pendingCount - bytesDone;
-
-				#if Trace_ParsingHackery
-					fprintf ( stderr, "   ProcessUTF8Portion handled %d pending bytes\n", bytesDone );
-				#endif
-				
-				if ( bytesDone == parser.pendingCount ) {
-
-					// Done with all of the pending input, move on to the current buffer.
-					parser.pendingCount = 0;
-
-				} else if ( bytesLeft <= pendingOverlap ) {
-
-					// The leftover pending input all came from the current buffer. Exit this loop.
-					buffer -= bytesLeft;
-					xmpSize += bytesLeft;
-					parser.pendingCount = 0;
-
-				} else if ( xmpSize > 0 ) {
-
-					// Pull more of the current buffer into the pending input and try again.
-					// Backup by this pass's overlap so the loop entry code runs OK.
-					parser.pendingCount -= pendingOverlap;
-					buffer -= pendingOverlap;
-					xmpSize += pendingOverlap;
-
-				} else {
-
-					// There is no more of the current buffer. Wait for more. Partial sequences at
-					// the end of the last buffer should be treated as Latin-1 by ProcessUTF8Portion.
-					XMP_Assert ( ! lastClientCall );
-					parser.pendingCount = bytesLeft;
-					memcpy ( &parser.pendingInput[0], &parser.pendingInput[bytesDone], bytesLeft );	// AUDIT: Count is safe.
-					return;
-
-				}
-			
-			}
-			
-			// Done with the pending input, process the current buffer.
-
-			size_t bytesDone = ProcessUTF8Portion ( &parser, (XMP_Uns8*)buffer, xmpSize, lastClientCall );
-
-			#if Trace_ParsingHackery
-				fprintf ( stderr, "   ProcessUTF8Portion handled %d additional bytes\n", bytesDone );
-			#endif
-			
-			if ( bytesDone < xmpSize ) {
-
-				XMP_Assert ( ! lastClientCall );
-				size_t bytesLeft = xmpSize - bytesDone;
-				if ( bytesLeft > kXMLPendingInputMax ) XMP_Throw ( "Parser bytesLeft too large", kXMPErr_InternalFailure );
-
-				memcpy ( parser.pendingInput, &buffer[bytesDone], bytesLeft );	// AUDIT: Count is safe.
-				parser.pendingCount = bytesLeft;
-				return;	// Wait for the next buffer.
-
-			}
-
-		}
+		bool done = this->ProcessXMLBuffer ( buffer, xmpSize, lastClientCall );
+		if ( ! done ) return;	// Wait for the next buffer.
 		
 		if ( lastClientCall ) {
-		
-			#if XMP_DebugBuild && DumpXMLParseTree
-				if ( parser.parseLog == 0 ) parser.parseLog = stdout;
-				DumpXMLTree ( parser.parseLog, parser.tree, 0 );
-			#endif
-
-			const XML_Node * xmlRoot = FindRootNode ( this, *this->xmlParser, options );
-
-			if ( xmlRoot != 0 ) {
-
-				ProcessRDF ( &this->tree, *xmlRoot, options );
-				NormalizeDCArrays ( &this->tree );
-				if ( this->tree.options & kXMP_PropHasAliases ) MoveExplicitAliases ( &this->tree, options );
-				TouchUpDataModel ( this );
-				
-				// Delete empty schema nodes. Do this last, other cleanup can make empty schema.
-				size_t schemaNum = 0;
-				while ( schemaNum < this->tree.children.size() ) {
-					XMP_Node * currSchema = this->tree.children[schemaNum];
-					if ( currSchema->children.size() > 0 ) {
-						++schemaNum;
-					} else {
-						delete this->tree.children[schemaNum];	// ! Delete the schema node itself.
-						this->tree.children.erase ( this->tree.children.begin() + schemaNum );
-					}
-				}
-				
-			}
-
+			this->ProcessXMLTree ( options );
 			delete this->xmlParser;
 			this->xmlParser = 0;
-
 		}
 		
 	} catch ( ... ) {
 
 		delete this->xmlParser;
 		this->xmlParser = 0;
-		prevTkVer = 0;
-		this->tree.ClearNode();
 		throw;
 
 	}

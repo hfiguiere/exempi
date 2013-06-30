@@ -51,12 +51,12 @@ class FileHandler
 public:
 	
 	FileHandler(std::string & uid, XMP_OptionBits handlerFlags, FileHandlerType type, ModuleSharedPtr module):
-	  mVersion(0), mUID(uid), mHandlerFlags(handlerFlags), mType(type), mModule(module), mOverwrite(false) {}
+	  mVersion(0), mUID(uid), mHandlerFlags(handlerFlags), mOverwrite(false), mType(type), mModule(module) {}
 
 	virtual ~FileHandler(){}
 
-	inline XMP_Int64 getVersion() const { return mVersion; }
-	inline void setVersion( XMP_Uns32 version ) { mVersion = version; }
+	inline double getVersion() const { return mVersion; }
+	inline void setVersion( double version ) { mVersion = version; }
 
 	inline const std::string& getUID() const { return mUID; }
 	inline XMP_OptionBits getHandlerFlags() const { return mHandlerFlags; }
@@ -88,7 +88,7 @@ private:
 	typedef std::vector<CheckFormat> CheckFormatVec;
 
 	CheckFormatVec				mCheckFormatVec;
-	XMP_Uns32					mVersion;
+	double						mVersion;
 	std::string					mUID;
 	XMP_OptionBits				mHandlerFlags;
 	XMP_OptionBits				mSerializeOption;

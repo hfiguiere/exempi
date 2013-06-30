@@ -53,7 +53,7 @@ bool SWF_CheckFormat ( XMP_FileFormat format,
 	
 	// Make sure the file is long enough for an empty SWF stream. Check the signature.
 
-	if ( fileRef->Length() < SWF_IO::HeaderPrefixSize ) return false;
+	if ( fileRef->Length() < (XMP_Int64)SWF_IO::HeaderPrefixSize ) return false;
 
 	fileRef->Rewind();
 	XMP_Uns8 buffer [4];
@@ -306,12 +306,19 @@ void SWF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 	this->hasMetadata = true;
 	
-	// Rewrite the file.
+	// Update the uncompressed file length and rewrite the file.
 	
+	PutUns32LE ( this->expandedSWF.size(), &this->expandedSWF[4] );
+
 	XMP_IO * fileRef = this->parent->ioRef;
 	fileRef->Rewind();
 	fileRef->Truncate ( 0 );
-	fileRef->Write ( &this->expandedSWF[0], this->expandedSWF.size() );
+	
+	if ( this->isCompressed ) {
+		SWF_IO::CompressMemoryToFile ( this->expandedSWF, fileRef );
+	} else {
+		fileRef->Write ( &this->expandedSWF[0], this->expandedSWF.size() );
+	}
 
 }	// SWF_MetaHandler::UpdateFile
 

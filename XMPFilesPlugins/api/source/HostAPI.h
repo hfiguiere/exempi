@@ -7,19 +7,16 @@
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
 
-/**************************************************************************
-* @file HostAPI.h
-* 
-*  Function prototypes for the functions that is provided by the host (the XMPFiles) 
-*  that can be used by a plugin implementaion.
-*
-* @author Praveen Kumar Goyal (pkgoyal)
-* @bug No known bugs.
-***************************************************************************/
 
 #ifndef __HOSTAPI_H__
 #define __HOSTAPI_H__	1
 #include "PluginHandler.h"
+
+#define XMP_HOST_API_VERSION_1	1	// CS6
+#define XMP_HOST_API_VERSION_4	4	// CS7 and beyond
+
+#define XMP_HOST_API_VERSION	XMP_HOST_API_VERSION_4
+
 
 namespace XMP_PLUGIN
 {
@@ -34,8 +31,26 @@ struct Abort_API;
 struct StandardHandler_API;
 typedef char* StringPtr;
 
+/** @brief Request additional API suite from the host.
+ *
+ *  RequestAPISuite should be called during plugin initialization time
+ *  to request additional versioned APIs from the plugin host. If the name or version
+ *  of the requested API suite is unknown to the host an error is returned.
+ *
+ *  @param apiName The name of the API suite.
+ *  @param apiVersion The version of the API suite.
+ *  @param apiSuite On successful exit points to the API suite.
+ *  @param wError WXMP_Error structure which will be filled by the API if any error occurs.
+ *  @return kXMPErr_NoError on success otherwise error id of the failure.
+ */	
+typedef XMPErrorID (*RequestAPISuiteFn)( const char* apiName, XMP_Uns32 apiVersion, void** apiSuite, WXMP_Error* wError );
+	
+
 /** @struct HostAPI
  *  @brief This is a Host API structure.
+ *
+ *  Please don't change this struct.
+ *  Additional host functionality should be added through RequestAPISuite().
  */
 struct HostAPI
 {
@@ -45,7 +60,7 @@ struct HostAPI
 	XMP_Uns32				mSize;
    
 	/** 
-	 *  Version number of the plugin.
+	 *  Version number of the API.
 	 */
 	XMP_Uns32				mVersion;
 	
@@ -68,6 +83,16 @@ struct HostAPI
 	 * Pointer to a structure which contains API for accessing the standard file handler
 	 */
 	StandardHandler_API*	mStandardHandlerAPI;
+	
+	//
+	// VERSION 4
+	//
+	
+	/**
+	 * Function to request additional APIs from the host
+	 */
+	RequestAPISuiteFn		mRequestAPISuite;
+	
 };
 
 
@@ -92,7 +117,7 @@ struct FileIO_API
 	 *  @param wError WXMP_Error structure which will be filled by the API if any error occurs.
 	 *  @return kXMPErr_NoError on success otherwise error id of the failure.
 	 */	
-	typedef XMPErrorID (*ReadProc)( XMP_IORef io, void* buffer, XMP_Uns32 count, bool readAll, XMP_Uns32& byteRead, WXMP_Error * wError );
+	typedef XMPErrorID (*ReadProc)( XMP_IORef io, void* buffer, XMP_Uns32 count, XMP_Bool readAll, XMP_Uns32& byteRead, WXMP_Error * wError );
 	ReadProc		mReadProc;
 
 	/** @brief Write from a buffer.
@@ -224,7 +249,7 @@ struct Abort_API
 	 *  @param wError WXMP_Error structure which will be filled by the API if any error occurs.
 	 *  @return kXMPErr_NoError on success otherwise error id of the failure.
 	 */
-	typedef XMPErrorID (*CheckAbort)( SessionRef session, bool* aborted, WXMP_Error* wError );
+	typedef XMPErrorID (*CheckAbort)( SessionRef session, XMP_Bool * aborted, WXMP_Error* wError );
 	CheckAbort	mCheckAbort;
 };
 
@@ -241,7 +266,7 @@ struct StandardHandler_API
 	 * @param wError		WXMP_Error structure which will be filled by the API if any error occurs.
 	 * @return				kXMPErr_NoError on success otherwise error id of the failure.
 	 */
-	typedef XMPErrorID (*CheckFormatStandardHandler)( SessionRef session, XMP_FileFormat format, StringPtr path, bool& checkOK, WXMP_Error* wError );
+	typedef XMPErrorID (*CheckFormatStandardHandler)( SessionRef session, XMP_FileFormat format, StringPtr path, XMP_Bool & checkOK, WXMP_Error* wError );
 	CheckFormatStandardHandler mCheckFormatStandardHandler;
 
 	/** @brief Get XMP from standard file handler
@@ -256,9 +281,42 @@ struct StandardHandler_API
 	 * @param wError		WXMP_Error structure which will be filled by the API if any error occurs.
 	 * @return				kXMPErr_NoError on success otherwise error id of the failure.
 	 */
-	typedef XMPErrorID (*GetXMPStandardHandler)( SessionRef session, XMP_FileFormat format, StringPtr path, XMPMetaRef meta, bool* containsXMP, WXMP_Error* wError );
+	typedef XMPErrorID (*GetXMPStandardHandler)( SessionRef session, XMP_FileFormat format, StringPtr path, XMPMetaRef meta, XMP_Bool * containsXMP, WXMP_Error* wError );
 	GetXMPStandardHandler	mGetXMPStandardHandler;
 };
+
+struct StandardHandler_API_V2
+{
+	/** @brief Check format with standard file handler
+	 *
+	 * Call the replaced file handler (if available) to check the format of the data source.
+	 *
+	 * @param session		File handler session (referring to replacement handler)
+	 * @param format		The file format identifier
+	 * @param path			Path to the file that needs to be checked
+	 * @param checkOK		On return true if the data can be handled by the file handler
+	 * @param wError		WXMP_Error structure which will be filled by the API if any error occurs.
+	 * @return				kXMPErr_NoError on success otherwise error id of the failure.
+	 */
+	typedef XMPErrorID (*CheckFormatStandardHandler)( SessionRef session, XMP_FileFormat format, StringPtr path, XMP_Bool & checkOK, WXMP_Error* wError );
+	CheckFormatStandardHandler mCheckFormatStandardHandler;
+
+	/** @brief Get XMP from standard file handler
+	 *
+	 * Call the standard file handler in order to retrieve XMP from it.
+	 *
+	 * @param session		File handler session (referring to replacement handler)
+	 * @param format		The file format identifier
+	 * @param path			Path to the file that should be proceeded
+	 * @param xmpStr		Will on success contain serialized XMP Packet from the standard Handler
+	 * @param containsXMP	Returns true if the standard handler detected XMP
+	 * @param wError		WXMP_Error structure which will be filled by the API if any error occurs.
+	 * @return				kXMPErr_NoError on success otherwise error id of the failure.
+	 */
+	typedef XMPErrorID (*GetXMPStandardHandler)( SessionRef session, XMP_FileFormat format, StringPtr path, XMP_StringPtr* xmpStr, XMP_Bool * containsXMP, WXMP_Error* wError );
+	GetXMPStandardHandler	mGetXMPStandardHandler;
+};
+
 
 #ifdef __cplusplus
 }

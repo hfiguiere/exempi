@@ -25,6 +25,17 @@
 	#error "This is the Windows implementation of Host_IO."
 #endif
 
+static bool IsLongPath ( const std::string& path );
+static bool IsNetworkPath ( const std::string& path );
+static bool IsRelativePath ( const std::string& path );
+static bool GetWidePath ( const char* path, std::string & widePath );
+static std::string & CorrectSlashes ( std::string & path );
+
+static bool Exists ( const std::string & widePath );
+static Host_IO::FileRef Open ( const std::string & widePath, bool readOnly );
+static Host_IO::FileMode GetFileMode ( const std::string & widePath );
+static bool HaveWriteAccess( const std::string & widePath );
+
 // =================================================================================================
 // File operations
 // =================================================================================================
@@ -36,17 +47,66 @@
 bool Host_IO::Exists ( const char* filePath )
 {
 	std::string wideName;
-	const size_t utf8Len = strlen(filePath);
-	const size_t maxLen = 2 * (utf8Len+1);
+	if ( GetWidePath(filePath, wideName) ) {
+		return ::Exists(wideName);
+	}
+	return false;
+}
 
-	wideName.reserve ( maxLen );
-	wideName.assign ( maxLen, ' ' );
-	int wideLen = MultiByteToWideChar ( CP_UTF8, 0, filePath, -1, (LPWSTR)wideName.data(), (int)maxLen );
-	if ( wideLen == 0 ) return false;
+// =================================================================================================
+// Host_IO::Writable
+// ===============
+bool Host_IO::Writable( const char * path, bool checkCreationPossible )
+{
+	std::string widePath;
+	if ( ! GetWidePath(path, widePath) || widePath.length() == 0)
+		XMP_Throw ( "Host_IO::Writable, cannot convert path", kXMPErr_ExternalFailure );
 
-	DWORD attrs = GetFileAttributes ( (LPCWSTR)wideName.data() );
-	return ( attrs != INVALID_FILE_ATTRIBUTES);
+	if ( ::Exists( widePath ) )
+	{
+		switch ( ::GetFileMode( widePath ) )
+		{
+		case kFMode_IsFile:
+			if ( HaveWriteAccess( widePath ) ) {
+				// check for readonly attributes
+				DWORD fileAttrs = GetFileAttributesW ( (LPCWSTR) widePath.data() );
+				if ( fileAttrs & FILE_ATTRIBUTE_READONLY )
+					return false;
+				return true;
+			}
+			return false;
+			break;
 
+		case kFMode_IsFolder:
+			return HaveWriteAccess( widePath );
+			break;
+
+		default:
+			return false;
+			break;
+		}
+	} 
+	else if ( checkCreationPossible )
+	{
+		// get the parent path
+		std::string utf8Path(path);
+		CorrectSlashes(utf8Path);
+		size_t pos = utf8Path.find_last_of('\\');
+		if (pos != std::string::npos)
+		{
+			if (pos == 0)
+				utf8Path = utf8Path.substr(0, 1);
+			else
+				utf8Path = utf8Path.substr(0, pos);
+		}
+		else
+		{
+			utf8Path = ".";
+		}
+		return Host_IO::Writable( utf8Path.c_str(), checkCreationPossible );
+	}
+	else
+		return true;
 }
 
 // =================================================================================================
@@ -55,19 +115,14 @@ bool Host_IO::Exists ( const char* filePath )
 
 bool Host_IO::Create ( const char* filePath )
 {
-	if ( Host_IO::Exists ( filePath ) ) {
-		if ( Host_IO::GetFileMode ( filePath ) == kFMode_IsFile ) return false;
+	std::string wideName;
+	if ( !GetWidePath ( filePath, wideName ) || wideName.length() == 0 )
+		 XMP_Throw ( "Host_IO::Create, cannot convert path", kXMPErr_ExternalFailure );
+
+	if ( ::Exists ( wideName ) ) {
+		if ( ::GetFileMode ( wideName ) == kFMode_IsFile ) return false;
 		XMP_Throw ( "Host_IO::Create, path exists but is not a file", kXMPErr_InternalFailure );
 	}
-
-	std::string wideName;
-	const size_t utf8Len = strlen(filePath);
-	const size_t maxLen = 2 * (utf8Len+1);
-
-	wideName.reserve ( maxLen );
-	wideName.assign ( maxLen, ' ' );
-	int wideLen = MultiByteToWideChar ( CP_UTF8, 0, filePath, -1, (LPWSTR)wideName.data(), (int)maxLen );
-	if ( wideLen == 0 ) XMP_Throw ( "Host_IO::Create, cannot convert path", kXMPErr_InternalFailure );;
 
 	Host_IO::FileRef fileHandle;
 	fileHandle = CreateFileW ( (LPCWSTR)wideName.data(), (GENERIC_READ | GENERIC_WRITE), 0, 0, CREATE_ALWAYS,
@@ -76,7 +131,6 @@ bool Host_IO::Create ( const char* filePath )
 
 	CloseHandle ( fileHandle );
 	return true;
-
 }	// Host_IO::Create
 
 // =================================================================================================
@@ -116,14 +170,14 @@ bool Host_IO::GetModifyDate ( const char* filePath, XMP_DateTime * modifyDate )
 {
 	BOOL ok;
 	Host_IO::FileRef fileHandle;
-	
+
 	try {	// Host_IO::Open should not throw - fix after CS6.
 		fileHandle = Host_IO::Open ( filePath, Host_IO::openReadOnly );
 		if ( fileHandle == Host_IO::noFileRef ) return false;
 	} catch ( ... ) {
 		return false;
 	}
-	
+
 	FILETIME binTime;
 	ok = GetFileTime ( fileHandle, 0, 0, &binTime );
 	Host_IO::Close ( fileHandle );
@@ -178,34 +232,16 @@ std::string Host_IO::CreateTemp ( const char* sourcePath )
 // =================================================================================================
 // Host_IO::Open
 // =============
+//
+// Returns Host_IO::noFileRef (0) if the file does not exist, throws for other errors.
 
 Host_IO::FileRef Host_IO::Open ( const char* filePath, bool readOnly )
 {
-	if ( ! Host_IO::Exists ( filePath ) ) return Host_IO::noFileRef;
-
-	DWORD access = GENERIC_READ;	// Assume read mode.
-	DWORD share  = FILE_SHARE_READ;
-
-	if ( ! readOnly ) {
-		access |= GENERIC_WRITE;
-		share = 0;
-	}
-
 	std::string wideName;
-	const size_t utf8Len = strlen(filePath);
-	const size_t maxLen = 2 * (utf8Len+1);
+	if ( !GetWidePath ( filePath, wideName ) || wideName.length() == 0 )
+		XMP_Throw ( "Host_IO::Open, GetWidePath failure", kXMPErr_ExternalFailure );
 
-	wideName.reserve ( maxLen );
-	wideName.assign ( maxLen, ' ' );
-	int wideLen = MultiByteToWideChar ( CP_UTF8, 0, filePath, -1, (LPWSTR)wideName.data(), (int)maxLen );
-	if ( wideLen == 0 ) XMP_Throw ( "Host_IO::Open, MultiByteToWideChar failure", kXMPErr_ExternalFailure );
-
-	Host_IO::FileRef fileHandle;
-	fileHandle = CreateFileW ( (LPCWSTR)wideName.data(), access, share, 0, OPEN_EXISTING,
-							   (FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS), 0 );
-	if ( fileHandle == INVALID_HANDLE_VALUE ) XMP_Throw ( "Host_IO::Open, CreateFileW failure", kXMPErr_ExternalFailure );
-
-	return fileHandle;
+	return ::Open( wideName, readOnly );
 
 }	// Host_IO::Open
 
@@ -260,23 +296,16 @@ void Host_IO::SwapData ( const char* sourcePath, const char* destPath )
 
 void Host_IO::Rename ( const char* oldPath, const char* newPath )
 {
-	if ( Host_IO::Exists ( newPath ) ) XMP_Throw ( "Host_IO::Rename, new path exists", kXMPErr_InternalFailure );
-
 	std::string wideOldPath, wideNewPath;
-	size_t utf8Len = strlen(oldPath);
-	if ( utf8Len < strlen(newPath) ) utf8Len = strlen(newPath);
-	const size_t maxLen = 2 * (utf8Len+1);
-	int wideLen;
+	if ( !GetWidePath ( oldPath, wideOldPath ) || wideOldPath.length() == 0 )
+		XMP_Throw ( "Host_IO::Rename, GetWidePath failure", kXMPErr_ExternalFailure );
 
-	wideOldPath.reserve ( maxLen );
-	wideOldPath.assign ( maxLen, ' ' );
-	wideLen = MultiByteToWideChar ( CP_UTF8, 0, oldPath, -1, (LPWSTR)wideOldPath.data(), (int)maxLen );
-	if ( wideLen == 0 ) XMP_Throw ( "Host_IO::Rename, MultiByteToWideChar failure", kXMPErr_ExternalFailure );
+	if ( !GetWidePath ( newPath, wideNewPath ) || wideNewPath.length() == 0 )
+		XMP_Throw ( "Host_IO::Rename, GetWidePath failure", kXMPErr_ExternalFailure );
 
-	wideNewPath.reserve ( maxLen );
-	wideNewPath.assign ( maxLen, ' ' );
-	wideLen = MultiByteToWideChar ( CP_UTF8, 0, newPath, -1, (LPWSTR)wideNewPath.data(), (int)maxLen );
-	if ( wideLen == 0 ) XMP_Throw ( "Host_IO::Rename, MultiByteToWideChar failure", kXMPErr_ExternalFailure );
+	if ( ::Exists ( wideNewPath ) ) XMP_Throw ( "Host_IO::Rename, new path exists", kXMPErr_InternalFailure );
+
+	
 
 	BOOL ok = MoveFileW ( (LPCWSTR)wideOldPath.data(), (LPCWSTR)wideNewPath.data() );
 	if ( ! ok ) XMP_Throw ( "Host_IO::Rename, MoveFileW failure", kXMPErr_ExternalFailure );
@@ -289,16 +318,13 @@ void Host_IO::Rename ( const char* oldPath, const char* newPath )
 
 void Host_IO::Delete ( const char* filePath )
 {
-	if ( ! Host_IO::Exists ( filePath ) ) return;
-
 	std::string wideName;
-	const size_t utf8Len = strlen(filePath);
-	const size_t maxLen = 2 * (utf8Len+1);
+	if ( !GetWidePath ( filePath, wideName ) || wideName.length() == 0 )
+		XMP_Throw ( "Host_IO::Delete, GetWidePath failure", kXMPErr_ExternalFailure );
+	
+	if ( !::Exists ( wideName ) ) return;
 
-	wideName.reserve ( maxLen );
-	wideName.assign ( maxLen, ' ' );
-	int wideLen = MultiByteToWideChar ( CP_UTF8, 0, filePath, -1, (LPWSTR)wideName.data(), (int)maxLen );
-	if ( wideLen == 0 ) XMP_Throw ( "Host_IO::Delete, MultiByteToWideChar failure", kXMPErr_ExternalFailure );
+	
 
 	BOOL ok = DeleteFileW ( (LPCWSTR)wideName.data() );
 	if ( ! ok ) {
@@ -354,7 +380,7 @@ XMP_Uns32 Host_IO::Read ( Host_IO::FileRef fileHandle, void * buffer, XMP_Uns32 
 
 	DWORD bytesRead;
 	BOOL ok = ReadFile ( fileHandle, buffer, count, &bytesRead, 0 );
-	if ( ! ok ) XMP_Throw ( "Host_IO::Read, ReadFile failure", kXMPErr_ExternalFailure );
+	if ( ! ok ) XMP_Throw ( "Host_IO::Read, ReadFile failure", kXMPErr_ReadError );
 
 	return bytesRead;
 
@@ -370,7 +396,14 @@ void Host_IO::Write ( Host_IO::FileRef fileHandle, const void * buffer, XMP_Uns3
 
 	DWORD bytesWritten;
 	BOOL ok = WriteFile ( fileHandle, buffer, count, &bytesWritten, 0 );
-	if ( (! ok) || (bytesWritten != count) ) XMP_Throw ( "Host_IO::Write, WriteFile failure", kXMPErr_ExternalFailure );
+	if ( (! ok) || (bytesWritten != count) ) {
+		DWORD osCode = GetLastError();
+		if ( osCode == ERROR_DISK_FULL ) {
+			XMP_Throw ( "Host_IO::Write, disk full", kXMPErr_DiskSpace );
+		} else {
+			XMP_Throw ( "Host_IO::Write, WriteFile failure", kXMPErr_WriteError );
+		}
+	}
 
 }	// Host_IO::Write
 
@@ -412,23 +445,13 @@ void Host_IO::SetEOF ( Host_IO::FileRef fileHandle, XMP_Int64 length )
 // Host_IO::GetFileMode
 // ====================
 
-static DWORD kOtherAttrs = (FILE_ATTRIBUTE_DEVICE | FILE_ATTRIBUTE_OFFLINE);
+static DWORD kOtherAttrs = (FILE_ATTRIBUTE_DEVICE);
 
 Host_IO::FileMode Host_IO::GetFileMode ( const char * path )
 {
 	std::string utf16;	// GetFileAttributes wants native UTF-16.
-	ToUTF16Native ( (UTF8Unit*)path, strlen(path), &utf16 );
-	utf16.append ( 2, '\0' );	// Make sure there are at least 2 final zero bytes.
-
-	// ! A shortcut is seen as a file, we would need extra code to recognize it and find the target.
-
-	DWORD fileAttrs = GetFileAttributesW ( (LPCWSTR) utf16.c_str() );
-	if ( fileAttrs == INVALID_FILE_ATTRIBUTES ) return kFMode_DoesNotExist;	// ! Any failure turns into does-not-exist.
-
-	if ( fileAttrs & FILE_ATTRIBUTE_DIRECTORY ) return kFMode_IsFolder;
-	if ( fileAttrs & kOtherAttrs ) return kFMode_IsOther;
-	return kFMode_IsFile;
-
+	GetWidePath ( path, utf16 );
+	return ::GetFileMode( utf16 );
 }	// Host_IO::GetFileMode
 
 // =================================================================================================
@@ -438,7 +461,9 @@ Host_IO::FileMode Host_IO::GetFileMode ( const char * path )
 Host_IO::FileMode Host_IO::GetChildMode ( const char * parentPath, const char * childName )
 {
 	std::string fullPath = parentPath;
-	fullPath += '\\';
+	char lastChar = fullPath[fullPath.length() - 1];
+	if ( lastChar != '\\' && lastChar != '/' )
+		fullPath += '\\';
 	fullPath += childName;
 
 	return GetFileMode ( fullPath.c_str() );
@@ -462,8 +487,7 @@ Host_IO::FolderRef Host_IO::OpenFolder ( const char* folderPath )
 			findPath += findPath[findPath.length() - 1] == '\\' ? "*" : "\\*";
 
 			std::string utf16;	// FindFirstFile wants native UTF-16.
-			ToUTF16Native ( (UTF8Unit*)findPath.c_str(), findPath.size(), &utf16 );
-			utf16.append ( 2, '\0' );	// Make sure there are at least 2 final zero bytes.
+			GetWidePath ( findPath.c_str(), utf16 );
 
 			Host_IO::FolderRef folder = FindFirstFileW ( (LPCWSTR) utf16.c_str(), &childInfo );
 			if ( folder == noFolderRef ) XMP_Throw ( "Host_IO::OpenFolder - FindFirstFileW failed", kXMPErr_ExternalFailure );
@@ -525,3 +549,181 @@ bool Host_IO::GetNextChild ( Host_IO::FolderRef folder, std::string* childName )
 }	// Host_IO::GetNextChild
 
 // =================================================================================================
+// IsLongPath
+// =====================
+
+bool IsLongPath ( const std::string& path ) {
+	if ( path.find ( "\\\\?\\" ) == 0 ) return true;
+	return false;
+}
+
+// =================================================================================================
+// IsNetworkPath
+// =====================
+
+bool IsNetworkPath ( const std::string& path ) {
+	if ( path.find ( "\\\\" ) == 0 ) return true;
+	return false;
+}
+
+// =================================================================================================
+// IsRelativePath
+// =====================
+
+bool IsRelativePath ( const std::string& path ) {
+	if ( path.length() > 2) {
+		char driveLetter = path[0];
+		if ( ( driveLetter >= 'a' && driveLetter <= 'z' ) || ( driveLetter >= 'A' && driveLetter <= 'Z' ) ) {
+			if (path[1] == ':' && path[2] == '\\' ) {
+				if ( path.find(".\\") == std::string::npos )
+					return false;
+			}
+		}
+	}
+	return true;
+}
+
+// =================================================================================================
+// GetWidePath
+// =====================
+
+bool GetWidePath( const char* path, std::string & widePath ) {
+	std::string utfPath ( path );
+	CorrectSlashes ( utfPath);
+
+	if ( !IsLongPath ( utfPath ) ) {
+		if ( IsNetworkPath ( utfPath ) ) {
+			utfPath = "\\\\?\\UNC\\" + utfPath.substr ( 2 );
+		} else if ( IsRelativePath ( utfPath ) ) {
+			//don't do anything
+		} else { // absolute path
+			utfPath = "\\\\?\\" + utfPath;
+		}
+	}
+
+	widePath.clear();
+	const size_t utf8Len = utfPath.size();
+	const size_t maxLen = 2 * (utf8Len + 1);
+
+	widePath.reserve ( maxLen );
+	widePath.assign ( maxLen, ' ' );
+	int wideLen = MultiByteToWideChar ( CP_UTF8, 0, utfPath.c_str(), -1, (LPWSTR)widePath.data(), (int)maxLen );
+	if ( wideLen == 0 ) return false;
+	widePath.append ( 2, '\0' );	// Make sure there are at least 2 final zero bytes.
+	return true;
+}
+
+// =================================================================================================
+// CorrectSlashes
+// =====================
+
+std::string & CorrectSlashes ( std::string & path ) {
+	size_t idx = 0;
+
+	while( (idx = path.find_first_of('/',idx)) != std::string::npos )
+		path.replace( idx, 1, "\\" );
+	return path;
+}
+
+bool Exists ( const std::string & widePath )
+{
+	DWORD attrs = GetFileAttributesW ( (LPCWSTR)widePath.data() );
+	return ( attrs != INVALID_FILE_ATTRIBUTES);
+}
+
+
+Host_IO::FileMode GetFileMode ( const std::string & widePath )
+{
+	// ! A shortcut is seen as a file, we would need extra code to recognize it and find the target.
+	DWORD fileAttrs = GetFileAttributesW ( (LPCWSTR) widePath.c_str() );
+	if ( fileAttrs == INVALID_FILE_ATTRIBUTES ) return Host_IO::kFMode_DoesNotExist;	// ! Any failure turns into does-not-exist.
+
+	if ( fileAttrs & FILE_ATTRIBUTE_DIRECTORY ) return Host_IO::kFMode_IsFolder;
+	if ( fileAttrs & kOtherAttrs ) return Host_IO::kFMode_IsOther;
+	return Host_IO::kFMode_IsFile;
+
+}
+
+Host_IO::FileRef Open ( const std::string & widePath, bool readOnly )
+{
+	DWORD access = GENERIC_READ;	// Assume read mode.
+	DWORD share  = FILE_SHARE_READ;
+
+	if ( ! readOnly ) {
+		access |= GENERIC_WRITE;
+		share = 0;
+	}
+
+	Host_IO::FileRef fileHandle;
+	fileHandle = CreateFileW ( (LPCWSTR)widePath.data(), access, share, 0, OPEN_EXISTING,
+		(FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS), 0 );
+	if ( fileHandle == INVALID_HANDLE_VALUE ) {
+		DWORD osCode = GetLastError();
+		if ( (osCode == ERROR_FILE_NOT_FOUND) || (osCode == ERROR_PATH_NOT_FOUND) || (osCode == ERROR_FILE_OFFLINE) ) {
+			return Host_IO::noFileRef;
+		} else if ( osCode == ERROR_ACCESS_DENIED ) {
+			XMP_Throw ( "Open, file permission error", kXMPErr_FilePermission );
+		} else {
+			XMP_Throw ( "Open, other failure", kXMPErr_ExternalFailure );
+		}
+	}
+
+	return fileHandle;
+
+
+}
+
+bool HaveWriteAccess ( const std::string & widePath )
+{
+	bool writable = false;
+
+	DWORD length = 0;
+	LPCWSTR pathLPtr = (LPCWSTR)widePath.data();
+	const static SECURITY_INFORMATION requestedFileInfomration =  OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
+
+	if (!::GetFileSecurityW( pathLPtr, requestedFileInfomration, NULL, NULL, &length ) && ERROR_INSUFFICIENT_BUFFER == ::GetLastError())
+	{
+		std::string tempBuffer;
+		tempBuffer.reserve(length);
+		PSECURITY_DESCRIPTOR security = (PSECURITY_DESCRIPTOR)tempBuffer.data();
+		if ( security && ::GetFileSecurity( pathLPtr, requestedFileInfomration, security, length, &length ) )
+		{
+			HANDLE hToken = NULL;
+			const static DWORD tokenDesiredAccess = TOKEN_IMPERSONATE | TOKEN_QUERY | TOKEN_DUPLICATE | STANDARD_RIGHTS_READ;
+			if ( !::OpenThreadToken( ::GetCurrentThread(), tokenDesiredAccess, TRUE, &hToken) )
+			{
+				if ( !::OpenProcessToken( GetCurrentProcess(), tokenDesiredAccess, &hToken ) )
+				{
+					XMP_Throw ( "Unable to get any thread or process token", kXMPErr_InternalFailure );
+				}
+			}
+
+			HANDLE hImpersonatedToken = NULL;
+			if ( ::DuplicateToken( hToken, SecurityImpersonation, &hImpersonatedToken ) )
+			{
+				GENERIC_MAPPING mapping = { 0xFFFFFFFF };
+				PRIVILEGE_SET privileges = { 0 };
+				DWORD grantedAccess = 0, privilegesLength = sizeof( privileges );
+				BOOL result = FALSE;
+
+				mapping.GenericRead = FILE_GENERIC_READ;
+				mapping.GenericWrite = FILE_GENERIC_WRITE;
+				mapping.GenericExecute = FILE_GENERIC_EXECUTE;
+				mapping.GenericAll = FILE_ALL_ACCESS;
+				
+				DWORD genericAccessRights = FILE_GENERIC_WRITE;
+				::MapGenericMask( &genericAccessRights, &mapping );
+				
+				if ( ::AccessCheck( security, hImpersonatedToken, genericAccessRights, &mapping, &privileges, &privilegesLength, &grantedAccess, &result ) )
+				{
+					writable = (result == TRUE);
+				}
+				::CloseHandle( hImpersonatedToken );
+			}
+			
+			::CloseHandle( hToken );
+		}
+	}
+	return writable;
+}
+

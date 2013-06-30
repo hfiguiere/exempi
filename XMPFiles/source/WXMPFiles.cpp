@@ -12,6 +12,8 @@
 
 #include "public/include/client-glue/WXMPFiles.hpp"
 
+#include "source/XMP_ProgressTracker.hpp"
+
 #include "XMPFiles/source/XMPFiles_Impl.hpp"
 #include "XMPFiles/source/XMPFiles.hpp"
 
@@ -125,7 +127,7 @@ void WXMPFiles_DecrementRefCount_1 ( XMPFilesRef xmpObjRef )
 	XMP_EXIT_NoThrow
 }
 
-// =================================================================================================
+// -------------------------------------------------------------------------------------------------
 
 void WXMPFiles_GetFormatInfo_1 ( XMP_FileFormat   format,
                                  XMP_OptionBits * flags,
@@ -138,7 +140,7 @@ void WXMPFiles_GetFormatInfo_1 ( XMP_FileFormat   format,
 	XMP_EXIT
 }
 
-// =================================================================================================
+// -------------------------------------------------------------------------------------------------
 
 void WXMPFiles_CheckFileFormat_1 ( XMP_StringPtr filePath,
 								   WXMP_Result * wResult )
@@ -150,7 +152,7 @@ void WXMPFiles_CheckFileFormat_1 ( XMP_StringPtr filePath,
 	XMP_EXIT
 }
 
-// =================================================================================================
+// -------------------------------------------------------------------------------------------------
 
 void WXMPFiles_CheckPackageFormat_1 ( XMP_StringPtr folderPath,
                        				  WXMP_Result * wResult )
@@ -162,7 +164,7 @@ void WXMPFiles_CheckPackageFormat_1 ( XMP_StringPtr folderPath,
 	XMP_EXIT
 }
 
-// =================================================================================================
+// -------------------------------------------------------------------------------------------------
 
 void WXMPFiles_GetFileModDate_1 ( XMP_StringPtr    filePath,
 								  XMP_DateTime *   modDate,
@@ -176,6 +178,47 @@ void WXMPFiles_GetFileModDate_1 ( XMP_StringPtr    filePath,
 
 	XMP_EXIT
 }
+
+// -------------------------------------------------------------------------------------------------
+
+void WXMPFiles_GetAssociatedResources_1 ( XMP_StringPtr             filePath,
+										  void *                    resourceList,
+										  XMP_FileFormat            format, 
+										  XMP_OptionBits            options, 
+					                      SetClientStringVectorProc SetClientStringVector,
+										  WXMP_Result *             wResult )
+{
+	XMP_ENTER_Static ( "WXMPFiles_GetAssociatedResources_1" )
+
+		if ( resourceList == 0 ) XMP_Throw ( "An result resource list vector must be provided", kXMPErr_BadParam );
+
+		std::vector<std::string> resList;	// Pass a local vector, not the client's.
+		(*SetClientStringVector) ( resourceList, 0, 0 );	// Clear the client's result vector.
+		wResult->int32Result = XMPFiles::GetAssociatedResources ( filePath, &resList, format, options );
+
+		if ( wResult->int32Result && (! resList.empty()) ) {
+			const size_t fileCount = resList.size();
+			std::vector<XMP_StringPtr> ptrArray;
+			ptrArray.reserve ( fileCount );
+			for ( size_t i = 0; i < fileCount; ++i ) ptrArray.push_back ( resList[i].c_str() );
+			(*SetClientStringVector) ( resourceList, ptrArray.data(), fileCount );
+		}
+	XMP_EXIT
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void WXMPFiles_IsMetadataWritable_1 ( XMP_StringPtr    filePath,
+							          XMP_Bool *       writable, 
+							          XMP_FileFormat   format,
+							          XMP_OptionBits   options, 
+							          WXMP_Result *    wResult )
+{
+	XMP_ENTER_Static ( "WXMPFiles_IsMetadataWritable_1" )
+		wResult->int32Result = XMPFiles::IsMetadataWritable ( filePath, writable, format, options );
+	XMP_EXIT
+}
+
 
 // =================================================================================================
 
@@ -335,6 +378,85 @@ void WXMPFiles_CanPutXMP_1 ( XMPFilesRef   xmpObjRef,
 		}
 
 		EndPerfCheck ( kAPIPerf_CanPutXMP );
+	XMP_EXIT
+}
+
+// =================================================================================================
+
+void WXMPFiles_SetDefaultProgressCallback_1 ( XMP_ProgressReportWrapper wrapperProc,
+											  XMP_ProgressReportProc    clientProc,
+											  void *        context,
+											  float         interval,
+											  XMP_Bool      sendStartStop,
+											  WXMP_Result * wResult )
+{
+	XMP_ENTER_Static ( "WXMPFiles_SetDefaultProgressCallback_1" )
+	
+		XMP_ProgressTracker::CallbackInfo cbInfo ( wrapperProc, clientProc, context, interval, ConvertXMP_BoolToBool( sendStartStop ) );
+		XMPFiles::SetDefaultProgressCallback ( cbInfo );
+	
+	XMP_EXIT
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void WXMPFiles_SetProgressCallback_1 ( XMPFilesRef   xmpObjRef,
+									   XMP_ProgressReportWrapper wrapperProc,
+									   XMP_ProgressReportProc    clientProc,
+									   void *        context,
+									   float         interval,
+									   XMP_Bool      sendStartStop,
+									   WXMP_Result * wResult )
+{
+	XMP_ENTER_ObjWrite ( XMPFiles, "WXMPFiles_SetProgressCallback_1" )
+	
+		XMP_ProgressTracker::CallbackInfo cbInfo ( wrapperProc, clientProc, context, interval, ConvertXMP_BoolToBool( sendStartStop) );
+		thiz->SetProgressCallback ( cbInfo );
+	
+	XMP_EXIT
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void WXMPFiles_SetDefaultErrorCallback_1 ( XMPFiles_ErrorCallbackWrapper	wrapperProc,
+										   XMPFiles_ErrorCallbackProc		clientProc,
+										   void *							context,
+										   XMP_Uns32						limit,
+										   WXMP_Result *					wResult )
+{
+	XMP_ENTER_Static ( "WXMPFiles_SetDefaultErrorCallback_1" )
+
+		XMPFiles::SetDefaultErrorCallback ( wrapperProc, clientProc, context, limit );
+
+	XMP_EXIT
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void WXMPFiles_SetErrorCallback_1 ( XMPFilesRef						xmpObjRef,
+									XMPFiles_ErrorCallbackWrapper	wrapperProc,
+									XMPFiles_ErrorCallbackProc		clientProc,
+									void *							context,
+									XMP_Uns32						limit,
+									WXMP_Result *					wResult )
+{
+	XMP_ENTER_ObjWrite ( XMPFiles, "WXMPFiles_SetErrorCallback_1" )
+
+		thiz->SetErrorCallback ( wrapperProc, clientProc, context, limit );
+
+	XMP_EXIT
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void WXMPFiles_ResetErrorCallbackLimit_1 ( XMPFilesRef		xmpObjRef,
+										   XMP_Uns32		limit,
+										   WXMP_Result *	wResult )
+{
+	XMP_ENTER_ObjWrite ( XMPFiles, "WXMPFiles_ResetErrorCallbackLimit_1" )
+
+		thiz->ResetErrorCallbackLimit ( limit );
+
 	XMP_EXIT
 }
 

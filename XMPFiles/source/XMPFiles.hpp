@@ -18,6 +18,8 @@
 
 #include "public/include/XMP_IO.hpp"
 
+#include "source/XMP_ProgressTracker.hpp"
+
 class XMPFileHandler;
 namespace Common{ struct XMPFileHandlerInfo; }
 
@@ -57,10 +59,7 @@ namespace Common{ struct XMPFileHandlerInfo; }
 //	Destructor:
 //		- Decrement the ref count, return if greater than zero.
 //		- Call LFA_Close if necessary.
-//
-//	UnlockLib & UnlockObj:
-//		- Release the thread lock. Same for now, no per-object lock.
-//
+////
 //	GetFormatInfo:
 //		- Return the flags for the registered handler.
 //
@@ -137,7 +136,7 @@ namespace Common{ struct XMPFileHandlerInfo; }
 // file needs to be updated. The handler's destructor must only close the file, not update it.
 // The handler can optionally have a WriteFile method, if it can rewrite the entire file.
 //
-// The handler is free to use its best judgement about caching parts of the file in memory. Overall
+// The handler is free to use its best judgment about caching parts of the file in memory. Overall
 // speed of a single open/get/put/close cycle is probably the best goal, assuming a modern processor
 // with a reasonable (significant but not enormous) amount of RAM.
 //
@@ -161,92 +160,133 @@ namespace Common{ struct XMPFileHandlerInfo; }
 
 class XMPFiles {
 public:
+	static bool Initialize(XMP_OptionBits options, const char* pluginFolder, const char* plugins = NULL);
+	static void Terminate();
 
-	static void GetVersionInfo ( XMP_VersionInfo * info );
+	static void GetVersionInfo(XMP_VersionInfo * info);
 
-    static bool Initialize ( XMP_OptionBits options, const char* pluginFolder, const char* plugins = NULL );
-    static void Terminate();
-	
+	static bool GetFormatInfo(XMP_FileFormat format, XMP_OptionBits * flags = 0);
+
+	static bool GetFileModDate(
+		XMP_StringPtr filePath,
+		XMP_DateTime * modDate,
+		XMP_FileFormat * format = 0,
+		XMP_OptionBits options = 0);
+
+	static XMP_FileFormat CheckFileFormat(XMP_StringPtr filePath);
+	static XMP_FileFormat CheckPackageFormat(XMP_StringPtr folderPath);
+
+	static bool GetAssociatedResources ( 
+		XMP_StringPtr              filePath,
+        std::vector<std::string> * resourceList,
+        XMP_FileFormat             format  = kXMP_UnknownFile , 
+        XMP_OptionBits             options  = 0 );
+
+	static bool IsMetadataWritable ( 
+		XMP_StringPtr  filePath,
+        XMP_Bool *     writable,    
+        XMP_FileFormat format  = kXMP_UnknownFile ,
+        XMP_OptionBits options  = 0 );
+
+	static void SetDefaultProgressCallback(const XMP_ProgressTracker::CallbackInfo & cbInfo);
+	static void SetDefaultErrorCallback(XMPFiles_ErrorCallbackWrapper wrapperProc,
+		XMPFiles_ErrorCallbackProc clientProc,
+		void * context,
+		XMP_Uns32 limit);
+
 	XMPFiles();
 	virtual ~XMPFiles();
 
-	static bool GetFormatInfo ( XMP_FileFormat   format,
-                                XMP_OptionBits * flags = 0 );
-
-	static XMP_FileFormat CheckFileFormat    ( XMP_StringPtr filePath );
-	static XMP_FileFormat CheckPackageFormat ( XMP_StringPtr folderPath );
-	
-	static bool GetFileModDate ( XMP_StringPtr    filePath,
-								 XMP_DateTime *   modDate,
-								 XMP_FileFormat * format = 0,	// ! Can be null.
-								 XMP_OptionBits   options = 0 );
-
-	bool OpenFile ( XMP_StringPtr  filePath,
-			        XMP_FileFormat format = kXMP_UnknownFile,
-			        XMP_OptionBits openFlags = 0 );
-
-	#if XMP_StaticBuild	// ! Client XMP_IO objects can only be used in static builds.
-	bool OpenFile ( XMP_IO *       clientIO,
-			        XMP_FileFormat format = kXMP_UnknownFile,
-			        XMP_OptionBits openFlags = 0 );
-	#endif
-
-	bool OpenFile( const Common::XMPFileHandlerInfo&	hdlInfo,
-				   XMP_StringPtr						filePath,
-				   XMP_OptionBits						openFlags = 0 );
+	bool OpenFile(XMP_StringPtr filePath, XMP_FileFormat format = kXMP_UnknownFile, XMP_OptionBits openFlags = 0);
+	bool OpenFile(const Common::XMPFileHandlerInfo & hdlInfo, XMP_StringPtr filePath, XMP_OptionBits openFlags = 0);
 
 #if XMP_StaticBuild	// ! Client XMP_IO objects can only be used in static builds.
-	bool OpenFile( const Common::XMPFileHandlerInfo&	hdlInfo,
-				   XMP_IO*								clientIO,
-				   XMP_OptionBits						openFlags = 0 );
+	bool OpenFile(XMP_IO * clientIO, XMP_FileFormat format = kXMP_UnknownFile, XMP_OptionBits openFlags = 0);
+	bool OpenFile(const Common::XMPFileHandlerInfo & hdlInfo, XMP_IO * clientIO, XMP_OptionBits openFlags = 0);
 #endif
 
-	void CloseFile ( XMP_OptionBits closeFlags = 0 );
+	void CloseFile(XMP_OptionBits closeFlags = 0);
 
-	bool GetFileInfo ( XMP_StringPtr *  filePath = 0,
-                       XMP_StringLen *  filePathLen = 0,
-			           XMP_OptionBits * openFlags = 0,
-			           XMP_FileFormat * format = 0,
-			           XMP_OptionBits * handlerFlags = 0 ) const;
+	bool GetFileInfo(
+		XMP_StringPtr * filePath = 0,
+		XMP_StringLen * filePathLen = 0,
+		XMP_OptionBits * openFlags = 0,
+		XMP_FileFormat * format = 0,
+		XMP_OptionBits * handlerFlags = 0 ) const;
 
-	void SetAbortProc ( XMP_AbortProc abortProc,
-						void *        abortArg );
+	bool GetXMP(
+		SXMPMeta * xmpObj = 0,
+		XMP_StringPtr * xmpPacket = 0,
+		XMP_StringLen * xmpPacketLen = 0,
+		XMP_PacketInfo * packetInfo = 0);
 
-	bool GetXMP ( SXMPMeta *       xmpObj = 0,
-		          XMP_StringPtr *  xmpPacket = 0,
-		          XMP_StringLen *  xmpPacketLen = 0,
-                  XMP_PacketInfo * packetInfo = 0 );
+	void PutXMP(const SXMPMeta & xmpObj);
+	void PutXMP(XMP_StringPtr xmpPacket, XMP_StringLen xmpPacketLen = kXMP_UseNullTermination);
 
-	void PutXMP ( const SXMPMeta & xmpObj );
+	bool CanPutXMP(const SXMPMeta & xmpObj);
+	bool CanPutXMP(XMP_StringPtr xmpPacket, XMP_StringLen xmpPacketLen = kXMP_UseNullTermination);
 
-	void PutXMP ( XMP_StringPtr xmpPacket,
-                  XMP_StringLen xmpPacketLen = kXMP_UseNullTermination );
+	void SetAbortProc(XMP_AbortProc abortProc, void * abortArg);
 
-	bool CanPutXMP ( const SXMPMeta & xmpObj );
+	void SetProgressCallback(const XMP_ProgressTracker::CallbackInfo & cbInfo);
 
-	bool CanPutXMP ( XMP_StringPtr xmpPacket,
-                     XMP_StringLen xmpPacketLen = kXMP_UseNullTermination );
+	void SetErrorCallback(
+		XMPFiles_ErrorCallbackWrapper wrapperProc,
+		XMPFiles_ErrorCallbackProc clientProc,
+		void * context,
+		XMP_Uns32 limit);
+	void ResetErrorCallbackLimit(XMP_Uns32 limit);
+
+	class ErrorCallbackInfo : public GenericErrorCallback {
+	public:
+		XMPFiles_ErrorCallbackWrapper	wrapperProc;
+		XMPFiles_ErrorCallbackProc		clientProc;
+		void *							context;
+		std::string						filePath;
+
+		ErrorCallbackInfo()
+			: wrapperProc(0)
+			, clientProc(0)
+			, context(0) {};
+
+		void Clear() {
+			this->wrapperProc = 0; this->clientProc = 0; this->context = 0;
+			GenericErrorCallback::Clear(); 
+		};
+
+		bool CanNotify() const;
+
+		bool ClientCallbackWrapper(
+			XMP_StringPtr filePath,
+			XMP_ErrorSeverity severity,
+			XMP_Int32 cause,
+			XMP_StringPtr messsage) const;
+	};
 
 	inline bool UsesClientIO() { return this->filePath.empty(); };
 	inline bool UsesLocalIO() { return ( ! this->UsesClientIO() ); };
+	inline void SetFilePath(XMP_StringPtr _filePath) { filePath = _filePath; errorCallback.filePath = _filePath; }
+	inline void ClearFilePath() { filePath.clear(); errorCallback.filePath.clear(); }
+	inline const std::string& GetFilePath() { return filePath; }
 
 	// Leave this data public so file handlers can see it.
+	XMP_Int32				clientRefs;	// ! Must be signed to allow decrement from zero.
+	XMP_ReadWriteLock		lock;
+	XMP_FileFormat			format;
+	XMP_IO *				ioRef;		// Non-zero if a file is open.
+	XMP_OptionBits			openFlags;
+	XMPFileHandler *		handler;	// Non-null if a file is open.
+	void *					tempPtr;	// For use between the CheckProc and handler creation.
+	XMP_Uns32				tempUI32;
+	XMP_AbortProc			abortProc;
+	void *					abortArg;
+	XMP_ProgressTracker *	progressTracker;
+	ErrorCallbackInfo		errorCallback;
 
-	XMP_Int32 clientRefs;	// ! Must be signed to allow decrement from zero.
-	XMP_ReadWriteLock lock;
+private:
+	std::string				filePath;	// Empty for client-managed I/O.
+};
 
-	XMP_FileFormat   format;
-	XMP_IO *         ioRef;			// Non-zero if a file is open.
-	std::string      filePath;		// Empty for client-managed I/O.
-	XMP_OptionBits   openFlags;
-	XMPFileHandler * handler;		// Non-null if a file is open.
-
-	void *           tempPtr;		// For use between the CheckProc and handler creation.
-	XMP_Uns32        tempUI32;
-
-	XMP_AbortProc    abortProc;
-	void *           abortArg;
-
-};	// XMPFiles
+bool ErrorCallbackForXMPMeta(void * context, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr message);
 
 #endif /* __XMPFiles_hpp__ */

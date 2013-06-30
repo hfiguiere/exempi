@@ -10,8 +10,13 @@
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
 #include "public/include/XMP_Const.h"
 
+#include "source/XIO.hpp"
+
 #include "XMPFiles/source/HandlerRegistry.h"
-#include "XMPFiles/source/PluginHandler/XMPAtoms.h"
+
+#if EnablePluginManager
+	#include "XMPFiles/source/PluginHandler/XMPAtoms.h"
+#endif
 
 #if EnablePhotoHandlers
 	#include "XMPFiles/source/FileHandlers/JPEG_Handler.hpp"
@@ -47,7 +52,10 @@
 //#endif
 
 using namespace Common;
-using namespace XMP_PLUGIN;
+
+#if EnablePluginManager
+	using namespace XMP_PLUGIN;
+#endif
 
 // =================================================================================================
 
@@ -374,7 +382,11 @@ XMP_FileFormat HandlerRegistry::getFileFormat( const std::string & fileExt, bool
 		}
 	}
 
-	return ResourceParser::getPluginFileFormat ( fileExt, addIfNotFound );
+	#if EnablePluginManager
+		return ResourceParser::getPluginFileFormat ( fileExt, addIfNotFound );
+	#else
+		return kXMP_UnknownFile;
+	#endif
 }
 
 // =================================================================================================
@@ -602,8 +614,7 @@ XMPFileHandlerInfo* HandlerRegistry::selectSmartHandler( XMPFiles* session, XMP_
 		{
 			if( ( session->ioRef == 0 ) && (! ( handlerInfo->flags & kXMPFiles_HandlerOwnsFile ) ) ) 
 			{
-				session->ioRef = XMPFiles_IO::New_XMPFiles_IO( clientPath, readOnly );
-				
+				session->ioRef = XMPFiles_IO::New_XMPFiles_IO( clientPath, readOnly, &session->errorCallback);
 				if ( session->ioRef == 0 ) return 0;
 			}
 			
@@ -731,7 +742,7 @@ XMPFileHandlerInfo* HandlerRegistry::selectSmartHandler( XMPFiles* session, XMP_
 		{
 			if( (session->ioRef == 0) && (! (handlerInfo->flags & kXMPFiles_HandlerOwnsFile)) ) 
 			{
-				session->ioRef = XMPFiles_IO::New_XMPFiles_IO ( clientPath, readOnly );
+				session->ioRef = XMPFiles_IO::New_XMPFiles_IO ( clientPath, readOnly, &session->errorCallback);
 				if ( session->ioRef == 0 ) return 0;
 			} 
 			else if( (session->ioRef != 0) && (handlerInfo->flags & kXMPFiles_HandlerOwnsFile) ) 
@@ -753,7 +764,7 @@ XMPFileHandlerInfo* HandlerRegistry::selectSmartHandler( XMPFiles* session, XMP_
 
 	if( session->ioRef == 0 ) 
 	{
-		session->ioRef = XMPFiles_IO::New_XMPFiles_IO ( clientPath, readOnly );
+		session->ioRef = XMPFiles_IO::New_XMPFiles_IO ( clientPath, readOnly, &session->errorCallback );
 		if ( session->ioRef == 0 ) return 0;
 	}
 	

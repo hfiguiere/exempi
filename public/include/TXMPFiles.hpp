@@ -1,5 +1,5 @@
 #ifndef __TXMPFiles_hpp__
-#define __TXMPFiles_hpp__	1
+#define __TXMPFiles_hpp__    1
 
 #if ( ! __XMP_hpp__ )
     #error "Do not directly include, use XMP.hpp"
@@ -22,7 +22,7 @@
 /// format-specific file handlers that support file I/O for XMP. The file handlers implement smart,
 /// efficient support for those file formats for which the means to embed XMP is defined in the XMP
 /// Specification. Where possible, this support allows:
-///   \li Injection	of XMP where none currently exists
+///   \li Injection    of XMP where none currently exists
 ///   \li Expansion of XMP without regard to existing padding
 ///   \li Reconciliation of the XMP and other legacy forms of metadata.
 ///
@@ -58,8 +58,8 @@
 // =================================================================================================
 
 
-#if XMP_StaticBuild	// ! Client XMP_IO objects can only be used in static builds.
-	#include "XMP_IO.hpp"
+#if XMP_StaticBuild    // ! Client XMP_IO objects can only be used in static builds.
+    #include "XMP_IO.hpp"
 #endif
 
 
@@ -68,7 +68,7 @@ class TXMPFiles {
 
 public:
 
-	// =============================================================================================
+    // =============================================================================================
     /// \name Initialization and termination
     /// @{
     ///
@@ -94,7 +94,7 @@ public:
     ///
     /// @return True on success.
 
-	static bool Initialize();
+    static bool Initialize();
 
     // ---------------------------------------------------------------------------------------------
     /// @brief Initializes the XMPFiles library; must be called before creating an \c SXMPFiles object.
@@ -111,7 +111,7 @@ public:
     ///
     /// @return True on success.
 
-	static bool Initialize ( XMP_OptionBits options );
+    static bool Initialize ( XMP_OptionBits options );
 
     // ---------------------------------------------------------------------------------------------
     /// @brief Initializes the XMPFiles library; must be called before creating an \c SXMPFiles object.
@@ -131,7 +131,7 @@ public:
     ///
     /// @return True on success.
 
-	static bool Initialize ( const char* pluginFolder, const char* plugins = NULL );
+    static bool Initialize ( const char* pluginFolder, const char* plugins = NULL );
 
     // ---------------------------------------------------------------------------------------------
     /// @brief Initializes the XMPFiles library; must be called before creating an \c SXMPFiles object.
@@ -152,7 +152,7 @@ public:
     ///
     /// @return True on success.
 
-	static bool Initialize ( XMP_OptionBits options, const char* pluginFolder, const char* plugins = NULL );
+    static bool Initialize ( XMP_OptionBits options, const char* pluginFolder, const char* plugins = NULL );
 
     // ---------------------------------------------------------------------------------------------
     /// @brief Terminates use of the XMPFiles library.
@@ -162,11 +162,11 @@ public:
     ///
     /// This function is static; make the call directly from the concrete class (\c SXMPFiles).
 
-	static void Terminate();
+    static void Terminate();
 
     /// @}
 
-	// =============================================================================================
+    // =============================================================================================
     /// \name Constructors and destructor
     /// @{
     ///
@@ -185,14 +185,14 @@ public:
     ///
     /// @see \c OpenFile(), \c CloseFile()
 
-	virtual ~TXMPFiles() throw();
+    virtual ~TXMPFiles() throw();
 
     // ---------------------------------------------------------------------------------------------
     /// @brief Alternate constructor associates the new \c XMPFiles object with a specific file.
     ///
     /// Calls \c OpenFile() to open the specified file after performing a default construct.
     ///
-    /// @param filePath	The path for the file, specified as a nul-terminated UTF-8 string.
+    /// @param filePath    The path for the file, specified as a nul-terminated UTF-8 string.
     ///
     /// @param format A format hint for the file, if known.
     ///
@@ -210,19 +210,19 @@ public:
     /// @return The new \c TXMPFiles object.
 
     TXMPFiles ( XMP_StringPtr  filePath,
-				XMP_FileFormat format = kXMP_UnknownFile,
-				XMP_OptionBits openFlags = 0 );
+                XMP_FileFormat format = kXMP_UnknownFile,
+                XMP_OptionBits openFlags = 0 );
 
     // ---------------------------------------------------------------------------------------------
     /// @brief Alternate constructor associates the new \c XMPFiles object with a specific file,
     /// using a string object.
     ///
     /// Overloads the basic form of the function, allowing you to pass a string object
-	/// for the file path. It is otherwise identical; see details in the canonical form.
+    /// for the file path. It is otherwise identical; see details in the canonical form.
 
     TXMPFiles ( const tStringObj & filePath,
-				XMP_FileFormat     format = kXMP_UnknownFile,
-				XMP_OptionBits     openFlags = 0 );
+                XMP_FileFormat     format = kXMP_UnknownFile,
+                XMP_OptionBits     openFlags = 0 );
 
     // ---------------------------------------------------------------------------------------------
     /// @brief Copy constructor
@@ -242,7 +242,7 @@ public:
     ///
     /// @param rhs The existing \c TXMPFiles object.
 
-	void operator= ( const TXMPFiles<tStringObj> & rhs );
+    void operator= ( const TXMPFiles<tStringObj> & rhs );
 
     // ---------------------------------------------------------------------------------------------
     /// @brief Reconstructs a \c TXMPFiles object from an internal reference.
@@ -265,7 +265,7 @@ public:
     /// Use with the reconstruction constructor to safely pass \c SXMPFiles references across DLL
     /// boundaries where the clients might have used different string types when instantiating
     /// \c TXMPFiles.
-	///
+    ///
     /// @return The internal reference.
     ///
     /// @see \c TXMPMeta::GetInternalRef() for usage.
@@ -274,7 +274,7 @@ public:
 
     /// @}
 
-	// =============================================================================================
+    // =============================================================================================
     /// \name File handler information
     /// @{
     ///
@@ -314,11 +314,11 @@ public:
 
 
     static bool GetFormatInfo ( XMP_FileFormat   format,
-    							XMP_OptionBits * handlerFlags = 0 );
+                                XMP_OptionBits * handlerFlags = 0 );
 
     /// @}
 
-	// =============================================================================================
+    // =============================================================================================
     /// \name File operations
     /// @{
     ///
@@ -356,29 +356,92 @@ public:
     static XMP_FileFormat CheckPackageFormat ( XMP_StringPtr folderPath );
 
     // ---------------------------------------------------------------------------------------------
-    /// @brief \c GetFileModDate() returns the most recent modification date of a file containing metadata.
+    /// @brief \c GetFileModDate() returns the last modification date of all files that are returned
+    /// by \c GetAssociatedResources()
     ///
-    /// Tries to return the most recent O/S file modification date for associated metadata. In the
-    /// typical case of a single file containing embedded XMP and non-XMP this is the modification
-    /// date of that file. For a simple sidecar, such as MPEG-2, this is the modification date of
-    /// the sidecar and not the media file. For a video package such as P2 this is the XMP file, the
-    /// XML file, and any media file that might be read for metadata.
+    /// Returns the most recent O/S file modification date of all associated files. In the typical case
+    /// of a single file containing embedded XMP, returned date value is the modification date of the 
+    /// same file. For sidecar and folder based video packages, returned date value is the modification 
+    /// date of that associated file which was updated last.
     ///
-    /// @param filePath The path for the file, appropriate for the local operating system. Passed as
-    /// a nul-terminated UTF-8 string. The path is the same as would be passed to \c OpenFile.
+    /// @param filePath A path exactly as would be passed to \c OpenFile.
+    /// 
+    /// @param modDate A required pointer to return the last modification date.
     ///
-    /// @param modDate A required pointer to return the modification date.
-    ///
-    /// @param format An optional in/out pointer to a file format. Used on input as a hint for the
-    /// handler to select, on output as the handler chosen.
+    /// @param format A format hint as would be passed to \c OpenFile.
     ///
     /// @param options An optional set of option flags. The only defined one is \c kXMPFiles_ForceGivenHandler,
     /// used to shortcut the handler selection logic if the caller is certain of the format.
     ///
-    /// @return True if a modification date could be determined, false if there is no smart file handler.
+    /// @return Returns true if the file path is valid to select a smart handler, false for an
+    /// invalid path or if fallback packet scanning would be selected. 
 
-    static bool GetFileModDate ( XMP_StringPtr filePath, XMP_DateTime * modDate,
-                                 XMP_FileFormat * format = 0, XMP_OptionBits options = 0 );
+    static bool GetFileModDate ( XMP_StringPtr    filePath,
+                                 XMP_DateTime *   modDate,
+                                 XMP_FileFormat * format = 0,
+                                 XMP_OptionBits   options = 0 );
+	
+
+    // ---------------------------------------------------------------------------------------------
+    /// @brief \c GetAssociatedResources() returns a list of files and folders associated to filePath.
+    ///
+    /// \c GetAssociatedResources is provided to locate all files that are associated to the given
+    /// filePath such as sidecar-based XMP or folder-based video packages.If a smart 
+    /// handler can be selected (not fallback packet scanning) then a list of file/folder paths is
+    /// returned for the related files that can be safely copied/imported to a different location,
+    /// keeping intact metadata(XMP and non-XMP),content and the necessary folder structure of the 
+    /// format. The necessary folder structure here is the structure that is needed to uniquely 
+    /// identify a folder-based format.The filePath and format parameters are exactly as would be 
+    /// used for OpenFile. In the simple embedded XMP case just one path is returned. In the simple
+    /// sidecar case one or two paths will be returned, one if there is no sidecar XMP and two if 
+    /// sidecar XMP exists. For folder-based handlers paths to all associated files is returned, 
+    /// including the files and folders necessary to identify the format.In general, all the returned
+    /// paths are existent.In case of folder based video formats the first associated resource in the 
+	/// resourceList is the root folder.
+    ///
+    /// @param filePath A path exactly as would be passed to \c OpenFile.
+    /// 
+    /// @param resourceList Address of a vector of strings to receive all associated resource paths.
+    ///
+    /// @param format A format hint as would be passed to \c OpenFile.
+    ///
+    /// @param options An optional set of option flags. The only defined one is \c kXMPFiles_ForceGivenHandler,
+    /// used to shortcut the handler selection logic if the caller is certain of the format.
+    ///
+    /// @return Returns true if the file path is valid to select a smart handler, false for an
+    /// invalid path or if fallback packet scanning would be selected. Can also return false for
+    /// unexpected errors that prevent knowledge of the file usage.
+    
+    static bool GetAssociatedResources ( XMP_StringPtr            filePath,
+                                         std::vector<tStringObj>* resourceList,
+                                         XMP_FileFormat           format = kXMP_UnknownFile, 
+                                         XMP_OptionBits           options = 0);
+
+    // ---------------------------------------------------------------------------------------------
+    /// @brief \c IsMetadataWritable() returns true if metadata can be updated for the given media path.
+    ///
+    /// \c IsMetadataWritable is provided to check if metadata can be updated or written to the format.In  
+    /// the case of folder-based video formats only if all the metadata files can be written to, true is 
+    /// returned.In other words, false is returned for a partial-write state of metadata files in
+    /// folder-based media formats. 
+    ///
+    /// @param filePath A path exactly as would be passed to \c OpenFile.
+    ///
+    /// @param writable A pointer to the result flag. Is true if the metadata can be updated in the format,
+    /// otherwise false.
+    ///
+    /// @param format A format hint as would be passed to \c OpenFile.
+    ///
+    /// @param options An optional set of option flags. The only defined one is \c kXMPFiles_ForceGivenHandler,
+    /// used to shortcut the handler selection logic if the caller is certain of the format.
+    ///
+    /// @return Returns true if the file path is valid to select a smart handler, false for an
+    /// invalid path or if fallback packet scanning would be selected. 
+    
+    static bool IsMetadataWritable (XMP_StringPtr  filePath,
+                                   bool *         writable,    
+                                   XMP_FileFormat format = kXMP_UnknownFile,
+                                   XMP_OptionBits options = 0 );
 
     // ---------------------------------------------------------------------------------------------
     /// @brief \c OpenFile() opens a file for metadata access.
@@ -423,7 +486,7 @@ public:
     ///   \li \c #kXMPFiles_OpenForUpdate - Open for reading and writing.
     ///   \li \c #kXMPFiles_OpenOnlyXMP - Only the XMP is wanted, no reconciliation.
     ///   \li \c #kXMPFiles_OpenStrictly - Be strict about locating XMP and reconciling with other
-    ///   forms. By default, a best effort is made to locate the	correct XMP and to reconcile XMP
+    ///   forms. By default, a best effort is made to locate the    correct XMP and to reconcile XMP
     ///   with other forms (if reconciliation is done). This option forces stricter rules, resulting
     ///   in exceptions for errors. The definition of strictness is specific to each handler, there
     ///   might be no difference.
@@ -434,33 +497,32 @@ public:
     /// anticipated problems, such as passing \c #kXMPFiles_OpenUseSmartHandler but not having an
     /// appropriate smart handler. Throws an exception for serious problems.
 
-
-	bool OpenFile ( XMP_StringPtr  filePath,
-				    XMP_FileFormat format = kXMP_UnknownFile,
-				    XMP_OptionBits openFlags = 0 );
+    bool OpenFile ( XMP_StringPtr  filePath,
+                    XMP_FileFormat format = kXMP_UnknownFile,
+                    XMP_OptionBits openFlags = 0 );
 
     // ---------------------------------------------------------------------------------------------
     /// @brief \c OpenFile() opens a file for metadata access, using a string object
     ///
     /// Overloads the basic form of the function, allowing you to pass a string object for the file
-	/// path. It is otherwise identical; see details in the canonical form.
+    /// path. It is otherwise identical; see details in the canonical form.
 
-	bool OpenFile ( const tStringObj & filePath,
-				    XMP_FileFormat     format = kXMP_UnknownFile,
-				    XMP_OptionBits     openFlags = 0 );
+    bool OpenFile ( const tStringObj & filePath,
+                    XMP_FileFormat     format = kXMP_UnknownFile,
+                    XMP_OptionBits     openFlags = 0 );
 
-	#if XMP_StaticBuild	// ! Client XMP_IO objects can only be used in static builds.
+    #if XMP_StaticBuild    // ! Client XMP_IO objects can only be used in static builds.
     // ---------------------------------------------------------------------------------------------
     /// @brief \c OpenFile() opens a client-provided XMP_IO object for metadata access.
     ///
     /// Alternative to the basic form of the function, allowing you to pass an XMP_IO object for
     /// client-managed I/O.
-	///
+    ///
 
-	bool OpenFile ( XMP_IO *       clientIO,
-				    XMP_FileFormat format = kXMP_UnknownFile,
-				    XMP_OptionBits openFlags = 0 );
-	#endif
+    bool OpenFile ( XMP_IO *       clientIO,
+                    XMP_FileFormat format = kXMP_UnknownFile,
+                    XMP_OptionBits openFlags = 0 );
+    #endif
 
     // ---------------------------------------------------------------------------------------------
     /// @brief CloseFile() explicitly closes an opened file.
@@ -504,10 +566,10 @@ public:
     /// but \c CloseFile() has not. False otherwise. Even if the file object is open, the actual
     /// disk file might be closed in the host file-system sense; see \c OpenFile().
 
-	bool GetFileInfo ( tStringObj *     filePath = 0,
-					   XMP_OptionBits * openFlags = 0,
-					   XMP_FileFormat * format = 0,
-    				   XMP_OptionBits * handlerFlags = 0 );
+    bool GetFileInfo ( tStringObj *     filePath = 0,
+                       XMP_OptionBits * openFlags = 0,
+                       XMP_FileFormat * format = 0,
+                       XMP_OptionBits * handlerFlags = 0 );
 
     // ---------------------------------------------------------------------------------------------
     /// @brief \c SetAbortProc() registers a callback function used to check for a user-signaled abort.
@@ -521,11 +583,11 @@ public:
     /// @param abortArg A pointer to caller-defined data to pass to the callback function.
 
     void SetAbortProc ( XMP_AbortProc abortProc,
-    					void *        abortArg );
+                        void *        abortArg );
 
     /// @}
 
-	// =============================================================================================
+    // =============================================================================================
     /// \name Accessing metadata
     /// @{
     ///
@@ -562,8 +624,8 @@ public:
     /// @return True if the file has XMP, false otherwise.
 
     bool GetXMP ( SXMPMeta *       xmpObj = 0,
-    			  tStringObj *     xmpPacket = 0,
-    			  XMP_PacketInfo * packetInfo = 0 );
+                  tStringObj *     xmpPacket = 0,
+                  XMP_PacketInfo * packetInfo = 0 );
 
     // ---------------------------------------------------------------------------------------------
     /// @brief \c PutXMP() updates the XMP metadata in this object without writing out the file.
@@ -578,21 +640,21 @@ public:
 
     // ---------------------------------------------------------------------------------------------
     /// @brief \c PutXMP() updates the XMP metadata in this object without writing out the file,
-	/// using a string object for input.
+    /// using a string object for input.
     ///
     /// Overloads the basic form of the function, allowing you to pass the metadata as a string object
-	/// instead of an XMP object. It is otherwise identical; see details in the canonical form.
-	///
+    /// instead of an XMP object. It is otherwise identical; see details in the canonical form.
+    ///
     /// @param xmpPacket The new metadata as a string object containing a complete XMP packet.
 
     void PutXMP ( const tStringObj & xmpPacket );
 
     // ---------------------------------------------------------------------------------------------
     /// @brief \c PutXMP() updates the XMP metadata in this object without writing out the file,
-   	/// using a string object and optional length.
+       /// using a string object and optional length.
     ///
     /// Overloads the basic form of the function, allowing you to pass the metadata as a string object
-	/// instead of an XMP object. It is otherwise identical; see details in the canonical form.
+    /// instead of an XMP object. It is otherwise identical; see details in the canonical form.
     ///
     /// @param xmpPacket The new metadata as a <tt>const char *</tt> string containing an XMP packet.
     ///
@@ -644,7 +706,7 @@ public:
     /// passed in a string object.
     ///
     /// Overloads the basic form of the function, allowing you to pass the metadata as a string object
-	/// instead of an XMP object. It is otherwise identical; see details in the canonical form.
+    /// instead of an XMP object. It is otherwise identical; see details in the canonical form.
     ///
     /// @param xmpPacket The proposed new metadata as a string object containing an XMP packet.
 
@@ -655,7 +717,7 @@ public:
     /// passed in a string object.
     ///
     /// Overloads the basic form of the function, allowing you to pass the metadata as a string object
-	/// instead of an XMP object. It is otherwise identical; see details in the canonical form.
+    /// instead of an XMP object. It is otherwise identical; see details in the canonical form.
     ///
     /// @param xmpPacket The proposed new metadata as a <tt>const char *</tt> string containing an XMP packet.
     ///
@@ -667,15 +729,124 @@ public:
 
     /// @}
 
-	// =============================================================================================
+    // =============================================================================================
+    /// \name Progress notifications
+    /// @{
+    ///
+    /// These functions allow track the progress of file operations. Initially only file updates are
+    /// tracked, these all occur within calls to SXMPFiles::CloseFile. There are no plans to track
+    /// other operations at this time. Tracking support must be added to specific file handlers,
+    /// there are no guarantees about which handlers will have support. To simplify the logic only
+    /// file writes will be estimated and measured.
+
+    // ---------------------------------------------------------------------------------------------
+    /// @brief \c SetDefaultProgressCallback() sets a global default for progress tracking. This is
+    /// used as a default for XMPFiles (library) objects created after the default is set. This does
+    /// not affect the callback for new SXMPFiles (client) objects with an existing XMPFiles object.
+    ///
+    /// @param proc The client's callback function. Can be zero to disable notifications.
+    ///
+    /// @param context A pointer used to carry client-private context.
+    ///
+    /// @param interval The desired number of seconds between notifications. Ideally the first
+    /// notification is sent after this interval, then at each following multiple of this interval.
+    ///
+    /// @param sendStartStop A Boolean value indicating if initial and final notifications are
+    /// wanted in addition to those at the reporting intervals.
+
+    static void SetDefaultProgressCallback ( XMP_ProgressReportProc proc, void * context = 0,
+                                             float interval = 1.0, bool sendStartStop = false );
+
+    // ---------------------------------------------------------------------------------------------
+    /// @brief \c SetProgressCallback() sets the progress notification callback for the associated
+    /// XMPFiles (library) object.
+    ///
+    /// @param proc The client's callback function. Can be zero to disable notifications.
+    ///
+    /// @param context A pointer used to carry client-private context.
+    ///
+    /// @param interval The desired number of seconds between notifications. Ideally the first
+    /// notification is sent after this interval, then at each following multiple of this interval.
+    ///
+    /// @param sendStartStop A Boolean value indicating if initial and final notifications are
+    /// wanted in addition to those at the reporting intervals.
+
+    void SetProgressCallback ( XMP_ProgressReportProc proc, void * context = 0,
+                               float interval = 1.0, bool sendStartStop = false );
+                                             
+    /// @}
+
+    // =============================================================================================
+    // Error notifications
+    // ===================
+
+    // ---------------------------------------------------------------------------------------------
+    /// \name Error notifications
+    /// @{
+    ///
+    /// From the beginning through version 5.5, XMP Toolkit errors result in throwing an \c XMP_Error
+    /// exception. For the most part exceptions were thrown early and thus API calls aborted as soon
+    /// as an error was detected. Starting in version 5.5, support has been added for notifications
+    /// of errors arising in calls to \c TXMPFiles functions.
+    ///
+    /// A client can register an error notification callback function for a \c TXMPFile object. This
+    /// can be done as a global default or individually to each object. The global default applies
+    /// to all objects created after it is registered. Within the object there is no difference
+    /// between the global default or explicitly registered callback. The callback function returns
+    /// a \c bool value indicating if recovery should be attempted (true) or an exception thrown
+    /// (false). If no callback is registered, a best effort at recovery and continuation will be
+    /// made with an exception thrown if recovery is not possible.
+    ///
+    /// The number of notifications delivered for a given TXMPFiles object can be limited. This is
+    /// intended to reduce chatter from multiple or cascading errors. The limit is set when the
+    /// callback function is registered. This limits the number of notifications of the highest
+    /// severity delivered or less. If a higher severity error occurs, the counting starts again.
+    /// The limit and counting can be reset at any time, see \c ResetErrorCallbackLimit.
+
+    //  --------------------------------------------------------------------------------------------
+    /// @brief SetDefaultErrorCallback() registers a global default error notification callback.
+    ///
+    /// @param proc The client's callback function.
+    ///
+    /// @param context Client-provided context for the callback.
+    ///
+    /// @param limit A limit on the number of notifications to be delivered.
+
+    static void SetDefaultErrorCallback ( XMPFiles_ErrorCallbackProc proc, void* context = 0, XMP_Uns32 limit = 1 );
+
+    //  --------------------------------------------------------------------------------------------
+    /// @brief SetErrorCallback() registers an error notification callback.
+    ///
+    /// @param proc The client's callback function.
+    ///
+    /// @param context Client-provided context for the callback.
+    ///
+    /// @param limit A limit on the number of notifications to be delivered.
+
+    void SetErrorCallback ( XMPFiles_ErrorCallbackProc proc, void* context = 0, XMP_Uns32 limit = 1 );
+
+    //  --------------------------------------------------------------------------------------------
+    /// @brief ResetErrorCallbackLimit() resets the error notification limit and counting. It has no
+    /// effect if an error notification callback function is not registered. 
+    ///
+    /// @param limit A limit on the number of notifications to be delivered.
+
+    void ResetErrorCallbackLimit ( XMP_Uns32 limit = 1 );
+
+    /// @}
+
+    // =============================================================================================
 
 private:
 
-	XMPFilesRef xmpFilesRef;
+    XMPFilesRef xmpFilesRef;
 
-	static void SetClientString ( void * clientPtr, XMP_StringPtr valuePtr, XMP_StringLen valueLen );
+    // These are used as callbacks from the library code to the client when returning values that
+    // involve heap allocations. This ensures the allocations occur within the client.
+    static void SetClientString ( void * clientPtr, XMP_StringPtr valuePtr, XMP_StringLen valueLen );
+    static void SetClientStringVector ( void * clientPtr, XMP_StringPtr* arrayPtr, XMP_Uns32 stringCount );
 
-};	// class TXMPFiles
+};    // class TXMPFiles
 
 // =================================================================================================
 

@@ -59,6 +59,7 @@ enum
 	kXMPFiles_NeedsReadOnlyPacket_K,
 	kXMPFiles_UsesSidecarXMP_K,
 	kXMPFiles_FolderBasedFormat_K,
+	kXMPFiles_NeedsPreloading_K,
 
     // Serialize option
     kXMP_OmitPacketWrapper_K,
@@ -99,7 +100,7 @@ class ResourceParser
 {
 public:
 	ResourceParser(ModuleSharedPtr module)
-		: mModule(module), mFlags(0), mSerializeOption(0), mType(0), mVersion(0), mOverwriteHandler(false) {}
+		: mModule(module), mFlags(0), mSerializeOption(0), mType(0), mVersion(0.0), mOverwriteHandler(false) {}
 
 	/** 
 	 *  Initialize the XMPAtoms which will be used in parsing resource files.
@@ -186,7 +187,7 @@ private:
 	FileHandlerType       mType;
 	XMP_OptionBits        mFlags;
 	XMP_OptionBits        mSerializeOption;
-	XMP_Uns32             mVersion;
+	double                mVersion;
 	bool				  mOverwriteHandler;
 	CheckFormat           mCheckFormat;
 	std::set<XMP_FileFormat> mFileExtensions;

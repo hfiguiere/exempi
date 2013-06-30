@@ -52,6 +52,8 @@ using namespace std;
 
 XMP_VarString * xdefaultName = 0;	// Needed in XMPMeta-Parse.cpp, MoveExplicitAliases.
 
+static XMPMeta::ErrorCallbackInfo sDefaultErrorCallback;
+
 // These are embedded version strings.
 
 const char * kXMPCore_EmbeddedVersion   = kXMPCore_VersionMessage;
@@ -636,12 +638,19 @@ RegisterStandardAliases()
 // ============
 
 
-XMPMeta::XMPMeta() : tree(XMP_Node(0,"",0)), clientRefs(0), prevTkVer(0), xmlParser(0)
+XMPMeta::XMPMeta() : tree(XMP_Node(0,"",0)), clientRefs(0), xmlParser(0)
 {
-	// Nothing more to do, clientRefs is incremented in wrapper.
 	#if XMP_TraceCTorDTor
 		printf ( "Default construct XMPMeta @ %.8X\n", this );
 	#endif
+
+	if ( sDefaultErrorCallback.clientProc != 0 ) {
+		this->errorCallback.wrapperProc = sDefaultErrorCallback.wrapperProc;
+		this->errorCallback.clientProc = sDefaultErrorCallback.clientProc;
+		this->errorCallback.context = sDefaultErrorCallback.context;
+		this->errorCallback.limit = sDefaultErrorCallback.limit;
+	}
+
 }	// XMPMeta
 
 // -------------------------------------------------------------------------------------------------
@@ -810,6 +819,7 @@ XMPMeta::Initialize()
 	XMP_Assert ( sizeof(XMP_Uns16) == 2 );
 	XMP_Assert ( sizeof(XMP_Uns32) == 4 );
 	XMP_Assert ( sizeof(XMP_Uns64) == 8 );
+	XMP_Assert ( sizeof(XMP_Bool) == 1 );
 
 	XMP_Assert ( sizeof(XMP_OptionBits) == 4 );	// Check that option masking work on all 32 bits.
 	XMP_OptionBits flag = (XMP_OptionBits) (~0UL);
@@ -1212,7 +1222,6 @@ void
 XMPMeta::Erase()
 {
 
-	this->prevTkVer = 0;
 	if ( this->xmlParser != 0 ) {
 		delete ( this->xmlParser );
 		this->xmlParser = 0;
@@ -1238,6 +1247,7 @@ XMPMeta::Clone ( XMPMeta * clone, XMP_OptionBits options ) const
 	clone->tree.options = this->tree.options;
 	clone->tree.name    = this->tree.name;
 	clone->tree.value   = this->tree.value;
+	clone->errorCallback = this->errorCallback;
 
 	#if 0	// *** XMP_DebugBuild
 		clone->tree._namePtr = clone->tree.name.c_str();
@@ -1277,6 +1287,87 @@ void XMP_Node::GetLocalURI ( XMP_StringPtr * uriStr, XMP_StringLen * uriSize ) c
 
 	}
 
+}
+
+// =================================================================================================
+// Error notifications
+// ===================
+
+// -------------------------------------------------------------------------------------------------
+// SetDefaultErrorCallback
+// -----------------------
+
+/* class-static */ void
+XMPMeta::SetDefaultErrorCallback ( XMPMeta_ErrorCallbackWrapper wrapperProc,
+								   XMPMeta_ErrorCallbackProc    clientProc,
+								   void *    context,
+								   XMP_Uns32 limit )
+{
+	XMP_Assert ( wrapperProc != 0 );	// Must always be set by the glue;
+
+	sDefaultErrorCallback.wrapperProc = wrapperProc;
+	sDefaultErrorCallback.clientProc = clientProc;
+	sDefaultErrorCallback.context = context;
+	sDefaultErrorCallback.limit = limit;
+
+}	// SetDefaultErrorCallback
+
+// -------------------------------------------------------------------------------------------------
+// SetErrorCallback
+// ----------------
+
+void
+XMPMeta::SetErrorCallback ( XMPMeta_ErrorCallbackWrapper wrapperProc,
+							XMPMeta_ErrorCallbackProc    clientProc,
+							void *    context,
+							XMP_Uns32 limit )
+{
+	XMP_Assert ( wrapperProc != 0 );	// Must always be set by the glue;
+	
+	this->errorCallback.Clear();
+	this->errorCallback.wrapperProc = wrapperProc;
+	this->errorCallback.clientProc = clientProc;
+	this->errorCallback.context = context;
+	this->errorCallback.limit = limit;
+	
+}	// SetErrorCallback
+
+// -------------------------------------------------------------------------------------------------
+// ResetErrorCallbackLimit
+// -----------------------
+
+void
+XMPMeta::ResetErrorCallbackLimit ( XMP_Uns32 limit )
+{
+
+	this->errorCallback.limit = limit;
+	this->errorCallback.notifications = 0;
+	this->errorCallback.topSeverity = kXMPErrSev_Recoverable;
+
+}	// ResetErrorCallbackLimit
+
+// -------------------------------------------------------------------------------------------------
+// ErrorCallbackInfo::CanNotify
+// -------------------------------
+//
+// This is const just to be usable from const XMPMeta functions.
+
+bool XMPMeta::ErrorCallbackInfo::CanNotify() const
+{
+	XMP_Assert ( (this->clientProc == 0) || (this->wrapperProc != 0) );
+	return ( this->clientProc != 0);
+}
+
+// -------------------------------------------------------------------------------------------------
+// ErrorCallbackInfo::ClientCallbackWrapper
+// -------------------------------
+//
+// This is const just to be usable from const XMPMeta functions.
+
+bool XMPMeta::ErrorCallbackInfo::ClientCallbackWrapper ( XMP_StringPtr filePath, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr messsage ) const
+{
+	XMP_Bool retValue = (*this->wrapperProc) ( this->clientProc, this->context, severity, cause, messsage );
+	return ConvertXMP_BoolToBool(retValue);
 }
 
 // =================================================================================================

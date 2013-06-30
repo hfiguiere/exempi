@@ -18,32 +18,370 @@
 
 #include <vector>
 
-// =================================================================================================
-
 #define MIN(a,b)	((a) < (b) ? (a) : (b))
+
+namespace ID3_Support {
+
+// =================================================================================================
 
 ID3GenreMap* kMapID3GenreCodeToName = 0;	// Map from a code like "21" or "RX" to the full name.
 ID3GenreMap* kMapID3GenreNameToCode = 0;	// Map from the full name to a code like "21" or "RX".
 
+static size_t numberedGenreCount = 0;	// Set in InitializeGlobals, used in ID3v1Tag::read and write.
+
+struct GenreInfo { const char * code; const char * name; };
+
+static const GenreInfo kAbbreviatedGenres[] = {	// ID3 v3 or v4 genre abbreviations.
+	{ "RX", "Remix" },
+	{ "CR", "Cover" },
+	{ 0, 0 }
+};
+
+static const GenreInfo kNumberedGenres[] = {	// Numeric genre codes from ID3 v1, complete range of 0..125.
+	{   "0", "Blues" },
+	{   "1", "Classic Rock" },
+	{   "2", "Country" },
+	{   "3", "Dance" },
+	{   "4", "Disco" },
+	{   "5", "Funk" },
+	{   "6", "Grunge" },
+	{   "7", "Hip-Hop" },
+	{   "8", "Jazz" },
+	{   "9", "Metal" },
+	{  "10", "New Age" },
+	{  "11", "Oldies" },
+	{  "12", "Other" },
+	{  "13", "Pop" },
+	{  "14", "R&B" },
+	{  "15", "Rap" },
+	{  "16", "Reggae" },
+	{  "17", "Rock" },
+	{  "18", "Techno" },
+	{  "19", "Industrial" },
+	{  "20", "Alternative" },
+	{  "21", "Ska" },
+	{  "22", "Death Metal" },
+	{  "23", "Pranks" },
+	{  "24", "Soundtrack" },
+	{  "25", "Euro-Techno" },
+	{  "26", "Ambient" },
+	{  "27", "Trip-Hop" },
+	{  "28", "Vocal" },
+	{  "29", "Jazz+Funk" },
+	{  "30", "Fusion" },
+	{  "31", "Trance" },
+	{  "32", "Classical" },
+	{  "33", "Instrumental" },
+	{  "34", "Acid" },
+	{  "35", "House" },
+	{  "36", "Game" },
+	{  "37", "Sound Clip" },
+	{  "38", "Gospel" },
+	{  "39", "Noise" },
+	{  "40", "AlternRock" },
+	{  "41", "Bass" },
+	{  "42", "Soul" },
+	{  "43", "Punk" },
+	{  "44", "Space" },
+	{  "45", "Meditative" },
+	{  "46", "Instrumental Pop" },
+	{  "47", "Instrumental Rock" },
+	{  "48", "Ethnic" },
+	{  "49", "Gothic" },
+	{  "50", "Darkwave" },
+	{  "51", "Techno-Industrial" },
+	{  "52", "Electronic" },
+	{  "53", "Pop-Folk" },
+	{  "54", "Eurodance" },
+	{  "55", "Dream" },
+	{  "56", "Southern Rock" },
+	{  "57", "Comedy" },
+	{  "58", "Cult" },
+	{  "59", "Gangsta" },
+	{  "60", "Top 40" },
+	{  "61", "Christian Rap" },
+	{  "62", "Pop/Funk" },
+	{  "63", "Jungle" },
+	{  "64", "Native American" },
+	{  "65", "Cabaret" },
+	{  "66", "New Wave" },
+	{  "67", "Psychadelic" },
+	{  "68", "Rave" },
+	{  "69", "Showtunes" },
+	{  "70", "Trailer" },
+	{  "71", "Lo-Fi" },
+	{  "72", "Tribal" },
+	{  "73", "Acid Punk" },
+	{  "74", "Acid Jazz" },
+	{  "75", "Polka" },
+	{  "76", "Retro" },
+	{  "77", "Musical" },
+	{  "78", "Rock & Roll" },
+	{  "79", "Hard Rock" },
+	{  "80", "Folk" },
+	{  "81", "Folk-Rock" },
+	{  "82", "National Folk" },
+	{  "83", "Swing" },
+	{  "84", "Fast Fusion" },
+	{  "85", "Bebob" },
+	{  "86", "Latin" },
+	{  "87", "Revival" },
+	{  "88", "Celtic" },
+	{  "89", "Bluegrass" },
+	{  "90", "Avantgarde" },
+	{  "91", "Gothic Rock" },
+	{  "92", "Progressive Rock" },
+	{  "93", "Psychedelic Rock" },
+	{  "94", "Symphonic Rock" },
+	{  "95", "Slow Rock" },
+	{  "96", "Big Band" },
+	{  "97", "Chorus" },
+	{  "98", "Easy Listening" },
+	{  "99", "Acoustic" },
+	{ "100", "Humour" },
+	{ "101", "Speech" },
+	{ "102", "Chanson" },
+	{ "103", "Opera" },
+	{ "104", "Chamber Music" },
+	{ "105", "Sonata" },
+	{ "106", "Symphony" },
+	{ "107", "Booty Bass" },
+	{ "108", "Primus" },
+	{ "109", "Porn Groove" },
+	{ "110", "Satire" },
+	{ "111", "Slow Jam" },
+	{ "112", "Club" },
+	{ "113", "Tango" },
+	{ "114", "Samba" },
+	{ "115", "Folklore" },
+	{ "116", "Ballad" },
+	{ "117", "Power Ballad" },
+	{ "118", "Rhythmic Soul" },
+	{ "119", "Freestyle" },
+	{ "120", "Duet" },
+	{ "121", "Punk Rock" },
+	{ "122", "Drum Solo" },
+	{ "123", "A capella" },	// ! Should be Acapella, keep space for compatibility with old code.
+	{ "124", "Euro-House" },
+	{ "125", "Dance Hall" },
+	{ 0, 0 }
+};
+
 // =================================================================================================
 
-bool ID3_Support::InitializeGlobals()
+bool InitializeGlobals()
 {
+
+	kMapID3GenreCodeToName = new ID3GenreMap;
+	if ( kMapID3GenreCodeToName == 0 ) return false;
+	kMapID3GenreNameToCode = new ID3GenreMap;
+	if ( kMapID3GenreNameToCode == 0 ) return false;
+	
+	ID3GenreMap::value_type newValue;
+	
+	size_t i;
+	
+	for ( i = 0; kNumberedGenres[i].code != 0; ++i ) {
+		XMP_Assert ( (long)i == strtol ( kNumberedGenres[i].code, 0, 10 ) );
+		ID3GenreMap::value_type code2Name ( kNumberedGenres[i].code, kNumberedGenres[i].name );
+		kMapID3GenreCodeToName->insert ( kMapID3GenreCodeToName->end(), code2Name );
+		ID3GenreMap::value_type name2Code ( kNumberedGenres[i].name, kNumberedGenres[i].code );
+		kMapID3GenreNameToCode->insert ( kMapID3GenreNameToCode->end(), name2Code );
+	}
+	
+	numberedGenreCount = i;	// Used in ID3v1Tag::read and write.
+	
+	for ( i = 0; kAbbreviatedGenres[i].code != 0; ++i ) {
+		ID3GenreMap::value_type code2Name ( kAbbreviatedGenres[i].code, kAbbreviatedGenres[i].name );
+		kMapID3GenreCodeToName->insert ( kMapID3GenreCodeToName->end(), code2Name );
+		ID3GenreMap::value_type name2Code ( kAbbreviatedGenres[i].name, kAbbreviatedGenres[i].code );
+		kMapID3GenreNameToCode->insert ( kMapID3GenreNameToCode->end(), name2Code );
+	}
+
 	return true;
+
+}	// InitializeGlobals
+
+// =================================================================================================
+
+void TerminateGlobals()
+{
+	delete kMapID3GenreCodeToName;
+	delete kMapID3GenreNameToCode;
+	kMapID3GenreCodeToName = kMapID3GenreNameToCode = 0;
+}
+
+// =================================================================================================
+// GenreUtils
+// =================================================================================================
+
+const char * GenreUtils::FindGenreName ( const std::string & code )
+{
+	// Lookup a genre code and return its name if known, otherwise 0.
+	
+	const char * name = 0;
+	ID3GenreMap::iterator mapPos = kMapID3GenreCodeToName->find ( code.c_str() );
+	if ( mapPos != kMapID3GenreCodeToName->end() ) name = mapPos->second;
+	return name;
+
+}
+
+// =================================================================================================
+	
+const char * GenreUtils::FindGenreCode ( const std::string & name )
+{
+	// Lookup a genre name and return its code if known, otherwise 0.
+	
+	const char * code = 0;
+	ID3GenreMap::iterator mapPos = kMapID3GenreNameToCode->find ( name.c_str() );
+	if ( mapPos != kMapID3GenreNameToCode->end() ) code = mapPos->second;
+	return code;
+
 }
 
 // =================================================================================================
 
-void ID3_Support::TerminateGlobals()
+static void StripOutsideSpaces ( std::string * value )
 {
-	// nothing yet
+	size_t length = value->size();
+	size_t first, last;
+	
+	for ( first = 0; ((first < length) && ((*value)[first] == ' ')); ++first ) {}
+	if ( first == length ) { value->erase(); return; }
+	XMP_Assert ( (first < length) && ((*value)[first] != ' ') );
+	
+	for ( last = length-1; ((last > first) && ((*value)[last] == ' ')); --last ) {}
+	if ( (first == 0) && (last == length-1) ) return;
+	
+	size_t newLen = last - first + 1;
+	if ( newLen < length ) *value = value->substr ( first, newLen );
+	
+}
+
+// =================================================================================================
+
+void GenreUtils::ConvertGenreToXMP ( const char * id3Genre, std::string * xmpGenre )
+{
+	// If the first character of TCON is not '(' then the entire TCON value is taken as the genre
+	// name and the suffix is empty.
+	//
+	// If the first character of TCON is '(' then the string up to ')' (or the end) is taken as the
+	// coded genre name. The rest of the TCON value after ')' is taken as the suffix.
+	//
+	// If the coded name is known then the corresponsing full name is used as the genre name, with
+	// no parens.
+	//
+	// If the coded name is not known then the coded name with parens is used as the genre name.
+	//
+	// The value of xmpDM:genre begins with the genre name. If the suffix is not empty we append
+	// "; " and the suffix. The known coded genre names currently do not use semicolon.
+	//
+	// Keeping the parens when importing unknown coded names might seem odd. But it preserves the
+	// ID3 syntax when exporting. Otherwise we would import "(XX)" and export "XX". We don't add
+	// parens all the time on export, that would import "Blues/R&B" and export "(Blues/R&B)".
+
+	xmpGenre->erase();
+	size_t id3Length = strlen ( id3Genre );
+	if ( id3Length == 0 ) return;
+	
+	if ( id3Genre[0] != '(' ) {
+		// No left paren, take the whole TCON value as the XMP value.
+		xmpGenre->assign ( id3Genre, id3Length );
+		StripOutsideSpaces ( xmpGenre );
+		return;
+	}
+	
+	// The first character of TCON is '(', process the coded part and the suffix.
+	
+	size_t codeEnd;
+	std::string genreCode, suffix;
+
+	for ( codeEnd = 1; ((codeEnd < id3Length) && (id3Genre[codeEnd] != ')')); ++codeEnd ) {}
+	genreCode.assign ( &id3Genre[1], codeEnd-1 );
+	if ( codeEnd < id3Length ) suffix.assign ( &id3Genre[codeEnd+1], id3Length-codeEnd-1 );
+
+	StripOutsideSpaces ( &genreCode );
+	StripOutsideSpaces ( &suffix );
+
+	if ( genreCode.empty() ) {
+
+		(*xmpGenre) = suffix;	// Degenerate case of "()suffix", treat as if "suffix".
+
+	} else {
+
+		const char * fullName = FindGenreName ( genreCode );
+
+		if ( fullName != 0 ) {
+			(*xmpGenre) = fullName;
+		} else {
+			(*xmpGenre) = '(';
+			(*xmpGenre) += genreCode;
+			(*xmpGenre) += ')';
+		}
+
+		if ( ! suffix.empty() ) {
+			(*xmpGenre) += "; ";
+			(*xmpGenre) += suffix;
+		}
+
+	}
+
+}
+
+// =================================================================================================
+
+void GenreUtils::ConvertGenreToID3 ( const char * xmpGenre, std::string * id3Genre )
+{
+	// The genre name is the xmpDM:genre value up to ';', with spaces at the front or back removed.
+	// The suffix is everything after ';', also with spaces at the front or back removed.
+	//
+	// If the genre name is known, it is replaced by the coded name in parens.
+	//
+	// The TCON value is the genre name plus the suffix. If the genre name does not end in ')' then
+	// a space is inserted.
+	
+	id3Genre->erase();
+	size_t xmpLength = strlen ( xmpGenre );
+	if ( xmpLength == 0 ) return;
+	
+	size_t nameEnd;
+	std::string genreName, suffix;
+	
+	for ( nameEnd = 0; ((nameEnd < xmpLength) && (xmpGenre[nameEnd] != ';')); ++nameEnd ) {}
+	genreName.assign ( xmpGenre, nameEnd );
+	if ( nameEnd < xmpLength ) suffix.assign ( &xmpGenre[nameEnd+1], xmpLength-nameEnd-1 );
+
+	StripOutsideSpaces ( &genreName );
+	StripOutsideSpaces ( &suffix );
+	
+	if ( genreName.empty() ) {
+
+		(*id3Genre) = suffix;	// Degenerate case of "; suffix", treat as if "suffix".
+
+	} else {
+
+		const char * codedName = FindGenreCode ( genreName );
+		if ( codedName != 0 ) {
+			genreName = '(';
+			genreName += codedName;
+			genreName += ')';
+		}
+		
+		(*id3Genre) = genreName;
+		if ( ! suffix.empty() ) {
+			if ( genreName[genreName.size()-1] != ')' ) (*id3Genre) += ' ';
+			(*id3Genre) += suffix;
+		}
+
+	}
+
 }
 
 // =================================================================================================
 // ID3Header
 // =================================================================================================
 
-bool ID3_Support::ID3Header::read ( XMP_IO* file )
+bool ID3Header::read ( XMP_IO* file )
 {
 
 	XMP_Assert ( sizeof(fields) == kID3_TagHeaderSize );
@@ -66,10 +404,10 @@ bool ID3_Support::ID3Header::read ( XMP_IO* file )
 
 // =================================================================================================
 
-void ID3_Support::ID3Header::write ( XMP_IO* file, XMP_Int64 tagSize )
+void ID3Header::write ( XMP_IO* file, XMP_Int64 tagSize )
 {
 
-	XMP_Assert ( (kID3_TagHeaderSize <= tagSize) && (tagSize < 256*1024*1024) );	// 256 MB limit due to synching.
+	XMP_Assert ( ((XMP_Int64)kID3_TagHeaderSize <= tagSize) && (tagSize < 256*1024*1024) );	// 256 MB limit due to synching.
 
 	XMP_Uns32 synchSize = int32ToSynch ( (XMP_Uns32)tagSize - kID3_TagHeaderSize );
 	PutUns32BE ( synchSize, &this->fields[ID3Header::o_size] );
@@ -83,7 +421,7 @@ void ID3_Support::ID3Header::write ( XMP_IO* file, XMP_Int64 tagSize )
 
 #define frameDefaults	id(0), flags(0), content(0), contentSize(0), active(true), changed(false)
 
-ID3_Support::ID3v2Frame::ID3v2Frame() : frameDefaults
+ID3v2Frame::ID3v2Frame() : frameDefaults
 {
 	XMP_Assert ( sizeof(fields) == kV23_FrameHeaderSize );	// Only need to do this in one place.
 	memset ( this->fields, 0, kV23_FrameHeaderSize );
@@ -91,7 +429,7 @@ ID3_Support::ID3v2Frame::ID3v2Frame() : frameDefaults
 
 // =================================================================================================
 
-ID3_Support::ID3v2Frame::ID3v2Frame ( XMP_Uns32 id ) : frameDefaults
+ID3v2Frame::ID3v2Frame ( XMP_Uns32 id ) : frameDefaults
 {
 	memset ( this->fields, 0, kV23_FrameHeaderSize );
 	this->id = id;
@@ -100,7 +438,7 @@ ID3_Support::ID3v2Frame::ID3v2Frame ( XMP_Uns32 id ) : frameDefaults
 
 // =================================================================================================
 
-void ID3_Support::ID3v2Frame::release()
+void ID3v2Frame::release()
 {
 	if ( this->content != 0 ) delete this->content;
 	this->content = 0;
@@ -109,7 +447,7 @@ void ID3_Support::ID3v2Frame::release()
 
 // =================================================================================================
 
-void ID3_Support::ID3v2Frame::setFrameValue ( const std::string& rawvalue, bool needDescriptor,
+void ID3v2Frame::setFrameValue ( const std::string& rawvalue, bool needDescriptor,
 											  bool utf16, bool isXMPPRIVFrame, bool needEncodingByte )
 {
 
@@ -170,7 +508,7 @@ void ID3_Support::ID3v2Frame::setFrameValue ( const std::string& rawvalue, bool 
 
 // =================================================================================================
 
-XMP_Int64 ID3_Support::ID3v2Frame::read ( XMP_IO* file, XMP_Uns8 majorVersion )
+XMP_Int64 ID3v2Frame::read ( XMP_IO* file, XMP_Uns8 majorVersion )
 {
 	XMP_Assert ( (2 <= majorVersion) && (majorVersion <= 4) );
 
@@ -213,7 +551,7 @@ XMP_Int64 ID3_Support::ID3v2Frame::read ( XMP_IO* file, XMP_Uns8 majorVersion )
 
 // =================================================================================================
 
-void ID3_Support::ID3v2Frame::write ( XMP_IO* file, XMP_Uns8 majorVersion )
+void ID3v2Frame::write ( XMP_IO* file, XMP_Uns8 majorVersion )
 {
 	XMP_Assert ( (2 <= majorVersion) && (majorVersion <= 4) );
 
@@ -236,7 +574,7 @@ void ID3_Support::ID3v2Frame::write ( XMP_IO* file, XMP_Uns8 majorVersion )
 
 // =================================================================================================
 		
-bool ID3_Support::ID3v2Frame::advancePastCOMMDescriptor ( XMP_Int32& pos )
+bool ID3v2Frame::advancePastCOMMDescriptor ( XMP_Int32& pos )
 {
 
 		if ( (this->contentSize - pos) <= 3 ) return false; // silent error, no room left behing language tag
@@ -267,7 +605,7 @@ bool ID3_Support::ID3v2Frame::advancePastCOMMDescriptor ( XMP_Int32& pos )
 
 // =================================================================================================
 
-bool ID3_Support::ID3v2Frame::getFrameValue ( XMP_Uns8 majorVersion, XMP_Uns32 logicalID, std::string* utf8string )
+bool ID3v2Frame::getFrameValue ( XMP_Uns8 majorVersion, XMP_Uns32 logicalID, std::string* utf8string )
 {
 
 	XMP_Assert ( (this->content != 0) && (this->contentSize >= 0) && (this->contentSize < 20*1024*1024) );
@@ -349,9 +687,9 @@ bool ID3_Support::ID3v2Frame::getFrameValue ( XMP_Uns8 majorVersion, XMP_Uns32 l
 // ID3v1Tag
 // =================================================================================================
 
-bool ID3_Support::ID3v1Tag::read ( XMP_IO* file, SXMPMeta* meta )
+bool ID3v1Tag::read ( XMP_IO* file, SXMPMeta* meta )
 {
-	// returns returns true, if ID3v1 (or v1.1) exists, otherwise false, sets XMP properties en route
+	// Returns true if ID3v1 (or v1.1) exists, otherwise false, sets XMP properties en route.
 
 	if ( file->Length() <= 128 ) return false;  // ensure sufficient room
 	file->Seek ( -128, kXMP_SeekFromEnd );
@@ -410,8 +748,13 @@ bool ID3_Support::ID3v1Tag::read ( XMP_IO* file, SXMPMeta* meta )
 	}
 
 	XMP_Uns8 genreNo = XIO::ReadUns8 ( file );
-	if ( genreNo < 127 ) {
-		meta->SetProperty ( kXMP_NS_DM, "genre", Genres[genreNo] );
+	if ( genreNo < numberedGenreCount ) {
+		meta->SetProperty ( kXMP_NS_DM, "genre", kNumberedGenres[genreNo].name );
+	} else {
+		char buffer[4];	// AUDIT: Big enough for UInt8.
+		snprintf ( buffer, 4, "%d", genreNo );
+		XMP_Assert ( strlen(buffer) == 3 );	// Should be in the range 126..255.
+		meta->SetProperty ( kXMP_NS_DM, "genre", buffer );
 	}
 
 	return true; // ID3Tag found
@@ -420,7 +763,25 @@ bool ID3_Support::ID3v1Tag::read ( XMP_IO* file, SXMPMeta* meta )
 
 // =================================================================================================
 
-void ID3_Support::ID3v1Tag::write ( XMP_IO* file, SXMPMeta* meta )
+static inline bool GetDecimalUns32 ( const char * str, XMP_Uns32 * bin )
+{
+	XMP_Assert ( bin != 0 );
+	if ( (str == 0) || (str[0] == 0) ) return false;
+	
+	*bin = 0;
+	for ( size_t i = 0; str[i] != 0; ++i ) {
+		char ch = str[i];
+		if ( (ch < '0') || (ch > '9') ) return false;
+		*bin = (*bin * 10) + (ch - '0');
+	}
+	
+	return true;
+
+}
+
+// =================================================================================================
+
+void ID3v1Tag::write ( XMP_IO* file, SXMPMeta* meta )
 {
 
 	std::string zeros ( 128, '\0' );
@@ -470,20 +831,22 @@ void ID3_Support::ID3v1Tag::write ( XMP_IO* file, SXMPMeta* meta )
 
 	if ( meta->GetProperty ( kXMP_NS_DM, "genre", &utf8, 0 ) ) {
 
-		XMP_Uns8 genreNo = 0;
+		// Write the first genre code as a UInt8.
+		size_t nameEnd;
+		std::string name;
+		
+		for ( nameEnd = 0; ((nameEnd < utf8.size()) && (utf8[nameEnd] != ';')); ++nameEnd ) {}
+		name.assign ( utf8.c_str(), nameEnd );
+		const char * code = GenreUtils::FindGenreCode ( name );
 
-		int i;
-		const char* genreCString = utf8.c_str();
-		for ( i = 0; i < 127; ++i ) {
-			if ( (strlen(genreCString) == strlen(Genres[i])) &&  //fixing buggy stricmp behaviour on PPC
-				 (stricmp ( genreCString, Genres[i] ) == 0 ) ) {
-				genreNo = i; // found
-				break;
+		if ( code != 0 ) {
+			XMP_Uns32 value;
+			bool ok = GetDecimalUns32 ( code, &value );
+			if ( ok && (value <= 255) ) {
+				file->Seek ( (-128 + 127), kXMP_SeekFromEnd );
+				XIO::WriteUns8 ( file, (XMP_Uns8)value );
 			}
 		}
-
-		file->Seek ( (-128 + 127), kXMP_SeekFromEnd );
-		XIO::WriteUns8 ( file, genreNo );
 
 	}
 
@@ -502,3 +865,7 @@ void ID3_Support::ID3v1Tag::write ( XMP_IO* file, SXMPMeta* meta )
 	}
 
 }	// ID3v1Tag::write
+
+// =================================================================================================
+
+};	// namespace ID3_Support

@@ -104,7 +104,7 @@ public:
 
 	// ---------------------------------------------------------------------------------------------
 
-	#pragma pack (1)	// ! These must match the file layout!
+	#pragma pack (push, 1)	// ! These must match the file layout!
 
 	struct Content_mvhd_0 {
 		XMP_Uns32 vFlags;			//   0
@@ -163,6 +163,12 @@ public:
 		XMP_Uns32 samplesPerChunk;	//  4
 		XMP_Uns32 sampleDescrID;	//  8
 	};								// 12
+
+	#pragma pack( pop )
+
+#if SUNOS_SPARC
+	#pragma pack( )
+#endif //#if SUNOS_SPARC
 
 	// ---------------------------------------------------------------------------------------------
 

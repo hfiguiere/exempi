@@ -23,6 +23,14 @@
 
 #include "source/EndianUtils.hpp"
 
+#include "source/Endian.h"
+
+#if SUNOS_SPARC
+        static const IEndian &IE = BigEndian::getInstance();
+#else
+        static const IEndian &IE = LittleEndian::getInstance();
+#endif //#if SUNOS_SPARC
+
 // =================================================================================================
 /// \file TIFF_Support.hpp
 /// \brief XMPFiles support for TIFF streams.
@@ -642,7 +650,7 @@ public:
 	virtual void IntegrateFromPShop6 ( const void * buriedPtr, size_t buriedLen ) = 0;
 
 	virtual XMP_Uns32 UpdateMemoryStream ( void** dataPtr, bool condenseStream = false ) = 0;
-	virtual void      UpdateFileStream   ( XMP_IO* fileRef ) = 0;
+	virtual void      UpdateFileStream   ( XMP_IO* fileRef, XMP_ProgressTracker* progressTracker ) = 0;
 
 	// ---------------------------------------------------------------------------------------------
 
@@ -658,11 +666,17 @@ public:
 
 	virtual ~TIFF_Manager() {};
 
+	virtual void SetErrorCallback ( GenericErrorCallback * ec ) { this->errorCallbackPtr = ec; };
+
+	virtual void NotifyClient ( XMP_ErrorSeverity severity, XMP_Error & error );
+
 protected:
 
 	bool bigEndian, nativeEndian;
 
 	XMP_Uns32 CheckTIFFHeader ( const XMP_Uns8* tiffPtr, XMP_Uns32 length );
+		// The pointer is to a buffer of the first 8 bytes. The length is the overall length, used
+		// to check the primary IFD offset.
 
 	TIFF_Manager();	// Force clients to use the reader or writer derived classes.
 
@@ -672,6 +686,8 @@ protected:
 		XMP_Uns32 count;
 		XMP_Uns32 dataOrOffset;
 	};
+
+	GenericErrorCallback *errorCallbackPtr;
 
 };	// TIFF_Manager
 
@@ -730,7 +746,7 @@ public:
 	void IntegrateFromPShop6 ( const void * buriedPtr, size_t buriedLen ) { NotAppropriate(); };
 
 	XMP_Uns32 UpdateMemoryStream ( void** dataPtr, bool condenseStream = false ) { if ( dataPtr != 0 ) *dataPtr = tiffStream; return tiffLength; };
-	void      UpdateFileStream   ( XMP_IO* fileRef ) { NotAppropriate(); };
+	void      UpdateFileStream   ( XMP_IO* fileRef, XMP_ProgressTracker* progressTracker ) { NotAppropriate(); };
 
 	TIFF_MemoryReader() : ownedStream(false), tiffStream(0), tiffLength(0) {};
 
@@ -771,7 +787,12 @@ private:
 	const TweakedIFDEntry* FindTagInIFD ( XMP_Uns8 ifd, XMP_Uns16 id ) const;
 
 	const inline void* GetDataPtr ( const TweakedIFDEntry* tifdEntry ) const
-		{ if ( tifdEntry->bytes <= 4 ) return &tifdEntry->dataOrPos; else return (this->tiffStream + tifdEntry->dataOrPos); };
+		{ if ( GetUns32AsIs(&tifdEntry->bytes) <= 4 ) {
+		  	return &tifdEntry->dataOrPos;
+		  } else {
+		  	return (this->tiffStream + GetUns32AsIs(&tifdEntry->dataOrPos));
+		  }
+		}
 
 	static inline void NotAppropriate() { XMP_Throw ( "Not appropriate for TIFF_Reader", kXMPErr_InternalFailure ); };
 
@@ -835,7 +856,7 @@ public:
 	void IntegrateFromPShop6 ( const void * buriedPtr, size_t buriedLen );
 
 	XMP_Uns32 UpdateMemoryStream ( void** dataPtr, bool condenseStream = false );
-	void      UpdateFileStream   ( XMP_IO* fileRef );
+	void      UpdateFileStream   ( XMP_IO* fileRef, XMP_ProgressTracker* progressTracker );
 
 	TIFF_FileWriter();
 
@@ -934,8 +955,7 @@ private:
 	void DeleteExistingInfo();
 
 	XMP_Uns32 ProcessMemoryIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd );
-	XMP_Uns32 ProcessFileIFD   ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, XMP_IO* fileRef, void* _ioBuf );
-		// *** Temporary hack above, _ioBuf is IOBuffer* but don't want to include XIO.hpp.
+	XMP_Uns32 ProcessFileIFD   ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, XMP_IO* fileRef );
 
 	void ProcessPShop6IFD ( const TIFF_MemoryReader& buriedExif, XMP_Uns8 ifd );
 
@@ -958,6 +978,7 @@ private:
 
 };	// TIFF_FileWriter
 
+XMP_Bool IsOffsetValid( XMP_Uns32 offset, XMP_Uns32 lowerBound, XMP_Uns32 upperBound );
 
 // =================================================================================================
 

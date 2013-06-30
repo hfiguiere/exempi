@@ -49,14 +49,11 @@ bool ASF_CheckFormat ( XMP_FileFormat format,
 	IgnoreParam(format); IgnoreParam(fileRef); IgnoreParam(parent);
 	XMP_Assert ( format == kXMP_WMAVFile );
 
-	IOBuffer ioBuf;
+	if ( fileRef->Length() < guidLen ) return false;
+	GUID guid;
 
 	fileRef->Rewind();
-	if ( ! CheckFileSpace ( fileRef, &ioBuf, guidLen ) ) return false;
-
-	GUID guid;
-	memcpy ( &guid, ioBuf.ptr, guidLen );
-
+	fileRef->Read ( &guid, guidLen );
 	if ( ! IsEqualGUID ( ASF_Header_Object, guid ) ) return false;
 
 	return true;
@@ -96,7 +93,7 @@ void ASF_MetaHandler::CacheFileData()
 	XMP_IO* fileRef ( this->parent->ioRef );
 	if ( fileRef == 0 ) return;
 
-	ASF_Support support ( &this->legacyManager );
+	ASF_Support support ( &this->legacyManager,0 );
 	ASF_Support::ObjectState objectState;
 	long numTags = support.OpenASF ( fileRef, objectState );
 	if ( numTags == 0 ) return;
@@ -174,7 +171,7 @@ void ASF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	XMP_IO* fileRef ( this->parent->ioRef );
 	if ( fileRef == 0 ) return;
 
-	ASF_Support support;
+	ASF_Support support(0,this->parent->progressTracker);
 	ASF_Support::ObjectState objectState;
 	long numTags = support.OpenASF ( fileRef, objectState );
 	if ( numTags == 0 ) return;
@@ -233,7 +230,10 @@ void ASF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 			updated = SafeWriteFile();
 
 		} else {
-
+			
+			XMP_ProgressTracker* progressTracker = this->parent->progressTracker;
+			if ( progressTracker != 0 ) progressTracker->BeginWork ( (float)packetLen );
+			
 			// current XMP chunk size is sufficient -> write (in place update)
 			updated = ASF_Support::WriteBuffer(fileRef, objectState.xmpPos, packetLen, packetStr );
 
@@ -257,6 +257,7 @@ void ASF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 			}
 
+			if ( progressTracker != 0  ) progressTracker->WorkComplete();
 		}
 
 	}
@@ -276,7 +277,7 @@ void ASF_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 	bool ok;
 	XMP_IO* originalRef = this->parent->ioRef;
 
-	ASF_Support support;
+	ASF_Support support(0,this->parent->progressTracker);
 	ASF_Support::ObjectState objectState;
 	long numTags = support.OpenASF ( originalRef, objectState );
 	if ( numTags == 0 ) return;
@@ -285,7 +286,21 @@ void ASF_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 
 	ASF_Support::ObjectIterator curPos = objectState.objects.begin();
 	ASF_Support::ObjectIterator endPos = objectState.objects.end();
-
+	XMP_ProgressTracker* progressTracker = this->parent->progressTracker;
+	if ( progressTracker != 0 ) {
+		float nonheadersize = (float)(xmpPacket.size()+kASF_ObjectBaseLen+8);
+		bool legacyChange=this->legacyManager.hasLegacyChanged( );
+		for ( ; curPos != endPos; ++curPos ) {
+			if (curPos->xmp) continue;
+			//header objects are taken care of in ASF_Support::WriteHeaderObject
+			if ( ! ( IsEqualGUID ( ASF_Header_Object, curPos->guid) && legacyChange ) ) {
+				nonheadersize+=(curPos->len);
+			}
+		}
+		curPos = objectState.objects.begin();
+		endPos = objectState.objects.end();
+		progressTracker->BeginWork ( nonheadersize );
+	}
 	for ( ; curPos != endPos; ++curPos ) {
 
 		ASF_Support::ObjectData object = *curPos;
@@ -316,6 +331,7 @@ void ASF_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 
 	ok = support.UpdateFileSize ( tempRef );
 	if ( ! ok ) XMP_Throw ( "Failure updating ASF file size", kXMPErr_InternalFailure );
+	if ( progressTracker != 0  ) progressTracker->WorkComplete();
 
 }	// ASF_MetaHandler::WriteTempFile
 

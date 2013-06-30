@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-<title>XMP-Toolkit-SDK-CS6: Class Members - Functions</title>
+<title>XMP-Toolkit-SDK-CC201306: Class Members - Functions</title>
 <link href="xmp.css" rel="stylesheet" type="text/css">
 <link href="tabs.css" rel="stylesheet" type="text/css">
 </head><body>
@@ -243,6 +243,9 @@ window.onload = initDynSections;
 <li>GetArrayItem()
 : <a class="el" href="classTXMPMeta.html#ac64a4251d157937f69b73f2ffac4f7cc">TXMPMeta&lt; tStringObj &gt;</a>
 </li>
+<li>GetAssociatedResources()
+: <a class="el" href="classTXMPFiles.html#a03e6c681e827666690f0e5567b0b2a8a">TXMPFiles&lt; tStringObj &gt;</a>
+</li>
 <li>GetErrMsg()
 : <a class="el" href="classXMP__Error.html#a9a3560c67612dec9a6ca37c34eb2c153">XMP_Error</a>
 </li>
@@ -305,8 +308,8 @@ window.onload = initDynSections;
 : <a class="el" href="classTXMPMeta.html#a885ef7127b897e349f71fa493ace3c94">TXMPMeta&lt; tStringObj &gt;</a>
 </li>
 <li>GetVersionInfo()
-: <a class="el" href="classTXMPMeta.html#a5415cfc01a9cb8786939246571a23a9d">TXMPMeta&lt; tStringObj &gt;</a>
-, <a class="el" href="classTXMPFiles.html#a6e521c034728b59ab55213a9d8203d1e">TXMPFiles&lt; tStringObj &gt;</a>
+: <a class="el" href="classTXMPFiles.html#a6e521c034728b59ab55213a9d8203d1e">TXMPFiles&lt; tStringObj &gt;</a>
+, <a class="el" href="classTXMPMeta.html#a5415cfc01a9cb8786939246571a23a9d">TXMPMeta&lt; tStringObj &gt;</a>
 </li>
 <li>GetXMP()
 : <a class="el" href="classTXMPFiles.html#a42ca0bbc5ac66a8de1710e03a7ff17b3">TXMPFiles&lt; tStringObj &gt;</a>
@@ -318,7 +321,13 @@ window.onload = initDynSections;
 <li>Initialize()
 : <a class="el" href="classTXMPFiles.html#a0874bbbf41c9490abfb613bfe297327d">TXMPFiles&lt; tStringObj &gt;</a>
 , <a class="el" href="classTXMPMeta.html#af1defbb73f919eae06456a655dea726c">TXMPMeta&lt; tStringObj &gt;</a>
-, <a class="el" href="classTXMPFiles.html#acc4b3bc2109fa98b4083df0d974f7dfb">TXMPFiles&lt; tStringObj &gt;</a>
+, <a class="el" href="classTXMPFiles.html#abf0defebf7ca7d2cba7aed3c5dc107df">TXMPFiles&lt; tStringObj &gt;</a>
+</li>
+<li>IsMetadataWritable()
+: <a class="el" href="classTXMPFiles.html#a6dfa135d53143d45e5ff22efa554398e">TXMPFiles&lt; tStringObj &gt;</a>
+</li>
+<li>IsNotified()
+: <a class="el" href="classXMP__Error.html#a5a0651a9615a6a60e467a96ddb43a6bb">XMP_Error</a>
 </li>
 </ul>
 
@@ -369,6 +378,10 @@ window.onload = initDynSections;
 <li>RemoveProperties()
 : <a class="el" href="classTXMPUtils.html#a40c645803530662e08d042b4b7c6190d">TXMPUtils&lt; tStringObj &gt;</a>
 </li>
+<li>ResetErrorCallbackLimit()
+: <a class="el" href="classTXMPFiles.html#a8e37b25dd1cba1e9a3f45037022717f2">TXMPFiles&lt; tStringObj &gt;</a>
+, <a class="el" href="classTXMPMeta.html#a31c7ef089e8fadff122044afa27d200a">TXMPMeta&lt; tStringObj &gt;</a>
+</li>
 </ul>
 
 
@@ -385,17 +398,34 @@ window.onload = initDynSections;
 <li>SetArrayItem()
 : <a class="el" href="classTXMPMeta.html#a1570eb89d613b4a94ca572e4644168cc">TXMPMeta&lt; tStringObj &gt;</a>
 </li>
+<li>SetDefaultErrorCallback()
+: <a class="el" href="classTXMPFiles.html#accc6c1cef9f124f6c5ed360251aa5aa7">TXMPFiles&lt; tStringObj &gt;</a>
+, <a class="el" href="classTXMPMeta.html#a1e90e0c8cd8c5670267bb693cf3660fe">TXMPMeta&lt; tStringObj &gt;</a>
+</li>
+<li>SetDefaultProgressCallback()
+: <a class="el" href="classTXMPFiles.html#a83335ee20bb3ea543c8c86a5757a7753">TXMPFiles&lt; tStringObj &gt;</a>
+</li>
+<li>SetErrorCallback()
+: <a class="el" href="classTXMPFiles.html#a43a98633a0090fb4ade76edf24302ab1">TXMPFiles&lt; tStringObj &gt;</a>
+, <a class="el" href="classTXMPMeta.html#aee41442af4f049c1d6698fc27ce854d0">TXMPMeta&lt; tStringObj &gt;</a>
+</li>
 <li>SetGlobalOptions()
 : <a class="el" href="classTXMPMeta.html#ae7bb38d9b3857b08106630a386b47332">TXMPMeta&lt; tStringObj &gt;</a>
 </li>
 <li>SetLocalizedText()
 : <a class="el" href="classTXMPMeta.html#af9531b949a462f5663b1f3fd99464c19">TXMPMeta&lt; tStringObj &gt;</a>
 </li>
+<li>SetNotified()
+: <a class="el" href="classXMP__Error.html#a9c368db94ca63ad7b9b118051d1f8897">XMP_Error</a>
+</li>
 <li>SetObjectName()
 : <a class="el" href="classTXMPMeta.html#acf1935be8e4849976dfc02325424960a">TXMPMeta&lt; tStringObj &gt;</a>
 </li>
 <li>SetObjectOptions()
 : <a class="el" href="classTXMPMeta.html#a92055b3ae18dfd5e5491108f59318f17">TXMPMeta&lt; tStringObj &gt;</a>
+</li>
+<li>SetProgressCallback()
+: <a class="el" href="classTXMPFiles.html#aa283e2a1c16918c86148446859ed1a2d">TXMPFiles&lt; tStringObj &gt;</a>
 </li>
 <li>SetProperty()
 : <a class="el" href="classTXMPMeta.html#a1dfd6a08ebfd1a6364b3a7b6584bcc28">TXMPMeta&lt; tStringObj &gt;</a>
@@ -419,7 +449,7 @@ window.onload = initDynSections;
 : <a class="el" href="classTXMPMeta.html#ac2e798da5f9d94e486382a41e73fcea3">TXMPMeta&lt; tStringObj &gt;</a>
 </li>
 <li>SetStructField()
-: <a class="el" href="classTXMPMeta.html#a77d4a1bf7831f39073af9ea1544ebefa">TXMPMeta&lt; tStringObj &gt;</a>
+: <a class="el" href="classTXMPMeta.html#a0e44c30e7527064909e5f7035d53c4f5">TXMPMeta&lt; tStringObj &gt;</a>
 </li>
 <li>SetTimeZone()
 : <a class="el" href="classTXMPUtils.html#a96bcc45febac55f6c49951815b7de2ef">TXMPUtils&lt; tStringObj &gt;</a>
@@ -473,6 +503,6 @@ window.onload = initDynSections;
 </ul>
 </div>
 <hr size="1"><address style="text-align: right;"><small>
-XMP-Toolkit-SDK-CS6 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
+XMP-Toolkit-SDK-CC201306 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
 </body>
 </html>

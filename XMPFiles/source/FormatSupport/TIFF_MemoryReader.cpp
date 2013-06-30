@@ -12,6 +12,7 @@
 
 #include "XMPFiles/source/FormatSupport/TIFF_Support.hpp"
 #include "source/XIO.hpp"
+#include "source/EndianUtils.hpp"
 
 // =================================================================================================
 /// \file TIFF_MemoryReader.cpp
@@ -55,11 +56,11 @@ void TIFF_MemoryReader::SortIFD ( TweakedIFDInfo* thisIFD )
 
 	XMP_Uns16 tagCount = thisIFD->count;
 	TweakedIFDEntry* ifdEntries = thisIFD->entries;
-	XMP_Uns16 prevTag = ifdEntries[0].id;
+	XMP_Uns16 prevTag = GetUns16AsIs ( &ifdEntries[0].id );
 
 	for ( size_t i = 1; i < tagCount; ++i ) {
 
-		XMP_Uns16 thisTag = ifdEntries[i].id;
+		XMP_Uns16 thisTag = GetUns16AsIs ( &ifdEntries[i].id );
 
 		if ( thisTag > prevTag ) {
 
@@ -78,7 +79,7 @@ void TIFF_MemoryReader::SortIFD ( TweakedIFDInfo* thisIFD )
 			// Out of order, move this tag up, prevTag is unchanged. Might still be a duplicate!
 			XMP_Int32 j;	// ! Need a signed value.
 			for ( j = (XMP_Int32)i-1; j >= 0; --j ) {
-				if ( ifdEntries[j].id <= thisTag ) break;
+				if ( GetUns16AsIs(&ifdEntries[j].id) <= thisTag ) break;
 			}
 
 			if ( (j >= 0) && (ifdEntries[j].id == thisTag) ) {
@@ -92,10 +93,20 @@ void TIFF_MemoryReader::SortIFD ( TweakedIFDInfo* thisIFD )
 			} else {
 
 				// Move the out of order entry to position j+1, move the middle of the array down.
-				TweakedIFDEntry temp = ifdEntries[i];
-				++j;	// ! So the insertion index becomes j.
-				memcpy ( &ifdEntries[j+1], &ifdEntries[j], 12*(i-j) );	// AUDIT: Safe, moving less than i entries to a location before i.
-				ifdEntries[j] = temp;
+				#if ! SUNOS_SPARC
+					TweakedIFDEntry temp = ifdEntries[i];
+					++j;	// ! So the insertion index becomes j.
+					memcpy ( &ifdEntries[j+1], &ifdEntries[j], 12*(i-j) );	// AUDIT: Safe, moving less than i entries to a location before i.
+					ifdEntries[j] = temp;
+				#else
+					void * tempifdEntries = &ifdEntries[i];
+					TweakedIFDEntry temp;
+					memcpy ( &temp, tempifdEntries, sizeof(TweakedIFDEntry) );
+					++j;	// ! So the insertion index becomes j.
+					memcpy ( &ifdEntries[j+1], &ifdEntries[j], 12*(i-j) );	// AUDIT: Safe, moving less than i entries to a location before i.
+					tempifdEntries = &ifdEntries[j];
+					memcpy ( tempifdEntries, &temp, sizeof(TweakedIFDEntry) );
+				#endif
 
 			}
 
@@ -126,7 +137,7 @@ bool TIFF_MemoryReader::GetIFD ( XMP_Uns8 ifd, TagInfoMap* ifdMap ) const
 			TweakedIFDEntry* thisTag = &(thisIFD->entries[i]);
 			if ( (thisTag->type < kTIFF_ByteType) || (thisTag->type > kTIFF_LastType) ) continue;	// Bad type, skip this tag.
 
-			TagInfo info ( thisTag->id, thisTag->type, 0, 0, thisTag->bytes );
+			TagInfo info ( thisTag->id, thisTag->type, 0, 0, GetUns32AsIs(&thisTag->bytes)  );
 			info.count = info.dataLen / (XMP_Uns32)kTIFF_TypeSizes[info.type];
 			info.dataPtr = this->GetDataPtr ( thisTag );
 
@@ -166,10 +177,11 @@ const TIFF_MemoryReader::TweakedIFDEntry* TIFF_MemoryReader::FindTagInIFD ( XMP_
 		// There are halfLength entries below spanMiddle, then the spanMiddle entry, then
 		// spanLength-halfLength-1 entries above spanMiddle (which can be none).
 
-		if ( spanMiddle->id == id ) {
+		XMP_Uns16 middleID = GetUns16AsIs ( &spanMiddle->id );
+		if ( middleID == id ) {
 			spanBegin = spanMiddle;
 			break;
-		} else if ( spanMiddle->id > id ) {
+		} else if ( middleID > id ) {
 			spanLength = halfLength;	// Discard the middle.
 		} else {
 			spanBegin = spanMiddle;	// Keep a valid spanBegin for the return check, don't use spanMiddle+1.
@@ -178,7 +190,7 @@ const TIFF_MemoryReader::TweakedIFDEntry* TIFF_MemoryReader::FindTagInIFD ( XMP_
 
 	}
 
-	if ( spanBegin->id != id ) spanBegin = 0;
+	if ( GetUns16AsIs(&spanBegin->id) != id ) spanBegin = 0;
 	return spanBegin;
 
 }	// TIFF_MemoryReader::FindTagInIFD
@@ -206,14 +218,18 @@ bool TIFF_MemoryReader::GetTag ( XMP_Uns8 ifd, XMP_Uns16 id, TagInfo* info ) con
 {
 	const TweakedIFDEntry* thisTag = this->FindTagInIFD ( ifd, id );
 	if ( thisTag == 0 ) return false;
-	if ( (thisTag->type < kTIFF_ByteType) || (thisTag->type > kTIFF_LastType) ) return false;	// Bad type, skip this tag.
+	
+	XMP_Uns16 thisType = GetUns16AsIs ( &thisTag->type );
+	XMP_Uns32 thisBytes = GetUns32AsIs ( &thisTag->bytes );
+	
+	if ( (thisType < kTIFF_ByteType) || (thisType > kTIFF_LastType) ) return false;	// Bad type, skip this tag.
 
 	if ( info != 0 ) {
 
-		info->id = thisTag->id;
-		info->type = thisTag->type;
-		info->count = thisTag->bytes / (XMP_Uns32)kTIFF_TypeSizes[thisTag->type];
-		info->dataLen = thisTag->bytes;
+		info->id = GetUns16AsIs ( &thisTag->id );
+		info->type = thisType;
+		info->count = thisBytes / (XMP_Uns32)kTIFF_TypeSizes[thisType];
+		info->dataLen = thisBytes;
 
 		info->dataPtr = this->GetDataPtr ( thisTag );
 
@@ -242,7 +258,7 @@ bool TIFF_MemoryReader::GetTag_Integer ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns32* 
 	if ( thisTag == 0 ) return false;
 
 	if ( thisTag->type > kTIFF_LastType ) return false;	// Unknown type.
-	if ( thisTag->bytes != kTIFF_TypeSizes[thisTag->type] ) return false;	// Wrong count.
+	if ( GetUns32AsIs(&thisTag->bytes) != kTIFF_TypeSizes[thisTag->type] ) return false;	// Wrong count.
 
 	XMP_Uns32 uns32;
 	XMP_Int32 int32;
@@ -553,27 +569,40 @@ void TIFF_MemoryReader::ParseMemoryStream ( const void* data, XMP_Uns32 length, 
 	if ( primaryIFDOffset != 0 ) tnailIFDOffset = this->ProcessOneIFD ( primaryIFDOffset, kTIFF_PrimaryIFD );
 	
 	// ! Need the thumbnail IFD for checking full Exif APP1 in some JPEG files!
-	if ( tnailIFDOffset != 0 ) (void) this->ProcessOneIFD ( tnailIFDOffset, kTIFF_TNailIFD );
+	if ( tnailIFDOffset != 0 ) {
+		if ( IsOffsetValid(tnailIFDOffset, 8, ifdLimit ) ) { 	// Ignore a bad Thumbnail IFD offset.
+			(void) this->ProcessOneIFD ( tnailIFDOffset, kTIFF_TNailIFD );
+		} else {
+			XMP_Error error ( kXMPErr_BadTIFF, "Bad IFD offset" );
+			this->NotifyClient (kXMPErrSev_Recoverable, error );
+		}
+	}
 
 	const TweakedIFDEntry* exifIFDTag = this->FindTagInIFD ( kTIFF_PrimaryIFD, kTIFF_ExifIFDPointer );
-	if ( (exifIFDTag != 0) && (exifIFDTag->type == kTIFF_LongType) && (exifIFDTag->bytes == 4) ) {
+	if ( (exifIFDTag != 0) && (exifIFDTag->type == kTIFF_LongType) && (GetUns32AsIs(&exifIFDTag->bytes) == 4) ) {
 		XMP_Uns32 exifOffset = this->GetUns32 ( &exifIFDTag->dataOrPos );
 		(void) this->ProcessOneIFD ( exifOffset, kTIFF_ExifIFD );
 	}
 
 	const TweakedIFDEntry* gpsIFDTag = this->FindTagInIFD ( kTIFF_PrimaryIFD, kTIFF_GPSInfoIFDPointer );
-	if ( (gpsIFDTag != 0) && (gpsIFDTag->type == kTIFF_LongType) && (gpsIFDTag->bytes == 4) ) {
+	if ( (gpsIFDTag != 0) && (gpsIFDTag->type == kTIFF_LongType) && (GetUns32AsIs(&gpsIFDTag->bytes) == 4) ) {
 		XMP_Uns32 gpsOffset = this->GetUns32 ( &gpsIFDTag->dataOrPos );
-		if ( (8 <= gpsOffset) && (gpsOffset < ifdLimit) ) {	// Ignore a bad GPS IFD offset.
+		if ( IsOffsetValid ( gpsOffset, 8, ifdLimit ) ) {	// Ignore a bad GPS IFD offset.
 			(void) this->ProcessOneIFD ( gpsOffset, kTIFF_GPSInfoIFD );
+		} else {
+			XMP_Error error ( kXMPErr_BadTIFF, "Bad IFD offset" );
+			this->NotifyClient (kXMPErrSev_Recoverable, error );
 		}
 	}
 
 	const TweakedIFDEntry* interopIFDTag = this->FindTagInIFD ( kTIFF_ExifIFD, kTIFF_InteroperabilityIFDPointer );
-	if ( (interopIFDTag != 0) && (interopIFDTag->type == kTIFF_LongType) && (interopIFDTag->bytes == 4) ) {
+	if ( (interopIFDTag != 0) && (interopIFDTag->type == kTIFF_LongType) && (GetUns32AsIs(&interopIFDTag->bytes) == 4) ) {
 		XMP_Uns32 interopOffset = this->GetUns32 ( &interopIFDTag->dataOrPos );
-		if ( (8 <= interopOffset) && (interopOffset < ifdLimit) ) {	// Ignore a bad Interoperability IFD offset.
+		if ( IsOffsetValid ( interopOffset, 8, ifdLimit ) ) {	// Ignore a bad Interoperability IFD offset.
 			(void) this->ProcessOneIFD ( interopOffset, kTIFF_InteropIFD );
+		} else {
+			XMP_Error error ( kXMPErr_BadTIFF, "Bad IFD offset" );
+			this->NotifyClient (kXMPErrSev_Recoverable, error );
 		}
 	}
 
@@ -588,16 +617,22 @@ XMP_Uns32 TIFF_MemoryReader::ProcessOneIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd )
 	TweakedIFDInfo& ifdInfo = this->containedIFDs[ifd];
 
 	if ( (ifdOffset < 8) || (ifdOffset > (this->tiffLength - kEmptyIFDLength)) ) {
-		XMP_Throw ( "Bad IFD offset", kXMPErr_BadTIFF );
+		XMP_Error error(kXMPErr_BadTIFF, "Bad IFD offset" );
+		this->NotifyClient ( kXMPErrSev_FileFatal, error );
 	}
 
 	XMP_Uns8* ifdPtr = this->tiffStream + ifdOffset;
 	XMP_Uns16 ifdCount = this->GetUns16 ( ifdPtr );
 	TweakedIFDEntry* ifdEntries = (TweakedIFDEntry*)(ifdPtr+2);
 
-	if ( ifdCount >= 0x8000 ) XMP_Throw ( "Outrageous IFD count", kXMPErr_BadTIFF );
+	if ( ifdCount >= 0x8000 ) {
+		XMP_Error error(kXMPErr_BadTIFF, "Outrageous IFD count" );
+		this->NotifyClient ( kXMPErrSev_FileFatal, error );
+	}
+
 	if ( (XMP_Uns32)(2 + ifdCount*12 + 4) > (this->tiffLength - ifdOffset) ) {
-		XMP_Throw ( "Out of bounds IFD", kXMPErr_BadTIFF );
+		XMP_Error error(kXMPErr_BadTIFF, "Out of bounds IFD" );
+		this->NotifyClient ( kXMPErrSev_FileFatal, error );
 	}
 
 	ifdInfo.count = ifdCount;
@@ -615,21 +650,48 @@ XMP_Uns32 TIFF_MemoryReader::ProcessOneIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd )
 			Flip4 ( &thisEntry->bytes );
 		}
 
-		if ( thisEntry->id <= prevTag ) needsSorting = true;
-		prevTag = thisEntry->id;
+		if ( GetUns16AsIs(&thisEntry->id) <= prevTag ) needsSorting = true;
+		prevTag = GetUns16AsIs ( &thisEntry->id );
 
-		if ( (thisEntry->type < kTIFF_ByteType) || (thisEntry->type > kTIFF_LastType) ) continue;	// Bad type, skip this tag.
+		if ( (GetUns16AsIs(&thisEntry->type) < kTIFF_ByteType) || (GetUns16AsIs(&thisEntry->type) > kTIFF_LastType) ) continue;	// Bad type, skip this tag.
 
-		thisEntry->bytes *= (XMP_Uns32)kTIFF_TypeSizes[thisEntry->type];
-		if ( thisEntry->bytes > 4 ) {
-			if ( ! this->nativeEndian ) Flip4 ( &thisEntry->dataOrPos );
-			if ( (thisEntry->dataOrPos < 8) || (thisEntry->dataOrPos >= this->tiffLength) ) {
-				thisEntry->bytes = thisEntry->dataOrPos = 0;	// Make this bad tag look empty.
+		#if ! SUNOS_SPARC
+	
+			thisEntry->bytes *= (XMP_Uns32)kTIFF_TypeSizes[thisEntry->type];
+			if ( thisEntry->bytes > 4 ) {
+				if ( ! this->nativeEndian ) Flip4 ( &thisEntry->dataOrPos );
+				if ( (thisEntry->dataOrPos < 8) || (thisEntry->dataOrPos >= this->tiffLength) ) {
+					thisEntry->bytes = thisEntry->dataOrPos = 0;	// Make this bad tag look empty.
+				}
+				if ( thisEntry->bytes > (this->tiffLength - thisEntry->dataOrPos) ) {
+					thisEntry->bytes = thisEntry->dataOrPos = 0;	// Make this bad tag look empty.
+				}
 			}
-			if ( thisEntry->bytes > (this->tiffLength - thisEntry->dataOrPos) ) {
-				thisEntry->bytes = thisEntry->dataOrPos = 0;	// Make this bad tag look empty.
+	
+		#else
+	
+			void *tempEntryByte = &thisEntry->bytes;
+			XMP_Uns32 temp = GetUns32AsIs(&thisEntry->bytes);
+			temp = temp * (XMP_Uns32)kTIFF_TypeSizes[GetUns16AsIs(&thisEntry->type)];
+			memcpy ( tempEntryByte, &temp, sizeof(thisEntry->bytes) );
+	
+			// thisEntry->bytes *= (XMP_Uns32)kTIFF_TypeSizes[thisEntry->type];
+			if ( GetUns32AsIs(&thisEntry->bytes) > 4 ) {
+				void *tempEntryDataOrPos = &thisEntry->dataOrPos;
+				if ( ! this->nativeEndian ) Flip4 ( &thisEntry->dataOrPos );
+				if ( (GetUns32AsIs(&thisEntry->dataOrPos) < 8) || (GetUns32AsIs(&thisEntry->dataOrPos) >= this->tiffLength) ) {
+					// thisEntry->bytes = thisEntry->dataOrPos = 0;	// Make this bad tag look empty.
+					memset ( tempEntryByte, 0, sizeof(XMP_Uns32) );
+					memset ( tempEntryDataOrPos, 0, sizeof(XMP_Uns32) );
+				}
+				if ( GetUns32AsIs(&thisEntry->bytes) > (this->tiffLength - GetUns32AsIs(&thisEntry->dataOrPos)) ) {
+					// thisEntry->bytes = thisEntry->dataOrPos = 0;	// Make this bad tag look empty.
+					memset ( tempEntryByte, 0, sizeof(XMP_Uns32) );
+					memset ( tempEntryDataOrPos, 0, sizeof(XMP_Uns32) );
+				}
 			}
-		}
+	
+		#endif
 
 	}
 

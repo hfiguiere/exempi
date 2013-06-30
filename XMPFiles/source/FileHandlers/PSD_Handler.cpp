@@ -48,20 +48,19 @@ using namespace std;
 
 bool PSD_CheckFormat ( XMP_FileFormat format,
 	                   XMP_StringPtr  filePath,
-                       XMP_IO*    fileRef,
+                       XMP_IO*    	  fileRef,
                        XMPFiles *     parent )
 {
 	IgnoreParam(format); IgnoreParam(filePath); IgnoreParam(parent);
 	XMP_Assert ( format == kXMP_PhotoshopFile );
 
-	IOBuffer ioBuf;
-
 	fileRef->Rewind ( );
-	if ( ! CheckFileSpace ( fileRef, &ioBuf, 34 ) ) return false;	// 34 = header plus 2 lengths
+	if ( fileRef->Length() < 34 ) return false;	// 34 = header plus 2 lengths
 
-	if ( ! CheckBytes ( ioBuf.ptr, "8BPS", 4 ) ) return false;
-	ioBuf.ptr += 4;	// Move to the version.
-	XMP_Uns16 version = GetUns16BE ( ioBuf.ptr );
+	XMP_Uns8 buffer [4];
+	fileRef->ReadAll ( buffer, 4 );
+	if ( ! CheckBytes ( buffer, "8BPS", 4 ) ) return false;
+	XMP_Uns16 version = XIO::ReadUns16_BE ( fileRef );
 	if ( (version != 1) && (version != 2) ) return false;
 
 	return true;
@@ -128,7 +127,7 @@ void PSD_MetaHandler::CacheFileData()
 	}
 
 	XMP_Uns8  psdHeader[30];
-	XMP_Uns32 ioLen, cmLen, psirLen;
+	XMP_Uns32 ioLen, cmLen;
 
 	XMP_Int64 filePos = 0;
 	fileRef->Rewind ( );
@@ -146,10 +145,8 @@ void PSD_MetaHandler::CacheFileData()
 	filePos = fileRef->Seek ( psirOrigin, kXMP_SeekFromStart  );
 	if ( filePos !=  psirOrigin ) return;	// Throw?
 
-	ioLen = fileRef->Read ( psdHeader, 4 );
-	if ( ioLen != 4 ) return;	// Throw?
-
-	psirLen = GetUns32BE ( &psdHeader[0] );
+	if ( ! XIO::CheckFileSpace ( fileRef, 4 ) ) return;	// Throw?
+	XMP_Uns32 psirLen = XIO::ReadUns32_BE ( fileRef );
 
 	this->psirMgr.ParseFileResources ( fileRef, psirLen );
 
@@ -197,6 +194,8 @@ void PSD_MetaHandler::ProcessXMP()
 		this->iptcMgr = new IPTC_Writer();	// ! Parse it later.
 		this->exifMgr = new TIFF_FileWriter();
 	}
+	if ( this->parent )
+		exifMgr->SetErrorCallback( &this->parent->errorCallback );
 
 	PSIR_Manager & psir = this->psirMgr;	// Give the compiler help in recognizing non-aliases.
 	IPTC_Manager & iptc = *this->iptcMgr;
@@ -242,14 +241,8 @@ void PSD_MetaHandler::ProcessXMP()
 		XMP_StringLen packetLen = (XMP_StringLen)this->xmpPacket.size();
 		try {
 			this->xmpObj.ParseFromBuffer ( packetStr, packetLen );
-			haveXMP = true;
-		} catch ( ... ) {
-			XMP_ClearOption ( options, k2XMP_FileHadXMP );
-			if ( haveIPTC ) iptc.ParseMemoryDataSets ( iptcInfo.dataPtr, iptcInfo.dataLen );
-			if ( iptcDigestState == kDigestMatches ) iptcDigestState = kDigestMissing;
-			ImportPhotoData ( exif, iptc, psir, iptcDigestState, &this->xmpObj, options );
-			throw;	// ! Rethrow the exception, don't absorb it.
-		}
+		} catch ( ... ) { /* Ignore parsing failures, someday we hope to get partial XMP back. */ }
+		haveXMP = true;
 	}
 
 	// Process the legacy metadata.
@@ -298,6 +291,7 @@ void PSD_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 	bool doInPlace = (fileHadXMP && (this->xmpPacket.size() <= (size_t)oldPacketLength));
 	if ( this->psirMgr.IsLegacyChanged() ) doInPlace = false;
+	XMP_ProgressTracker* progressTracker = this->parent->progressTracker;
 
 	if ( doInPlace ) {
 
@@ -315,10 +309,10 @@ void PSD_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 		XMP_Assert ( this->xmpPacket.size() == (size_t)oldPacketLength );	// ! Done by common PutXMP logic.
 
-		// printf ( "PSD_MetaHandler::UpdateFile - XMP in-place packet offset %lld (0x%llX), size %d\n",
-		//		  oldPacketOffset, oldPacketOffset, this->xmpPacket.size() );
+		if ( progressTracker != 0 ) progressTracker->BeginWork ( this->xmpPacket.size() );
 		liveFile->Seek ( oldPacketOffset, kXMP_SeekFromStart  );
 		liveFile->Write ( this->xmpPacket.c_str(), (XMP_StringLen)this->xmpPacket.size() );
+		if ( progressTracker != 0 ) progressTracker->WorkComplete();
 
 	} else {
 
@@ -363,6 +357,7 @@ void PSD_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 	XMP_AbortProc abortProc  = this->parent->abortProc;
 	void *        abortArg   = this->parent->abortArg;
 	const bool    checkAbort = (abortProc != 0);
+	XMP_ProgressTracker* progressTracker = this->parent->progressTracker;
 
 	XMP_Uns64 sourceLen = origRef->Length();
 	if ( sourceLen == 0 ) return;	// Tolerate empty files.
@@ -382,35 +377,50 @@ void PSD_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 	FillPacketInfo ( this->xmpPacket, &this->packetInfo );
 
 	this->psirMgr.SetImgRsrc ( kPSIR_XMP, this->xmpPacket.c_str(), (XMP_StringLen)this->xmpPacket.size() );
+	
+	// Calculate the total writes I/O to be done by this method. This includes header section, color
+	// mode section and tail length after the image resources section. The write I/O for image
+	// resources section is added to total work in PSIR_FileWriter::UpdateFileResources.
+
+	origRef->Seek ( 26, kXMP_SeekFromStart );	//move to the point after Header 26 is the header length
+
+	XMP_Uns32 cmLen,cmLen1;
+	origRef->Read ( &cmLen, 4 );	// get the length of color mode section
+	cmLen1 = GetUns32BE ( &cmLen );
+	origRef->Seek ( cmLen1, kXMP_SeekFromCurrent );	//move to the end of color mode section
+	
+	XMP_Uns32 irLen;
+	origRef->Read ( &irLen, 4 );	// Get the source image resource section length.
+	irLen = GetUns32BE ( &irLen );
+		
+	XMP_Uns64 tailOffset = 26 + 4 + cmLen1 + 4 + irLen;
+	XMP_Uns64 tailLength = sourceLen - tailOffset;
+	
+	// Add work for 26 bytes header, 4 bytes color mode section length, color mode section length
+	// and tail length after the image resources section length.
+
+	if ( progressTracker != 0 ) progressTracker->BeginWork ( (float)(26.0f + 4.0f + cmLen1 + tailLength) );
 
 	// Copy the file header and color mode section, then write the updated image resource section,
 	// and copy the tail of the source file (layer and mask section to EOF).
 
 	origRef->Rewind ( );
 	tempRef->Truncate ( 0  );
-
 	XIO::Copy ( origRef, tempRef, 26 );	// Copy the file header.
 
-	XMP_Uns32 cmLen;
-	origRef->Read ( &cmLen, 4 );
+	origRef->Seek ( 4, kXMP_SeekFromCurrent );
 	tempRef->Write ( &cmLen, 4 );	// Copy the color mode section length.
-	cmLen = GetUns32BE ( &cmLen );
-	XIO::Copy ( origRef, tempRef, cmLen );	// Copy the color mode section contents.
 
-	XMP_Uns32 irLen;
-	origRef->Read ( &irLen, 4 );	// Get the source image resource section length.
-	irLen = GetUns32BE ( &irLen );
+	XIO::Copy ( origRef, tempRef, cmLen1 );	// Copy the color mode section contents.
 
-	this->psirMgr.UpdateFileResources ( origRef, tempRef, 0, abortProc, abortArg );
-
-	XMP_Uns64 tailOffset = 26 + 4 + cmLen + 4 + irLen;
-	XMP_Uns64 tailLength = sourceLen - tailOffset;
+	this->psirMgr.UpdateFileResources ( origRef, tempRef, abortProc, abortArg ,progressTracker );
 
 	origRef->Seek ( tailOffset, kXMP_SeekFromStart  );
 	tempRef->Seek ( 0, kXMP_SeekFromEnd  );
 	XIO::Copy ( origRef, tempRef, tailLength );	// Copy the tail of the file.
 
 	this->needsUpdate = false;
+	if ( progressTracker != 0 ) progressTracker->WorkComplete();
 
 }	// PSD_MetaHandler::WriteTempFile
 

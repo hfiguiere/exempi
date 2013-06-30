@@ -33,6 +33,7 @@ namespace ISOMedia {
 		k_mp41 = 0x6D703431UL, 	// Compatible brand codes
 		k_mp42 = 0x6D703432UL,
 		k_f4v  = 0x66347620UL,
+		k_avc1 = 0x61766331UL,
 		k_qt   = 0x71742020UL,
 
 		k_moov = 0x6D6F6F76UL, 	// Container Box, no version/flags.
@@ -58,6 +59,9 @@ namespace ISOMedia {
 		k_stsc = 0x73747363UL,
 		k_stco = 0x7374636FUL,
 		k_co64 = 0x636F3634UL,
+		k_dinf = 0x64696E66UL,
+		k_dref = 0x64726566UL,
+		k_alis = 0x616C6973UL,
 
 		k_meta = 0x6D657461UL, 	// Types for the iTunes metadata boxes.
 		k_ilst = 0x696C7374UL,

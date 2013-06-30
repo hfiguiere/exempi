@@ -14,15 +14,15 @@
 * All plugin should be derived from PluginBase. This is the basic miinimum 
 * functionalty which a  plugin should provide.
 * 
-* @author Praveen Kumar Goyal (pkgoyal)
-* @bug No known bugs.
 ***************************************************************************/
 
 #ifndef PLUGINBASE_H
 #define PLUGINBASE_H
 
+
+#include <cstring>
+#include <vector>
 #include <string>
-#include <string.h>
 #include "HostAPIAccess.h"
 #define TXMP_STRING_TYPE std::string
 #include "XMP.hpp"
@@ -36,8 +36,8 @@ namespace XMP_PLUGIN
 	virtual void cacheFileData( const IOAdapter& file, std::string& xmpStr );
 	virtual void updateFile( const IOAdapter& file, bool doSafeUpdate, const std::string& xmpStr );
 	virtual void writeTempFile( const IOAdapter& srcFile, const IOAdapter& tmpFile, const std::string& xmpStr ) ;
-	virtual void importToXMP( SXMPMeta& xmp );
-	virtual void exportFromXMP( const SXMPMeta& xmp );
+	virtual void importToXMP( XMP_StringPtr* xmpStr  );
+	virtual void exportFromXMP( XMP_StringPtr xmpStr  );
 
     First two functions are pure virtual functions so these should be implemented for sure. 
     Last three functions(eg. writeTempFile, importToXMP, exportToXMP) may not be required by the file
@@ -73,6 +73,35 @@ public:
 	void cacheFileData( XMP_IORef fileRef, XMP_StringPtr* xmpStr );
 	void updateFile( XMP_IORef fileRef, bool doSafeUpdate, XMP_StringPtr xmpStr );
 	void writeTempFile( XMP_IORef srcFileRef, XMP_IORef fileRef, XMP_StringPtr xmpStr );
+	void FillMetadataFiles( StringVectorRef metadataFiles, SetStringVectorProc SetStringVector );
+	void FillAssociatedResources( StringVectorRef resourceList, SetStringVectorProc SetStringVector );
+	/** @brief Check format with standard file handler
+	*
+	* Call the standard file handler to check the format of the data source.
+	* This call expects that this is a replacement file handler. Otherwise
+	* the call fails with an exception.
+	*
+	* @param path	Pointer to the path string of the file to be checked. Pass NULL to check the
+	*				file passed in during initialization (see PluginBase::getPath() )
+	* @return		true on success
+	*/
+	bool checkFormatStandard( const std::string* path = NULL );
+
+	/** @brief Get metadata from standard file handler
+	 *
+	 * Call the standard file handler in order to retrieve XMP from it.
+	 * This call expects that session refers to a replacement file handler. Otherwise
+	 * this call fails with an exception.
+	 * Calls checkFormatStandard internally before calling the actual standard handler.
+	 *
+	 * @param xmpStr		Serialized to XMP packet. Will be populated with XMP read from standard handler.
+	 * @param path			Pointer to the path string of the file to be checked. Pass NULL to check the
+	 *						file passed in during initialization (see PluginBase::getPath() )
+	 * @param containsXMP	Returns true if the standard handler detected XMP
+	 * @return				true on success
+	 */
+	bool getXMPStandard( std::string& xmpStr, const std::string* path = NULL, bool* containsXMP = NULL );
+
 	/** @brief Get file format
 	 *
 	 * Get the file format of this handler. 
@@ -126,12 +155,48 @@ public:
 	 *
 	 */
 	virtual bool getFileModDate ( XMP_DateTime* modDate );
+	virtual void FillMetadataFiles ( std::vector<std::string> * metadataFiles );
+
+	 /** @brief Return the list of all resources associated to the opened filePath
+	 *
+	 * The purpose of the method FillAssociatedResources is to return all files, XMP or non-XMP, 
+	 * that are associated to the current opened filePath.In the case of a typical single file with 
+	 * embedded metadata this is that one file. In the simple sidecar case one or two paths will be 
+     * returned, one if there is no sidecar XMP and two if sidecar XMP exists. For folder-based 
+     * handlers paths to all associated files is returned, including the files and folders necessary
+     * to identify the format.In general, all the returned paths are existent.
+	 * 
+	 * The default implementation only cares about the case of a single file with embedded metadata.
+	 * All other cases will fail and return false.
+	 *
+	 * @param resourceList	A required pointer to return the list of all associated resources.
+	 *
+	 */
+	virtual void FillAssociatedResources ( std::vector<std::string> * resourceList );
+
+	
+	 /** @brief Returns true if the Metadata can be updated for the opened filePath
+	 *
+	 * The purpose of the method IsMetadataWritable is to to check if metadata can be updated or 
+	 * written to the format. In the case of folder-based video formats only if all the metadata  
+	 * files can be written to, true is returned.In other words, false is returned for a 
+     * partial-write state of metadata files in folder-based media formats. 
+	 * 
+	 * The default implementation only cares about the case of a single file with embedded metadata.
+	 * All other cases will fail and return false.
+	 *
+	 * @return	True if the metadata can be updated, otherwise false
+	 *
+	 */
+	virtual bool IsMetadataWritable ( );
 
 	/** Virtual functions which need to be implemented by the plugin Developer in the derived class. 
 	 */
 	virtual void cacheFileData( const IOAdapter& file, std::string& xmpStr ) = 0;
 	virtual void updateFile( const IOAdapter& file, bool doSafeUpdate, const std::string& xmpStr ) = 0;
 	virtual void writeTempFile( const IOAdapter& srcFile, const IOAdapter& tmpFile, const std::string& xmpStr ) {}
+	virtual void importToXMP( XMP_StringPtr* xmpStr );
+	virtual void exportFromXMP( XMP_StringPtr xmpStr );
 private:
 	std::string		mPath;
 	XMP_OptionBits	mHandlerFlags;
@@ -151,6 +216,14 @@ private:
  *  plugins resource file "MODULE_IDENTIFIER.txt".
  */
 const char* GetModuleIdentifier();
+
+/** @brief Do additional steps to setup the plugin during plugin initialization.
+ *
+ *  This function will be called during initialization of the plugin and can be
+ *  used to request additional host API suites using RequestAPISuite().
+ *  The plugin initialization will be aborted if false is returned.
+ */
+bool SetupPlugin();
 
 /** @brief Register the file handlers available in the plug-in. 
  *

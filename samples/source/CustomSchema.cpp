@@ -13,7 +13,10 @@
 * and modify properties with complex paths using the path composition utilities from the XMP API
 */
 
+#include <cstdio>
+#include <vector>
 #include <string>
+#include <cstring>
 
 // Must be defined to instantiate template classes
 #define TXMP_STRING_TYPE std::string
