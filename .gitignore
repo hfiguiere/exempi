@@ -2,6 +2,7 @@ Makefile
 Makefile.in
 GNUmakefile
 GNUmakefile.in
+TAGS
 *~
 config.guess
 config.sub

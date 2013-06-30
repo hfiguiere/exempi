@@ -45,6 +45,7 @@
 	#include "XMPFiles/source/FileHandlers/PNG_Handler.hpp"
 	#include "XMPFiles/source/FileHandlers/PostScript_Handler.hpp"
 	#include "XMPFiles/source/FileHandlers/UCF_Handler.hpp"
+	#include "XMPFiles/source/FileHandlers/GIF_Handler.hpp"
 #endif
 
 //#if EnablePacketScanning
@@ -151,6 +152,7 @@ void HandlerRegistry::initialize()
 	allOK &= this->registerNormalHandler ( kXMP_InDesignFile, kInDesign_HandlerFlags, InDesign_CheckFormat, InDesign_MetaHandlerCTor );
 	allOK &= this->registerNormalHandler ( kXMP_PNGFile, kPNG_HandlerFlags, PNG_CheckFormat, PNG_MetaHandlerCTor );
 	allOK &= this->registerNormalHandler ( kXMP_UCFFile, kUCF_HandlerFlags, UCF_CheckFormat, UCF_MetaHandlerCTor );
+	allOK &= this->registerNormalHandler ( kXMP_GIFFile, kGIF_HandlerFlags, GIF_CheckFormat, GIF_MetaHandlerCTor );
 	// ! EPS and PostScript have the same handler, EPS is a proper subset of PostScript.
 	allOK &= this->registerNormalHandler ( kXMP_EPSFile, kPostScript_HandlerFlags, PostScript_CheckFormat, PostScript_MetaHandlerCTor );
 	allOK &= this->registerNormalHandler ( kXMP_PostScriptFile, kPostScript_HandlerFlags, PostScript_CheckFormat, PostScript_MetaHandlerCTor );

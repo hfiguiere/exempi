@@ -12,7 +12,15 @@
 // Derived from PNG_Handler.hpp by Ian Jacobi
 // =================================================================================================
 
-#include "GIF_Support.hpp"
+#include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
+
+#include "public/include/XMP_Const.h"
+#include "public/include/XMP_IO.hpp"
+
+#include "XMPFiles/source/XMPFiles_Impl.hpp"
+#include "source/XMPFiles_IO.hpp"
+
+#include "XMPFiles/source/FormatSupport/GIF_Support.hpp"
 
 // =================================================================================================
 /// \file GIF_Handler.hpp
@@ -28,7 +36,7 @@ extern XMPFileHandler* GIF_MetaHandlerCTor ( XMPFiles* parent );
 
 extern bool GIF_CheckFormat ( XMP_FileFormat format,
 							   XMP_StringPtr  filePath,
-                               LFA_FileRef    fileRef,
+                               XMP_IO*    fileRef,
                                XMPFiles*     parent );
 
 static const XMP_OptionBits kGIF_HandlerFlags = ( kXMPFiles_CanInjectXMP | 
@@ -48,7 +56,7 @@ public:
 	void ProcessXMP();
 	
 	void UpdateFile ( bool doSafeUpdate );
-    void WriteFile  ( LFA_FileRef sourceRef, const std::string& sourcePath );
+	void WriteTempFile  ( XMP_IO* tempRef );
 
 	bool SafeWriteFile ();
 

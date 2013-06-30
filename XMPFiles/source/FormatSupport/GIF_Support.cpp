@@ -7,10 +7,13 @@
 // of the Adobe license agreement accompanying it.
 //
 // Derived from PNG_Support.cpp by Ian Jacobi
+// Ported to the CS6 version by Hubert Figuiere
 // =================================================================================================
 
 #include "GIF_Support.hpp"
 #include <string.h>
+
+#include "source/XIO.hpp"
 
 typedef std::basic_string<unsigned char> filebuffer;
 
@@ -33,17 +36,18 @@ namespace GIF_Support
 
 	// =============================================================================================
 
-	long OpenGIF ( LFA_FileRef fileRef, BlockState & inOutBlockState )
+	long OpenGIF (  XMP_IO* fileRef, BlockState & inOutBlockState )
 	{
 		XMP_Uns64 pos = 0;
 		unsigned char name;
 		XMP_Uns32 len;
 		BlockData newBlock;
 	
-		pos = LFA_Seek ( fileRef, 0, SEEK_SET );
+		pos = fileRef->Seek ( 0, kXMP_SeekFromStart );
 		// header needs to be a block, mostly for our safe write.
 		pos = ReadHeader ( fileRef );
-		if (pos < 13) return 0;
+		if (pos < 13)
+			return 0;
 		
 		newBlock.pos = 0;
 		newBlock.len = pos;
@@ -59,7 +63,7 @@ namespace GIF_Support
 
 	// =============================================================================================
 
-	long ReadHeader ( LFA_FileRef fileRef )
+	long ReadHeader ( XMP_IO* fileRef )
 	{
 		long bytesRead;
 		long headerSize;
@@ -68,22 +72,22 @@ namespace GIF_Support
 		unsigned char buffer[768];
 		
 		headerSize = 0;
-		bytesRead = LFA_Read ( fileRef, buffer, GIF_SIGNATURE_LEN );
+		bytesRead = fileRef->Read ( buffer, GIF_SIGNATURE_LEN );
 		if ( bytesRead != GIF_SIGNATURE_LEN ) return 0;
 		if ( memcmp ( buffer, GIF_SIGNATURE_DATA, GIF_SIGNATURE_LEN) != 0 ) return 0;
 		headerSize += bytesRead;
-		bytesRead = LFA_Read ( fileRef, buffer, 3 );
+		bytesRead = fileRef->Read ( buffer, 3 );
 		if ( bytesRead != 3 ) return 0;
 		if ( memcmp ( buffer, "87a", 3 ) != 0 && memcmp ( buffer, "89a", 3 ) != 0 ) return 0;
 		headerSize += bytesRead;
-		bytesRead = LFA_Read ( fileRef, buffer, 4 );
+		bytesRead = fileRef->Read ( buffer, 4 );
 		if ( bytesRead != 4 ) return 0;
 		headerSize += bytesRead;
-		bytesRead = LFA_Read ( fileRef, buffer, 3 );
+		bytesRead = fileRef->Read ( buffer, 3 );
 		if ( bytesRead != 3 ) return 0;
 		headerSize += bytesRead;
 		if ( buffer[0] & 0x80 ) tableSize = (1 << ((buffer[0] & 0x07) + 1)) * 3;
-		bytesRead = LFA_Read ( fileRef, buffer, tableSize );
+		bytesRead = fileRef->Read ( buffer, tableSize );
 		if ( bytesRead != tableSize ) return 0;
 		headerSize += bytesRead;
 		
@@ -92,7 +96,7 @@ namespace GIF_Support
 
 	// =============================================================================================
 
-	bool  ReadBlock ( LFA_FileRef fileRef, BlockState & inOutBlockState, unsigned char * blockType, XMP_Uns32 * blockLength, XMP_Uns64 & inOutPosition )
+	bool  ReadBlock ( XMP_IO* fileRef, BlockState & inOutBlockState, unsigned char * blockType, XMP_Uns32 * blockLength, XMP_Uns64 & inOutPosition )
 	{
 		try
 		{
@@ -101,39 +105,39 @@ namespace GIF_Support
 			long blockSize;
 			unsigned char buffer[768];
 
-			bytesRead = LFA_Read ( fileRef, buffer, 1 );
+			bytesRead = fileRef->Read ( buffer, 1 );
 			if ( bytesRead != 1 ) return false;
 			inOutPosition += 1;
 			if ( buffer[0] == bImage )
 			{
 				// Image is a special case.
 			        long tableSize = 0;
-				bytesRead = LFA_Read ( fileRef, buffer, 4 );
+				bytesRead = fileRef->Read ( buffer, 4 );
 				if ( bytesRead != 4 ) return false;
 				inOutPosition += 4;
-				bytesRead = LFA_Read ( fileRef, buffer, 4 );
+				bytesRead = fileRef->Read ( buffer, 4 );
 				if ( bytesRead != 4 ) return false;
 				inOutPosition += 4;
-				bytesRead = LFA_Read ( fileRef, buffer, 1 );
+				bytesRead = fileRef->Read ( buffer, 1 );
 				if ( bytesRead != 1 ) return false;
 				inOutPosition += 1;
 				if ( buffer[0] & 0x80 ) tableSize = (1 << ((buffer[0] & 0x07) + 1)) * 3;
-				bytesRead = LFA_Read ( fileRef, buffer, tableSize );
+				bytesRead = fileRef->Read ( buffer, tableSize );
 				if ( bytesRead != tableSize ) return 0;
 				inOutPosition += tableSize;
-				bytesRead = LFA_Read ( fileRef, buffer, 1 );
+				bytesRead = fileRef->Read ( buffer, 1 );
 				if ( bytesRead != 1 ) return false;
 				inOutPosition += 1;
-				bytesRead = LFA_Read ( fileRef, buffer, 1 );
+				bytesRead = fileRef->Read ( buffer, 1 );
 				if ( bytesRead != 1 ) return false;
 				inOutPosition += 1;
 				tableSize = buffer[0];
 				while ( tableSize != 0x00 )
 				{
-					bytesRead = LFA_Read ( fileRef, buffer, tableSize );
+					bytesRead = fileRef->Read ( buffer, tableSize );
 					if ( bytesRead != tableSize ) return false;
 					inOutPosition += tableSize;
-					bytesRead = LFA_Read ( fileRef, buffer, 1 );
+					bytesRead = fileRef->Read ( buffer, 1 );
 					if ( bytesRead != 1 ) return false;
 					inOutPosition += 1;
 					tableSize = buffer[0];
@@ -156,19 +160,19 @@ namespace GIF_Support
 
 				newBlock.pos = startPosition;
 
-				bytesRead = LFA_Read ( fileRef, buffer, 1 );
+				bytesRead = fileRef->Read ( buffer, 1 );
 				if ( bytesRead != 1 ) return false;
 				inOutPosition += 1;
 				type = buffer[0];
 				newBlock.type = type;
 
-				bytesRead = LFA_Read ( fileRef, buffer, 1 );
+				bytesRead = fileRef->Read ( buffer, 1 );
 				if ( bytesRead != 1 ) return false;
 				inOutPosition += 1;
 				tableSize = buffer[0];
 				while ( tableSize != 0x00 )
 				{
-					bytesRead = LFA_Read ( fileRef, buffer, tableSize );
+					bytesRead = fileRef->Read ( buffer, tableSize );
 					if ( bytesRead != tableSize ) return false;
 					inOutPosition += tableSize;
 					if ( inOutPosition - startPosition == 14 && type == bApplication )
@@ -185,7 +189,7 @@ namespace GIF_Support
 							return true;
 						}
 					}
-					bytesRead = LFA_Read ( fileRef, buffer, 1 );
+					bytesRead = fileRef->Read ( buffer, 1 );
 					if ( bytesRead != 1 ) return false;
 					inOutPosition += 1;
 					tableSize = buffer[0];
@@ -218,7 +222,7 @@ namespace GIF_Support
 
 	// =============================================================================================
 
-	bool WriteXMPBlock ( LFA_FileRef fileRef, XMP_Uns32 len, const char* inBuffer )
+	bool WriteXMPBlock ( XMP_IO* fileRef, XMP_Uns32 len, const char* inBuffer )
 	{
 		bool ret = false;
 		unsigned long datalen = (APPLICATION_HEADER_LEN + len + MAGIC_TRAILER_LEN);
@@ -233,7 +237,7 @@ namespace GIF_Support
 			pos += len;
 			memcpy(&buffer[pos], MAGIC_TRAILER_DATA, MAGIC_TRAILER_LEN);
 
-			LFA_Write(fileRef, buffer, datalen);
+			fileRef->Write(buffer, datalen);
 
 			ret = true;
 		}
@@ -246,12 +250,12 @@ namespace GIF_Support
 
 	// =============================================================================================
 
-	bool CopyBlock ( LFA_FileRef sourceRef, LFA_FileRef destRef, BlockData& block )
+	bool CopyBlock ( XMP_IO* sourceRef, XMP_IO* destRef, BlockData& block )
 	{
 		try
 		{
-			LFA_Seek (sourceRef, block.pos, SEEK_SET );
-			LFA_Copy (sourceRef, destRef, (block.len));
+			sourceRef->Seek ( block.pos, kXMP_SeekFromStart );
+			XIO::Copy (sourceRef, destRef, (block.len));
 
 		} catch ( ... ) {
 
@@ -268,14 +272,14 @@ namespace GIF_Support
 
 	// =============================================================================================
 
-	unsigned long CheckApplicationBlockHeader ( LFA_FileRef fileRef, BlockState& inOutBlockState, BlockData& inOutBlockData, XMP_Uns64& inOutPosition )
+	unsigned long CheckApplicationBlockHeader ( XMP_IO* fileRef, BlockState& inOutBlockState, BlockData& inOutBlockData, XMP_Uns64& inOutPosition )
 	{
 		try
 		{
-			LFA_Seek(fileRef, (inOutBlockData.pos), SEEK_SET);
+			fileRef->Seek((inOutBlockData.pos), kXMP_SeekFromStart);
 
 			unsigned char buffer[256];
-			long bytesRead = LFA_Read ( fileRef, buffer, APPLICATION_HEADER_LEN );
+			long bytesRead = fileRef->Read ( buffer, APPLICATION_HEADER_LEN );
 
 			if (bytesRead == APPLICATION_HEADER_LEN)
 			{
@@ -287,16 +291,16 @@ namespace GIF_Support
 					
 					inOutPosition = inOutBlockData.pos + APPLICATION_HEADER_LEN;
 					inOutBlockState.xmpPos = inOutPosition;
-					bytesRead = LFA_Read ( fileRef, buffer, 1 );
+					bytesRead = fileRef->Read ( buffer, 1 );
 					if ( bytesRead != 1 ) return 0;
 					inOutPosition += 1;
 					tableSize = buffer[0];
 					while ( tableSize != 0x00 )
 					{
-						bytesRead = LFA_Read ( fileRef, buffer, tableSize );
+						bytesRead = fileRef->Read ( buffer, tableSize );
 						if ( bytesRead != tableSize ) return false;
 						inOutPosition += tableSize;
-						bytesRead = LFA_Read ( fileRef, buffer, 1 );
+						bytesRead = fileRef->Read ( buffer, 1 );
 						if ( bytesRead != 1 ) return false;
 						inOutPosition += 1;
 						tableSize = buffer[0];
@@ -312,14 +316,14 @@ namespace GIF_Support
 		return 0;
 	}
 
-	bool ReadBuffer ( LFA_FileRef fileRef, XMP_Uns64 & pos, XMP_Uns32 len, char * outBuffer )
+	bool ReadBuffer ( XMP_IO* fileRef, XMP_Uns64 & pos, XMP_Uns32 len, char * outBuffer )
 	{
 		try
 		{
 			if ( (fileRef == 0) || (outBuffer == 0) ) return false;
 		
-			LFA_Seek (fileRef, pos, SEEK_SET );
-			long bytesRead = LFA_Read ( fileRef, outBuffer, len );
+			fileRef->Seek ( pos, kXMP_SeekFromStart );
+			long bytesRead = fileRef->Read ( outBuffer, len );
 			if ( XMP_Uns32(bytesRead) != len ) return false;
 		
 			return true;
@@ -329,14 +333,14 @@ namespace GIF_Support
 		return false;
 	}
 
-	bool WriteBuffer ( LFA_FileRef fileRef, XMP_Uns64 & pos, XMP_Uns32 len, const char * inBuffer )
+	bool WriteBuffer ( XMP_IO* fileRef, XMP_Uns64 & pos, XMP_Uns32 len, const char * inBuffer )
 	{
 		try
 		{
 			if ( (fileRef == 0) || (inBuffer == 0) ) return false;
 		
-			LFA_Seek (fileRef, pos, SEEK_SET );
-			LFA_Write( fileRef, inBuffer, len );
+			fileRef->Seek ( pos, kXMP_SeekFromStart );
+			fileRef->Write( inBuffer, len );
 		
 			return true;
 		}

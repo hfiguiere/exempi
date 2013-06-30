@@ -59,6 +59,7 @@ libformatsupport_la_SOURCES = \
 	RIFF_Support.cpp     TIFF_Support.cpp \
 	ISOBaseMedia_Support.hpp ISOBaseMedia_Support.cpp \
 	PNG_Support.cpp   ReconcileLegacy.cpp  \
+	GIF_Support.cpp \
 	SWF_Support.hpp SWF_Support.cpp\
 	XDCAM_Support.hpp XDCAM_Support.cpp\
 	TIFF_FileWriter.cpp  XMPScanner.cpp \
@@ -77,4 +78,3 @@ WAVE/CartMetadata.cpp  WAVE/Cr8rMetadata.h    WAVE/INFOMetadata.cpp  WAVE/PrmLMe
 	$(NULL)
 
 
-#GIF_Support.cpp

@@ -14,7 +14,7 @@
 
 #include "XMP_Environment.h"	// ! This must be the first include.
 
-#include "XMPFiles_Impl.hpp"
+#include "XMPFiles/source/XMPFiles_Impl.hpp"
 
 #define GIF_SIGNATURE_LEN		3
 #define GIF_SIGNATURE_DATA		"\x47\x49\x46"
@@ -54,17 +54,17 @@ namespace GIF_Support
 			BlockVector blocks;	/* vector of blocks */
 	};
 
-	long OpenGIF ( LFA_FileRef fileRef, BlockState& inOutBlockState );
+	long OpenGIF ( XMP_IO* fileRef, BlockState& inOutBlockState );
 
-	long ReadHeader ( LFA_FileRef fileRef );
-	bool ReadBlock ( LFA_FileRef fileRef, BlockState& inOutBlockState, unsigned char* blockType, XMP_Uns32* blockLength, XMP_Uns64& inOutPosition );
-	bool WriteXMPBlock ( LFA_FileRef fileRef, XMP_Uns32 len, const char* inBuffer );
-	bool CopyBlock ( LFA_FileRef sourceRef, LFA_FileRef destRef, BlockData& block );
+	long ReadHeader ( XMP_IO* fileRef );
+	bool ReadBlock ( XMP_IO* fileRef, BlockState& inOutBlockState, unsigned char* blockType, XMP_Uns32* blockLength, XMP_Uns64& inOutPosition );
+	bool WriteXMPBlock ( XMP_IO* fileRef, XMP_Uns32 len, const char* inBuffer );
+	bool CopyBlock ( XMP_IO* sourceRef, XMP_IO* destRef, BlockData& block );
 
-	unsigned long CheckApplicationBlockHeader ( LFA_FileRef fileRef, BlockState& inOutBlockState, BlockData& inOutBlockData, XMP_Uns64& inOutPosition );
+	unsigned long CheckApplicationBlockHeader ( XMP_IO* fileRef, BlockState& inOutBlockState, BlockData& inOutBlockData, XMP_Uns64& inOutPosition );
 
-	bool ReadBuffer ( LFA_FileRef fileRef, XMP_Uns64& pos, XMP_Uns32 len, char* outBuffer );
-	bool WriteBuffer ( LFA_FileRef fileRef, XMP_Uns64& pos, XMP_Uns32 len, const char* inBuffer );
+	bool ReadBuffer ( XMP_IO* fileRef, XMP_Uns64& pos, XMP_Uns32 len, char* outBuffer );
+	bool WriteBuffer ( XMP_IO* fileRef, XMP_Uns64& pos, XMP_Uns32 len, const char* inBuffer );
 
 } // namespace GIF_Support
 

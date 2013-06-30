@@ -11,7 +11,8 @@
 
 #include "GIF_Handler.hpp"
 
-#include "GIF_Support.hpp"
+#include "source/XIO.hpp"
+#include "XMPFiles/source/FormatSupport/GIF_Support.hpp"
 
 using namespace std;
 
@@ -39,15 +40,15 @@ XMPFileHandler * GIF_MetaHandlerCTor ( XMPFiles * parent )
 
 bool GIF_CheckFormat ( XMP_FileFormat format,
 					   XMP_StringPtr  filePath,
-                       LFA_FileRef    fileRef,
+                       XMP_IO*    fileRef,
                        XMPFiles *     parent )
 {
 	IgnoreParam(format); IgnoreParam(fileRef); IgnoreParam(parent);
 	XMP_Assert ( format == kXMP_GIFFile );
 
 	IOBuffer ioBuf;
-	
-	LFA_Seek ( fileRef, 0, SEEK_SET );
+
+	fileRef->Rewind();
 	if ( ! CheckFileSpace ( fileRef, &ioBuf, GIF_SIGNATURE_LEN ) ) return false;	// We need at least 3, so the buffer is not filled.
 
 	if ( ! CheckBytes ( ioBuf.ptr, GIF_SIGNATURE_DATA, GIF_SIGNATURE_LEN ) ) return false;
@@ -86,7 +87,7 @@ void GIF_MetaHandler::CacheFileData()
 
 	this->containsXMP = false;
 
-	LFA_FileRef fileRef ( this->parent->fileRef );
+	XMP_IO* fileRef ( this->parent->ioRef );
 	if ( fileRef == 0) return;
 
 	// We try to navigate through the blocks to find the XMP block.
@@ -167,7 +168,7 @@ void GIF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	XMP_StringLen packetLen = xmpPacket.size();
 	if ( packetLen == 0 ) return;
 
-	LFA_FileRef fileRef(this->parent->fileRef);
+	XMP_IO* fileRef(this->parent->ioRef);
 	if ( fileRef == 0 ) return;
 
 	GIF_Support::BlockState blockState;
@@ -202,15 +203,15 @@ void GIF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 // GIF_MetaHandler::WriteFile
 // ===========================
 
-void GIF_MetaHandler::WriteFile ( LFA_FileRef sourceRef, const std::string & sourcePath )
+void GIF_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 {
-	LFA_FileRef destRef = this->parent->fileRef;
+	XMP_IO* originalRef = this->parent->ioRef;
 
 	GIF_Support::BlockState blockState;
-	long numBlocks = GIF_Support::OpenGIF ( sourceRef, blockState );
+	long numBlocks = GIF_Support::OpenGIF ( originalRef, blockState );
 	if ( numBlocks == 0 ) return;
 
-	LFA_Truncate(destRef, 0);
+	tempRef->Truncate( 0 );
 	// LFA_Write(destRef, GIF_SIGNATURE_DATA, GIF_SIGNATURE_LEN);
 
 	GIF_Support::BlockIterator curPos = blockState.blocks.begin();
@@ -227,7 +228,7 @@ void GIF_MetaHandler::WriteFile ( LFA_FileRef sourceRef, const std::string & sou
 			continue;
 
 		// copy any other block
-		GIF_Support::CopyBlock(sourceRef, destRef, block);
+		GIF_Support::CopyBlock(originalRef, tempRef, block);
 
 		// place XMP block immediately before trailer
 		if (blockCount == numBlocks - 2)
@@ -235,7 +236,7 @@ void GIF_MetaHandler::WriteFile ( LFA_FileRef sourceRef, const std::string & sou
 			XMP_StringPtr packetStr = xmpPacket.c_str();
 			XMP_StringLen packetLen = xmpPacket.size();
 
-			GIF_Support::WriteXMPBlock(destRef, packetLen, packetStr );
+			GIF_Support::WriteXMPBlock(tempRef, packetLen, packetStr );
 		}
 	}
 
@@ -249,39 +250,15 @@ bool GIF_MetaHandler::SafeWriteFile ()
 {
 	bool ret = false;
 
-	std::string origPath = this->parent->filePath;
-	LFA_FileRef origRef  = this->parent->fileRef;
-	
-	std::string updatePath;
-	LFA_FileRef updateRef = 0;
-	
-	CreateTempFile ( origPath, &updatePath, kCopyMacRsrc );
-	updateRef = LFA_Open ( updatePath.c_str(), 'w' );
+	XMP_IO* originalFile  = this->parent->ioRef;
+	XMP_IO* tempFile = originalFile->DeriveTemp();
+	if ( tempFile == 0 )
+		XMP_Throw ( "Failure creating GIF temp file", kXMPErr_InternalFailure );
 
-	this->parent->filePath = updatePath;
-	this->parent->fileRef  = updateRef;
-	
-	try {
-		this->WriteFile ( origRef, origPath );
-		ret = true;
-	} catch ( ... ) {
-		LFA_Close ( updateRef );
-		this->parent->filePath = origPath;
-		this->parent->fileRef  = origRef;
-		throw;
-	}
+	this->WriteTempFile( tempFile );
+	originalFile->AbsorbTemp();
 
-	LFA_Close ( origRef );
-	LFA_Delete ( origPath.c_str() );
-
-	LFA_Close ( updateRef );
-	LFA_Rename ( updatePath.c_str(), origPath.c_str() );
-	this->parent->filePath = origPath;
-
-	this->parent->fileRef = 0;
-
-	return ret;
-
+	return true;
 } // GIF_MetaHandler::SafeWriteFile
 
 // =================================================================================================
