@@ -1,5 +1,7 @@
 Makefile
 Makefile.in
+GNUmakefile
+GNUmakefile.in
 *~
 config.guess
 config.sub
