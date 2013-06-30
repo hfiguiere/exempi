@@ -44,6 +44,10 @@ using namespace std;
 ///
 // =================================================================================================
 
+#if ! XMP_StaticBuild
+	#include "public/include/XMP.incl_cpp"
+#endif
+
 #if XMP_WinBuild
 	#pragma warning ( disable : 4290 )	// C++ exception specification ignored except to indicate a function is not __declspec(nothrow)
 	#pragma warning ( disable : 4800 )	// forcing value to bool 'true' or 'false' (performance warning)
@@ -52,6 +56,15 @@ using namespace std;
 bool ignoreLocalText = false;
 
 XMP_FileFormat voidFileFormat = 0;	// Used as sink for unwanted output parameters.
+
+#if ! XMP_StaticBuild
+	XMP_PacketInfo voidPacketInfo;
+	void *         voidVoidPtr    = 0;
+	XMP_StringPtr  voidStringPtr  = 0;
+	XMP_StringLen  voidStringLen  = 0;
+	XMP_OptionBits voidOptionBits = 0;
+#endif
+
 // =================================================================================================
 
 // Add all known mappings, multiple mappings (tif, tiff) are OK.
@@ -89,6 +102,7 @@ const FileExtMapping kFileExtMap[] =
 	  { "wma",  kXMP_WMAVFile },
 	  { "wmv",  kXMP_WMAVFile },
 	  { "mxf",  kXMP_MXFFile },
+	  { "r3d",  kXMP_REDFile },
 
 	  { "mpg",  kXMP_MPEGFile },
 	  { "mpeg", kXMP_MPEGFile },
@@ -165,7 +179,6 @@ const char * kKnownRejectedFiles[] =
 		// UCF subformats
 		"air",
 		// Others
-		"r3d",
 	  0 };	// ! Keep a 0 sentinel at the end.
 
 // =================================================================================================
@@ -369,13 +382,88 @@ bool XMPFileHandler::GetFileModDate ( XMP_DateTime * modDate )
 		XMP_Throw ( "Base implementation of GetFileModDate only for typical embedding handlers", kXMPErr_InternalFailure );
 	}
 	
-	if ( this->parent->filePath.empty() ) {
+	if ( this->parent->GetFilePath().empty() ) {
 		XMP_Throw ( "GetFileModDate cannot be used with client-provided I/O", kXMPErr_InternalFailure );
 	}
 	
-	return Host_IO::GetModifyDate ( this->parent->filePath.c_str(), modDate );
+	return Host_IO::GetModifyDate ( this->parent->GetFilePath().c_str(), modDate );
 
 }	// XMPFileHandler::GetFileModDate
+
+// =================================================================================================
+// XMPFileHandler::FillMetadataFiles
+// ==============================
+//
+// The base implementation is only for files having embedded metadata for which the same file will
+// be returned.
+
+void XMPFileHandler::FillMetadataFiles ( std::vector<std::string> * metadataFiles )
+{
+	XMP_OptionBits flags = this->handlerFlags;
+	if ( (flags & kXMPFiles_HandlerOwnsFile) ||
+		 (flags & kXMPFiles_UsesSidecarXMP) ||
+		 (flags & kXMPFiles_FolderBasedFormat) ) {
+		XMP_Throw ( "Base implementation of FillMetadataFiles only for typical embedding handlers", kXMPErr_InternalFailure );
+	}
+	
+	if ( this->parent->GetFilePath().empty() ) {
+		XMP_Throw ( "FillMetadataFiles cannot be used with client-provided I/O", kXMPErr_InternalFailure );
+	}
+	
+	metadataFiles->push_back ( std::string ( this->parent->GetFilePath().c_str() ) );
+}	// XMPFileHandler::FillMetadataFiles
+
+// =================================================================================================
+// XMPFileHandler::FillAssociatedResources
+// =======================================
+//
+// The base implementation is only for files having embedded metadata for which the same file will
+// be returned as the associated resource.
+// 
+
+void XMPFileHandler::FillAssociatedResources ( std::vector<std::string> * metadataFiles )
+{
+	XMP_OptionBits flags = this->handlerFlags;
+	if ( (flags & kXMPFiles_HandlerOwnsFile) ||
+		 (flags & kXMPFiles_UsesSidecarXMP) ||
+		 (flags & kXMPFiles_FolderBasedFormat) ) {
+		XMP_Throw ( "GetAssociatedResources is not implemented for this file format", kXMPErr_InternalFailure );
+	}
+	
+	if ( this->parent->GetFilePath().empty() ) {
+		XMP_Throw ( "GetAssociatedResources cannot be used with client-provided I/O", kXMPErr_InternalFailure );
+	}
+	
+	metadataFiles->push_back ( std::string ( this->parent->GetFilePath().c_str() ) );
+}	// XMPFileHandler::FillAssociatedResources
+
+// =================================================================================================
+// XMPFileHandler::IsMetadataWritable
+// =======================================
+//
+// The base implementation is only for files having embedded metadata and it checks whether that 
+// file is writable or no.Returns true if the file is writable. 
+// 
+bool XMPFileHandler::IsMetadataWritable ( )
+{
+	XMP_OptionBits flags = this->handlerFlags;
+	if ( (flags & kXMPFiles_HandlerOwnsFile) ||
+		 (flags & kXMPFiles_UsesSidecarXMP)  ||
+		 (flags & kXMPFiles_FolderBasedFormat) ) {
+		XMP_Throw ( "IsMetadataWritable is not implemented for this file format", kXMPErr_InternalFailure );
+	}
+
+	if ( this->parent->GetFilePath().empty() ) {
+		XMP_Throw ( "IsMetadataWritable cannot be used with client-provided I/O", kXMPErr_InternalFailure );
+	}
+
+	try {
+		return Host_IO::Writable( this->parent->GetFilePath().c_str() );
+	} catch ( ... ) {
+
+	}
+	return false;
+}
 
 // =================================================================================================
 // XMPFileHandler::ProcessXMP

@@ -15,9 +15,10 @@
 #include "XMPFiles/source/XMPFiles_Impl.hpp"
 #include "source/XMPFiles_IO.hpp"
 #include "source/XIO.hpp"
+#include "source/IOUtils.hpp"
 
 #include "XMPFiles/source/FileHandlers/SonyHDV_Handler.hpp"
-
+#include "XMPFiles/source/FormatSupport/PackageFormat_Support.hpp"
 #include "third-party/zuid/interfaces/MD5.h"
 
 #if XMP_WinBuild
@@ -535,7 +536,7 @@ SonyHDV_MetaHandler::SonyHDV_MetaHandler ( XMPFiles * _parent )
 
 	if ( this->parent->tempPtr == 0 ) {
 		// The CheckFormat call might have been skipped.
-		this->parent->tempPtr = CreatePseudoClipPath ( this->parent->filePath );
+		this->parent->tempPtr = CreatePseudoClipPath ( this->parent->GetFilePath() );
 	}
 
 	this->rootPath.assign ( (char*) this->parent->tempPtr );
@@ -581,6 +582,24 @@ bool SonyHDV_MetaHandler::MakeClipFilePath ( std::string * path, XMP_StringPtr s
 
 }	// SonyHDV_MetaHandler::MakeClipFilePath
 
+// This method removes the timestamp information from a clip name. It returns the clip name with a following "_".
+// For example: The clip name "00_0001_2007-08-06_165555" becomes "00_0001_".
+static void RemoveTimeStampFromClipName(std::string &clipName)
+{
+	int usCount = 0;
+	size_t i, limit = clipName.size();
+
+	for ( i = 0; i < limit; ++i ) {
+		if ( clipName[i] == '_' ) {
+			++usCount;
+			if ( usCount == 2 ) break;
+		}
+	}
+
+	if ( i < limit ) clipName.erase ( i );
+	clipName += '_';	// Make sure a final '_' is there for the search comparisons.
+}
+
 // =================================================================================================
 // SonyHDV_MetaHandler::MakeIndexFilePath
 // ======================================
@@ -608,18 +627,7 @@ bool SonyHDV_MetaHandler::MakeIndexFilePath ( std::string& idxPath, const std::s
 	// Can be isolated to a separate function.
 
 	std::string clipName = leafName;
-	int usCount = 0;
-	size_t i, limit = leafName.size();
-
-	for ( i = 0; i < limit; ++i ) {
-		if ( clipName[i] == '_' ) {
-			++usCount;
-			if ( usCount == 2 ) break;
-		}
-	}
-
-	if ( i < limit ) clipName.erase ( i );
-	clipName += '_';	// Make sure a final '_' is there for the search comparisons.
+	RemoveTimeStampFromClipName(clipName);
 
 	Host_IO::AutoFolder aFolder;
 	std::string childName;
@@ -721,6 +729,101 @@ bool SonyHDV_MetaHandler::GetFileModDate ( XMP_DateTime * modDate )
 }	// SonyHDV_MetaHandler::GetFileModDate
 
 // =================================================================================================
+// SonyHDV_MetaHandler::FillMetadataFiles
+// ================================
+void SonyHDV_MetaHandler::FillMetadataFiles ( std::vector<std::string>* metadataFiles )
+{
+	std::string noExtPath, filePath;
+
+	noExtPath = rootPath + kDirChar + "VIDEO" + kDirChar + "HVR" + kDirChar + clipName;
+
+	filePath = noExtPath + ".XMP";
+	metadataFiles->push_back ( filePath );
+	filePath = noExtPath + ".IDX";
+	metadataFiles->push_back ( filePath );
+
+}	// 	FillMetadataFiles_SonyHDV
+
+// =================================================================================================
+// SonyHDV_MetaHandler::IsMetadataWritable
+// =======================================
+
+bool SonyHDV_MetaHandler::IsMetadataWritable ( )
+{
+	std::vector<std::string> metadataFiles;
+	FillMetadataFiles(&metadataFiles);
+	std::vector<std::string>::iterator itr = metadataFiles.begin();
+	// Check whether sidecar is writable, if not then check if it can be created.
+	return Host_IO::Writable( itr->c_str(), true );
+}// SonyHDV_MetaHandler::IsMetadataWritable
+
+
+// =================================================================================================
+// SonyHDV_MetaHandler::FillAssociatedResources
+// ======================================
+//
+// This method returns all clip associated "media files","index files" whose name
+// starts with XX_CCCC_ and side cars starting with XX_CCCC.
+void SonyHDV_MetaHandler::FillAssociatedResources ( std::vector<std::string> * resourceList )
+{
+	// The possible associated resources:
+	//	VIDEO/
+	//		HVR/
+	//			XX_CCCC_YYYY-MM-DD_hhmmss.M2T	// HDV media
+	//			XX_CCCC_YYYY-MM-DD_hhmmss.IDX	// Metadata Index file
+	//			XX_CCCC_YYYY-MM-DD_hhmmss.XMP	// sidecar
+	//
+	//			XX_CCCC_YYYY-MM-DD_hhmmss.AVI	// DV(AVI) medi
+	//			XX_CCCC_YYYY-MM-DD_hhmmss.IDX	// Metadata Index file
+	//			XX_CCCC_YYYY-MM-DD_hhmmss.XMP	// sidecar
+	//
+	//			XX_CCCC_YYYY-MM-DD_hhmmss.DV	// DV(RAW) media
+	//			XX_CCCC_YYYY-MM-DD_hhmmss.IDX	// Metadata Index file
+	//			XX_CCCC_YYYY-MM-DD_hhmmss.XMP	// sidecar
+	//
+	//			tracks.dat						// Clip database file
+
+	std:: string hvrPath = this->rootPath + kDirChar + "VIDEO" + kDirChar + "HVR";
+	std::string filePath;
+
+	//Add RootPath
+	filePath = this->rootPath + kDirChar;
+	PackageFormat_Support::AddResourceIfExists( resourceList, filePath );
+
+	// If XX_CCCC_YYYY-MM-DD_hhmmss is clip name then we remove YYYY-MM-DD_hhmmss from this and return
+	// all files starting with XX_CCCC_ and having required extension.
+	std::string clipNameWithoutTimeStamp = this->clipName;
+	RemoveTimeStampFromClipName(clipNameWithoutTimeStamp);
+
+	// Add media files.
+	// We don't know the extension of the media so we will check for all
+	// three possible extensions and add whichever is existing.
+	
+	// "AddResourceIfExists" will add all spanned clips that match the clip prefix "clipNameWithoutTimeStamp" 
+	// and specified extensions.
+	PackageFormat_Support::AddResourceIfExists(resourceList, hvrPath, clipNameWithoutTimeStamp.c_str(), ".M2T");
+
+	PackageFormat_Support::AddResourceIfExists(resourceList, hvrPath, clipNameWithoutTimeStamp.c_str(), ".AVI");
+
+	PackageFormat_Support::AddResourceIfExists(resourceList, hvrPath, clipNameWithoutTimeStamp.c_str(), ".DV");
+
+	// Add Index files.
+	PackageFormat_Support::AddResourceIfExists(resourceList, hvrPath, clipNameWithoutTimeStamp.c_str(), ".IDX");
+
+	// Add sidecars.
+	// For sidecars we will look for XX_CCCC*.XMP instead of XX_CCCC_*.XMP because we may generate such files
+	// in case of spanning (in future) or logical paths.
+	clipNameWithoutTimeStamp.erase(clipNameWithoutTimeStamp.end()-1);
+	PackageFormat_Support::AddResourceIfExists(resourceList, hvrPath, clipNameWithoutTimeStamp.c_str(), ".XMP");
+
+	//Add clip database file
+	filePath = hvrPath + kDirChar + "tracks.dat";
+	PackageFormat_Support::AddResourceIfExists(resourceList, filePath);
+
+}	// SonyHDV_MetaHandler::FillAssociatedResources
+
+
+// =================================================================================================
 // SonyHDV_MetaHandler::CacheFileData
 // ==================================
 
@@ -729,22 +832,23 @@ void SonyHDV_MetaHandler::CacheFileData()
 	XMP_Assert ( ! this->containsXMP );
 
 	if ( this->parent->UsesClientIO() ) {
-		XMP_Throw ( "XDCAM cannot be used with client-managed I/O", kXMPErr_InternalFailure );
+		XMP_Throw ( "SonyHDV cannot be used with client-managed I/O", kXMPErr_InternalFailure );
 	}
 
 	// See if the clip's .XMP file exists.
 
 	std::string xmpPath;
 	this->MakeClipFilePath ( &xmpPath, ".XMP" );
-	if ( Host_IO::GetFileMode ( xmpPath.c_str() ) != Host_IO::kFMode_IsFile ) return;	// No XMP.
+	if ( ! Host_IO::Exists ( xmpPath.c_str() ) ) return;	// No XMP.
 
-	// Read the entire .XMP file.
+	// Read the entire .XMP file. We know the XMP exists, New_XMPFiles_IO is supposed to return 0
+	// only if the file does not exist.
 
 	bool readOnly = XMP_OptionIsClear ( this->parent->openFlags, kXMPFiles_OpenForUpdate );
 
 	XMP_Assert ( this->parent->ioRef == 0 );
 	XMPFiles_IO* xmpFile =  XMPFiles_IO::New_XMPFiles_IO ( xmpPath.c_str(), readOnly );
-	if ( xmpFile == 0 ) return;	// The open failed.
+	if ( xmpFile == 0 ) XMP_Throw ( "SonyHDV XMP file open failure", kXMPErr_InternalFailure );
 	this->parent->ioRef = xmpFile;
 
 	XMP_Int64 xmpLen = xmpFile->Length();

@@ -8,17 +8,14 @@
 
 #include "public/include/XMP_Const.h"
 
-#if UnicodeTestBuild
-	#include <cassert>
-	#include <stdexcept>
-	#define UC_Assert assert
-	#define UC_Throw(m,k) throw std::logic_error ( m )
-#else
-	#define UC_Assert(cond) /* Nothing for now, should be XMP_Assert. */
-	#define UC_Throw(msg,id)  throw XMP_Error ( id, msg )
-#endif
+#define UC_Assert(cond) /* Nothing for now, should be XMP_Assert. */
+#define UC_Throw(msg,id)  throw XMP_Error ( id, msg )
 
 #include "source/UnicodeConversions.hpp"
+
+#if SUNOS_SPARC
+	#include "string.h"
+#endif
 
 using namespace std;
 
@@ -221,15 +218,20 @@ void InitializeUnicodeConversions()
 
 // =================================================================================================
 
-static inline UTF16Unit UTF16InSwap ( const UTF16Unit * inPtr )
+#if SUNOS_SPARC
+	#define DefineAndGetValue(type,inPtr) type inUnit; memcpy ( &inUnit, inPtr, sizeof(type) ); 
+#else
+	#define DefineAndGetValue(type,inPtr) type inUnit = *((type *)inPtr); 
+#endif
+
+static inline UTF16Unit UTF16InSwap ( const void * inPtr )
 {
-	UTF16Unit inUnit = *inPtr;
+	DefineAndGetValue ( UTF16Unit, inPtr );
 	return (inUnit << 8) | (inUnit >> 8);
 }
-
-static inline UTF32Unit UTF32InSwap ( const UTF32Unit * inPtr )
+static inline UTF32Unit UTF32InSwap ( const void * inPtr )
 {
-	UTF32Unit inUnit = *inPtr;
+	DefineAndGetValue ( UTF32Unit, inPtr );
 	return (inUnit << 24) | ((inUnit << 8) & 0x00FF0000) | ((inUnit >> 8) & 0x0000FF00) | (inUnit >> 24);
 }
 

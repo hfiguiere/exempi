@@ -538,6 +538,52 @@ XMP_Uns64 Chunk::calculateSize( bool setOriginal /*= false*/ )
 
 //-----------------------------------------------------------------------------
 // 
+// Chunk::calculateWriteSize(...)
+// 
+// Purpose: Calculate the size of the chunks that are dirty including the size 
+//			of its children
+// 
+//-----------------------------------------------------------------------------
+
+XMP_Int64 Chunk::calculateWriteSize( ) const
+{
+	XMP_Int64 size=0;
+	if (hasChanged())
+	{
+		size+=(sizeof(XMP_Uns32)*2);
+		if (mChunkMode == CHUNK_LEAF)
+		{
+			if ( mSize % 2 == 1 )
+			{
+				// for odd file sizes, a pad byte is written
+				size+=(mSize+1);
+			}
+			else
+			{
+				size+=mSize;
+			}
+		}
+		else	// mChunkMode == CHUNK_NODE
+		{
+			// writes type if defined
+			if (mChunkId.type != kType_NONE)
+			{
+				size+=sizeof(XMP_Uns32);
+			}
+
+			 // calls calculateWriteSize recursively on it's children
+			for( ConstChunkIterator iter = mChildren.begin(); iter != mChildren.end(); iter++ )
+			{
+				size+=(*iter)->calculateWriteSize(  );
+			}
+		}
+	}
+
+	return size;
+}
+
+//-----------------------------------------------------------------------------
+// 
 // Chunk::setOffset(...)
 // 
 // Purpose: Adjust the offset that this chunk has within the file

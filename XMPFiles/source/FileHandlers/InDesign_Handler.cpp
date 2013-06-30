@@ -176,7 +176,10 @@ void InDesign_MetaHandler::CacheFileData()
 	XMP_IO* fileRef = this->parent->ioRef;
 	XMP_PacketInfo & packetInfo = this->packetInfo;
 
-	IOBuffer ioBuf;
+	XMP_Assert ( kINDD_PageSize == sizeof(InDesignMasterPage) );
+	static const size_t kBufferSize = (2 * kINDD_PageSize);
+	XMP_Uns8 buffer [kBufferSize];
+
 	size_t	 dbPages;
 	XMP_Uns8 cobjEndian;
 
@@ -184,19 +187,16 @@ void InDesign_MetaHandler::CacheFileData()
 	void *        abortArg   = this->parent->abortArg;
 	const bool    checkAbort = (abortProc != 0);
 
-	XMP_Assert ( kINDD_PageSize == sizeof(InDesignMasterPage) );
-	XMP_Assert ( kIOBufferSize >= (2 * kINDD_PageSize) );
-
 	this->containsXMP = false;
 
 	// ---------------------------------------------------------------------------------
 	// Figure out which master page is active and seek to the contiguous object portion.
 
 	{
-		FillBuffer ( fileRef, 0, &ioBuf );
-		if ( ioBuf.len < (2 * kINDD_PageSize) ) XMP_Throw ( "GetMainPacket/ScanInDesignFile: Read failure", kXMPErr_ExternalFailure );
+		fileRef->Rewind();
+		fileRef->ReadAll ( buffer, (2 * kINDD_PageSize) );
 
-		InDesignMasterPage * masters = (InDesignMasterPage *) ioBuf.ptr;
+		InDesignMasterPage * masters = (InDesignMasterPage *) &buffer[0];
 		XMP_Uns64 seq0 = GetUns64LE ( (XMP_Uns8 *) &masters[0].fSequenceNumber );
 		XMP_Uns64 seq1 = GetUns64LE ( (XMP_Uns8 *) &masters[1].fSequenceNumber );
 
@@ -212,9 +212,11 @@ void InDesign_MetaHandler::CacheFileData()
 	if ( cobjEndian == kINDD_BigEndian ) this->streamBigEndian = true;
 
 	// ---------------------------------------------------------------------------------------------
-	// Look for the XMP contiguous object stream. Most of the time there will be just one stream and
-	// it will be the XMP. So we might as well fill the whole buffer and not worry about reading too
-	// much and seeking back to the start of the following stream.
+	// Look for the XMP contiguous object. Each contiguous object has a header and trailer, both of
+	// the InDesignContigObjMarker structure. The stream size in the header/trailer is the number of
+	// data bytes between the header and trailer. The XMP stream begins with a 4 byte size of the
+	// XMP packet. Yes, this is the contiguous object data size minus 4 - silly but true. The XMP
+	// must have a packet wrapper, the leading xpacket PI is used as the marker of XMP.
 
 	XMP_Int64 cobjPos = (XMP_Int64)dbPages * kINDD_PageSize;	// ! Use a 64 bit multiply!
 	cobjPos -= (2 * sizeof(InDesignContigObjMarker));			// ! For the first pass in the loop.
@@ -230,62 +232,63 @@ void InDesign_MetaHandler::CacheFileData()
 		// ! The writeable bit of fObjectClassID is ignored, we use the packet trailer flag.
 
 		cobjPos += streamLength + (2 * sizeof(InDesignContigObjMarker));
-		FillBuffer ( fileRef, cobjPos, &ioBuf );	// Make sure buffer starts at cobjPos for length check.
-		if ( ioBuf.len < (2 * sizeof(InDesignContigObjMarker)) ) break;	// Too small, must be end of file.
+		fileRef->Seek ( cobjPos, kXMP_SeekFromStart );
+		fileRef->ReadAll ( buffer, sizeof(InDesignContigObjMarker) );
 
-		const InDesignContigObjMarker * cobjHeader = (const InDesignContigObjMarker *) ioBuf.ptr;
+		const InDesignContigObjMarker * cobjHeader = (const InDesignContigObjMarker *) &buffer[0];
 		if ( ! CheckBytes ( Uns8Ptr(&cobjHeader->fGUID), kINDDContigObjHeaderGUID, kInDesignGUIDSize ) ) break;	// Not a contiguous object header.
 		this->xmpObjID = cobjHeader->fObjectUID;	// Save these now while the buffer is good.
 		this->xmpClassID = cobjHeader->fObjectClassID;
 		streamLength = GetUns32LE ( (XMP_Uns8 *) &cobjHeader->fStreamLength );
-		ioBuf.ptr += sizeof ( InDesignContigObjMarker );
 
-		// See if this is the XMP stream. Only check for UTF-8, others get caught in fallback scanning.
+		// See if this is the XMP stream.
 
-		if ( ! CheckFileSpace ( fileRef, &ioBuf, 4 ) ) continue;	// Too small, can't possibly be XMP.
+		if ( streamLength < (4 + kUTF8_PacketHeaderLen + kUTF8_PacketTrailerLen) ) continue;	// Too small, can't possibly be XMP.
 
-		XMP_Uns32 innerLength = GetUns32LE ( ioBuf.ptr );
-		if ( this->streamBigEndian ) innerLength = GetUns32BE ( ioBuf.ptr );
+		fileRef->ReadAll ( buffer, (4 + kUTF8_PacketHeaderLen) );
+		XMP_Uns32 innerLength = GetUns32LE ( &buffer[0] );
+		if ( this->streamBigEndian ) innerLength = GetUns32BE ( &buffer[0] );
 		if ( innerLength != (streamLength - 4) ) {
 			// Be tolerant of a mistake with the endian flag.
 			innerLength = Flip4 ( innerLength );
 			if ( innerLength != (streamLength - 4) ) continue;	// Not legit XMP.
 		}
-		ioBuf.ptr += 4;
 
-		if ( ! CheckFileSpace ( fileRef, &ioBuf, kUTF8_PacketHeaderLen ) ) continue;	// Too small, can't possibly be XMP.
+		XMP_Uns8 * chPtr = &buffer[4];
+		size_t startLen = strlen((char*)kUTF8_PacketStart);
+		size_t idLen = strlen((char*)kUTF8_PacketID);
+		
+		if ( ! CheckBytes ( chPtr, kUTF8_PacketStart, startLen ) ) continue;
+		chPtr += startLen;
 
-		if ( ! CheckBytes ( ioBuf.ptr, kUTF8_PacketStart, strlen((char*)kUTF8_PacketStart) ) ) continue;
-		ioBuf.ptr += strlen((char*)kUTF8_PacketStart);
-
-		XMP_Uns8 quote = *ioBuf.ptr;
+		XMP_Uns8 quote = *chPtr;
 		if ( (quote != '\'') && (quote != '"') ) continue;
-		ioBuf.ptr += 1;
-		if ( *ioBuf.ptr != quote ) {
-			if ( ! CheckBytes ( ioBuf.ptr, Uns8Ptr("\xEF\xBB\xBF"), 3 ) ) continue;
-			ioBuf.ptr += 3;
+		chPtr += 1;
+		if ( *chPtr != quote ) {
+			if ( ! CheckBytes ( chPtr, Uns8Ptr("\xEF\xBB\xBF"), 3 ) ) continue;
+			chPtr += 3;
 		}
-		if ( *ioBuf.ptr != quote ) continue;
-		ioBuf.ptr += 1;
+		if ( *chPtr != quote ) continue;
+		chPtr += 1;
 
-		if ( ! CheckBytes ( ioBuf.ptr, Uns8Ptr(" id="), 4 ) ) continue;
-		ioBuf.ptr += 4;
-		quote = *ioBuf.ptr;
+		if ( ! CheckBytes ( chPtr, Uns8Ptr(" id="), 4 ) ) continue;
+		chPtr += 4;
+		quote = *chPtr;
 		if ( (quote != '\'') && (quote != '"') ) continue;
-		ioBuf.ptr += 1;
-		if ( ! CheckBytes ( ioBuf.ptr, kUTF8_PacketID, strlen((char*)kUTF8_PacketID) ) ) continue;
-		ioBuf.ptr += strlen((char*)kUTF8_PacketID);
-		if ( *ioBuf.ptr != quote ) continue;
-		ioBuf.ptr += 1;
+		chPtr += 1;
+		if ( ! CheckBytes ( chPtr, kUTF8_PacketID, idLen ) ) continue;
+		chPtr += idLen;
+		if ( *chPtr != quote ) continue;
+		chPtr += 1;
 
 		// We've seen enough, it is the XMP. To fit the Basic_Handler model we need to compute the
-		// total size of remaining contiguous objects, the trailingContentSize.
+		// total size of remaining contiguous objects, the trailingContentSize. We don't use the
+		// size to EOF, that would wrongly include the final zero padding for 4KB alignment.
 
 		this->xmpPrefixSize = sizeof(InDesignContigObjMarker) + 4;
 		this->xmpSuffixSize = sizeof(InDesignContigObjMarker);
 		packetInfo.offset = cobjPos + this->xmpPrefixSize;
 		packetInfo.length = innerLength;
-
 
 		XMP_Int64 tcStart = cobjPos + streamLength + (2 * sizeof(InDesignContigObjMarker));
 		while ( true ) {
@@ -293,9 +296,9 @@ void InDesign_MetaHandler::CacheFileData()
 				XMP_Throw ( "InDesign_MetaHandler::LocateXMP - User abort", kXMPErr_UserAbort );
 			}
 			cobjPos += streamLength + (2 * sizeof(InDesignContigObjMarker));
-			FillBuffer ( fileRef, cobjPos, &ioBuf );	// Make sure buffer starts at cobjPos for length check.
-			if ( ioBuf.len < sizeof(InDesignContigObjMarker) ) break;	// Too small, must be end of file.
-			cobjHeader = (const InDesignContigObjMarker *) ioBuf.ptr;
+			XMP_Uns32 len = fileRef->Read ( buffer, sizeof(InDesignContigObjMarker) );
+			if ( len < sizeof(InDesignContigObjMarker) ) break;	// Too small, must be end of file.
+			cobjHeader = (const InDesignContigObjMarker *) &buffer[0];
 			if ( ! CheckBytes ( Uns8Ptr(&cobjHeader->fGUID), kINDDContigObjHeaderGUID, kInDesignGUIDSize ) ) break;	// Not a contiguous object header.
 			streamLength = GetUns32LE ( (XMP_Uns8 *) &cobjHeader->fStreamLength );
 		}

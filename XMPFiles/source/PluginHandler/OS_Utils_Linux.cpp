@@ -26,6 +26,7 @@ static ModuleRefToPathMap							sMapModuleRefToPath;
 //typedef std::map<void*, std::string>				ResourceFileToPathMap;
 typedef std::map<OS_ModuleRef, std::string>			ResourceFileToPathMap;
 static ResourceFileToPathMap						sMapResourceFileToPath;
+static XMP_ReadWriteLock							sMapModuleRWLock;
 
 typedef std::tr1::shared_ptr<int>					FilePtr;
 
@@ -104,6 +105,7 @@ OS_ModuleRef LoadModule( const std::string & inModulePath, bool inOnlyResourceAc
 		}
 		else
 		{	// success !
+			XMP_AutoLock writeLock ( &sMapModuleRWLock, kXMP_WriteLock );
 			ModuleRefToPathMap::const_iterator iter = sMapModuleRefToPath.find(result);
 			if( iter == sMapModuleRefToPath.end() )
 			{
@@ -136,6 +138,7 @@ void UnloadModule( OS_ModuleRef inModule, bool inOnlyResourceAccess )
 		}
 		else
 		{
+			XMP_AutoLock writeLock ( &sMapModuleRWLock, kXMP_WriteLock );
 			ModuleRefToPathMap::iterator iter = sMapModuleRefToPath.find(inModule);
 			if( iter != sMapModuleRefToPath.end() )
 			{
@@ -160,7 +163,12 @@ static std::string GetModulePath(
 
 	if( inOSModule != NULL )
 	{
-		ModuleRefToPathMap::const_iterator iter = sMapModuleRefToPath.find(inOSModule);
+		ModuleRefToPathMap::const_iterator iter;
+		{
+			XMP_AutoLock readLock ( &sMapModuleRWLock, kXMP_ReadLock );
+			iter = sMapModuleRefToPath.find(inOSModule);
+		}
+
 		ResourceFileToPathMap::const_iterator iter2 = sMapResourceFileToPath.find(inOSModule);
 		if( (iter != sMapModuleRefToPath.end()) && (iter2 != sMapResourceFileToPath.end()) )
 		{

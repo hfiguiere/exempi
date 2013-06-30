@@ -53,13 +53,14 @@ bool TIFF_CheckFormat ( XMP_FileFormat format,
 
 	enum { kMinimalTIFFSize = 4+4+2+12+4 };	// Header plus IFD with 1 entry.
 
-	IOBuffer ioBuf;
-
 	fileRef->Rewind ( );
-	if ( ! CheckFileSpace ( fileRef, &ioBuf, kMinimalTIFFSize ) ) return false;
+	if ( ! XIO::CheckFileSpace ( fileRef, kMinimalTIFFSize ) ) return false;
 
-	bool leTIFF = CheckBytes ( ioBuf.ptr, "\x49\x49\x2A\x00", 4 );
-	bool beTIFF = CheckBytes ( ioBuf.ptr, "\x4D\x4D\x00\x2A", 4 );
+	XMP_Uns8 buffer [4];
+	fileRef->Read ( buffer, 4 );
+	
+	bool leTIFF = CheckBytes ( buffer, "\x49\x49\x2A\x00", 4 );
+	bool beTIFF = CheckBytes ( buffer, "\x4D\x4D\x00\x2A", 4 );
 
 	return (leTIFF | beTIFF);
 
@@ -264,14 +265,8 @@ void TIFF_MetaHandler::ProcessXMP()
 		XMP_StringLen packetLen = (XMP_StringLen)this->xmpPacket.size();
 		try {
 			this->xmpObj.ParseFromBuffer ( packetStr, packetLen );
-			haveXMP = true;
-		} catch ( ... ) {
-			XMP_ClearOption ( options, k2XMP_FileHadXMP );
-			if ( haveIPTC ) iptc.ParseMemoryDataSets ( iptcInfo.dataPtr, iptcInfo.dataLen );
-			if ( iptcDigestState == kDigestMatches ) iptcDigestState = kDigestMissing;
-			ImportPhotoData ( tiff, iptc, psir, iptcDigestState, &this->xmpObj, options );
-			throw;	// ! Rethrow the exception, don't absorb it.
-		}
+		} catch ( ... ) { /* Ignore parsing failures, someday we hope to get partial XMP back. */ }
+		haveXMP = true;
 	}
 
 	// Process the legacy metadata.
@@ -331,6 +326,9 @@ void TIFF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 	bool doInPlace = (fileHadXMP && (this->xmpPacket.size() <= (size_t)oldPacketLength));
 	if ( this->tiffMgr.IsLegacyChanged() ) doInPlace = false;
+	
+	bool localProgressTracking = false;
+	XMP_ProgressTracker* progressTracker = this->parent->progressTracker;
 
 	if ( ! doInPlace ) {
 
@@ -338,8 +336,13 @@ void TIFF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 			sAPIPerf->back().extraInfo += ", TIFF append update";
 		#endif
 
+		if ( (progressTracker != 0) && (! progressTracker->WorkInProgress()) ) {
+			localProgressTracking = true;
+			progressTracker->BeginWork();
+		}
+
 		this->tiffMgr.SetTag ( kTIFF_PrimaryIFD, kTIFF_XMP, kTIFF_UndefinedType, (XMP_Uns32)this->xmpPacket.size(), this->xmpPacket.c_str() );
-		this->tiffMgr.UpdateFileStream ( destRef );
+		this->tiffMgr.UpdateFileStream ( destRef, progressTracker );
 
 	} else {
 
@@ -357,11 +360,21 @@ void TIFF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 		XMP_Assert ( this->xmpPacket.size() == (size_t)oldPacketLength );	// ! Done by common PutXMP logic.
 
+		if ( progressTracker != 0 ) {
+			if ( progressTracker->WorkInProgress() ) {
+				progressTracker->AddTotalWork ( this->xmpPacket.size() );
+			} else {
+				localProgressTracking = true;
+				progressTracker->BeginWork ( this->xmpPacket.size() );
+			}
+		}
+
 		liveFile->Seek ( oldPacketOffset, kXMP_SeekFromStart  );
 		liveFile->Write ( this->xmpPacket.c_str(), (XMP_Int32)this->xmpPacket.size() );
 
 	}
-
+	
+	if ( localProgressTracking ) progressTracker->WorkComplete();
 	this->needsUpdate = false;
 
 }	// TIFF_MetaHandler::UpdateFile
@@ -384,6 +397,9 @@ void TIFF_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 	if ( fileLen > 0xFFFFFFFFLL ) {	// Check before making a copy of the file.
 		XMP_Throw ( "TIFF fles can't exceed 4GB", kXMPErr_BadTIFF );
 	}
+	
+	XMP_ProgressTracker* progressTracker = this->parent->progressTracker;
+	if ( progressTracker != 0 ) progressTracker->BeginWork ( (float)fileLen );
 
 	origRef->Rewind ( );
 	tempRef->Truncate ( 0 );
@@ -397,6 +413,8 @@ void TIFF_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 		this->parent->ioRef = origRef;
 		throw;
 	}
+	
+	if ( progressTracker != 0 ) progressTracker->WorkComplete();
 
 }	// TIFF_MetaHandler::WriteTempFile
 

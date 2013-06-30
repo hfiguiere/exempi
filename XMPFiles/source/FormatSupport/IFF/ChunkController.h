@@ -16,6 +16,7 @@
 #include "public/include/XMP_IO.hpp"
 
 #include "source/XMP_LibUtils.hpp"
+#include "source/XMP_ProgressTracker.hpp"
 
 #include "XMPFiles/source/FormatSupport/IFF/ChunkPath.h"
 #include "XMPFiles/source/FormatSupport/IFF/IChunkBehavior.h"
@@ -105,8 +106,9 @@ class ChunkController
 		 * 2. write the changed chunks to the file
 		 *
 		 * @param stream the open [file] stream for writing, the file pointer must be at the beginning
+		 * @param progressTracker Progress tracker to track the file write progress and reporting it to client
 		 */
-		void writeFile( XMP_IO* stream );
+		void writeFile( XMP_IO* stream,XMP_ProgressTracker * progressTracker  );
 
 		/**
 		 * Returns the first (or last) Chunk that matches the passed path.

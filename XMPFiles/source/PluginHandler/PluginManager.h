@@ -12,17 +12,23 @@
 #include "PluginHandler.h"
 #include "ModuleUtils.h"
 
+#if XMP_WinBuild && _MSC_VER >= 1700
+	// Visual Studio 2012 or newer supports C++11 (mostly)
+	#include <memory>
+	#include <functional>
+	#define XMP_SHARED_PTR std::shared_ptr
+#else
+	#define XMP_SHARED_PTR std::tr1::shared_ptr
+#endif
+
 namespace XMP_PLUGIN
 {
 
 typedef XMP_Uns32 XMPAtom;
 typedef XMPAtom FileHandlerType;
 
-class Module;
-typedef std::tr1::shared_ptr<Module>						ModuleSharedPtr;
-
-class FileHandler;
-typedef std::tr1::shared_ptr<FileHandler>					FileHandlerSharedPtr;
+typedef XMP_SHARED_PTR<class Module>						ModuleSharedPtr;
+typedef XMP_SHARED_PTR<class FileHandler>					FileHandlerSharedPtr;
 
 class FileHandlerInstance;
 typedef FileHandlerInstance*								FileHandlerInstancePtr;
@@ -37,8 +43,8 @@ inline void CheckError( WXMP_Error & error )
 {
 	if( error.mErrorID != kXMPErr_NoError )
 	{
-		if( error.mErrorID >= 500 /* kXMPErr_PluginInternal */ 
-			|| error.mErrorID <= 512 /* kXMPErr_SetHostAPI */  )
+		if( error.mErrorID >= kXMPErr_PluginInternal &&
+			error.mErrorID <= kXMPErr_PluginLastError )
 		{
 			throw XMP_Error( kXMPErr_InternalFailure, error.mErrorMsg );
 		}
@@ -52,7 +58,7 @@ inline void CheckError( WXMP_Error & error )
 /** @class PluginManager
  *  @brief Register all file handlers from all the plugins available in Plugin directory.
  *
- *  At the initialization time of XMPFiles, PluginManager loads all the avalbale plugins
+ *  At the initialization time of XMPFiles, PluginManager loads all the available plugins
  */
 class PluginManager
 {
@@ -136,6 +142,7 @@ private:
 	/**
 	 * Terminate host API
 	 */
+	void initializeHostAPI();
 	void terminateHostAPI();
 
 	/** 
@@ -143,7 +150,7 @@ private:
 	 *  @param module
 	 *  @return Void.
 	 */
-	void loadResourceFile( ModuleSharedPtr module );	
+	void loadResourceFile( ModuleSharedPtr module );
 	
 	/** 
 	 *  Scan mPluginDir for the plugins. It also scans nested folder upto level inMaxNumOfNestedFolder.
@@ -164,21 +171,36 @@ private:
 			const std::string& inPath, 
 			std::vector<std::string>& ioFoundLibs, 
 			XMP_Int32 inLevel, 
-			XMP_Int32 inMaxNestingLevel );	
+			XMP_Int32 inMaxNestingLevel );
 
 	/**
 	 * Setup passed in HostAPI structure for the host API v1
 	 */
 	static void SetupHostAPI_V1( HostAPIRef hostAPI );
 
+	/**
+	 * Setup passed in HostAPI structure for the host API v2
+	 */
+	static void SetupHostAPI_V2( HostAPIRef hostAPI );
+
+	/**
+	 * Setup passed in HostAPI structure for the host API v3
+	 */
+	static void SetupHostAPI_V3( HostAPIRef hostAPI );
+
+		/**
+	 * Setup passed in HostAPI structure for the host API v4
+	 */
+	static void SetupHostAPI_V4( HostAPIRef hostAPI );
+
+
 	typedef std::map<XMP_FileFormat, FileHandlerPair>		PluginHandlerMap;
 	typedef std::map<XMP_Uns32, HostAPIRef>					HostAPIMap;
-	typedef std::map<SessionRef, FileHandlerInstancePtr>	SessionMap;		
+	typedef std::map<SessionRef, FileHandlerInstancePtr>	SessionMap;
 
 	std::string						mPluginDir;
 	StringVec						mExtensions;
 	StringVec						mPluginsNeeded;
-	ModuleVec						mModules;
 	PluginHandlerMap				mHandlers;
 	SessionMap						mSessions;
 	HostAPIMap						mHostAPIs;

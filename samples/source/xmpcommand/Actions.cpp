@@ -13,7 +13,11 @@
 const char * XMP_EXE_VERSION= "4.4";
 
 #include <stdexcept>
-#include <stdarg.h>
+#include <cstdarg>
+#include <cstdio>
+#include <vector>
+#include <string>
+#include <cstring>
 
 //XMP related
 #define TXMP_STRING_TYPE std::string

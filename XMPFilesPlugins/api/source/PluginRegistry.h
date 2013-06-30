@@ -7,16 +7,6 @@
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
 
-/**************************************************************************
-* @file PluginRegistry.h
-* @brief Classes to register multiple file hanlder in one plugin
-*
-* It contains classes to give easy way to register multiple file handler in one plugin.
-* 
-* @author Praveen Kumar Goyal (pkgoyal)
-* @bug No known bugs.
-***************************************************************************/
-
 #ifndef PLUGINREGISTRY_H
 #define PLUGINREGISTRY_H
 #include "PluginHandler.h"

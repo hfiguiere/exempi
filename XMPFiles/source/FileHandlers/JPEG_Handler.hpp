@@ -90,6 +90,7 @@ private:
 	typedef std::map < GUID_32, std::string > ExtendedXMPMap;
 
 	ExtendedXMPMap extendedXMP;	// ! Only contains those with complete data.
+//	void CacheExtendedXMP ( ExtendedXMPInfo * extXMP, XMP_Uns8 * buffer, size_t bufferLen );
 
 };	// JPEG_MetaHandler
 

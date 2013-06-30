@@ -12,6 +12,8 @@
 #include "public/include/XMP_Environment.h"	// ! Must be the first #include!
 #include "public/include/XMP_Const.h"
 
+#include "source/XMP_LibUtils.hpp"
+
 #include <string>
 #include <vector>
 
@@ -108,8 +110,9 @@ enum { kXMLPendingInputMax = 16 };
 class XMLParserAdapter {
 public:
 
-	XMLParserAdapter()
-		: tree(0,"",kRootNode), rootNode(0), rootCount(0), charEncoding(XMP_OptionBits(-1)), pendingCount(0)
+	XMLParserAdapter() : tree(0,"",kRootNode), rootNode(0), rootCount(0),
+	                     charEncoding(XMP_OptionBits(-1)), pendingCount(0),
+	                     errorCallback(0)
 	{
 		#if XMP_DebugBuild
 			parseLog = 0;
@@ -119,6 +122,15 @@ public:
 	virtual ~XMLParserAdapter() {};
 	
 	virtual void ParseBuffer ( const void * buffer, size_t length, bool last ) = 0;
+	
+	virtual void SetErrorCallback ( GenericErrorCallback * ec )
+		{ this->errorCallback = ec; };
+
+	virtual void NotifyClient ( XMP_ErrorSeverity severity, XMP_Error & error )
+	{
+		if (this->errorCallback)
+			this->errorCallback->NotifyClient( severity, error );
+	}
 
 	XML_Node		tree;
 	XML_NodeVector	parseStack;
@@ -128,7 +140,9 @@ public:
 	XMP_OptionBits	charEncoding;
 	size_t          pendingCount;
 	unsigned char	pendingInput[kXMLPendingInputMax];	// Buffered input for character encoding checks.
-	
+
+	GenericErrorCallback * errorCallback;	// Set if the relevant XMPCore or XMPFiles object has one.
+
 	#if XMP_DebugBuild
 		FILE * parseLog;
 	#endif

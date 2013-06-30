@@ -75,6 +75,14 @@ extern bool ignoreLocalText;
 	#define EnablePacketScanning 1
 #endif
 
+#ifndef EnablePluginManager
+	#if XMP_iOSBuild
+		#define EnablePluginManager 0
+	#else
+		#define EnablePluginManager 1
+	#endif
+#endif
+
 extern XMP_Int32 sXMPFilesInitCount;
 
 #ifndef GatherPerformanceData
@@ -157,7 +165,15 @@ extern const FileExtMapping kFileExtMap[];
 extern const char * kKnownScannedFiles[];
 extern const char * kKnownRejectedFiles[];
 
-typedef std::map < const char *, const char * >		ID3GenreMap;
+class CharStarLess {	// Comparison object for the genre code maps.
+public:
+	bool operator() ( const char * left, const char * right ) const {
+		int order = strcmp ( left, right );
+		return order < 0;
+	}
+};
+
+typedef std::map < const char *, const char *, CharStarLess >		ID3GenreMap;
 extern ID3GenreMap* kMapID3GenreCodeToName;	// Storage defined in ID3_Support.cpp.
 extern ID3GenreMap* kMapID3GenreNameToCode;
 
@@ -266,11 +282,17 @@ public:
 	containsXMP(false), processedXMP(false), needsUpdate(false)
 
 	XMPFileHandler() : parent(0), DefaultCTorPresets {};
-	XMPFileHandler (XMPFiles * _parent) : parent(_parent), DefaultCTorPresets {};
+	XMPFileHandler (XMPFiles * _parent) : parent(_parent), DefaultCTorPresets
+	{
+		xmpObj.SetErrorCallback(ErrorCallbackForXMPMeta, &parent->errorCallback);
+	};
 
 	virtual ~XMPFileHandler() {};	// ! The specific handler is responsible for tnailInfo.tnailImage.
 	
 	virtual bool GetFileModDate ( XMP_DateTime * modDate );	// The default implementation is for embedding handlers.
+	virtual void FillMetadataFiles ( std::vector<std::string> * metadataFiles );
+	virtual void FillAssociatedResources ( std::vector<std::string> * resourceList );
+	virtual bool IsMetadataWritable ( );
 
 	virtual void CacheFileData() = 0;
 	virtual void ProcessXMP();		// The default implementation just parses the XMP.

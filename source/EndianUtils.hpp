@@ -13,6 +13,10 @@
 #include "public/include/XMP_Environment.h"	// ! This must be the first include.
 #include "public/include/XMP_Const.h"
 
+#if SUNOS_SPARC || SUNOS
+#include "string.h"
+#endif //SUNOS_SPARC
+
 // *** These should be in a more common location. The Unicode conversions of XMPCore have similar utils. 
 // *** May want to improve with PowerPC swapping load/store, or SSE instructions.
 
@@ -22,7 +26,7 @@
 #if XMP_WinBuild
 	#pragma warning ( disable : 4127 )	// conditional expression is constant
 	#define kBigEndianHost 0
-#elif XMP_MacBuild
+#elif XMP_MacBuild | XMP_iOSBuild
 	#if __BIG_ENDIAN__
 		#define kBigEndianHost 1
 	#elif __LITTLE_ENDIAN__
@@ -58,6 +62,18 @@ typedef void (*PutDouble_Proc) ( double value, void* addr );
 
 // =================================================================================================
 
+#if SUNOS_SPARC || SUNOS
+	#define DefineAndGetValue(type,addr)	type value = 0; memcpy ( &value, addr, sizeof(type) )
+	#define DefineAndSetValue(type,addr)	memcpy(addr, &value, sizeof(type))
+	#define DefineFlipAndSet(type,x,addr)	type temp; memcpy(&temp, addr, sizeof(type)); temp = Flip##x(temp); memcpy(addr, &temp, sizeof(type))
+#else
+	#define DefineAndGetValue(type,addr)	type value = *((type*)addr)
+	#define DefineAndSetValue(type,addr)	*((type*)addr) = value
+	#define DefineFlipAndSet(type,x,addr)	type* uPtr = (type*) addr; *uPtr = Flip##x ( *uPtr )
+#endif //#if SUNOS_SPARC
+
+// -------------------------------------------------------------------------------------------------
+
 static inline XMP_Uns16 Flip2 ( XMP_Uns16 value )
 {
 	value = ((value & 0x00FF) << 8) | ((value & 0xFF00) >> 8);
@@ -68,8 +84,7 @@ static inline XMP_Uns16 Flip2 ( XMP_Uns16 value )
 
 static inline void Flip2 ( void * addr )
 {
-	XMP_Uns16 * u16Ptr = (XMP_Uns16*) addr;
-	*u16Ptr = Flip2 ( *u16Ptr );
+	DefineFlipAndSet ( XMP_Uns16, 2, addr );	
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -85,8 +100,7 @@ static inline XMP_Uns32 Flip4 ( XMP_Uns32 value )
 
 static inline void Flip4 ( void * addr )
 {
-	XMP_Uns32 * u32Ptr = (XMP_Uns32*) addr;
-	*u32Ptr = Flip4 ( *u32Ptr );
+	DefineFlipAndSet ( XMP_Uns32, 4, addr );
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -102,68 +116,85 @@ static inline XMP_Uns64 Flip8 ( XMP_Uns64 value )
 
 static inline void Flip8 ( void * addr )
 {
-	XMP_Uns64 * u64Ptr = (XMP_Uns64*) addr;
-	*u64Ptr = Flip8 ( *u64Ptr );
+	DefineFlipAndSet ( XMP_Uns64, 8, addr );
 }
 
 // =================================================================================================
 
-static inline XMP_Uns16
-GetUns16BE ( const void * addr )
+static inline XMP_Uns16 GetUns16BE ( const void * addr )
 {
-	XMP_Uns16 value = *((XMP_Uns16*)addr);
+	DefineAndGetValue ( XMP_Uns16, addr );
 	if ( kLittleEndianHost ) value = Flip2 ( value );
 	return value;
 }
 
 // -------------------------------------------------------------------------------------------------
 
-static inline XMP_Uns16
-GetUns16LE ( const void * addr )
+static inline XMP_Uns16 GetUns16LE ( const void * addr )
 {
-	XMP_Uns16 value = *((XMP_Uns16*)addr);
+	DefineAndGetValue ( XMP_Uns16, addr );
 	if ( kBigEndianHost ) value = Flip2 ( value );
 	return value;
 }
 
 // -------------------------------------------------------------------------------------------------
 
-static inline XMP_Uns32
-GetUns32BE ( const void * addr )
+static inline XMP_Uns16 GetUns16AsIs ( const void * addr )
 {
-	XMP_Uns32 value = *((XMP_Uns32*)addr);
+	DefineAndGetValue ( XMP_Uns16, addr );
+	return value;	// Use this to avoid SPARC failure to handle unaligned loads and stores.
+}
+
+// -------------------------------------------------------------------------------------------------
+
+static inline XMP_Uns32 GetUns32BE ( const void * addr )
+{
+	DefineAndGetValue ( XMP_Uns32, addr );
 	if ( kLittleEndianHost ) value = Flip4 ( value );
 	return value;
 }
 
 // -------------------------------------------------------------------------------------------------
 
-static inline XMP_Uns32
-GetUns32LE ( const void * addr )
+static inline XMP_Uns32 GetUns32LE ( const void * addr )
 {
-	XMP_Uns32 value = *((XMP_Uns32*)addr);
+	DefineAndGetValue ( XMP_Uns32, addr );
 	if ( kBigEndianHost ) value = Flip4 ( value );
 	return value;
 }
 
 // -------------------------------------------------------------------------------------------------
 
-static inline XMP_Uns64
-GetUns64BE ( const void * addr )
+static inline XMP_Uns32 GetUns32AsIs ( const void * addr )
 {
-	XMP_Uns64 value = *((XMP_Uns64*)addr);
+	DefineAndGetValue ( XMP_Uns32, addr );
+	return value;	// Use this to avoid SPARC failure to handle unaligned loads and stores.
+}
+
+// -------------------------------------------------------------------------------------------------
+
+static inline XMP_Uns64 GetUns64BE ( const void * addr )
+{
+	DefineAndGetValue ( XMP_Uns64, addr );
 	if ( kLittleEndianHost ) value = Flip8 ( value );
 	return value;
 }
 
 // -------------------------------------------------------------------------------------------------
 
-static inline XMP_Uns64
-GetUns64LE ( const void * addr )
+static inline XMP_Uns64 GetUns64LE ( const void * addr )
 {
-	XMP_Uns64 value = *((XMP_Uns64*)addr);
+	DefineAndGetValue ( XMP_Uns64, addr );
 	if ( kBigEndianHost ) value = Flip8 ( value );
 	return value;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+static inline XMP_Uns64 GetUns64AsIs ( const void * addr )
+{
+	DefineAndGetValue ( XMP_Uns64, addr );
+	return value;	// Use this to avoid SPARC failure to handle unaligned loads and stores.
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -310,56 +341,71 @@ MakeDoubleLE ( double value )
 
 // =================================================================================================
 
-static inline void
-PutUns16BE ( XMP_Uns16 value, void * addr )
+static inline void PutUns16BE ( XMP_Uns16 value, void * addr )
 {
 	if ( kLittleEndianHost ) value = Flip2 ( value );
-	*((XMP_Uns16*)addr) = value;
+	DefineAndSetValue ( XMP_Uns16, addr );
 }
 
 // -------------------------------------------------------------------------------------------------
 
-static inline void
-PutUns16LE ( XMP_Uns16 value, void * addr )
+static inline void PutUns16LE ( XMP_Uns16 value, void * addr )
 {
 	if ( kBigEndianHost ) value = Flip2 ( value );
-	*((XMP_Uns16*)addr) = value;
+	DefineAndSetValue ( XMP_Uns16, addr );
 }
 
 // -------------------------------------------------------------------------------------------------
 
-static inline void
-PutUns32BE ( XMP_Uns32 value, void * addr )
+static inline void PutUns16AsIs ( XMP_Uns16 value, void * addr )
+{
+	DefineAndSetValue ( XMP_Uns16, addr );	// Use this to avoid SPARC failure to handle unaligned loads and stores.
+}
+
+// -------------------------------------------------------------------------------------------------
+
+static inline void PutUns32BE ( XMP_Uns32 value, void * addr )
 {
 	if ( kLittleEndianHost ) value = Flip4 ( value );
-	*((XMP_Uns32*)addr) = value;
+	DefineAndSetValue ( XMP_Uns32, addr );
 }
 
 // -------------------------------------------------------------------------------------------------
 
-static inline void
-PutUns32LE ( XMP_Uns32 value, void * addr )
+static inline void PutUns32LE ( XMP_Uns32 value, void * addr )
 {
 	if ( kBigEndianHost ) value = Flip4 ( value );
-	*((XMP_Uns32*)addr) = value;
+	DefineAndSetValue ( XMP_Uns32, addr );
 }
 
 // -------------------------------------------------------------------------------------------------
 
-static inline void
-PutUns64BE ( XMP_Uns64 value, void * addr )
+static inline void PutUns32AsIs ( XMP_Uns32 value, void * addr )
+{
+	DefineAndSetValue ( XMP_Uns32, addr );	// Use this to avoid SPARC failure to handle unaligned loads and stores.
+}
+
+// -------------------------------------------------------------------------------------------------
+
+static inline void PutUns64BE ( XMP_Uns64 value, void * addr )
 {
 	if ( kLittleEndianHost ) value = Flip8 ( value );
-	*((XMP_Uns64*)addr) = value;
+	DefineAndSetValue ( XMP_Uns64, addr );
 }
 
 // -------------------------------------------------------------------------------------------------
 
-static inline void
-PutUns64LE ( XMP_Uns64 value, void * addr )
+static inline void PutUns64LE ( XMP_Uns64 value, void * addr )
 {
 	if ( kBigEndianHost ) value = Flip8 ( value );
-	*((XMP_Uns64*)addr) = value;
+	DefineAndSetValue ( XMP_Uns64, addr );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+static inline void PutUns64AsIs ( XMP_Uns64 value, void * addr )
+{
+	DefineAndSetValue ( XMP_Uns64, addr );	// Use this to avoid SPARC failure to handle unaligned loads and stores.
 }
 
 // -------------------------------------------------------------------------------------------------

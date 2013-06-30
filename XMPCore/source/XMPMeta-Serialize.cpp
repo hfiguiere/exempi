@@ -1167,6 +1167,7 @@ SerializeAsRDF ( const XMPMeta & xmpObj,
 	
 }	// SerializeAsRDF
 
+
 // -------------------------------------------------------------------------------------------------
 // SerializeToBuffer
 // -----------------
@@ -1244,6 +1245,7 @@ XMPMeta::SerializeToBuffer ( XMP_VarString * rdfString,
 	std::string tailStr;
 
 	SerializeAsRDF ( *this, *rdfString, tailStr, options, newline, indentStr, baseIndent );
+
 	if ( charEncoding == kXMP_EncodeUTF8 ) {
 
 		if ( options & kXMP_ExactPacketLength ) {

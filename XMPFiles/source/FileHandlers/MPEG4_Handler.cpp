@@ -21,6 +21,7 @@
 #include "XMPFiles/source/FormatSupport/ISOBaseMedia_Support.hpp"
 #include "XMPFiles/source/FormatSupport/MOOV_Support.hpp"
 
+#include "source/XMP_ProgressTracker.hpp"
 #include "source/UnicodeConversions.hpp"
 #include "third-party/zuid/interfaces/MD5.h"
 
@@ -40,7 +41,11 @@ using namespace std;
 
 // The basic content of a timecode sample description table entry. Does not include trailing boxes.
 
+#if SUNOS_SPARC || SUNOS_X86
+#pragma pack ( 1 )
+#else
 #pragma pack ( push, 1 )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 
 struct stsdBasicEntry {
 	XMP_Uns32 entrySize;
@@ -55,7 +60,11 @@ struct stsdBasicEntry {
 	XMP_Uns8  reserved_3;
 };
 
+#if SUNOS_SPARC || SUNOS_X86
+#pragma pack (  )
+#else
 #pragma pack ( pop )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 
 // =================================================================================================
 
@@ -226,7 +235,8 @@ bool MPEG4_CheckFormat ( XMP_FileFormat format,
 				parent->format = kXMP_MOVFile;
 				parent->tempUI32 = MOOV_Manager::kFileIsModernQT;
 				return true;
-			} else if ( (brand == ISOMedia::k_mp41) || (brand == ISOMedia::k_mp42) || (brand == ISOMedia::k_f4v) ) {
+			} else if ( (brand == ISOMedia::k_mp41) || (brand == ISOMedia::k_mp42) || 
+				(brand == ISOMedia::k_f4v) || ( brand == ISOMedia::k_avc1 ) ) {
 				haveCompatibleBrand = true;	// Need to keep looking in case 'qt  ' follows.
 			}
 
@@ -239,7 +249,6 @@ bool MPEG4_CheckFormat ( XMP_FileFormat format,
 		return true;
 
 	} else {
-
 		// No 'ftyp', look for classic QuickTime: 'moov', 'mdat', 'pnot', 'free', 'skip', and 'wide'.
 		// As an expedient, quit when a 'moov' box is found. Tolerate other boxes, they are in the
 		// wild for ill-formed files, e.g. seen when 'moov'/'udta' children get left at top level.
@@ -643,7 +652,7 @@ static void ExportISOCopyrights ( const SXMPMeta & xmp, MOOV_Manager * moovMgr )
 
 		MOOV_Manager::BoxInfo cprtInfo;
 		MOOV_Manager::BoxRef  cprtRef = moovMgr->GetNthChild ( udtaRef, ordinal-1, &cprtInfo );
-		if ( (cprtRef == 0) ) break;	// Sanity check, should not happen.
+		if ( cprtRef == 0 ) break;	// Sanity check, should not happen.
 		if ( (cprtInfo.boxType != ISOMedia::k_cprt) || (cprtInfo.contentSize < 6) ) continue;
 		if ( *cprtInfo.content != 0 ) continue;	// Only accept version 0, ignore the flags.
 
@@ -729,7 +738,7 @@ static void ExportISOCopyrights ( const SXMPMeta & xmp, MOOV_Manager * moovMgr )
 
 			MOOV_Manager::BoxInfo cprtInfo;
 			MOOV_Manager::BoxRef  cprtRef = moovMgr->GetNthChild ( udtaRef, isoIndex, &cprtInfo );
-			if ( (cprtRef == 0) ) break;	// Sanity check, should not happen.
+			if ( cprtRef == 0 ) break;	// Sanity check, should not happen.
 			if ( (cprtInfo.boxType != ISOMedia::k_cprt) || (cprtInfo.contentSize < 6) ) continue;
 			if ( *cprtInfo.content != 0 ) continue;	// Only accept version 0, ignore the flags.
 			if ( packedLang != GetUns16BE ( cprtInfo.content + 4 ) ) continue;	// Look for matching language.
@@ -1056,6 +1065,36 @@ static MOOV_Manager::BoxRef FindTimecode_trak ( const MOOV_Manager & moovMgr )
 }	// FindTimecode_trak
 
 // =================================================================================================
+// FindTimecode_dref
+// =================
+//
+// Look for the mdia/minf/dinf/dref box within a well-formed timecode track, return the dref box ref.
+
+static MOOV_Manager::BoxRef FindTimecode_dref ( const MOOV_Manager & moovMgr )
+{
+
+	MOOV_Manager::BoxRef trakRef = FindTimecode_trak ( moovMgr );
+	if ( trakRef == 0 ) return 0;
+
+	MOOV_Manager::BoxInfo tempInfo;
+	MOOV_Manager::BoxRef  tempRef, drefRef;
+
+	tempRef = moovMgr.GetTypeChild ( trakRef, ISOMedia::k_mdia, &tempInfo );
+	if ( tempRef == 0 ) return 0;
+
+	tempRef = moovMgr.GetTypeChild ( tempRef, ISOMedia::k_minf, &tempInfo );
+	if ( tempRef == 0 ) return 0;
+
+	tempRef = moovMgr.GetTypeChild ( tempRef, ISOMedia::k_dinf, &tempInfo );
+	if ( tempRef == 0 ) return 0;
+
+	drefRef = moovMgr.GetTypeChild ( tempRef, ISOMedia::k_dref, &tempInfo );
+
+	return drefRef;
+
+}	// FindTimecode_dref
+
+// =================================================================================================
 // FindTimecode_stbl
 // =================
 //
@@ -1343,7 +1382,11 @@ static void ExportTimecodeItems ( const SXMPMeta & xmp, MPEG4_MetaHandler::Timec
 // ImportCr8rItems
 // ===============
 
+#if SUNOS_SPARC || SUNOS_X86
+#pragma pack ( 1 )
+#else
 #pragma pack ( push, 1 )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 
 struct PrmLBoxContent {
 	XMP_Uns32 magic;
@@ -1370,7 +1413,11 @@ struct Cr8rBoxContent {
 	char appName[32];
 };
 
+#if SUNOS_SPARC || SUNOS_X86
+#pragma pack ( )
+#else
 #pragma pack ( pop )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 
 // -------------------------------------------------------------------------------------------------
 
@@ -2142,6 +2189,46 @@ void MPEG4_MetaHandler::ProcessXMP()
 
 bool MPEG4_MetaHandler::ParseTimecodeTrack()
 {
+	MOOV_Manager::BoxInfo drefInfo;
+	MOOV_Manager::BoxRef drefRef = FindTimecode_dref ( this->moovMgr );
+	bool qtTimecodeIsExternal=false;
+	if( drefRef != 0 )
+	{
+		this->moovMgr.GetBoxInfo( drefRef , &drefInfo );
+		// After dref atom in a QT file we should only 
+		// proceed further to check the Data refernces 
+		// if the total size of the content is greater
+		// than 8 bytes which suggests that there is atleast
+		// one data reference to check for external references.
+		if ( drefInfo.contentSize>8)
+		{
+			XMP_Uns32 noOfDrefs=GetUns32BE(drefInfo.content+4);
+			if(noOfDrefs>0)
+			{
+				const XMP_Uns8* dataReference = drefInfo.content + 8;
+				const XMP_Uns8* nextDataref   = 0;
+				const XMP_Uns8* boxlimit      = drefInfo.content + drefInfo.contentSize;
+				ISOMedia::BoxInfo dataRefernceInfo;
+				while(noOfDrefs--)
+				{
+					nextDataref= ISOMedia::GetBoxInfo( dataReference , boxlimit, 
+						&dataRefernceInfo);
+					//The content atleast contains the flag and some data
+					if ( dataRefernceInfo.contentSize > 4 )
+					{
+						if (dataRefernceInfo.boxType==ISOMedia::k_alis &&
+							*((XMP_Uns8*)(dataReference + dataRefernceInfo.headerSize + 4)) !=1 )
+						{
+							qtTimecodeIsExternal=true;
+							break;
+						}
+					}
+					dataReference=nextDataref;
+				}
+			}
+		}
+	}
+
 	MOOV_Manager::BoxRef stblRef = FindTimecode_stbl ( this->moovMgr );
 	if ( stblRef == 0 ) return false;
 
@@ -2217,91 +2304,98 @@ bool MPEG4_MetaHandler::ParseTimecodeTrack()
 	}
 
 	// Find the timecode sample.
+	// Read the timecode only if we are sure that it is not External
+	// This way we never find stsdBox and ExportTimecodeItems and
+	// ImportTimecodeItems doesn't do anything with timeCodeSample
+	// Also because sampleOffset is/remains zero UpdateFile doesn't
+	// update the timeCodeSample value
+	if(!qtTimecodeIsExternal)
+	{
+		XMP_Uns64 sampleOffset = 0;
+		MOOV_Manager::BoxInfo tempInfo;
+		MOOV_Manager::BoxRef  tempRef;
 
-	XMP_Uns64 sampleOffset = 0;
-	MOOV_Manager::BoxInfo tempInfo;
-	MOOV_Manager::BoxRef  tempRef;
+		tempRef = this->moovMgr.GetTypeChild ( stblRef, ISOMedia::k_stsc, &tempInfo );
+		if ( tempRef == 0 ) return false;
+		if ( tempInfo.contentSize < (8 + sizeof ( MOOV_Manager::Content_stsc_entry )) ) return false;
+		if ( GetUns32BE ( tempInfo.content + 4 ) == 0 ) return false;	// Make sure the entry count is non-zero.
 
-	tempRef = this->moovMgr.GetTypeChild ( stblRef, ISOMedia::k_stsc, &tempInfo );
-	if ( tempRef == 0 ) return false;
-	if ( tempInfo.contentSize < (8 + sizeof ( MOOV_Manager::Content_stsc_entry )) ) return false;
-	if ( GetUns32BE ( tempInfo.content + 4 ) == 0 ) return false;	// Make sure the entry count is non-zero.
+		XMP_Uns32 firstChunkNumber = GetUns32BE ( tempInfo.content + 8 );	// Want first field of first entry.
 
-	XMP_Uns32 firstChunkNumber = GetUns32BE ( tempInfo.content + 8 );	// Want first field of first entry.
+		tempRef = this->moovMgr.GetTypeChild ( stblRef, ISOMedia::k_stco, &tempInfo );
 
-	tempRef = this->moovMgr.GetTypeChild ( stblRef, ISOMedia::k_stco, &tempInfo );
+		if ( tempRef != 0 ) {
 
-	if ( tempRef != 0 ) {
+			if ( tempInfo.contentSize < (8 + 4) ) return false;
+			XMP_Uns32 stcoCount = GetUns32BE ( tempInfo.content + 4 );
+			if ( stcoCount < firstChunkNumber ) return false;
+			XMP_Uns32 * stcoPtr = (XMP_Uns32*) (tempInfo.content + 8);
+			sampleOffset = GetUns32BE ( &stcoPtr[firstChunkNumber-1] );	// ! Chunk number is 1-based.
 
-		if ( tempInfo.contentSize < (8 + 4) ) return false;
-		XMP_Uns32 stcoCount = GetUns32BE ( tempInfo.content + 4 );
-		if ( stcoCount < firstChunkNumber ) return false;
-		XMP_Uns32 * stcoPtr = (XMP_Uns32*) (tempInfo.content + 8);
-		sampleOffset = GetUns32BE ( &stcoPtr[firstChunkNumber-1] );	// ! Chunk number is 1-based.
+		} else {
 
-	} else {
+			tempRef = this->moovMgr.GetTypeChild ( stblRef, ISOMedia::k_co64, &tempInfo );
+			if ( (tempRef == 0) || (tempInfo.contentSize < (8 + 8)) ) return false;
+			XMP_Uns32 co64Count = GetUns32BE ( tempInfo.content + 4 );
+			if ( co64Count < firstChunkNumber ) return false;
+			XMP_Uns64 * co64Ptr = (XMP_Uns64*) (tempInfo.content + 8);
+			sampleOffset = GetUns64BE ( &co64Ptr[firstChunkNumber-1] );	// ! Chunk number is 1-based.
 
-		tempRef = this->moovMgr.GetTypeChild ( stblRef, ISOMedia::k_co64, &tempInfo );
-		if ( (tempRef == 0) || (tempInfo.contentSize < (8 + 8)) ) return false;
-		XMP_Uns32 co64Count = GetUns32BE ( tempInfo.content + 4 );
-		if ( co64Count < firstChunkNumber ) return false;
-		XMP_Uns64 * co64Ptr = (XMP_Uns64*) (tempInfo.content + 8);
-		sampleOffset = GetUns64BE ( &co64Ptr[firstChunkNumber-1] );	// ! Chunk number is 1-based.
-
-	}
-
-	if ( sampleOffset != 0 ) {	// Read the timecode sample.
-
-		XMPFiles_IO* localFile = 0;
-
-		if ( this->parent->ioRef == 0 ) {	// Local read-only files get closed in CacheFileData.
-			XMP_Assert ( this->parent->UsesLocalIO() );
-			localFile = XMPFiles_IO::New_XMPFiles_IO ( this->parent->filePath.c_str(), Host_IO::openReadOnly );
-			XMP_Enforce ( localFile != 0 );
-			this->parent->ioRef = localFile;
 		}
 
-		this->parent->ioRef->Seek ( sampleOffset, kXMP_SeekFromStart  );
-		this->parent->ioRef->ReadAll ( &this->tmcdInfo.timecodeSample, 4 );
-		this->tmcdInfo.timecodeSample = MakeUns32BE ( this->tmcdInfo.timecodeSample );
-		if ( localFile != 0 ) {
-			localFile->Close();
-			delete localFile;
-			this->parent->ioRef = 0;
-		}
+		if ( sampleOffset != 0 ) {	// Read the timecode sample.
 
-	}
-	
-	// If this is a QT file, look for an edit list offset to add to the timecode sample. Look in the
-	// timecode track for an edts/elst box. The content is a UInt8 version, UInt8[3] flags, a UInt32
-	// entry count, and a sequence of UInt32 triples (trackDuration, mediaTime, mediaRate). Take
-	// mediaTime from the first entry, divide it by tmcdInfo.frameDuration, add that to
-	// tmcdInfo.timecodeSample.
+			XMPFiles_IO* localFile = 0;
 
-	bool isQT = (this->fileMode == MOOV_Manager::kFileIsModernQT) ||
-				(this->fileMode == MOOV_Manager::kFileIsTraditionalQT);
-
-	MOOV_Manager::BoxRef elstRef = 0;
-	if ( isQT ) elstRef = FindTimecode_elst ( this->moovMgr );
-	if ( elstRef != 0 ) {
-
-		MOOV_Manager::BoxInfo elstInfo;
-		this->moovMgr.GetBoxInfo ( elstRef, &elstInfo );
-		
-		if ( elstInfo.contentSize >= (4+4+12) ) {
-			XMP_Uns32 elstCount = GetUns32BE ( elstInfo.content + 4 );
-			if ( elstCount >= 1 ) {
-				XMP_Uns32 mediaTime = GetUns32BE ( elstInfo.content + (4+4+4) );
-				this->tmcdInfo.timecodeSample += (mediaTime / this->tmcdInfo.frameDuration);
+			if ( this->parent->ioRef == 0 ) {	// Local read-only files get closed in CacheFileData.
+				XMP_Assert ( this->parent->UsesLocalIO() );
+				localFile = XMPFiles_IO::New_XMPFiles_IO ( this->parent->GetFilePath().c_str(), Host_IO::openReadOnly, &this->parent->errorCallback);
+				XMP_Enforce ( localFile != 0 );
+				this->parent->ioRef = localFile;
 			}
+
+			this->parent->ioRef->Seek ( sampleOffset, kXMP_SeekFromStart  );
+			this->parent->ioRef->ReadAll ( &this->tmcdInfo.timecodeSample, 4 );
+			this->tmcdInfo.timecodeSample = MakeUns32BE ( this->tmcdInfo.timecodeSample );
+			if ( localFile != 0 ) {
+				localFile->Close();
+				delete localFile;
+				this->parent->ioRef = 0;
+			}
+
 		}
+	
+		// If this is a QT file, look for an edit list offset to add to the timecode sample. Look in the
+		// timecode track for an edts/elst box. The content is a UInt8 version, UInt8[3] flags, a UInt32
+		// entry count, and a sequence of UInt32 triples (trackDuration, mediaTime, mediaRate). Take
+		// mediaTime from the first entry, divide it by tmcdInfo.frameDuration, add that to
+		// tmcdInfo.timecodeSample.
+
+		bool isQT = (this->fileMode == MOOV_Manager::kFileIsModernQT) ||
+					(this->fileMode == MOOV_Manager::kFileIsTraditionalQT);
+
+		MOOV_Manager::BoxRef elstRef = 0;
+		if ( isQT ) elstRef = FindTimecode_elst ( this->moovMgr );
+		if ( elstRef != 0 ) {
+
+			MOOV_Manager::BoxInfo elstInfo;
+			this->moovMgr.GetBoxInfo ( elstRef, &elstInfo );
 		
+			if ( elstInfo.contentSize >= (4+4+12) ) {
+				XMP_Uns32 elstCount = GetUns32BE ( elstInfo.content + 4 );
+				if ( elstCount >= 1 ) {
+					XMP_Uns32 mediaTime = GetUns32BE ( elstInfo.content + (4+4+4) );
+					this->tmcdInfo.timecodeSample += (mediaTime / this->tmcdInfo.frameDuration);
+				}
+			}
+		
+		}
+
+		// Finally update this->tmcdInfo to remember (for update) that there is an OK timecode track.
+
+		this->tmcdInfo.stsdBoxFound = true;
+		this->tmcdInfo.sampleOffset = sampleOffset;
 	}
-
-	// Finally update this->tmcdInfo to remember (for update) that there is an OK timecode track.
-
-	this->tmcdInfo.stsdBoxFound = true;
-	this->tmcdInfo.sampleOffset = sampleOffset;
 	return true;
 
 }	// MPEG4_MetaHandler::ParseTimecodeTrack
@@ -2484,6 +2578,21 @@ void MPEG4_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 	if ( ! haveISOFile ) ExportCr8rItems ( this->xmpObj, &this->moovMgr );
 
+	// Set up progress tracking if necessary. At this point just include the XMP size, we don't
+	// know the 'moov' box size until later.
+
+	bool localProgressTracking = false;
+	XMP_ProgressTracker* progressTracker = this->parent->progressTracker;
+	if ( progressTracker != 0 ) {
+		float xmpSize = (float)this->xmpPacket.size();
+		if ( progressTracker->WorkInProgress() ) {
+			progressTracker->AddTotalWork ( xmpSize );
+		} else {
+			localProgressTracking = true;
+			progressTracker->BeginWork ( xmpSize );
+		}
+	}
+
 	// Try to update the XMP in-place if that is all that changed, or if it is in a preferred 'uuid' box.
 	// The XMP has already been serialized by common code to the appropriate length. Otherwise, update
 	// the 'moov'/'udta'/'XMP_' box in the MOOV_Manager, or the 'uuid' XMP box in the file.
@@ -2506,6 +2615,7 @@ void MPEG4_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		if ( udtaRef != 0 ) this->moovMgr.DeleteTypeChild ( udtaRef, ISOMedia::k_XMP_ );
 
 	} else {
+
 		// Don't leave an old uuid XMP around (if we know about it).
 		if ( (! havePreferredXMP) && (this->xmpBoxSize != 0) ) {
 			WipeBoxFree ( fileRef, this->xmpBoxPos, this->xmpBoxSize );
@@ -2520,7 +2630,11 @@ void MPEG4_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 	if ( this->moovMgr.IsChanged() ) {
 		this->moovMgr.UpdateMemoryTree();
-		this->UpdateTopLevelBox ( moovBoxPos, moovBoxSize, &this->moovMgr.fullSubtree[0], (XMP_Uns32)this->moovMgr.fullSubtree.size() );
+		if ( progressTracker != 0 ) {
+			progressTracker->AddTotalWork ( (float)this->moovMgr.fullSubtree.size() );
+		}
+		this->UpdateTopLevelBox ( moovBoxPos, moovBoxSize, &this->moovMgr.fullSubtree[0],
+								  (XMP_Uns32)this->moovMgr.fullSubtree.size() );
 	}
 
 	if ( this->tmcdInfo.sampleOffset != 0 ) {
@@ -2546,6 +2660,8 @@ void MPEG4_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 	}
 
+	if ( localProgressTracking ) progressTracker->WorkComplete();
+
 }	// MPEG4_MetaHandler::UpdateFile
 
 // =================================================================================================
@@ -2561,11 +2677,13 @@ void MPEG4_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 	XMP_Assert ( this->needsUpdate );
 
 	XMP_IO* originalRef = this->parent->ioRef;
+	XMP_ProgressTracker* progressTracker = this->parent->progressTracker;
 
-	originalRef->Rewind();
 	tempRef->Rewind();
+	originalRef->Rewind();
+	if ( progressTracker != 0 ) progressTracker->BeginWork ( (float) originalRef->Length() );
 	XIO::Copy ( originalRef, tempRef, originalRef->Length(),
-			        this->parent->abortProc, this->parent->abortArg );
+			    this->parent->abortProc, this->parent->abortArg );
 
 	try {
 		this->parent->ioRef = tempRef;	// ! Fool UpdateFile into using the temp file.
@@ -2575,6 +2693,8 @@ void MPEG4_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 		this->parent->ioRef = originalRef;
 		throw;
 	}
+
+	if ( progressTracker != 0 ) progressTracker->WorkComplete();
 
 }	// MPEG4_MetaHandler::WriteTempFile
 

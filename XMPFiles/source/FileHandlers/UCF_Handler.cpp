@@ -128,7 +128,9 @@ bool UCF_CheckFormat (  XMP_FileFormat format,
 		XMP_LitMatch( mimetype, "application/vnd.adobe.indesign-idml-package" ) || //inCopy (inDesign) IDML Document
 		XMP_LitMatch( mimetype, "application/vnd.adobe.incopy-package"        ) ||  // InDesign Document
 		XMP_LitMatch( mimetype, "application/vnd.adobe.indesign-package"      ) ||  // InDesign Document
-
+		XMP_LitMatch( mimetype, "application/vnd.adobe.collage"    ) ||  //Adobe Collage
+		XMP_LitMatch( mimetype, "application/vnd.adobe.ideas"      ) ||  //Adobe Ideas
+		XMP_LitMatch( mimetype, "application/vnd.adobe.proto"      ) ||  //Adobe Proto
 		false ) // "sentinel"
 
 		// *** ==> unknown are also treated as not acceptable

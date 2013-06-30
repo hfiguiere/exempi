@@ -841,7 +841,7 @@ XMPMeta::SetLocalizedText ( XMP_StringPtr  schemaNS,
 							XMP_StringPtr  itemValue,
 							XMP_OptionBits options )
 {
-	options = options;	// Avoid unused parameter warning.
+	IgnoreParam(options);
 
 	XMP_Assert ( (schemaNS != 0) && (arrayName != 0) && (_genericLang != 0) && (_specificLang != 0) );	// Enforced by wrapper.
 

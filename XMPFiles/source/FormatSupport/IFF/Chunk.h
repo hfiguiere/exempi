@@ -195,6 +195,12 @@ class Chunk : public IChunkData,
 		 */
 		inline void setSize( XMP_Uns64 newSize, bool setOriginal = false )	{ mDirty = mSize != newSize; mSize = newSize; mOriginalSize = setOriginal ? newSize : mOriginalSize; }
 
+		/** 
+		 * Calculate the size of the chunks that are dirty including the size 
+		 * of its children
+		 */
+		XMP_Int64 calculateWriteSize( ) const;
+
 		/**
 		 * Calculate the size of this chunks based on its children sizes. 
 		 * If this chunk has no children then no new size will be calculated.

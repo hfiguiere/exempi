@@ -20,7 +20,10 @@
 
 #include "XMPFiles/source/XMPFiles_Impl.hpp"
 #include "XMPFiles/source/HandlerRegistry.h"
-#include "XMPFiles/source/PluginHandler/PluginManager.h"
+
+#if EnablePluginManager
+	#include "XMPFiles/source/PluginHandler/PluginManager.h"
+#endif
 
 #include "XMPFiles/source/FormatSupport/ID3_Support.hpp"
 
@@ -37,11 +40,18 @@
 // =================================================================================================
 
 using namespace Common;
-using namespace XMP_PLUGIN;
+
+#if EnablePluginManager
+	using namespace XMP_PLUGIN;
+#endif
 
 // =================================================================================================
 
 XMP_Int32 sXMPFilesInitCount = 0;
+
+static XMP_ProgressTracker::CallbackInfo sProgressDefault;
+static XMPFiles::ErrorCallbackInfo sDefaultErrorCallback;
+
 
 #if GatherPerformanceData
 	APIPerfCollection* sAPIPerf = 0;
@@ -65,6 +75,17 @@ XMP_Int32 sXMPFilesInitCount = 0;
 const char * kXMPFiles_EmbeddedVersion   = kXMPFiles_VersionMessage;
 const char * kXMPFiles_EmbeddedCopyright = kXMPFilesName " " kXMP_CopyrightStr;
 
+#define EMPTY_FILE_PATH ""
+#define XMP_FILES_STATIC_START try { int a;
+#define XMP_FILES_STATIC_END1(severity) a = 1; } catch ( XMP_Error & error ) { sDefaultErrorCallback.NotifyClient ( (severity), error, EMPTY_FILE_PATH ); }
+#define XMP_FILES_STATIC_END2(filePath, severity) a = 1; } catch ( XMP_Error & error ) { sDefaultErrorCallback.NotifyClient ( (severity), error, (filePath) ); }
+#define XMP_FILES_START try { int b;
+#define XMP_FILES_END1(severity) b = 1; } catch ( XMP_Error & error ) { errorCallback.NotifyClient ( (severity), error, this->filePath.c_str() ); }
+#define XMP_FILES_END2(filePath, severity) b = 1; } catch ( XMP_Error & error ) { errorCallback.NotifyClient ( (severity), error, (filePath) ); }
+#define XMP_FILES_STATIC_NOTIFY_ERROR(errorCallbackPtr, filePath, severity, error)							\
+	if ( (errorCallbackPtr) != NULL ) (errorCallbackPtr)->NotifyClient ( (severity), (error), (filePath) );
+
+
 // =================================================================================================
 
 #if EnablePacketScanning
@@ -78,7 +99,7 @@ const char * kXMPFiles_EmbeddedCopyright = kXMPFilesName " " kXMP_CopyrightStr;
 void
 XMPFiles::GetVersionInfo ( XMP_VersionInfo * info )
 {
-
+	XMP_FILES_STATIC_START
 	memset ( info, 0, sizeof(XMP_VersionInfo) );
 
 	info->major   = XMPFILES_API_VERSION_MAJOR;
@@ -87,7 +108,7 @@ XMPFiles::GetVersionInfo ( XMP_VersionInfo * info )
 	info->isDebug = kXMPFiles_DebugFlag;
 	info->flags   = 0;	// ! None defined yet.
 	info->message = kXMPFiles_VersionMessage;
-
+	XMP_FILES_STATIC_END1 ( kXMPErrSev_OperationFatal )
 }	// XMPFiles::GetVersionInfo
 
 // =================================================================================================
@@ -104,6 +125,7 @@ XMPFiles::GetVersionInfo ( XMP_VersionInfo * info )
 bool
 XMPFiles::Initialize( XMP_OptionBits options, const char* pluginFolder, const char* plugins /* = NULL */ )
 {
+	XMP_FILES_STATIC_START
 	++sXMPFilesInitCount;
 	if ( sXMPFilesInitCount > 1 ) return true;
 
@@ -145,11 +167,13 @@ XMPFiles::Initialize( XMP_OptionBits options, const char* pluginFolder, const ch
 		if ( ! ignoreLocalText ) XMP_Throw ( "Generic UNIX clients must pass kXMPFiles_IgnoreLocalText", kXMPErr_EnforceFailure );
 	#endif
 
-	if ( pluginFolder != 0 ) {
-		std::string pluginList;
-		if ( plugins != 0 ) pluginList.assign ( plugins );
-		PluginManager::initialize ( pluginFolder, pluginList );  // Load file handler plugins.
-	}
+	#if EnablePluginManager
+		if ( pluginFolder != 0 ) {
+			std::string pluginList;
+			if ( plugins != 0 ) pluginList.assign ( plugins );
+			PluginManager::initialize ( pluginFolder, pluginList );  // Load file handler plugins.
+		}
+	#endif
 
 	// Make sure the embedded info strings are referenced and kept.
 	if ( (kXMPFiles_EmbeddedVersion[0] == 0) || (kXMPFiles_EmbeddedCopyright[0] == 0) ) return false;
@@ -162,7 +186,8 @@ XMPFiles::Initialize( XMP_OptionBits options, const char* pluginFolder, const ch
 	XMP_Assert ( sizeof(XMP_Uns16) == 2 );
 	XMP_Assert ( sizeof(XMP_Uns32) == 4 );
 	XMP_Assert ( sizeof(XMP_Uns64) == 8 );
-
+	XMP_Assert ( sizeof(XMP_Bool) == 1 );
+	XMP_FILES_STATIC_END1 ( kXMPErrSev_ProcessFatal )
 	return true;
 
 }	// XMPFiles::Initialize
@@ -248,6 +273,7 @@ static void ReportPerformanceData()
 void
 XMPFiles::Terminate()
 {
+	XMP_FILES_STATIC_START
 	--sXMPFilesInitCount;
 	if ( sXMPFilesInitCount != 0 ) return;	// Not ready to terminate, or already terminated.
 
@@ -256,7 +282,10 @@ XMPFiles::Terminate()
 		EliminateGlobal ( sAPIPerf );
 	#endif
 
-	PluginManager::terminate();
+	#if EnablePluginManager
+		PluginManager::terminate();
+	#endif
+
 	HandlerRegistry::terminate();
 
 	SXMPMeta::Terminate();	// Just in case the client does not.
@@ -273,23 +302,36 @@ XMPFiles::Terminate()
 		xmpFilesLog = stderr;
 	#endif
 
+	XMP_FILES_STATIC_END1 ( kXMPErrSev_ProcessFatal )
 }	// XMPFiles::Terminate
 
 // =================================================================================================
 
-XMPFiles::XMPFiles() :
-	clientRefs(0),
-	format(kXMP_UnknownFile),
-	ioRef(0),
-	openFlags(0),
-	handler(0),
-	tempPtr(0),
-	tempUI32(0),
-	abortProc(0),
-	abortArg(0)
+XMPFiles::XMPFiles()
+	: clientRefs(0)
+	, format(kXMP_UnknownFile)
+	, ioRef(0)
+	, openFlags(0)
+	, handler(0)
+	, tempPtr(0)
+	, tempUI32(0)
+	, abortProc(0)
+	, abortArg(0)
+	, progressTracker(0)
 {
-	// Nothing more to do, clientRefs is incremented in wrapper.
+	XMP_FILES_START
+	if ( sProgressDefault.clientProc != 0 ) {
+		this->progressTracker = new XMP_ProgressTracker ( sProgressDefault );
+		if (this->progressTracker == 0) XMP_Throw ( "XMPFiles: Unable to allocate memory for Progress Tracker", kXMPErr_NoMemory );
+	}
 
+	if ( sDefaultErrorCallback.clientProc != 0 ) {
+		this->errorCallback.wrapperProc = sDefaultErrorCallback.wrapperProc;
+		this->errorCallback.clientProc = sDefaultErrorCallback.clientProc;
+		this->errorCallback.context = sDefaultErrorCallback.context;
+		this->errorCallback.limit = sDefaultErrorCallback.limit;
+	}
+	XMP_FILES_END1 ( kXMPErrSev_OperationFatal );
 }	// XMPFiles::XMPFiles
 
 // =================================================================================================
@@ -314,6 +356,7 @@ static inline void CloseLocalFile ( XMPFiles* thiz )
 
 XMPFiles::~XMPFiles()
 {
+	XMP_FILES_START
 	XMP_Assert ( this->clientRefs <= 0 );
 
 	if ( this->handler != 0 ) {
@@ -323,7 +366,9 @@ XMPFiles::~XMPFiles()
 
 	CloseLocalFile ( this );
 
+	if ( this->progressTracker != 0 ) delete this->progressTracker;
 	if ( this->tempPtr != 0 ) free ( this->tempPtr );	// ! Must have been malloc-ed!
+	XMP_FILES_END1 ( kXMPErrSev_OperationFatal )
 
 }	// XMPFiles::~XMPFiles
 
@@ -334,8 +379,10 @@ bool
 XMPFiles::GetFormatInfo ( XMP_FileFormat   format,
                           XMP_OptionBits * flags /* = 0 */ )
 {
-
+	XMP_FILES_STATIC_START
 	return HandlerRegistry::getInstance().getFormatInfo ( format, flags );
+	XMP_FILES_STATIC_END1 ( kXMPErrSev_OperationFatal )
+	return false;
 
 }	// XMPFiles::GetFormatInfo
 
@@ -345,14 +392,23 @@ XMPFiles::GetFormatInfo ( XMP_FileFormat   format,
 XMP_FileFormat
 XMPFiles::CheckFileFormat ( XMP_StringPtr clientPath )
 {
+	XMP_FILES_STATIC_START
 	if ( (clientPath == 0) || (*clientPath == 0) ) return kXMP_UnknownFile;
 
 	XMPFiles bogus;	// Needed to provide context to SelectSmartHandler.
-	bogus.filePath = clientPath;	// So that XMPFiles destructor cleans up the XMPFiles_IO object.
-	XMPFileHandlerInfo * handlerInfo = HandlerRegistry::getInstance().selectSmartHandler( &bogus, clientPath, kXMP_UnknownFile, kXMPFiles_OpenForRead );
+	bogus.SetFilePath ( clientPath ); // So that XMPFiles destructor cleans up the XMPFiles_IO object.
+	XMPFileHandlerInfo * handlerInfo = HandlerRegistry::getInstance().selectSmartHandler(&bogus, clientPath, kXMP_UnknownFile, kXMPFiles_OpenForRead);
 
-	if ( handlerInfo == 0 ) return kXMP_UnknownFile;
+	if ( handlerInfo == 0 ) {
+		if ( !Host_IO::Exists ( clientPath ) ) {
+			XMP_Error error ( kXMPErr_NoFile, "XMPFiles: file does not exist" );
+			XMP_FILES_STATIC_NOTIFY_ERROR ( &sDefaultErrorCallback, clientPath, kXMPErrSev_Recoverable, error );
+		}
+		return kXMP_UnknownFile;
+	}
 	return handlerInfo->format;
+	XMP_FILES_STATIC_END2 ( clientPath, kXMPErrSev_OperationFatal )
+	return kXMP_UnknownFile;
 
 }	// XMPFiles::CheckFileFormat
 
@@ -362,6 +418,7 @@ XMPFiles::CheckFileFormat ( XMP_StringPtr clientPath )
 XMP_FileFormat
 XMPFiles::CheckPackageFormat ( XMP_StringPtr folderPath )
 {
+	XMP_FILES_STATIC_START
 	// This is called with a path to a folder, and checks to see if that folder is the top level of
 	// a "package" that should be recognized by one of the folder-oriented handlers. The checks here
 	// are not overly extensive, but hopefully enough to weed out false positives.
@@ -375,17 +432,29 @@ XMPFiles::CheckPackageFormat ( XMP_StringPtr folderPath )
 		if ( folderMode != Host_IO::kFMode_IsFolder ) return kXMP_UnknownFile;
 		return HandlerRegistry::checkTopFolderName ( std::string ( folderPath ) );
 	#endif
+	XMP_FILES_STATIC_END2 ( folderPath, kXMPErrSev_OperationFatal )
+	return kXMP_UnknownFile;
 
 }	// XMPFiles::CheckPackageFormat
 
 // =================================================================================================
 
-static bool FileIsExcluded ( XMP_StringPtr clientPath, std::string * fileExt, Host_IO::FileMode * clientMode )
+static bool FileIsExcluded (
+	XMP_StringPtr clientPath,
+	std::string * fileExt,
+	Host_IO::FileMode * clientMode,
+	const XMPFiles::ErrorCallbackInfo * _errorCallbackInfoPtr = NULL )
 {
 	// ! Return true for excluded files, false for OK files.
 	
 	*clientMode = Host_IO::GetFileMode ( clientPath );
-	if ( (*clientMode == Host_IO::kFMode_IsFolder) || (*clientMode == Host_IO::kFMode_IsOther) ) return true;
+
+	if ( (*clientMode == Host_IO::kFMode_IsFolder) || (*clientMode == Host_IO::kFMode_IsOther) ) {
+		XMP_Error error ( kXMPErr_FilePathNotAFile, "XMPFiles: path specified is not a file" );
+		XMP_FILES_STATIC_NOTIFY_ERROR ( _errorCallbackInfoPtr, clientPath, kXMPErrSev_Recoverable, error );
+		return true;
+	}
+
 	XMP_Assert ( (*clientMode == Host_IO::kFMode_IsFile) || (*clientMode == Host_IO::kFMode_DoesNotExist) );
 
 	if ( *clientMode == Host_IO::kFMode_IsFile ) {
@@ -401,7 +470,11 @@ static bool FileIsExcluded ( XMP_StringPtr clientPath, std::string * fileExt, Ho
 
 		// See if this file is one that XMPFiles should never process.
 		for ( size_t i = 0; kKnownRejectedFiles[i] != 0; ++i ) {
-			if ( *fileExt == kKnownRejectedFiles[i] ) return true;
+			if ( *fileExt == kKnownRejectedFiles[i] ) {
+				XMP_Error error ( kXMPErr_RejectedFileExtension, "XMPFiles: rejected file extension specified" );
+				XMP_FILES_STATIC_NOTIFY_ERROR ( _errorCallbackInfoPtr, clientPath, kXMPErrSev_Recoverable, error );
+				return true;
+			}
 		}
 
 	}
@@ -409,6 +482,38 @@ static bool FileIsExcluded ( XMP_StringPtr clientPath, std::string * fileExt, Ho
 	return false;
 
 }	// FileIsExcluded
+
+static XMPFileHandlerInfo* CreateFileHandlerInfo (
+	XMPFiles* dummyParent,
+	XMP_FileFormat * format,
+	XMP_OptionBits   options,
+	const XMPFiles::ErrorCallbackInfo * _errorCallbackInfoPtr = NULL )
+{
+	Host_IO::FileMode clientMode;
+	std::string fileExt;	// Used to check for excluded files.
+	bool excluded = FileIsExcluded ( dummyParent->GetFilePath().c_str(), &fileExt, &clientMode, &sDefaultErrorCallback );	// ! Fills in fileExt and clientMode.
+	if ( excluded ) return 0;
+
+	XMPFileHandlerInfo * handlerInfo  = 0;
+
+	XMP_FileFormat dummyFormat = kXMP_UnknownFile;
+	if ( format == 0 ) format = &dummyFormat;
+
+	options |= kXMPFiles_OpenForRead;
+	handlerInfo = HandlerRegistry::getInstance().selectSmartHandler ( dummyParent, dummyParent->GetFilePath().c_str(), *format, options );
+
+	if ( handlerInfo == 0 ) {
+		if ( clientMode == Host_IO::kFMode_DoesNotExist ) {
+			XMP_Error error ( kXMPErr_NoFile, "XMPFiles: file does not exist" );
+			XMP_FILES_STATIC_NOTIFY_ERROR ( _errorCallbackInfoPtr, dummyParent->GetFilePath().c_str(), kXMPErrSev_Recoverable, error );
+		}else{
+			XMP_Error error ( kXMPErr_NoFileHandler, "XMPFiles: No smart file handler available to handle file" );
+			XMP_FILES_STATIC_NOTIFY_ERROR ( _errorCallbackInfoPtr, dummyParent->GetFilePath().c_str(), kXMPErrSev_Recoverable, error );
+		}
+		return 0;
+	}
+	return handlerInfo;
+}
 
 // =================================================================================================
 
@@ -419,45 +524,167 @@ XMPFiles::GetFileModDate ( XMP_StringPtr    clientPath,
 						   XMP_FileFormat * format, /* = 0 */
 						   XMP_OptionBits   options /* = 0 */ )
 {
-	
+	XMP_FILES_STATIC_START
 	// ---------------------------------------------------------------
 	// First try to select a smart handler. Return false if not found.
 	
 	XMPFiles dummyParent;	// GetFileModDate is static, but the handler needs a parent.
-	dummyParent.filePath = clientPath;
-
-	Host_IO::FileMode clientMode;
-	std::string fileExt;	// Used to check for excluded files.
-	bool excluded = FileIsExcluded ( clientPath, &fileExt, &clientMode );	// ! Fills in fileExt and clientMode.
-	if ( excluded ) return false;
-
-	XMPFileHandlerInfo * handlerInfo  = 0;
-	XMPFileHandlerCTor   handlerCTor  = 0;
-	XMP_OptionBits       handlerFlags = 0;
+	dummyParent.SetFilePath ( clientPath );
 	
-	XMP_FileFormat dummyFormat = kXMP_UnknownFile;
-	if ( format == 0 ) format = &dummyFormat;
-
-	options |= kXMPFiles_OpenForRead;
-	handlerInfo = HandlerRegistry::getInstance().selectSmartHandler ( &dummyParent, clientPath, *format, options );
+	
+	XMPFileHandlerInfo * handlerInfo  = 0;
+	handlerInfo = CreateFileHandlerInfo ( &dummyParent, format, options, &sDefaultErrorCallback );
 	if ( handlerInfo == 0 ) return false;
 	
 	// -------------------------------------------------------------------------
 	// Fill in the format output. Call the handler to get the modification date.
-	
+
 	dummyParent.format = handlerInfo->format;
-	*format = handlerInfo->format;
-	
+	if ( format ) *format = handlerInfo->format;
+
+	dummyParent.handler = handlerInfo->handlerCTor ( &dummyParent );
+
+	bool ok = false;
+
+	std::vector <std::string> resourceList;
+	try{
+		XMP_DateTime lastModDate;
+		XMP_DateTime junkDate;
+		if ( modDate == 0 ) modDate = &junkDate;
+		dummyParent.handler->FillAssociatedResources ( &resourceList );
+		size_t countRes = resourceList.size();
+		for ( size_t index = 0; index < countRes ; ++index ){
+			XMP_StringPtr curFilePath = resourceList[index].c_str();
+			if( Host_IO::GetFileMode ( curFilePath ) != Host_IO::kFMode_IsFile ) continue;// only interested in files
+			Host_IO::GetModifyDate ( curFilePath, &lastModDate );
+			if ( ! ok || ( SXMPUtils::CompareDateTime ( *modDate , lastModDate ) < 0 ) ) 
+			{
+				*modDate = lastModDate;
+				ok = true;
+			}
+		}
+	}
+	catch(...){
+		// Fallback to the old way 
+		// eventually this method would go away as 
+		// soon as the implementation for
+		// GetAssociatedResources is added to all 
+		// the file/Plugin Handlers
+		ok = dummyParent.handler->GetFileModDate ( modDate );
+	}
+	delete dummyParent.handler;
+	dummyParent.handler = 0;
+
+	return ok;
+	XMP_FILES_STATIC_END2 ( clientPath, kXMPErrSev_OperationFatal )
+	return false;
+
+}	// XMPFiles::GetFileModDate
+
+// =================================================================================================
+
+/* class static */
+bool
+XMPFiles::GetAssociatedResources ( 
+		XMP_StringPtr              filePath,
+        std::vector<std::string> * resourceList,
+        XMP_FileFormat             format  /* = kXMP_UnknownFile */, 
+        XMP_OptionBits             options /*  = 0 */ )
+{
+	XMP_FILES_STATIC_START
+	XMP_Assert ( (resourceList != 0) && resourceList->empty() );	// Ensure that the glue passes in an empty local.
+
+	// Try to select a handler.
+
+	if ( (filePath == 0) || (*filePath == 0) ) return false;
+
+	XMPFiles dummyParent;	// GetAssociatedResources is static, but the handler needs a parent.
+	dummyParent.SetFilePath ( filePath );
+
+	XMPFileHandlerInfo * handlerInfo  = 0;
+	handlerInfo = CreateFileHandlerInfo ( &dummyParent, &format, options, &sDefaultErrorCallback );
+	if ( handlerInfo == 0 ) return false;
+
+	// -------------------------------------------------------------------------
+	// Fill in the format output. Call the handler to get the Associated Resources.
+
+	dummyParent.format = handlerInfo->format;
+
 	dummyParent.handler = handlerInfo->handlerCTor ( &dummyParent );
 	
-	bool ok = dummyParent.handler->GetFileModDate ( modDate );
-	
+	try {
+		dummyParent.handler->FillAssociatedResources ( resourceList );
+	} catch ( XMP_Error& error ) {
+		if ( error.GetID() == kXMPErr_Unimplemented ) {
+			XMP_FILES_STATIC_NOTIFY_ERROR ( &sDefaultErrorCallback, filePath, kXMPErrSev_Recoverable, error );
+			return false;
+		} else {
+			throw;
+		}
+	}
+	XMP_Assert ( ! resourceList->empty() );
+
 	delete dummyParent.handler;
 	dummyParent.handler = 0;
 	
-	return ok;
+	return true;
+
+	XMP_FILES_STATIC_END2 ( filePath, kXMPErrSev_OperationFatal )
+	return false;
+
+}	// XMPFiles::GetAssociatedResources
+
+bool 
+XMPFiles::IsMetadataWritable (
+		XMP_StringPtr  filePath,
+        XMP_Bool *     writable,
+        XMP_FileFormat format  /* = kXMP_UnknownFile */,
+        XMP_OptionBits options  /* = 0 */ )
+{
+	XMP_FILES_STATIC_START
+	// Try to select a handler.
 	
-}	// XMPFiles::GetFileModDate
+	if ( (filePath == 0) || (*filePath == 0) ) return false;
+	
+	XMPFiles dummyParent;	// IsMetadataWritable is static, but the handler needs a parent.
+	dummyParent.SetFilePath ( filePath );
+
+	XMPFileHandlerInfo * handlerInfo  = 0;
+	handlerInfo = CreateFileHandlerInfo ( &dummyParent, &format, options, &sDefaultErrorCallback );
+	if ( handlerInfo == 0 ) return false;
+
+	if ( writable == 0 ) {
+		XMP_Throw("Boolean parameter is required for IsMetadataWritable() API.", kXMPErr_BadParam);
+	} else {
+		*writable = kXMP_Bool_False;
+	}
+
+
+	dummyParent.format = handlerInfo->format;
+	dummyParent.handler = handlerInfo->handlerCTor ( &dummyParent );
+	
+	// We don't require any of the files to be opened at this point.
+	// Also, if We don't close them then this will be a problem for embedded handlers because we will be checking
+	// write permission on the same file which could be open (in some mode) already.
+	CloseLocalFile(&dummyParent);
+	
+	try {
+		*writable = ConvertBoolToXMP_Bool( dummyParent.handler->IsMetadataWritable() );
+	}
+     catch ( XMP_Error& error ) {	
+		if ( error.GetID() == kXMPErr_Unimplemented ) {
+			XMP_FILES_STATIC_NOTIFY_ERROR ( &sDefaultErrorCallback, filePath, kXMPErrSev_Recoverable, error );
+			return false;
+		} else {
+			throw;
+		}
+	}
+	delete dummyParent.handler;
+	dummyParent.handler = 0;
+	XMP_FILES_STATIC_END2 ( filePath, kXMPErrSev_OperationFatal )
+	return true;
+} // XMPFiles::IsMetadataWritable 
+
 
 // =================================================================================================
 
@@ -476,7 +703,7 @@ DoOpenFile ( XMPFiles *     thiz,
 	CloseLocalFile ( thiz );	// Sanity checks if prior call failed.
 
 	thiz->ioRef = clientIO;
-	thiz->filePath = clientPath;
+	thiz->SetFilePath ( clientPath );
 
 	thiz->format = kXMP_UnknownFile;	// Make sure it is preset for later check.
 	thiz->openFlags = openFlags;
@@ -489,7 +716,7 @@ DoOpenFile ( XMPFiles *     thiz,
 	if ( thiz->UsesClientIO() ) {
 		clientMode = Host_IO::kFMode_IsFile;
 	} else {
-		bool excluded = FileIsExcluded ( clientPath, &fileExt, &clientMode );	// ! Fills in fileExt and clientMode.
+		bool excluded = FileIsExcluded ( clientPath, &fileExt, &clientMode, &thiz->errorCallback );	// ! Fills in fileExt and clientMode.
 		if ( excluded ) return false;
 	}
 
@@ -505,16 +732,32 @@ DoOpenFile ( XMPFiles *     thiz,
 
 	#if ! EnablePacketScanning
 
-		if ( handlerInfo == 0 ) return false;
+		if ( handlerInfo == 0 ) {
+			if ( clientMode == Host_IO::kFMode_DoesNotExist ) {
+				XMP_Error error ( kXMPErr_NoFile, "XMPFiles: file does not exist" );
+				XMP_FILES_STATIC_NOTIFY_ERROR ( &thiz->errorCallback, clientPath, kXMPErrSev_Recoverable, error );
+			}
+			return false;
+		}
 
 	#else
 
 		if ( handlerInfo == 0 ) {
 
 			// No smart handler, packet scan if appropriate.
+			if ( clientMode == Host_IO::kFMode_DoesNotExist ) {
+				XMP_Error error ( kXMPErr_NoFile, "XMPFiles: file does not exist" );
+				XMP_FILES_STATIC_NOTIFY_ERROR ( &thiz->errorCallback, clientPath, kXMPErrSev_Recoverable, error );
+				return false;
+			} else if ( clientMode != Host_IO::kFMode_IsFile ) {
+				return false;
+			}
 
-			if ( clientMode != Host_IO::kFMode_IsFile ) return false;
-			if ( openFlags & kXMPFiles_OpenUseSmartHandler ) return false;
+			if ( openFlags & kXMPFiles_OpenUseSmartHandler ) {
+				XMP_Error error ( kXMPErr_NoFileHandler, "XMPFiles: No smart file handler available to handle file" );
+				XMP_FILES_STATIC_NOTIFY_ERROR ( &thiz->errorCallback, clientPath, kXMPErrSev_Recoverable, error );
+				return false;
+			}
 
 			if ( openFlags & kXMPFiles_OpenLimitedScanning ) {
 				bool scanningOK = false;
@@ -588,7 +831,7 @@ static bool DoOpenFile( XMPFiles* thiz,
 	// setup members
 	//
 	thiz->ioRef		= clientIO;
-	thiz->filePath	= std::string( clientPath );
+	thiz->SetFilePath ( clientPath );
 	thiz->format	= hdlInfo.format;
 	thiz->openFlags = openFlags;
 
@@ -602,7 +845,12 @@ static bool DoOpenFile( XMPFiles* thiz,
 	XMP_Assert ( handlerFlags == handler->handlerFlags );
 
 	thiz->handler = handler;
+	bool readOnly = XMP_OptionIsClear ( openFlags, kXMPFiles_OpenForUpdate );
 
+	if ( thiz->ioRef == 0 ) {	//Need to open the file if not done already
+		thiz->ioRef = XMPFiles_IO::New_XMPFiles_IO ( clientPath, readOnly );
+		if ( thiz->ioRef == 0 ) return false;
+	}
 	//
 	// try to read metadata
 	//
@@ -644,9 +892,10 @@ XMPFiles::OpenFile ( XMP_StringPtr  clientPath,
 	                 XMP_FileFormat format /* = kXMP_UnknownFile */,
 	                 XMP_OptionBits openFlags /* = 0 */ )
 {
-
+	XMP_FILES_START
 	return DoOpenFile ( this, 0, clientPath, format, openFlags );
-
+	XMP_FILES_END2 ( clientPath, kXMPErrSev_FileFatal )
+	return false;
 }
 
 // =================================================================================================
@@ -658,35 +907,38 @@ XMPFiles::OpenFile ( XMP_IO*        clientIO,
 	                 XMP_FileFormat format /* = kXMP_UnknownFile */,
 	                 XMP_OptionBits openFlags /* = 0 */ )
 {
-
+	XMP_FILES_START
+	this->progressTracker = 0;	// Progress tracking is not supported for client-managed I/O.
 	return DoOpenFile ( this, clientIO, "", format, openFlags );
+	XMP_FILES_END1 ( kXMPErrSev_FileFatal )
+	return false;
 
 }	// XMPFiles::OpenFile
 
-#endif	// XMP_StaticBuild
-
-// =================================================================================================
-
-#if XMP_StaticBuild	// ! Client XMP_IO objects can only be used in static builds.
-
-bool XMPFiles::OpenFile( const Common::XMPFileHandlerInfo&	hdlInfo,
+bool XMPFiles::OpenFile ( const Common::XMPFileHandlerInfo&	hdlInfo,
 						 XMP_IO*							clientIO,
 						 XMP_OptionBits						openFlags /*= 0*/ )
 {
+	XMP_FILES_START
+	this->progressTracker = 0;	// Progress tracking is not supported for client-managed I/O.
+	return DoOpenFile ( this, hdlInfo, clientIO, NULL, openFlags );
+	XMP_FILES_END1 ( kXMPErrSev_FileFatal )
+	return false;
 
-	return DoOpenFile( this, hdlInfo, clientIO, NULL, openFlags );
 }
 
 #endif	// XMP_StaticBuild
 
 // =================================================================================================
 
-bool XMPFiles::OpenFile( const Common::XMPFileHandlerInfo&	hdlInfo,
+bool XMPFiles::OpenFile ( const Common::XMPFileHandlerInfo&	hdlInfo,
 						 XMP_StringPtr						filePath,
 						 XMP_OptionBits						openFlags /*= 0*/ )
 {
-
-	return DoOpenFile( this, hdlInfo, NULL, filePath, openFlags );
+	XMP_FILES_START
+	return DoOpenFile ( this, hdlInfo, NULL, filePath, openFlags );
+	XMP_FILES_END2 (filePath, kXMPErrSev_FileFatal )
+	return false;
 }
 
 // =================================================================================================
@@ -694,6 +946,7 @@ bool XMPFiles::OpenFile( const Common::XMPFileHandlerInfo&	hdlInfo,
 void
 XMPFiles::CloseFile ( XMP_OptionBits closeFlags /* = 0 */ )
 {
+	XMP_FILES_START
 	if ( this->handler == 0 ) return;	// Return if there is no open file (not an error).
 
 	bool needsUpdate = this->handler->needsUpdate;
@@ -714,6 +967,11 @@ XMPFiles::CloseFile ( XMP_OptionBits closeFlags /* = 0 */ )
 						  (! (handlerFlags & kXMPFiles_HandlerOwnsFile)) );
 	if ( doSafeUpdate && (! safeUpdateOK) ) {
 		XMP_Throw ( "XMPFiles::CloseFile - Safe update not supported", kXMPErr_Unavailable );
+	}
+
+	if ( (this->progressTracker != 0) && this->UsesLocalIO() ) {
+		XMPFiles_IO * localFile = (XMPFiles_IO*)this->ioRef;
+		localFile->SetProgressTracker ( this->progressTracker );
 	}
 
 	// Try really hard to make sure the file is closed and the handler is deleted.
@@ -765,6 +1023,7 @@ XMPFiles::CloseFile ( XMP_OptionBits closeFlags /* = 0 */ )
 				XMP_IO* origFileRef = this->ioRef;
 
 				origFileRef->Rewind();
+				if ( this->progressTracker != 0 && (this->handler->handlerFlags & kXMPFiles_CanNotifyProgress) ) progressTracker->BeginWork ( (float) origFileRef->Length() );
 				XIO::Copy ( origFileRef, tempFileRef, origFileRef->Length(), abortProc, abortArg );
 
 				try {
@@ -780,6 +1039,8 @@ XMPFiles::CloseFile ( XMP_OptionBits closeFlags /* = 0 */ )
 					throw;
 
 				}
+
+				if ( progressTracker != 0 && (this->handler->handlerFlags & kXMPFiles_CanNotifyProgress)) progressTracker->WorkComplete();
 
 			}
 
@@ -799,9 +1060,9 @@ XMPFiles::CloseFile ( XMP_OptionBits closeFlags /* = 0 */ )
 			if ( this->handler != 0 ) delete this->handler;
 		} catch ( ... ) { /* Do nothing, throw the outer exception later. */ }
 
-		if( this->ioRef ) this->ioRef->DeleteTemp();
+		if ( this->ioRef ) this->ioRef->DeleteTemp();
 		CloseLocalFile ( this );
-		this->filePath.clear();
+		this->ClearFilePath();
 
 		this->handler   = 0;
 		this->format    = kXMP_UnknownFile;
@@ -819,7 +1080,7 @@ XMPFiles::CloseFile ( XMP_OptionBits closeFlags /* = 0 */ )
 	// Clear the XMPFiles member variables.
 
 	CloseLocalFile ( this );
-	this->filePath.clear();
+	this->ClearFilePath();
 
 	this->handler   = 0;
 	this->format    = kXMP_UnknownFile;
@@ -829,6 +1090,7 @@ XMPFiles::CloseFile ( XMP_OptionBits closeFlags /* = 0 */ )
 	if ( this->tempPtr != 0 ) free ( this->tempPtr );	// ! Must have been malloc-ed!
 	this->tempPtr  = 0;
 	this->tempUI32 = 0;
+	XMP_FILES_END1 ( kXMPErrSev_FileFatal )
 
 }	// XMPFiles::CloseFile
 
@@ -841,6 +1103,7 @@ XMPFiles::GetFileInfo ( XMP_StringPtr *  filePath /* = 0 */,
 	                    XMP_FileFormat * format /* = 0 */,
 	                    XMP_OptionBits * handlerFlags /* = 0 */ ) const
 {
+	XMP_FILES_START
 	if ( this->handler == 0 ) return false;
 	XMPFileHandler * handler = this->handler;
 
@@ -855,7 +1118,7 @@ XMPFiles::GetFileInfo ( XMP_StringPtr *  filePath /* = 0 */,
 	*openFlags    = this->openFlags;
 	*format       = this->format;
 	*handlerFlags = this->handler->handlerFlags;
-
+	XMP_FILES_END1 ( kXMPErrSev_FileFatal )
 	return true;
 
 }	// XMPFiles::GetFileInfo
@@ -866,10 +1129,12 @@ void
 XMPFiles::SetAbortProc ( XMP_AbortProc abortProc,
 						 void *        abortArg )
 {
+	XMP_FILES_START
 	this->abortProc = abortProc;
 	this->abortArg  = abortArg;
 
 	XMP_Assert ( (abortProc != (XMP_AbortProc)0) || (abortArg != (void*)(unsigned long long)0xDEADBEEFULL) );	// Hack to test the assert callback.
+	XMP_FILES_END1 ( kXMPErrSev_OperationFatal )
 }	// XMPFiles::SetAbortProc
 
 // =================================================================================================
@@ -906,6 +1171,7 @@ XMPFiles::GetXMP ( SXMPMeta *       xmpObj /* = 0 */,
                    XMP_StringLen *  xmpPacketLen /* = 0 */,
                    XMP_PacketInfo * packetInfo /* = 0 */ )
 {
+	XMP_FILES_START
 	if ( this->handler == 0 ) XMP_Throw ( "XMPFiles::GetXMP - No open file", kXMPErr_BadObject );
 
 	XMP_OptionBits applyTemplateFlags = kXMPTemplate_AddNewProperties | kXMPTemplate_IncludeInternalProperties;
@@ -944,7 +1210,7 @@ XMPFiles::GetXMP ( SXMPMeta *       xmpObj /* = 0 */,
 	if ( xmpPacketLen != 0 ) *xmpPacketLen = (XMP_StringLen) this->handler->xmpPacket.size();
 	SetClientPacketInfo ( packetInfo, this->handler->packetInfo,
 						  this->handler->xmpPacket, this->handler->needsUpdate );
-
+	XMP_FILES_END1 ( kXMPErrSev_FileFatal )
 	return true;
 
 }	// XMPFiles::GetXMP
@@ -1038,7 +1304,9 @@ DoPutXMP ( XMPFiles * thiz, const SXMPMeta & xmpObj, const bool doIt )
 void
 XMPFiles::PutXMP ( const SXMPMeta & xmpObj )
 {
+	XMP_FILES_START
 	(void) DoPutXMP ( this, xmpObj, true );
+	XMP_FILES_END1 ( kXMPErrSev_FileFatal )
 
 }	// XMPFiles::PutXMP
 
@@ -1048,9 +1316,12 @@ void
 XMPFiles::PutXMP ( XMP_StringPtr xmpPacket,
                    XMP_StringLen xmpPacketLen /* = kXMP_UseNullTermination */ )
 {
-	SXMPMeta xmpObj ( xmpPacket, xmpPacketLen );
+	XMP_FILES_START
+	SXMPMeta xmpObj;
+	xmpObj.SetErrorCallback ( ErrorCallbackForXMPMeta, &errorCallback );
+	xmpObj.ParseFromBuffer ( xmpPacket, xmpPacketLen );
 	this->PutXMP ( xmpObj );
-
+	XMP_FILES_END1 ( kXMPErrSev_FileFatal )
 }	// XMPFiles::PutXMP
 
 // =================================================================================================
@@ -1058,6 +1329,7 @@ XMPFiles::PutXMP ( XMP_StringPtr xmpPacket,
 bool
 XMPFiles::CanPutXMP ( const SXMPMeta & xmpObj )
 {
+	XMP_FILES_START
 	if ( this->handler == 0 ) XMP_Throw ( "XMPFiles::CanPutXMP - No open file", kXMPErr_BadObject );
 
 	if ( ! (this->openFlags & kXMPFiles_OpenForUpdate) ) return false;
@@ -1067,6 +1339,8 @@ XMPFiles::CanPutXMP ( const SXMPMeta & xmpObj )
 	if ( this->handler->handlerFlags & kXMPFiles_CanExpand ) return true;
 
 	return DoPutXMP ( this, xmpObj, false );
+	XMP_FILES_END1 ( kXMPErrSev_FileFatal )
+	return false;
 
 }	// XMPFiles::CanPutXMP
 
@@ -1076,9 +1350,157 @@ bool
 XMPFiles::CanPutXMP ( XMP_StringPtr xmpPacket,
                       XMP_StringLen xmpPacketLen /* = kXMP_UseNullTermination */ )
 {
-	SXMPMeta xmpObj ( xmpPacket, xmpPacketLen );
+	XMP_FILES_START
+	SXMPMeta xmpObj;
+	xmpObj.SetErrorCallback ( ErrorCallbackForXMPMeta, &errorCallback );
+	xmpObj.ParseFromBuffer ( xmpPacket, xmpPacketLen );
 	return this->CanPutXMP ( xmpObj );
+	XMP_FILES_END1 ( kXMPErrSev_FileFatal )
+	return false;
 
 }	// XMPFiles::CanPutXMP
+
+// =================================================================================================
+
+/* class-static */
+void
+XMPFiles::SetDefaultProgressCallback ( const XMP_ProgressTracker::CallbackInfo & cbInfo )
+{
+	XMP_FILES_STATIC_START
+	XMP_Assert ( cbInfo.wrapperProc != 0 );	// ! Should be provided by the glue code.
+
+	sProgressDefault = cbInfo;
+	XMP_FILES_STATIC_END1 ( kXMPErrSev_OperationFatal )
+
+}	// XMPFiles::SetDefaultProgressCallback
+
+// =================================================================================================
+
+void
+XMPFiles::SetProgressCallback ( const XMP_ProgressTracker::CallbackInfo & cbInfo )
+{
+	XMP_FILES_START
+	XMP_Assert ( cbInfo.wrapperProc != 0 );	// ! Should be provided by the glue code.
+
+	if ( (this->handler != 0) && this->UsesClientIO() ) return;	// Can't use progress tracking.
+
+	if ( this->progressTracker != 0 ) {
+		delete this->progressTracker;	// ! Delete any existing tracker.
+		this->progressTracker = 0;
+	}
+	
+	if ( cbInfo.clientProc != 0 ) {
+		this->progressTracker = new XMP_ProgressTracker ( cbInfo );
+	}
+	XMP_FILES_END1 ( kXMPErrSev_OperationFatal )
+
+}	// XMPFiles::SetProgressCallback
+
+// =================================================================================================
+// Error notifications
+// ===================
+
+// -------------------------------------------------------------------------------------------------
+// SetDefaultErrorCallback
+// -----------------------
+
+/* class-static */ 
+void XMPFiles::SetDefaultErrorCallback ( XMPFiles_ErrorCallbackWrapper	wrapperProc,
+										 XMPFiles_ErrorCallbackProc		clientProc,
+										 void *							context,
+										 XMP_Uns32						limit )
+{
+	XMP_FILES_STATIC_START
+	XMP_Assert ( wrapperProc != 0 );	// Must always be set by the glue;
+
+	sDefaultErrorCallback.wrapperProc = wrapperProc;
+	sDefaultErrorCallback.clientProc = clientProc;
+	sDefaultErrorCallback.context = context;
+	sDefaultErrorCallback.limit = limit;
+	XMP_FILES_STATIC_END1 ( kXMPErrSev_OperationFatal )
+}	// SetDefaultErrorCallback
+
+// -------------------------------------------------------------------------------------------------
+// SetErrorCallback
+// ----------------
+
+void XMPFiles::SetErrorCallback ( XMPFiles_ErrorCallbackWrapper	wrapperProc,
+								  XMPFiles_ErrorCallbackProc	clientProc,
+								  void *						context,
+								  XMP_Uns32						limit )
+{
+	XMP_FILES_START
+	XMP_Assert ( wrapperProc != 0 );	// Must always be set by the glue;
+
+	this->errorCallback.Clear();
+	this->errorCallback.wrapperProc = wrapperProc;
+	this->errorCallback.clientProc = clientProc;
+	this->errorCallback.context = context;
+	this->errorCallback.limit = limit;
+	XMP_FILES_END1 ( kXMPErrSev_OperationFatal )
+}	// SetErrorCallback
+
+// -------------------------------------------------------------------------------------------------
+// ResetErrorCallbackLimit
+// -----------------------
+
+void XMPFiles::ResetErrorCallbackLimit ( XMP_Uns32 limit ) {
+	XMP_FILES_START
+	this->errorCallback.limit = limit;
+	this->errorCallback.notifications = 0;
+	this->errorCallback.topSeverity = kXMPErrSev_Recoverable;
+	XMP_FILES_END1 ( kXMPErrSev_OperationFatal )
+}	// ResetErrorCallbackLimit
+
+// -------------------------------------------------------------------------------------------------
+// ErrorCallbackInfo::CanNotify
+// -------------------------------
+//
+// This is const just to be usable from const XMPMeta functions.
+
+bool 
+	XMPFiles::ErrorCallbackInfo::CanNotify() const
+{
+	XMP_Assert ( (this->clientProc == 0) || (this->wrapperProc != 0) );
+	return ( this->clientProc != 0 );
+}
+
+// -------------------------------------------------------------------------------------------------
+// ErrorCallbackInfo::ClientCallbackWrapper
+// -------------------------------
+//
+// This is const just to be usable from const XMPMeta functions.
+
+bool
+	XMPFiles::ErrorCallbackInfo::ClientCallbackWrapper ( XMP_StringPtr filePath,
+														 XMP_ErrorSeverity severity,
+														 XMP_Int32 cause,
+														 XMP_StringPtr messsage ) const
+{
+	
+	XMP_StringPtr filePathPtr = filePath;
+	if ( filePathPtr == 0 ) {
+		filePathPtr = this->filePath.c_str();
+	}
+
+	XMP_Bool retValue = (*this->wrapperProc) ( this->clientProc, this->context, filePathPtr, severity, cause, messsage );
+	return ConvertXMP_BoolToBool(retValue);
+}
+
+// -------------------------------------------------------------------------------------------------
+// ErrorCallbackForXMPMeta
+// -------------------------------
+
+bool
+	ErrorCallbackForXMPMeta ( void * context, XMP_ErrorSeverity severity, 
+							   XMP_Int32 cause,
+							   XMP_StringPtr message)
+{
+	//typecast context to GenericErrorCallback
+	GenericErrorCallback * callback = ( GenericErrorCallback * ) context;
+	XMP_Error error ( cause, message );
+	callback->NotifyClient ( severity, error );
+	return !kXMP_Bool_False;
+}
 
 // =================================================================================================

@@ -21,12 +21,17 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#if (SUNOS_SPARC || SUNOS_X86)
+	#include <limits.h>
+	#include <stdlib.h>
+#endif
+
 // =================================================================================================
 // Host_IO implementations for POSIX
 // =================================
 
-#if (! XMP_MacBuild) & (! XMP_UNIXBuild)
-	#error "This is the POSIX implementation of Host_IO for Mac and general UNIX."
+#if (! XMP_MacBuild) & (! XMP_UNIXBuild) & (! XMP_iOSBuild)
+	#error "This is the POSIX implementation of Host_IO for Mac, iOS and general UNIX."
 #endif
 
 // =================================================================================================
@@ -37,6 +42,8 @@
 static char check_off_t_size [ (sizeof(off_t) == 8) ? 1 : -1 ];
 // *** No std::numeric_limits?  static char check_off_t_sign [ std::numeric_limits<off_t>::is_signed ? -1 : 1 ];
 
+static bool HaveWriteAccess( const std::string & path );
+
 // =================================================================================================
 // Host_IO::Exists
 // ===============
@@ -46,6 +53,48 @@ bool Host_IO::Exists ( const char* filePath )
 	struct stat info;
 	int err = stat ( filePath, &info );
 	return (err == 0);
+}
+
+// =================================================================================================
+// Host_IO::Writable
+// ===============
+bool Host_IO::Writable( const char * path, bool checkCreationPossible )
+{
+	if ( Exists( path ) )
+	{
+		switch ( GetFileMode( path ) )
+		{
+		case kFMode_IsFile:
+		case kFMode_IsFolder:
+			return HaveWriteAccess( path );
+			break;
+
+		default:
+			return false;
+			break;
+		}
+	} 
+	else if ( checkCreationPossible )
+	{
+		// get the parent path
+		std::string utf8Path(path);
+		size_t pos = utf8Path.find_last_of('/');
+		if (pos != std::string::npos)
+		{
+			if (pos == 0)
+				utf8Path = utf8Path.substr(0, 1);
+			else
+				utf8Path = utf8Path.substr(0, pos);
+		}
+		else
+		{
+			utf8Path = ".";
+		}
+		return Host_IO::Writable( utf8Path.c_str(), checkCreationPossible );
+	}
+	else
+		return true;
+
 }
 
 // =================================================================================================
@@ -73,7 +122,6 @@ bool Host_IO::Create ( const char* filePath )
 
 static void ConvertPosixDateTime ( const time_t & osTime, XMP_DateTime * xmpTime )
 {
-
 	struct tm posixUTC;
 	gmtime_r ( &osTime, &posixUTC );
 
@@ -101,7 +149,6 @@ static void ConvertPosixDateTime ( const time_t & osTime, XMP_DateTime * xmpTime
 
 bool Host_IO::GetModifyDate ( const char* filePath, XMP_DateTime* modifyDate )
 {
-
 	struct stat info;
 	int err = stat ( filePath, &info );
 	if ( err != 0 ) return false;
@@ -152,22 +199,30 @@ std::string Host_IO::CreateTemp ( const char* sourcePath )
 // =================================================================================================
 // Host_IO::Open
 // =============
+//
+// Returns Host_IO::noFileRef (0) if the file does not exist, throws for other errors.
 
 Host_IO::FileRef Host_IO::Open ( const char* filePath, bool readOnly )
 {
-	if ( ! Host_IO::Exists ( filePath ) ) return Host_IO::noFileRef;
-
 	int flags = (readOnly ? O_RDONLY : O_RDWR);	// *** Include O_EXLOCK?
 
 	int refNum = open ( filePath, flags, ( S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP ) );
-	if ( refNum == -1 ) XMP_Throw ( "Host_IO::Open, open failure", kXMPErr_ExternalFailure );
-
+	if ( refNum == -1 ) {
+		int osCode = errno;	// Capture ASAP and once, might not be thread safe.
+		if ( osCode == ENOENT ) {
+			return Host_IO::noFileRef;
+		} else if ( osCode == EACCES ) {
+			XMP_Throw ( "Host_IO::Open, file permission error", kXMPErr_FilePermission );
+		} else {
+			XMP_Throw ( "Host_IO::Open, other failure", kXMPErr_ExternalFailure );
+		}
+	}
 
 	if ( ! readOnly ) {
 		// A root user might be able to open a write-protected file w/o complaint.
 		struct stat info;
 		if ( fstat ( refNum, &info ) == -1 ) XMP_Throw ( "Host_IO::Open, fstat failed.", kXMPErr_ExternalFailure );
-		if ( 0 == (info.st_mode & S_IWUSR) ) XMP_Throw ( "Host_IO::Open, file is write proected", kXMPErr_ExternalFailure );
+		if ( 0 == (info.st_mode & S_IWUSR) ) XMP_Throw ( "Host_IO::Open, file permission error", kXMPErr_FilePermission );
 	}
 
 	return refNum;
@@ -193,7 +248,6 @@ void Host_IO::Close ( Host_IO::FileRef refNum )
 
 void Host_IO::SwapData ( const char* sourcePath, const char* destPath )
 {
-
 	// For lack of a better approach, do a 3-way rename.
 
 	std::string thirdPath = ConjureDerivedPath ( sourcePath );
@@ -301,7 +355,7 @@ XMP_Uns32 Host_IO::Read ( Host_IO::FileRef refNum, void * buffer, XMP_Uns32 coun
 	if ( count >= TwoGB ) XMP_Throw ( "Host_IO::Read, request too large", kXMPErr_EnforceFailure );
 
 	ssize_t bytesRead = read ( refNum, buffer, count );
-	if ( bytesRead == -1 ) XMP_Throw ( "Host_IO::Read, read failure", kXMPErr_ExternalFailure );
+	if ( bytesRead == -1 ) XMP_Throw ( "Host_IO::Read, read failure", kXMPErr_ReadError );
 
 	return bytesRead;
 
@@ -316,7 +370,14 @@ void Host_IO::Write ( Host_IO::FileRef refNum, const void * buffer, XMP_Uns32 co
 	if ( count >= TwoGB ) XMP_Throw ( "Host_IO::Write, request too large", kXMPErr_EnforceFailure );
 
 	ssize_t bytesWritten = write ( refNum, buffer, count );
-	if ( bytesWritten != count ) XMP_Throw ( "Host_IO::Write, write failure", kXMPErr_ExternalFailure );
+	if ( bytesWritten != (ssize_t)count ) {
+		int osCode = errno;	// Capture ASAP and once, might not be thread safe.
+		if ( errno == ENOSPC ) {
+			XMP_Throw ( "Host_IO::Write, disk full", kXMPErr_DiskSpace );
+		} else {
+			XMP_Throw ( "Host_IO::Write, write failure", kXMPErr_WriteError );
+		}
+	}
 
 }	// Host_IO::Write
 
@@ -377,7 +438,9 @@ Host_IO::FileMode Host_IO::GetFileMode ( const char * path )
 Host_IO::FileMode Host_IO::GetChildMode ( const char * parentPath, const char * childName )
 {
 	std::string fullPath = parentPath;
-	fullPath += '/';
+	char lastChar = fullPath[fullPath.length() -1];
+	if ( lastChar != '/' )
+		fullPath += '/';
 	fullPath += childName;
 
 	return GetFileMode ( fullPath.c_str() );
@@ -390,7 +453,6 @@ Host_IO::FileMode Host_IO::GetChildMode ( const char * parentPath, const char * 
 
 Host_IO::FolderRef Host_IO::OpenFolder ( const char* folderPath )
 {
-
 	switch ( Host_IO::GetFileMode ( folderPath ) ) {
 
 		case Host_IO::kFMode_IsFolder :
@@ -429,26 +491,55 @@ void Host_IO::CloseFolder ( Host_IO::FolderRef folder )
 // Host_IO::GetNextChild
 // =====================
 
+#if (SUNOS_SPARC || SUNOS_X86)
+	class SafeMalloc {
+	public:
+		void* pointer;
+		void* GetPointer() { return this->pointer; };
+		SafeMalloc ( size_t size ) { this->pointer = malloc ( size ); };
+		~SafeMalloc() { if ( this->pointer != 0 ) free ( this->pointer ); };
+	private:
+		SafeMalloc() : pointer(0) {};	// Hidden on purpose.
+	};
+#endif
+
 bool Host_IO::GetNextChild ( Host_IO::FolderRef folder, std::string* childName )
 {
-	struct dirent childInfo;
 	struct dirent * result;
 
 	if ( folder == Host_IO::noFolderRef ) return false;
+	
+	#if ! (SUNOS_SPARC || SUNOS_X86)
+		struct dirent _childInfo;
+		struct dirent* childInfo = &_childInfo;
+	#else
+		SafeMalloc sm ( offsetof ( struct dirent, d_name ) + PATH_MAX + 1 );
+		struct dirent* childInfo = (struct dirent *) sm.GetPointer();
+		if ( childInfo == 0 ) XMP_Throw ( "Can't allocate SunOS childInfo", kXMPErr_NoMemory );
+	#endif
 
 	while ( true ) {
 		// Ignore all children with names starting in '.'. This covers ., .., .DS_Store, etc.
 		// ! On AIX readdir_r returns 9 instead of 0 for normal termination.
-		int err = readdir_r ( folder, &childInfo, &result );	// ! Use the thread-dafe form.
+		int err = readdir_r ( folder, childInfo, &result );	// ! Use the thread-safe form.
 		if ( err == 9 ) return false;	// Tolerable should some other UNIX return 9.
 		if ( err != 0 ) XMP_Throw ( "Host_IO::GetNextChild, readdir_r failed", kXMPErr_ExternalFailure );
 		if ( result == 0 ) return false;
-		if ( childInfo.d_name[0] != '.' ) break;
+		if ( childInfo->d_name[0] != '.' ) break;
 	}
 
-	if ( childName != 0 ) *childName = childInfo.d_name;
+	if ( childName != 0 ) *childName = childInfo->d_name;
 	return true;
 
 }	// Host_IO::GetNextChild
+
+// =================================================================================================
+// Writable
+// =====================
+
+static bool HaveWriteAccess( const std::string & path )
+{
+	return ( access(path.c_str(), W_OK) == 0 );
+}
 
 // =================================================================================================

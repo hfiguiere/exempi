@@ -217,6 +217,8 @@ XMP_Uns64 INFOMetadata::serialize( XMP_Uns8** outBuffer )
 				//
 				memcpy( buffer+offset, &id, kSizeChunkID );
 				memcpy( buffer+offset+kSizeChunkID, &size, kSizeChunkSize );
+				//size has been changed in little endian format. Change it back to bigendina
+				size	= LE.getUns32( &size );
 				memcpy( buffer+offset+kChunkHeaderSize, value.c_str(), size );
 
 				//

@@ -174,7 +174,11 @@ namespace RIFF {
 	// =================================================================================================
 	// ImportCr8rItems
 	// ===============
+#if SUNOS_SPARC || SUNOS_X86
+	#pragma pack ( 1 )
+#else
 	#pragma pack ( push, 1 )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 	struct PrmLBoxContent {
 		XMP_Uns32 magic;
 		XMP_Uns32 size;
@@ -199,7 +203,11 @@ namespace RIFF {
 		char appOptions[16];
 		char appName[32];
 	};
+#if SUNOS_SPARC || SUNOS_X86
+	#pragma pack (  )
+#else
 	#pragma pack ( pop )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 
 	// static getter, determines appropriate chunkType (peeking)and returns
 	// the respective constructor. It's the caller's responsibility to

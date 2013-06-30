@@ -24,7 +24,11 @@ static const XMP_Uns32 kSizeAppOtions	= 16;
 static const XMP_Uns32 kSizeAppName		= 32;
 
 // Needed to be able to memcpy directly to this struct.
+#if SUNOS_SPARC || SUNOS_X86
+#pragma pack ( 1 )
+#else
 #pragma pack ( push, 1 )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 	struct Cr8rBoxContent 
 	{
 		XMP_Uns32	mMagic;
@@ -37,7 +41,11 @@ static const XMP_Uns32 kSizeAppName		= 32;
 		char		mAppOptions[kSizeAppOtions];
 		char		mAppName[kSizeAppName];
 	};
+#if SUNOS_SPARC || SUNOS_X86
+#pragma pack ( )
+#else
 #pragma pack ( pop )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 
 //-----------------------------------------------------------------------------
 // 

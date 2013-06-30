@@ -34,8 +34,8 @@ using namespace std;
 ///
 // =================================================================================================
 
-static const char * kExifSignatureString = "Exif\0\x00";
-static const char * kExifSignatureAltStr = "Exif\0\xFF";
+static const char * kExifSignatureString = "Exif\0\x00";	// There are supposed to be two zero bytes,
+static const char * kExifSignatureAltStr = "Exif\0\xFF";	// but files have been seen with just one.
 static const size_t kExifSignatureLength = 6;
 static const size_t kExifMaxDataLength   = 0xFFFF - 2 - kExifSignatureLength;
 
@@ -89,26 +89,28 @@ XMPFileHandler * JPEG_MetaHandlerCTor ( XMPFiles * parent )
 
 bool JPEG_CheckFormat ( XMP_FileFormat format,
 	                    XMP_StringPtr  filePath,
-                        XMP_IO*    fileRef,
+                        XMP_IO *       fileRef,
                         XMPFiles *     parent )
 {
 	IgnoreParam(format); IgnoreParam(filePath); IgnoreParam(parent);
 	XMP_Assert ( format == kXMP_JPEGFile );
 
-	IOBuffer ioBuf;
+	XMP_Uns8 buffer [100];
+	XMP_Uns16 marker;
 
-	fileRef->Rewind ( );
-	if ( ! CheckFileSpace ( fileRef, &ioBuf, 4 ) ) return false;	// We need at least 4, the buffer is filled anyway.
+	fileRef->Rewind();
+	if ( fileRef->Length() < 2 ) return false;	// Need at least the SOI marker.
+	size_t bufferLen = fileRef->Read ( buffer, sizeof(buffer) );
 
-	// First look for the SOI standalone marker. Then skip all 0xFF bytes, padding plus the high
-	// order byte of the next marker. Finally see if the next marker is legit.
+	marker = GetUns16BE ( &buffer[0] );
+	if ( marker != 0xFFD8 ) return false;	// Offset 0 must have the SOI marker.
+	
+	// Skip 0xFF padding and high order 0xFF of next marker.
+	size_t bufferPos = 2;
+	while ( (bufferPos < bufferLen) && (buffer[bufferPos] == 0xFF) ) bufferPos += 1;
+	if ( bufferPos == bufferLen ) return true;	// Nothing but 0xFF bytes, close enough.
 
-	if ( ! CheckBytes ( ioBuf.ptr, "\xFF\xD8", 2 ) ) return false;
-	ioBuf.ptr += 2;	// Move past the SOI.
-	while ( (ioBuf.ptr < ioBuf.limit) && (*ioBuf.ptr == 0xFF) ) ++ioBuf.ptr;
-	if ( ioBuf.ptr == ioBuf.limit ) return false;
-
-	XMP_Uns8 id = *ioBuf.ptr;
+	XMP_Uns8 id = buffer[bufferPos];	// Check the ID of the second marker.
 	if ( id >= 0xDD ) return true;	// The most probable cases.
 	if ( (id < 0xC0) || ((id & 0xF8) == 0xD0) || (id == 0xD8) || (id == 0xDA) || (id == 0xDC) ) return false;
 	return true;
@@ -140,6 +142,87 @@ JPEG_MetaHandler::~JPEG_MetaHandler()
 	if ( iptcMgr != 0 ) delete ( iptcMgr );
 
 }	// JPEG_MetaHandler::~JPEG_MetaHandler
+
+// =================================================================================================
+// CacheExtendedXMP
+// ================
+
+static void CacheExtendedXMP ( ExtendedXMPInfo * extXMP, XMP_Uns8 * buffer, size_t bufferLen )
+{
+
+	// Have a portion of the extended XMP, cache the contents. This is complicated by the need to
+	// tolerate files where the extension portions are not in order. The local ExtendedXMPInfo map
+	// uses the GUID as the key and maps that to a struct that has the full length and a map of the
+	// known portions. This known portion map uses the offset of the portion as the key and maps
+	// that to a string. Only fully seen extended XMP streams are kept, the right one gets picked in
+	// ProcessXMP.
+
+	// The extended XMP JPEG marker segment content holds:
+	//	- a signature string, "http://ns.adobe.com/xmp/extension/\0", already verified
+	//	- a 128 bit GUID stored as a 32 byte ASCII hex string
+	//	- a UInt32 full length of the entire extended XMP
+	//	- a UInt32 offset for this portion of the extended XMP
+	//	- the UTF-8 text for this portion of the extended XMP
+	
+	if ( bufferLen < kExtXMPPrefixLength ) return;	// Ignore bad input.
+	XMP_Assert ( CheckBytes ( &buffer[0], kExtXMPSignatureString, kExtXMPSignatureLength ) );
+
+	XMP_Uns8 * bufferPtr = buffer + kExtXMPSignatureLength;	// Start at the GUID.
+	
+	JPEG_MetaHandler::GUID_32 guid;
+	XMP_Assert ( sizeof(guid.data) == 32 );
+	memcpy ( &guid.data[0], bufferPtr, sizeof(guid.data) );	// AUDIT: Use of sizeof(guid.data) is safe.
+
+	bufferPtr += sizeof(guid.data);	// Move to the length and offset.
+	XMP_Uns32 fullLen = GetUns32BE ( bufferPtr );
+	XMP_Uns32 offset  = GetUns32BE ( bufferPtr+4 );
+
+	bufferPtr += 8;	// Move to the XMP stream portion.
+	size_t xmpLen = bufferLen - kExtXMPPrefixLength;
+
+	#if Trace_UnlimitedJPEG
+		printf ( "New extended XMP portion: fullLen %d, offset %d, GUID %.32s\n", fullLen, offset, guid.data );
+	#endif
+
+	// Find the ExtXMPContent for this GUID, and the string for this portion's offset.
+
+	ExtendedXMPInfo::iterator guidPos = extXMP->find ( guid );
+	if ( guidPos == extXMP->end() ) {
+		ExtXMPContent newExtContent ( fullLen );
+		guidPos = extXMP->insert ( extXMP->begin(), ExtendedXMPInfo::value_type ( guid, newExtContent ) );
+	}
+
+	ExtXMPPortions::iterator offsetPos;
+	ExtXMPContent & extContent = guidPos->second;
+
+	if ( extContent.portions.empty() ) {
+		// When new create a full size offset 0 string, to which all in-order portions will get appended.
+		offsetPos = extContent.portions.insert ( extContent.portions.begin(),
+												 ExtXMPPortions::value_type ( 0, std::string() ) );
+		offsetPos->second.reserve ( extContent.length );
+	}
+
+	// Try to append this portion to a logically contiguous preceeding one.
+
+	if ( offset == 0 ) {
+		offsetPos = extContent.portions.begin();
+		XMP_Assert ( (offsetPos->first == 0) && (offsetPos->second.size() == 0) );
+	} else {
+		offsetPos = extContent.portions.lower_bound ( offset );
+		--offsetPos;	// Back up to the portion whose offset is less than the new offset.
+		if ( (offsetPos->first + offsetPos->second.size()) != offset ) {
+			// Can't append, create a new portion.
+			offsetPos = extContent.portions.insert ( extContent.portions.begin(),
+													 ExtXMPPortions::value_type ( offset, std::string() ) );
+		}
+	}
+
+	// Cache this portion of the extended XMP.
+
+	std::string & extPortion = offsetPos->second;
+	extPortion.append ( (XMP_StringPtr)bufferPtr, xmpLen );
+
+}	// CacheExtendedXMP
 
 // =================================================================================================
 // JPEG_MetaHandler::CacheFileData
@@ -187,12 +270,11 @@ JPEG_MetaHandler::~JPEG_MetaHandler()
 
 void JPEG_MetaHandler::CacheFileData()
 {
-	XMP_IO*      fileRef    = this->parent->ioRef;
+	XMP_IO* fileRef = this->parent->ioRef;
 	XMP_PacketInfo & packetInfo = this->packetInfo;
 
-	size_t	  segLen;
-	bool      ok;
-	IOBuffer ioBuf;
+	static const size_t kBufferSize = 64*1024;	// Enough for maximum segment contents.
+	XMP_Uns8 buffer [kBufferSize];
 
 	XMP_AbortProc abortProc  = this->parent->abortProc;
 	void *        abortArg   = this->parent->abortArg;
@@ -211,9 +293,7 @@ void JPEG_MetaHandler::CacheFileData()
 	// Look for any of the Exif, PSIR, main XMP, or extended XMP marker segments. Quit when we hit
 	// an SOFn, EOI, or invalid/unexpected marker.
 
-	fileRef->Seek ( 2, kXMP_SeekFromStart  );	// Skip the SOI. The JPEG header has already been verified.
-	ioBuf.filePos = 2;
-	RefillBuffer ( fileRef, &ioBuf );
+	fileRef->Seek ( 2, kXMP_SeekFromStart  );	// Skip the SOI, CheckFormat made sure it is present.
 
 	while ( true ) {
 
@@ -221,238 +301,95 @@ void JPEG_MetaHandler::CacheFileData()
 			XMP_Throw ( "JPEG_MetaHandler::CacheFileData - User abort", kXMPErr_UserAbort );
 		}
 
-		if ( ! CheckFileSpace ( fileRef, &ioBuf, 2 ) ) return;
-
-		if ( *ioBuf.ptr != 0xFF ) return;	// All valid markers have a high byte of 0xFF.
-		while ( *ioBuf.ptr == 0xFF ) {	// Skip padding 0xFF bytes and the marker's high byte.
-			++ioBuf.ptr;
-			if ( ! CheckFileSpace ( fileRef, &ioBuf, 1 ) ) return;
+		if ( ! XIO::CheckFileSpace ( fileRef, 2 ) ) return;	// Quit, don't throw, if the file ends unexpectedly.
+		
+		XMP_Uns16 marker = XIO::ReadUns16_BE ( fileRef );	// Read the next marker.
+		if ( marker == 0xFFFF ) {
+			// Have a pad byte, skip it. These are almost unheard of, so efficiency isn't critical.
+			fileRef->Seek ( -1, kXMP_SeekFromCurrent );	// Skip the first 0xFF, read the second again.
+			continue;
 		}
-
-		XMP_Uns16 marker = 0xFF00 + *ioBuf.ptr;
 
 		if ( (marker == 0xFFDA) || (marker == 0xFFD9) ) break;	// Quit reading at the first SOS marker or at EOI.
 
 		if ( (marker == 0xFF01) ||	// Ill-formed file if we encounter a TEM or RSTn marker.
 			 ((0xFFD0 <= marker) && (marker <= 0xFFD7)) ) return;
 
-		if ( marker == 0xFFED ) {
+		XMP_Uns16 contentLen = XIO::ReadUns16_BE ( fileRef );	// Read this segment's length.
+		if ( contentLen < 2 ) XMP_Throw ( "Invalid JPEG segment length", kXMPErr_BadJPEG );
+		contentLen -= 2;	// Reduce to just the content length.
+		
+		XMP_Int64 contentOrigin = fileRef->Offset();
+		size_t signatureLen;
+
+		if ( (marker == 0xFFED) && (contentLen >= kPSIRSignatureLength) ) {
 
 			// This is an APP13 marker, is it the Photoshop image resources?
 
-			++ioBuf.ptr;	// Move ioBuf.ptr to the marker segment length field.
-			if ( ! CheckFileSpace ( fileRef, &ioBuf, 2 ) ) return;
+			signatureLen = fileRef->Read ( buffer, kPSIRSignatureLength );
+			if ( (signatureLen == kPSIRSignatureLength) &&
+				 CheckBytes ( &buffer[0], kPSIRSignatureString, kPSIRSignatureLength ) ) {
 
-			segLen = GetUns16BE ( ioBuf.ptr );
-			if ( segLen < 2 ) return;	// Invalid JPEG.
-
-			ioBuf.ptr += 2;	// Move ioBuf.ptr to the marker segment content.
-			segLen -= 2;	// Adjust segLen to count just the content portion.
-
-			ok = CheckFileSpace ( fileRef, &ioBuf, kPSIRSignatureLength );
-			if ( ok && (segLen >= kPSIRSignatureLength) &&
-				 CheckBytes ( ioBuf.ptr, kPSIRSignatureString, kPSIRSignatureLength ) ) {
-
-				// This is the Photoshop image resources, cache the contents.
-
-				ioBuf.ptr += kPSIRSignatureLength;	// Move ioBuf.ptr to the image resources.
-				segLen -= kPSIRSignatureLength;	// Adjust segLen to count just the image resources.
-				ok = CheckFileSpace ( fileRef, &ioBuf, segLen );	// Buffer the full content portion.
-				if ( ! ok ) return;	// Must be a truncated file.
-
-				this->psirContents.assign ( (XMP_StringPtr)ioBuf.ptr, segLen );
-				ioBuf.ptr += segLen;
-
-			} else {
-
-				// This is the not Photoshop image resources, skip the marker segment's content.
-
-				if ( segLen <= size_t(ioBuf.limit - ioBuf.ptr) ) {
-					ioBuf.ptr += segLen;	// The next marker is in this buffer.
-				} else {
-					// The next marker is beyond this buffer, move to the start of it and fill the buffer.
-					size_t skipCount = segLen - (ioBuf.limit - ioBuf.ptr);		// The amount to move beyond this buffer.
-					XMP_Int64 bufferEnd = ioBuf.filePos + (XMP_Int64)ioBuf.len;	// File offset at the end of this buffer.
-					XMP_Int64 nextPos = bufferEnd + (XMP_Int64)skipCount;
-					MoveToOffset ( fileRef, nextPos, &ioBuf );
-				}
+				size_t psirLen = contentLen - kPSIRSignatureLength;
+				fileRef->Seek ( (contentOrigin + kPSIRSignatureLength), kXMP_SeekFromStart );
+				fileRef->ReadAll ( buffer, psirLen );
+				this->psirContents.assign ( (char*)buffer, psirLen );
+				continue;	// Move on to the next marker.
 
 			}
 
-			continue;	// Move on to the next marker.
-
-		} else if ( marker == 0xFFE1 ) {
+		} else if ( (marker == 0xFFE1) && (contentLen >= kExifSignatureLength) ) {	// Check for the shortest signature.
 
 			// This is an APP1 marker, is it the Exif, main XMP, or extended XMP?
-			// ! Check in that order, which happens to be increasing signature string length.
+			// ! Check in that order, which is in increasing signature string length.
+			
+			XMP_Assert ( (kExifSignatureLength < kMainXMPSignatureLength) &&
+						 (kMainXMPSignatureLength < kExtXMPSignatureLength) );
+			signatureLen = fileRef->Read ( buffer, kExtXMPSignatureLength );	// Read for the longest signature.
 
-			++ioBuf.ptr;	// Move ioBuf.ptr to the marker segment length field.
-			if ( ! CheckFileSpace ( fileRef, &ioBuf, 2 ) ) return;
+			if ( (signatureLen >= kExifSignatureLength) &&
+				 (CheckBytes ( &buffer[0], kExifSignatureString, kExifSignatureLength ) ||
+				  CheckBytes ( &buffer[0], kExifSignatureAltStr, kExifSignatureLength )) ) {
 
-			segLen = GetUns16BE ( ioBuf.ptr );
-			if ( segLen < 2 ) return;	// Invalid JPEG.
-
-			ioBuf.ptr += 2;	// Move ioBuf.ptr to the marker segment content.
-			segLen -= 2;	// Adjust segLen to count just the content portion.
-
-			// Check for the Exif APP1 marker segment.
-
-			ok = CheckFileSpace ( fileRef, &ioBuf, kExifSignatureLength );
-			if ( ok && (segLen >= kExifSignatureLength) &&
-				 (CheckBytes ( ioBuf.ptr, kExifSignatureString, kExifSignatureLength ) ||
-				  CheckBytes ( ioBuf.ptr, kExifSignatureAltStr, kExifSignatureLength )) ) {
-
-				// This is the Exif metadata, cache the contents.
-
-				ioBuf.ptr += kExifSignatureLength;	// Move ioBuf.ptr to the TIFF stream.
-				segLen -= kExifSignatureLength;	// Adjust segLen to count just the TIFF stream.
-				ok = CheckFileSpace ( fileRef, &ioBuf, segLen );	// Buffer the full content portion.
-				if ( ! ok ) return;	// Must be a truncated file.
-
-				this->exifContents.assign ( (XMP_StringPtr)ioBuf.ptr, segLen );
-				ioBuf.ptr += segLen;
-
+				size_t exifLen = contentLen - kExifSignatureLength;
+				fileRef->Seek ( (contentOrigin + kExifSignatureLength), kXMP_SeekFromStart );
+				fileRef->ReadAll ( buffer, exifLen );
+				this->exifContents.assign ( (char*)buffer, exifLen );
 				continue;	// Move on to the next marker.
 
 			}
-
-			// Check for the main XMP APP1 marker segment.
-
-			ok = CheckFileSpace ( fileRef, &ioBuf, kMainXMPSignatureLength );
-			if ( ok && (segLen >= kMainXMPSignatureLength) &&
-				 CheckBytes ( ioBuf.ptr, kMainXMPSignatureString, kMainXMPSignatureLength ) ) {
-
-				// This is the main XMP, cache the contents.
-
-				ioBuf.ptr += kMainXMPSignatureLength;	// Move ioBuf.ptr to the XMP Packet.
-				segLen -= kMainXMPSignatureLength;	// Adjust segLen to count just the XMP Packet.
-				ok = CheckFileSpace ( fileRef, &ioBuf, segLen );	// Buffer the full content portion.
-				if ( ! ok ) return;	// Must be a truncated file.
-
-				this->packetInfo.offset = ioBuf.filePos + (ioBuf.ptr - &ioBuf.data[0]);
-				this->packetInfo.length = (XMP_Int32)segLen;
-				this->packetInfo.padSize   = 0;				// Assume for now, set these properly in ProcessXMP.
-				this->packetInfo.charForm  = kXMP_CharUnknown;
-				this->packetInfo.writeable = true;
-
-				this->xmpPacket.assign ( (XMP_StringPtr)ioBuf.ptr, segLen );
-				ioBuf.ptr += segLen;	// ! Set this->packetInfo.offset first!
+			
+			if ( (signatureLen >= kMainXMPSignatureLength) &&
+				 CheckBytes ( &buffer[0], kMainXMPSignatureString, kMainXMPSignatureLength ) ) {
 
 				this->containsXMP = true;	// Found the standard XMP packet.
+				size_t xmpLen = contentLen - kMainXMPSignatureLength;
+				fileRef->Seek ( (contentOrigin + kMainXMPSignatureLength), kXMP_SeekFromStart );
+				fileRef->ReadAll ( buffer, xmpLen );
+				this->xmpPacket.assign ( (char*)buffer, xmpLen );
+				this->packetInfo.offset = contentOrigin + kMainXMPSignatureLength;
+				this->packetInfo.length = (XMP_Int32)xmpLen;
+				this->packetInfo.padSize   = 0;	// Assume the rest for now, set later in ProcessXMP.
+				this->packetInfo.charForm  = kXMP_CharUnknown;
+				this->packetInfo.writeable = true;
 				continue;	// Move on to the next marker.
 
 			}
+			
+			if ( (signatureLen >= kExtXMPSignatureLength) &&
+				 CheckBytes ( &buffer[0], kExtXMPSignatureString, kExtXMPSignatureLength ) ) {
 
-			// Check for an extension XMP APP1 marker segment.
-
-			ok = CheckFileSpace ( fileRef, &ioBuf, kExtXMPPrefixLength );	// ! The signature, GUID, length, and offset.
-			if ( ok && (segLen >= kExtXMPPrefixLength) &&
-				 CheckBytes ( ioBuf.ptr, kExtXMPSignatureString, kExtXMPSignatureLength ) ) {
-
-				// This is a portion of the extended XMP, cache the contents. This is complicated by
-				// the need to tolerate files where the extension portions are not in order. The
-				// local ExtendedXMPInfo map uses the GUID as the key and maps that to a struct that
-				// has the full length and a map of the known portions. This known portion map uses
-				// the offset of the portion as the key and maps that to a string. Only fully seen
-				// extended XMP streams are kept, the right one gets picked in ProcessXMP.
-
-				segLen -= kExtXMPPrefixLength;	// Adjust segLen to count just the XMP stream portion.
-
-				ioBuf.ptr += kExtXMPSignatureLength;	// Move ioBuf.ptr to the GUID.
-				GUID_32 guid;
-				XMP_Assert ( sizeof(guid.data) == 32 );
-				memcpy ( &guid.data[0], ioBuf.ptr, sizeof(guid.data) );	// AUDIT: Use of sizeof(guid.data) is safe.
-
-				ioBuf.ptr += 32;	// Move ioBuf.ptr to the length and offset.
-				XMP_Uns32 fullLen = GetUns32BE ( ioBuf.ptr );
-				XMP_Uns32 offset  = GetUns32BE ( ioBuf.ptr+4 );
-
-				ioBuf.ptr += 8;	// Move ioBuf.ptr to the XMP stream portion.
-
-				#if Trace_UnlimitedJPEG
-					printf ( "New extended XMP portion: fullLen %d, offset %d, GUID %.32s\n", fullLen, offset, guid.data );
-				#endif
-
-				// Find the ExtXMPContent for this GUID, and the string for this portion's offset.
-
-				ExtendedXMPInfo::iterator guidPos = extXMP.find ( guid );
-				if ( guidPos == extXMP.end() ) {
-					ExtXMPContent newExtContent ( fullLen );
-					guidPos = extXMP.insert ( extXMP.begin(), ExtendedXMPInfo::value_type ( guid, newExtContent ) );
-				}
-
-				ExtXMPPortions::iterator offsetPos;
-				ExtXMPContent & extContent = guidPos->second;
-
-				if ( extContent.portions.empty() ) {
-					// When new create a full size offset 0 string, to which all in-order portions will get appended.
-					offsetPos = extContent.portions.insert ( extContent.portions.begin(),
-															 ExtXMPPortions::value_type ( 0, std::string() ) );
-					offsetPos->second.reserve ( extContent.length );
-				}
-
-				// Try to append this portion to a logically contiguous preceeding one.
-
-				if ( offset == 0 ) {
-					offsetPos = extContent.portions.begin();
-					XMP_Assert ( (offsetPos->first == 0) && (offsetPos->second.size() == 0) );
-				} else {
-					offsetPos = extContent.portions.lower_bound ( offset );
-					--offsetPos;	// Back up to the portion whose offset is less than the new offset.
-					if ( (offsetPos->first + offsetPos->second.size()) != offset ) {
-						// Can't append, create a new portion.
-						offsetPos = extContent.portions.insert ( extContent.portions.begin(),
-																 ExtXMPPortions::value_type ( offset, std::string() ) );
-					}
-				}
-
-				// Cache this portion of the extended XMP.
-
-				std::string & extPortion = offsetPos->second;
-				ok = CheckFileSpace ( fileRef, &ioBuf, segLen );	// Buffer the full content portion.
-				if ( ! ok ) return;	// Must be a truncated file.
-				extPortion.append ( (XMP_StringPtr)ioBuf.ptr, segLen );
-				ioBuf.ptr += segLen;
-
+				fileRef->Seek ( contentOrigin, kXMP_SeekFromStart );
+				fileRef->ReadAll ( buffer, contentLen );
+				CacheExtendedXMP ( &extXMP, buffer, contentLen );
 				continue;	// Move on to the next marker.
 
 			}
-
-			// If we get here this is some other uninteresting APP1 marker segment, skip it.
-
-			if ( segLen <= size_t(ioBuf.limit - ioBuf.ptr) ) {
-				ioBuf.ptr += segLen;	// The next marker is in this buffer.
-			} else {
-				// The next marker is beyond this buffer, move to the start of it and fill the buffer.
-				size_t skipCount = segLen - (ioBuf.limit - ioBuf.ptr);		// The amount to move beyond this buffer.
-				XMP_Int64 bufferEnd = ioBuf.filePos + (XMP_Int64)ioBuf.len;	// File offset at the end of this buffer.
-				XMP_Int64 nextPos = bufferEnd + (XMP_Int64)skipCount;
-				MoveToOffset ( fileRef, nextPos, &ioBuf );
-			}
-
-		} else {
-
-			// This is a non-terminating but uninteresting marker segment. Skip it.
-
-			++ioBuf.ptr;	// Move ioBuf.ptr to the marker segment length field.
-			if ( ! CheckFileSpace ( fileRef, &ioBuf, 2 ) ) return;
-
-			segLen = GetUns16BE ( ioBuf.ptr );	// Remember that the length includes itself.
-			if ( segLen < 2 ) return;		// Invalid JPEG.
-
-			if ( segLen <= size_t(ioBuf.limit - ioBuf.ptr) ) {
-				ioBuf.ptr += segLen;	// The next marker is in this buffer.
-			} else {
-				// The next marker is beyond this buffer, move to the start of it and fill the buffer.
-				size_t skipCount = segLen - (ioBuf.limit - ioBuf.ptr);		// The amount to move beyond this buffer.
-				XMP_Int64 bufferEnd = ioBuf.filePos + (XMP_Int64)ioBuf.len;	// File offset at the end of this buffer.
-				XMP_Int64 nextPos = bufferEnd + (XMP_Int64)skipCount;
-				MoveToOffset ( fileRef, nextPos, &ioBuf );
-			}
-
-			continue;	// Move on to the next marker.
 
 		}
+		
+		// None of the above, seek to the next marker.
+		fileRef->Seek ( (contentOrigin + contentLen) , kXMP_SeekFromStart );
 
 	}
 
@@ -610,6 +547,8 @@ void JPEG_MetaHandler::ProcessXMP()
 		this->psirMgr = new PSIR_FileWriter();
 		this->iptcMgr = new IPTC_Writer();	// ! Parse it later.
 	}
+	if ( this->parent )
+		exifMgr->SetErrorCallback( &this->parent->errorCallback );
 
 	// Set up everything for the legacy import, but don't do it yet. This lets us do a forced legacy
 	// import if the XMP packet gets parsing errors.
@@ -666,14 +605,8 @@ void JPEG_MetaHandler::ProcessXMP()
 		XMP_StringLen packetLen = (XMP_StringLen)this->xmpPacket.size();
 		try {
 			this->xmpObj.ParseFromBuffer ( packetStr, packetLen );
-			haveXMP = true;
-		} catch ( ... ) {
-			XMP_ClearOption ( options, k2XMP_FileHadXMP );
-			if ( haveIPTC ) iptc.ParseMemoryDataSets ( iptcInfo.dataPtr, iptcInfo.dataLen );
-			if ( iptcDigestState == kDigestMatches ) iptcDigestState = kDigestMissing;
-			ImportPhotoData ( exif, iptc, psir, iptcDigestState, &this->xmpObj, options );
-			throw;	// ! Rethrow the exception, don't absorb it.
-		}
+		} catch ( ... ) { /* Ignore parsing failures, someday we hope to get partial XMP back. */ }
+		haveXMP = true;
 	}
 
 	// Process the extended XMP if it has a matching GUID.
@@ -822,8 +755,6 @@ void JPEG_MetaHandler::UpdateFile ( bool doSafeUpdate )
 // rest of the file is copied, skipping the old Exif, XMP, and PSIR. The checking for old metadata
 // stops at the first SOFn marker.
 
-// *** What about Mac resources?
-
 void JPEG_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 {
 	XMP_IO* origRef = this->parent->ioRef;
@@ -832,16 +763,16 @@ void JPEG_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 	void *        abortArg   = this->parent->abortArg;
 	const bool    checkAbort = (abortProc != 0);
 
-	XMP_Uns16 marker;
-	size_t	  segLen;	// ! Must be a size to hold at least 64k+2.
-	IOBuffer  ioBuf;
-	XMP_Uns32 first4;
+	XMP_Uns16 marker, contentLen;
 
-	XMP_Assert ( kIOBufferSize >= (2 + 64*1024) );	// Enough for a marker plus maximum contents.
-
-	if ( origRef->Length() == 0 ) return;	// Tolerate empty files.
-	origRef->Rewind();
-	tempRef->Truncate ( 0 );
+	static const size_t kBufferSize = 64*1024;	// Enough for a segment with maximum contents.
+	XMP_Uns8 buffer [kBufferSize];
+	
+	XMP_Int64 origLength = origRef->Length();
+	if ( origLength == 0 ) return;	// Tolerate empty files.
+	if ( origLength < 4 ) {
+		XMP_Throw ( "JPEG must have at least SOI and EOI markers", kXMPErr_BadJPEG );
+	}
 
 	if ( ! skipReconcile ) {
 		// Update the IPTC-IIM and native TIFF/Exif metadata, and reserialize the now final XMP packet.
@@ -849,45 +780,46 @@ void JPEG_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 		this->xmpObj.SerializeToBuffer ( &this->xmpPacket, kXMP_UseCompactFormat );
 	}
 
-	RefillBuffer ( origRef, &ioBuf );
-	if ( ! CheckFileSpace ( origRef, &ioBuf, 4 ) ) {
-		XMP_Throw ( "JPEG must have at least SOI and EOI markers", kXMPErr_BadJPEG );
-	}
+	origRef->Rewind();
+	tempRef->Truncate ( 0 );
 
-	marker = GetUns16BE ( ioBuf.ptr );
+	marker = XIO::ReadUns16_BE ( origRef );	// Just read the SOI marker.
 	if ( marker != 0xFFD8 ) XMP_Throw ( "Missing SOI marker", kXMPErr_BadJPEG );
-	tempRef->Write ( ioBuf.ptr, 2 );
-	ioBuf.ptr += 2;
+	XIO::WriteUns16_BE ( tempRef, marker );
 
-	// Copy the leading APP0 marker segments.
+	// Copy any leading APP0 marker segments.
 
 	while ( true ) {
 
 		if ( checkAbort && abortProc(abortArg) ) {
 			XMP_Throw ( "JPEG_MetaHandler::WriteFile - User abort", kXMPErr_UserAbort );
 		}
-
-		if ( ! CheckFileSpace ( origRef, &ioBuf, 2 ) ) XMP_Throw ( "Unexpected end to JPEG", kXMPErr_BadJPEG );
-		marker = GetUns16BE ( ioBuf.ptr );
+		
+		if ( ! XIO::CheckFileSpace ( origRef, 2 ) ) break;	// Tolerate a file that ends abruptly.
+		
+		marker = XIO::ReadUns16_BE ( origRef );	// Read the next marker.
 		if ( marker == 0xFFFF ) {
-			tempRef->Write ( ioBuf.ptr, 1 );	// Copy the 0xFF pad byte.
-			++ioBuf.ptr;
+			// Have a pad byte, skip it. These are almost unheard of, so efficiency isn't critical.
+			origRef->Seek ( -1, kXMP_SeekFromCurrent );	// Skip the first 0xFF, read the second again.
 			continue;
 		}
 
-		if ( marker != 0xFFE0 ) break;
+		if ( marker != 0xFFE0 ) break;	// Have a non-APP0 marker.
+		XIO::WriteUns16_BE ( tempRef, marker );	// Write the APP0 marker.
+		
+		contentLen = XIO::ReadUns16_BE ( origRef );	// Copy the APP0 segment's length.
+		XIO::WriteUns16_BE ( tempRef, contentLen );
 
-		if ( ! CheckFileSpace ( origRef, &ioBuf, 4 ) ) XMP_Throw ( "Unexpected end to JPEG", kXMPErr_BadJPEG );
-		segLen = GetUns16BE ( ioBuf.ptr+2 );
-		segLen += 2;	// ! Don't do above in case machine does 16 bit "+".
-
-		if ( ! CheckFileSpace ( origRef, &ioBuf, segLen ) ) XMP_Throw ( "Unexpected end to JPEG", kXMPErr_BadJPEG );
-		tempRef->Write ( ioBuf.ptr, (XMP_Int32)segLen );
-		ioBuf.ptr += segLen;
+		if ( contentLen < 2 ) XMP_Throw ( "Invalid JPEG segment length", kXMPErr_BadJPEG );
+		contentLen -= 2;	// Reduce to just the content length.
+		origRef->ReadAll ( buffer, contentLen );	// Copy the APP0 segment's content.
+		tempRef->Write ( buffer, contentLen );
 
 	}
 
 	// Write the new Exif APP1 marker segment.
+
+	XMP_Uns32 first4;
 
 	if ( this->exifMgr != 0 ) {
 
@@ -965,73 +897,91 @@ void JPEG_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 
 	// Copy remaining marker segments, skipping old metadata, to the first SOS marker or to EOI.
 
+	origRef->Seek ( -2, kXMP_SeekFromCurrent );	// Back up to the marker from the end of the APP0 copy loop.
+	
 	while ( true ) {
 
 		if ( checkAbort && abortProc(abortArg) ) {
 			XMP_Throw ( "JPEG_MetaHandler::WriteFile - User abort", kXMPErr_UserAbort );
 		}
 
-		if ( ! CheckFileSpace ( origRef, &ioBuf, 2 ) ) XMP_Throw ( "Unexpected end to JPEG", kXMPErr_BadJPEG );
-		marker = GetUns16BE ( ioBuf.ptr );
+		if ( ! XIO::CheckFileSpace ( origRef, 2 ) ) break;	// Tolerate a file that ends abruptly.
+		
+		marker = XIO::ReadUns16_BE ( origRef );	// Read the next marker.
 		if ( marker == 0xFFFF ) {
-			tempRef->Write ( ioBuf.ptr, 1 );	// Copy the 0xFF pad byte.
-			++ioBuf.ptr;
+			// Have a pad byte, skip it. These are almost unheard of, so efficiency isn't critical.
+			origRef->Seek ( -1, kXMP_SeekFromCurrent );	// Skip the first 0xFF, read the second again.
 			continue;
 		}
 
-		if ( (marker == 0xFFDA) || (marker == 0xFFD9) ) break;	// Quit at the first SOS marker or at EOI.
+		if ( (marker == 0xFFDA) || (marker == 0xFFD9) ) {	// Quit at the first SOS marker or at EOI.
+			origRef->Seek ( -2, kXMP_SeekFromCurrent );	// The tail copy must include this marker.
+			break;
+		}
 
 		if ( (marker == 0xFF01) ||	// Ill-formed file if we encounter a TEM or RSTn marker.
 			 ((0xFFD0 <= marker) && (marker <= 0xFFD7)) ) {
 			XMP_Throw ( "Unexpected TEM or RSTn marker", kXMPErr_BadJPEG );
 		}
 
-		if ( ! CheckFileSpace ( origRef, &ioBuf, 4 ) ) XMP_Throw ( "Unexpected end to JPEG", kXMPErr_BadJPEG );
-		segLen = GetUns16BE ( ioBuf.ptr+2 );
-
-		if ( ! CheckFileSpace ( origRef, &ioBuf, 2+segLen ) ) XMP_Throw ( "Unexpected end to JPEG", kXMPErr_BadJPEG );
-
+		contentLen = XIO::ReadUns16_BE ( origRef );	// Read this segment's length.
+		if ( contentLen < 2 ) XMP_Throw ( "Invalid JPEG segment length", kXMPErr_BadJPEG );
+		contentLen -= 2;	// Reduce to just the content length.
+		
+		XMP_Int64 contentOrigin = origRef->Offset();
 		bool copySegment = true;
-		XMP_Uns8* signaturePtr = ioBuf.ptr + 4;
+		size_t signatureLen;
 
-		if ( marker == 0xFFED ) {
-			if ( (segLen >= kPSIRSignatureLength) &&
-				 CheckBytes ( signaturePtr, kPSIRSignatureString, kPSIRSignatureLength ) ) {
+		if ( (marker == 0xFFED) && (contentLen >= kPSIRSignatureLength) ) {
+
+			// This is an APP13 segment, skip if it is the old PSIR.
+			signatureLen = origRef->Read ( buffer, kPSIRSignatureLength );
+			if ( (signatureLen == kPSIRSignatureLength) &&
+				 CheckBytes ( &buffer[0], kPSIRSignatureString, kPSIRSignatureLength ) ) {
 				copySegment = false;
 			}
-		} else if ( marker == 0xFFE1 ) {
-			if ( (segLen >= kExifSignatureLength) &&
-				 (CheckBytes ( signaturePtr, kExifSignatureString, kExifSignatureLength ) ||
-				  CheckBytes ( signaturePtr, kExifSignatureAltStr, kExifSignatureLength )) ) {
-				copySegment = false;
-			} else if ( (segLen >= kMainXMPSignatureLength) &&
-						CheckBytes ( signaturePtr, kMainXMPSignatureString, kMainXMPSignatureLength ) ) {
-				copySegment = false;
-			} else if ( (segLen >= kExtXMPPrefixLength) &&
-				 		CheckBytes ( signaturePtr, kExtXMPSignatureString, kExtXMPSignatureLength ) ) {
+
+		} else if ( (marker == 0xFFE1) && (contentLen >= kExifSignatureLength) ) {	// Check for the shortest signature.
+
+			// This is an APP1 segment, skip if it is the old Exif or XMP.
+			
+			XMP_Assert ( (kExifSignatureLength < kMainXMPSignatureLength) &&
+						 (kMainXMPSignatureLength < kExtXMPSignatureLength) );
+			signatureLen = origRef->Read ( buffer, kExtXMPSignatureLength );	// Read for the longest signature.
+
+			if ( (signatureLen >= kExifSignatureLength) &&
+				 (CheckBytes ( &buffer[0], kExifSignatureString, kExifSignatureLength ) ||
+				  CheckBytes ( &buffer[0], kExifSignatureAltStr, kExifSignatureLength )) ) {
 				copySegment = false;
 			}
+			
+			if ( copySegment && (signatureLen >= kMainXMPSignatureLength) &&
+				 CheckBytes ( &buffer[0], kMainXMPSignatureString, kMainXMPSignatureLength ) ) {
+				copySegment = false;
+			}
+			
+			if ( copySegment && (signatureLen == kExtXMPSignatureLength) &&
+				 CheckBytes ( &buffer[0], kExtXMPSignatureString, kExtXMPPrefixLength ) ) {
+				copySegment = false;
+			}
+			
 		}
-
-		if ( copySegment ) tempRef->Write ( ioBuf.ptr, (XMP_Int32)(2+segLen) );
-
-		ioBuf.ptr += 2+segLen;
+		
+		if ( ! copySegment ) {
+			origRef->Seek ( (contentOrigin + contentLen), kXMP_SeekFromStart );
+		} else {
+			XIO::WriteUns16_BE ( tempRef, marker );
+			XIO::WriteUns16_BE ( tempRef, (contentLen + 2) );
+			origRef->Seek ( contentOrigin, kXMP_SeekFromStart );
+			origRef->ReadAll ( buffer, contentLen );
+			tempRef->Write ( buffer, contentLen );
+		}
 
 	}
 
 	// Copy the remainder of the source file.
 
-	size_t bufTail = ioBuf.len - (ioBuf.ptr - &ioBuf.data[0]);
-	tempRef->Write ( ioBuf.ptr, (XMP_Int32)bufTail );
-	ioBuf.ptr += bufTail;
-
-	while ( true ) {
-		RefillBuffer ( origRef, &ioBuf );
-		if ( ioBuf.len == 0 ) break;
-		tempRef->Write ( ioBuf.ptr, (XMP_Int32)ioBuf.len );
-		ioBuf.ptr += ioBuf.len;
-	}
-
+	XIO::Copy ( origRef, tempRef, (origLength - origRef->Offset()) );
 	this->needsUpdate = false;
 
 }	// JPEG_MetaHandler::WriteTempFile

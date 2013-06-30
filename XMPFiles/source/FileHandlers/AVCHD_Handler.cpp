@@ -15,8 +15,10 @@
 #include "XMPFiles/source/XMPFiles_Impl.hpp"
 #include "source/XMPFiles_IO.hpp"
 #include "source/XIO.hpp"
+#include "source/IOUtils.hpp"
 
 #include "XMPFiles/source/FileHandlers/AVCHD_Handler.hpp"
+#include "XMPFiles/source/FormatSupport/PackageFormat_Support.hpp"
 
 #include "source/UnicodeConversions.hpp"
 #include "third-party/zuid/interfaces/MD5.h"
@@ -403,6 +405,16 @@ static bool MakeLeafPath ( std::string * path, XMP_StringPtr root, XMP_StringPtr
 
 		path->erase ( partialLen );
 		*path += ".MPL";
+		if ( Host_IO::GetFileMode ( path->c_str() ) == Host_IO::kFMode_IsFile ) return true;
+
+	} else if ( XMP_LitMatch ( suffix, ".m2ts" ) ) {	// Special case of ".mts" for the stream file.
+
+		path->erase ( partialLen );
+		*path += ".mts";
+		if ( Host_IO::GetFileMode ( path->c_str() ) == Host_IO::kFMode_IsFile ) return true;
+
+		path->erase ( partialLen );
+		*path += ".MTS";
 		if ( Host_IO::GetFileMode ( path->c_str() ) == Host_IO::kFMode_IsFile ) return true;
 
 	}
@@ -1221,10 +1233,15 @@ static bool ReadAVCHDPlaylistExtensionData ( XMPFiles_IO & mplFile,
 
 	if ( extensionData.mMakersPrivateDataStartAddress > 0 ) {
 
-		if ( ! avchdLegacyData.mClipExtensionData.mMakersPrivateData.mPanasonicPrivateData.mPresent ) return false;
+		// return true here because all the data is already read successfully except the maker's private data and more
+		// specifically of panasonic. So if the relevant panasonic data is not present we just skip it.
+		// Assumption here is that if its not present in ClipExtension then it will not be in Playlist extension
+		if ( ! avchdLegacyData.mClipExtensionData.mMakersPrivateData.mPanasonicPrivateData.mPresent ) return true;
 
 		mplFile.Seek ( dataBlockStart + extensionData.mMakersPrivateDataStartAddress, kXMP_SeekFromStart );
-
+		
+		// Here private data was found.If the data was panasonic private data and we were unable to read it ,
+		// Return false 
 		if ( ! ReadAVCHDMakersPrivateData ( mplFile, playlistMarkID, extensionData.mMakersPrivateData ) ) return false;
 
 	}
@@ -1450,10 +1467,10 @@ static bool ReadAVCHDLegacyPlaylistFile ( const std::string& mplPath,
 
 static bool FindAVCHDLegacyPlaylistFile ( const std::string& strRootPath,
 										  const std::string& strClipName,
-										  AVCHD_LegacyMetadata& avchdLegacyData )
+										  AVCHD_LegacyMetadata& avchdLegacyData,
+										  std::string &mplPath )
 {
 	bool success = false;
-	std::string mplPath;
 
 	// Find the corresponding .MPL file -- because of clip spanning the .MPL name may not match the
 	// .CPI name for a given clip -- we need to open .MPL files and look for one that contains a
@@ -1510,12 +1527,13 @@ static bool FindAVCHDLegacyPlaylistFile ( const std::string& strRootPath,
 static bool ReadAVCHDLegacyMetadata ( const std::string& strPath,
 									  const std::string& strRootPath,
 									  const std::string& strClipName,
-									  AVCHD_LegacyMetadata& avchdLegacyData )
+									  AVCHD_LegacyMetadata& avchdLegacyData,
+									  std::string&	mplFile)
 {
 	bool success = ReadAVCHDLegacyClipFile ( strPath, avchdLegacyData );
 
 	if ( success && avchdLegacyData.mClipExtensionData.mPresent ) {
-		success = FindAVCHDLegacyPlaylistFile ( strRootPath, strClipName, avchdLegacyData );
+		success = FindAVCHDLegacyPlaylistFile ( strRootPath, strClipName, avchdLegacyData, mplFile );
 	}
 
 	return success;
@@ -1820,7 +1838,7 @@ AVCHD_MetaHandler::AVCHD_MetaHandler ( XMPFiles * _parent )
 
 	if ( this->parent->tempPtr == 0 ) {
 		// The CheckFormat call might have been skipped.
-		this->parent->tempPtr = CreatePseudoClipPath ( this->parent->filePath );
+		this->parent->tempPtr = CreatePseudoClipPath ( this->parent->GetFilePath() );
 	}
 
 	this->rootPath.assign ( (char*) this->parent->tempPtr );
@@ -1984,6 +2002,130 @@ bool AVCHD_MetaHandler::GetFileModDate ( XMP_DateTime * modDate )
 }	// AVCHD_MetaHandler::GetFileModDate
 
 // =================================================================================================
+// AVCHD_MetaHandler::FillMetadataFiles
+// ================================
+void AVCHD_MetaHandler::FillMetadataFiles ( std::vector<std::string> * metadataFiles)
+{
+	std::string noExtPath, filePath, altPath;
+
+	noExtPath = rootPath + kDirChar + "BDMV" + kDirChar + "STREAM" + kDirChar + clipName;
+	filePath  = noExtPath + ".xmp";
+	if ( ! Host_IO::Exists ( filePath.c_str() ) ) {
+		altPath = noExtPath + ".XMP";
+		if ( Host_IO::Exists ( altPath.c_str() ) ) filePath = altPath;
+	}
+	metadataFiles->push_back ( filePath );
+
+	noExtPath = rootPath + kDirChar + "BDMV" + kDirChar + "CLIPINF" + kDirChar + clipName;
+	filePath  = noExtPath + ".clpi";
+	if ( ! Host_IO::Exists ( filePath.c_str() ) ) {
+		altPath = noExtPath + ".CLPI";
+		if ( ! Host_IO::Exists ( altPath.c_str() ) ) altPath = noExtPath + ".cpi";
+		if ( ! Host_IO::Exists ( altPath.c_str() ) ) altPath = noExtPath + ".CPI";
+		if ( Host_IO::Exists ( altPath.c_str() ) ) filePath = altPath;
+	}
+	metadataFiles->push_back ( filePath );
+
+}	// 	FillMetadataFiles_AVCHD
+
+// =================================================================================================
+// AVCHD_MetaHandler::IsMetadataWritable
+// =======================================
+
+bool AVCHD_MetaHandler::IsMetadataWritable ( )
+{
+	std::vector<std::string> metadataFiles;
+	FillMetadataFiles(&metadataFiles);
+	std::vector<std::string>::iterator itr = metadataFiles.begin();
+	// Check whether sidecar is writable, if not then check if it can be created.
+	return Host_IO::Writable( itr->c_str(), true );
+}// AVCHD_MetaHandler::IsMetadataWritable
+
+// =================================================================================================
+// AVCHD_MetaHandler::FillAssociatedResources
+// ======================================
+void AVCHD_MetaHandler::FillAssociatedResources ( std::vector<std::string> * resourceList )
+{
+	/// The possible associated resources:
+	///   BDMV/
+	///         index.bdmv
+	///         MovieObject.bdmv
+	///         PLAYLIST/
+	///				xxxxx.mpls   
+	///         STREAM/
+	///				zzzzz.m2ts
+	///             zzzzz.xmp
+	///         CLIPINF/
+	///				zzzzz.clpi
+	///         BACKUP/
+	//    xxxxx is a five digit playlist name
+	//    zzzzz is a five digit clip name
+	//
+	std::string bdmvPath = rootPath + kDirChar + "BDMV" + kDirChar;
+	std::string filePath, clipInfoPath;
+	//Add RootPath
+	filePath = rootPath + kDirChar;
+	PackageFormat_Support::AddResourceIfExists( resourceList, filePath );
+	// Add existing files under the folder "BDMV"
+	filePath = bdmvPath + "index.bdmv";
+	if ( ! PackageFormat_Support::AddResourceIfExists ( resourceList, filePath ) ) {
+		filePath = bdmvPath + "INDEX.BDMV";
+		if ( ! PackageFormat_Support::AddResourceIfExists ( resourceList, filePath ) ) {
+			filePath = bdmvPath + "index.bdm";
+			if ( ! PackageFormat_Support::AddResourceIfExists ( resourceList, filePath ) ) {
+				filePath = bdmvPath + "INDEX.BDM";
+				PackageFormat_Support::AddResourceIfExists ( resourceList, filePath );
+			}
+		}
+	}
+	filePath = bdmvPath + "MovieObject.bdmv";
+	if ( ! PackageFormat_Support::AddResourceIfExists ( resourceList, filePath ) ) {
+		filePath = bdmvPath + "MOVIEOBJECT.BDMV";
+		if ( ! PackageFormat_Support::AddResourceIfExists ( resourceList, filePath ) ) {
+			filePath = bdmvPath + "MovieObj.bdm";
+			if ( ! PackageFormat_Support::AddResourceIfExists ( resourceList, filePath ) ) {
+				filePath = bdmvPath + "MOVIEOBJ.BDM";
+				PackageFormat_Support::AddResourceIfExists ( resourceList, filePath );
+			}
+		}
+	}
+
+
+	if ( MakeClipInfoPath ( &filePath, ".clpi", true /* checkFile */ ) ) {
+		PackageFormat_Support::AddResourceIfExists ( resourceList, filePath );
+		clipInfoPath = filePath;
+	}
+	else {
+		filePath = bdmvPath + "CLIPINF" + kDirChar ;
+		PackageFormat_Support::AddResourceIfExists ( resourceList, filePath );
+	}
+
+	bool addedStreamDir=false;
+	if ( MakeClipStreamPath ( &filePath, ".xmp", true /* checkFile */ ) ) {
+		PackageFormat_Support::AddResourceIfExists ( resourceList, filePath );
+		addedStreamDir = true;
+	}
+
+
+	if ( MakeClipStreamPath ( &filePath, ".m2ts", true /* checkFile */ ) ) {
+		PackageFormat_Support::AddResourceIfExists ( resourceList, filePath );
+	}
+	else if ( ! addedStreamDir ) {
+		filePath = bdmvPath + "STREAM" + kDirChar ;
+		PackageFormat_Support::AddResourceIfExists ( resourceList, filePath );
+	}
+
+	AVCHD_LegacyMetadata avchdLegacyData;
+	if ( ReadAVCHDLegacyMetadata ( clipInfoPath, this->rootPath, this->clipName, avchdLegacyData, filePath ) ) {
+		PackageFormat_Support::AddResourceIfExists ( resourceList, filePath );
+	}	
+	else {
+		filePath = bdmvPath + "PLAYLIST" + kDirChar ;
+		PackageFormat_Support::AddResourceIfExists ( resourceList, filePath );
+	}
+}
+	
+// =================================================================================================
 // AVCHD_MetaHandler::CacheFileData
 // ================================
 
@@ -1992,22 +2134,24 @@ void AVCHD_MetaHandler::CacheFileData()
 	XMP_Assert ( ! this->containsXMP );
 
 	if ( this->parent->UsesClientIO() ) {
-		XMP_Throw ( "XDCAM cannot be used with client-managed I/O", kXMPErr_InternalFailure );
+		XMP_Throw ( "AVCHD cannot be used with client-managed I/O", kXMPErr_InternalFailure );
 	}
 
 	// See if the clip's .XMP file exists.
 
 	std::string xmpPath;
 	bool found = this->MakeClipStreamPath ( &xmpPath, ".xmp", true /* checkFile */ );
-	if ( ! found ) return;
+	if ( ! found ) return;	// No XMP.
+	XMP_Assert ( Host_IO::Exists ( xmpPath.c_str() ) );	// MakeClipStreamPath should ensure this.
 
-	// Read the entire .XMP file.
+	// Read the entire .XMP file. We know the XMP exists, New_XMPFiles_IO is supposed to return 0
+	// only if the file does not exist.
 
 	bool readOnly = XMP_OptionIsClear ( this->parent->openFlags, kXMPFiles_OpenForUpdate );
 
 	XMP_Assert ( this->parent->ioRef == 0 );
 	XMPFiles_IO* xmpFile =  XMPFiles_IO::New_XMPFiles_IO ( xmpPath.c_str(), readOnly );
-	if ( xmpFile == 0 ) return;	// The open failed.
+	if ( xmpFile == 0 ) XMP_Throw ( "AVCHD XMP file open failure", kXMPErr_InternalFailure );
 	this->parent->ioRef = xmpFile;
 
 	XMP_Int64 xmpLen = xmpFile->Length();
@@ -2043,10 +2187,10 @@ void AVCHD_MetaHandler::ProcessXMP()
 
 	// read clip info
 	AVCHD_LegacyMetadata avchdLegacyData;
-	std::string strPath;
+	std::string strPath,mplfile;
 
 	bool ok = this->MakeClipInfoPath ( &strPath, ".clpi", true /* checkFile */ );
-	if ( ok ) ReadAVCHDLegacyMetadata ( strPath, this->rootPath, this->clipName, avchdLegacyData );
+	if ( ok ) ReadAVCHDLegacyMetadata ( strPath, this->rootPath, this->clipName, avchdLegacyData , mplfile);
 	if ( ! ok ) return;
 
 	const AVCHD_blkPlayListMarkExt& markExt = avchdLegacyData.mPlaylistExtensionData.mPlaylistMarkExt;

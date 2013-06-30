@@ -42,137 +42,6 @@
 
 namespace ID3_Support {
 
-	// Genres
-	static char Genres[128][32] = {
-		"Blues",			// 0
-		"Classic Rock",		// 1
-		"Country",			// 2
-		"Dance",
-		"Disco",
-		"Funk",
-		"Grunge",
-		"Hip-Hop",
-		"Jazz",				// 8
-		"Metal",
-		"New Age",			// 10
-		"Oldies",
-		"Other",			// 12
-		"Pop",
-		"R&B",
-		"Rap",
-		"Reggae",			// 16
-		"Rock",				// 17
-		"Techno",
-		"Industrial",
-		"Alternative",
-		"Ska",
-		"Death Metal",
-		"Pranks",
-		"Soundtrack",		// 24
-		"Euro-Techno",
-		"Ambient",
-		"Trip-Hop",
-		"Vocal",
-		"Jazz+Funk",
-		"Fusion",
-		"Trance",
-		"Classical",		// 32
-		"Instrumental",
-		"Acid",
-		"House",
-		"Game",
-		"Sound Clip",
-		"Gospel",
-		"Noise",
-		"AlternRock",
-		"Bass",
-		"Soul",				//42
-		"Punk",
-		"Space",
-		"Meditative",
-		"Instrumental Pop",
-		"Instrumental Rock",
-		"Ethnic",
-		"Gothic",
-		"Darkwave",
-		"Techno-Industrial",
-		"Electronic",
-		"Pop-Folk",
-		"Eurodance",
-		"Dream",
-		"Southern Rock",
-		"Comedy",
-		"Cult",
-		"Gangsta",
-		"Top 40",
-		"Christian Rap",
-		"Pop/Funk",
-		"Jungle",
-		"Native American",
-		"Cabaret",
-		"New Wave",			// 66
-		"Psychadelic",
-		"Rave",
-		"Showtunes",
-		"Trailer",
-		"Lo-Fi",
-		"Tribal",
-		"Acid Punk",
-		"Acid Jazz",
-		"Polka",
-		"Retro",
-		"Musical",
-		"Rock & Roll",
-		"Hard Rock",
-		"Folk",				// 80
-		"Folk-Rock",
-		"National Folk",
-		"Swing",
-		"Fast Fusion",
-		"Bebob",
-		"Latin",
-		"Revival",
-		"Celtic",
-		"Bluegrass",		// 89
-		"Avantgarde",
-		"Gothic Rock",
-		"Progressive Rock",
-		"Psychedelic Rock",
-		"Symphonic Rock",
-		"Slow Rock",
-		"Big Band",
-		"Chorus",
-		"Easy Listening",
-		"Acoustic",
-		"Humour",			// 100
-		"Speech",
-		"Chanson",
-		"Opera",
-		"Chamber Music",
-		"Sonata",
-		"Symphony",
-		"Booty Bass",
-		"Primus",
-		"Porn Groove",
-		"Satire",
-		"Slow Jam",
-		"Club",
-		"Tango",
-		"Samba",
-		"Folklore",
-		"Ballad",
-		"Power Ballad",
-		"Rhythmic Soul",
-		"Freestyle",
-		"Duet",
-		"Punk Rock",
-		"Drum Solo",
-		"A capella",
-		"Euro-House",
-		"Dance Hall",
-		"Unknown"			// 126
-	};
-
 	// =============================================================================================
 
 	inline XMP_Int32 synchToInt32 ( XMP_Uns32 rawDataBE ) {
@@ -191,8 +60,21 @@ namespace ID3_Support {
 
 	// =============================================================================================
 	
-	bool InitializeGlobals();
+	bool InitializeGlobals();	// Initialize and terminate the known genre maps.
 	void TerminateGlobals();
+	
+	// =============================================================================================
+
+	namespace GenreUtils {	
+		
+		void ConvertGenreToXMP ( const char * id3Genre, std::string * xmpGenre );
+		void ConvertGenreToID3 ( const char * xmpGenre, std::string * id3Genre );
+
+		// Internal utilities, exposed for unit testing:
+		const char * FindGenreName ( const std::string & code );
+		const char * FindGenreCode ( const std::string & name );
+
+	};
 
 	// =============================================================================================
 

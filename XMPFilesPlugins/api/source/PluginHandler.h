@@ -14,13 +14,18 @@
 * This contains the prototype for the plug-in based File Handlers. Plug-in need 
 * to implement exported function InitializePlugin.
 * 
-* @author Praveen Kumar Goyal (pkgoyal)
-* @bug No known bugs.
 ***************************************************************************/
 
 #ifndef __Plugin_Handler_hpp__
 #define __Plugin_Handler_hpp__	1
 #include "PluginConst.h"
+
+// versioning
+#define XMP_PLUGIN_VERSION_1	1	// CS6
+#define XMP_PLUGIN_VERSION_2	2	//
+#define XMP_PLUGIN_VERSION_3	3	// CS7
+
+#define XMP_PLUGIN_VERSION		XMP_PLUGIN_VERSION_3
 
 namespace XMP_PLUGIN
 {
@@ -114,7 +119,7 @@ typedef XMPErrorID (*TerminateSessionProc)( SessionRef session, WXMP_Error * wEr
  *  @param wError		WXMP_Error structure which will be filled by the API if any error occurs.
  *  @return				kXMPErr_NoError on success otherwise error id of the failure.
  */
-typedef XMPErrorID (*CheckSessionFileFormatProc)( XMP_StringPtr uid, XMP_StringPtr filePath, XMP_IORef fileRef, bool * result, WXMP_Error * wError );
+typedef XMPErrorID (*CheckSessionFileFormatProc)( XMP_StringPtr uid, XMP_StringPtr filePath, XMP_IORef fileRef, XMP_Bool * result, WXMP_Error * wError );
 
 /** 
  *  Function pointer to the function CheckFolderFormat which will be called to
@@ -129,18 +134,18 @@ typedef XMPErrorID (*CheckSessionFileFormatProc)( XMP_StringPtr uid, XMP_StringP
  *  @param wError		WXMP_Error structure which will be filled by the API if any error occurs.
  *  @return				kXMPErr_NoError on success otherwise error id of the failure.
  */
-typedef XMPErrorID (*CheckSessionFolderFormatProc)( XMP_StringPtr uid, XMP_StringPtr rootPath, XMP_StringPtr gpName, XMP_StringPtr parentName, XMP_StringPtr leafName, bool * result, WXMP_Error * wError );
+typedef XMPErrorID (*CheckSessionFolderFormatProc)( XMP_StringPtr uid, XMP_StringPtr rootPath, XMP_StringPtr gpName, XMP_StringPtr parentName, XMP_StringPtr leafName, XMP_Bool * result, WXMP_Error * wError );
 
 /**
  * Function type for GetFileModDate. Returns the most recent file modification date for any file
  * associated with the path that is read to obtain metadata. A static routine in XMPFiles.
  *
  *  @param session		File Handler instance.
- *	@param ok			A pointer to a bool for the eventual public API function result.
+ *	@param ok			A pointer to a XMP_Bool for the eventual public API function result.
  *	@param modDate		A pointer to the date to be returned.
  *  @param wError		WXMP_Error structure which will be filled by the API if any error occurs.
  */
-typedef XMPErrorID (*GetSessionFileModDateProc) ( SessionRef session, bool * ok, XMP_DateTime * modDate, WXMP_Error * wError );
+typedef XMPErrorID (*GetSessionFileModDateProc) ( SessionRef session, XMP_Bool * ok, XMP_DateTime * modDate, WXMP_Error * wError );
 
 /** 
  *  Function pointer to the function CacheFileData which will be called to
@@ -165,7 +170,7 @@ typedef XMPErrorID (*CacheFileDataProc)( SessionRef session, XMP_IORef fileRef, 
  *  @param wError		WXMP_Error structure which will be filled by the API if any error occurs.
  *  @return				kXMPErr_NoError on success otherwise error id of the failure.
  */
-typedef XMPErrorID (*UpdateFileProc)( SessionRef session, XMP_IORef fileRef, bool doSafeUpdate, XMP_StringPtr xmpStr, WXMP_Error * wError );
+typedef XMPErrorID (*UpdateFileProc)( SessionRef session, XMP_IORef fileRef, XMP_Bool doSafeUpdate, XMP_StringPtr xmpStr, WXMP_Error * wError );
 
 /** 
  *  Function pointer to the function WriteTempFile. It write the entire file format into a
@@ -203,6 +208,65 @@ typedef XMPErrorID (*ImportToXMPProc)( SessionRef session, XMPMetaRef xmp, WXMP_
  */
 typedef XMPErrorID (*ExportFromXMPProc)( SessionRef session, XMPMetaRef xmp, WXMP_Error * wError );
 
+/** 
+ *  Function pointer to the function FillMetadataFiles. This function returns the list of file paths
+ *  associated with storing the metadata information.
+ *
+ *  @param session					File Handler instance.
+ *  @param metadataFiles			pointer of std::vector of std::string
+ *  @param SetClientStringVector	pointer to client provided function to fill the vector with strings.
+ *  @param wError					WXMP_Error structure which will be filled by the API if any error occurs.
+ *  @return							kXMPErr_NoError on success otherwise error id of the failure.
+ */
+typedef XMPErrorID (*FillMetadataFilesProc)( SessionRef session, StringVectorRef metadataFiles,
+	SetStringVectorProc SetClientStringVector, WXMP_Error * wError );
+
+/** 
+ *  Function pointer to the function FillAssociatedResources. This function returns the list of all file paths
+ *  associated to the opened session 
+ *
+ *  @param session					File Handler instance.
+ *  @param resourceList			    pointer of std::vector of std::string
+ *  @param SetClientStringVector	pointer to client provided function to fill the vector with strings.
+ *  @param wError					WXMP_Error structure which will be filled by the API if any error occurs.
+ *  @return							kXMPErr_NoError on success otherwise error id of the failure.
+ */
+typedef XMPErrorID (*FillAssociatedResourcesProc)( SessionRef session, StringVectorRef resourceList,
+	SetStringVectorProc SetClientStringVector, WXMP_Error * wError );
+
+/** 
+ *  Function pointer to the function ImportToXMP. Any non metadata from a file that is supposed 
+ *  to be mapped into a XMP namespace should be added to the XMP packet using this function.
+ *
+ *  @param session		File Handler instance.
+ *  @param xmpStr		A pointer to a buffer which contain the xmpData.
+ *  @param wError		WXMP_Error structure which will be filled by the API if any error occurs.
+ *  @return				kXMPErr_NoError on success otherwise error id of the failure.
+ */
+typedef XMPErrorID (*ImportToXMPStringProc)( SessionRef session, XMP_StringPtr* xmpStr , WXMP_Error * wError );
+
+/** 
+ *  Function pointer to the function ExportFromXMP. The XMP packet is supposed to be 
+ *  written to the file. If the packet contains any data that should be mapped back to
+ *  native (non-XMP) metadata values then that should happen here.
+ *
+ *  @param session		File Handler instance.
+ *  @param xmpStr		A pointer to a buffer which contain the xmpData.
+ *  @param wError		WXMP_Error structure which will be filled by the API if any error occurs.
+ *  @return				kXMPErr_NoError on success otherwise error id of the failure.
+ */
+typedef XMPErrorID (*ExportFromXMPStringProc)( SessionRef session, XMP_StringPtr xmpStr, WXMP_Error * wError );
+
+/** 
+ *  Function pointer to the function IsMetadataWritable. This function returns if the metadata can be updated  
+ *  for the opened session 
+ *
+ *  @param session					File Handler instance.
+ *  @param result					[out] pointer to a boolen which will be true if the metadata can be updated.
+ *  @return							kXMPErr_NoError on success otherwise error id of the failure.
+ */
+typedef XMPErrorID (*IsMetadataWritableProc)( SessionRef session, XMP_Bool * result, WXMP_Error * wError );
+
 
 /** @struct PluginAPI
  *  @brief This is a Plugin API structure.
@@ -222,6 +286,7 @@ struct PluginAPI
 	 */
 	XMP_Uns32						mVersion;
 	
+	// version 1
 	TerminatePluginProc				mTerminatePluginProc;
 	SetHostAPIProc					mSetHostAPIProc;
 	
@@ -235,10 +300,33 @@ struct PluginAPI
 	CacheFileDataProc				mCacheFileDataProc;
 	UpdateFileProc					mUpdateFileProc;
 	WriteTempFileProc				mWriteTempFileProc;
-	ImportToXMPProc					mImportToXMPProc;
-	ExportFromXMPProc				mExportFromXMPProc;
+	
+	ImportToXMPProc					mImportToXMPProc;			// deprecated in version 2 in favour of mImportToXMPStringProc
+	ExportFromXMPProc				mExportFromXMPProc;			// deprecated in version 2 in favour of mExportFromXMPStringProc
+
+	// version 2
+	FillMetadataFilesProc			mFillMetadataFilesProc;
+	ImportToXMPStringProc			mImportToXMPStringProc;
+	ExportFromXMPStringProc			mExportFromXMPStringProc;
+	FillAssociatedResourcesProc     mFillAssociatedResourcesProc;
+
+	// version 3
+	IsMetadataWritableProc			mIsMetadataWritableProc;
 };
 
+
+/** @brief Plugin Entry point (legacy).
+ *
+ *  This is the legacy entry point for the plugin. It will fill \param pluginAPI inside the plugin.
+ * 
+ *  @param moduleID		It is the module identifier string which is present in plugin's resource 
+ *						file 'MODULE_IDENTIFIER.txt". It should be same as the one which is present in plugin's library.
+ *  @param pluginAPI	structure pointer to PluginAPI which will be filled by the plugin.
+ *  @param wError		structure pointer to WXMP_Error which will be filled in case of an error.
+ *  @return				kXMPErr_NoError on success otherwise error id of the failure.
+ */
+DllExport XMPErrorID InitializePlugin( XMP_StringPtr moduleID, PluginAPIRef pluginAPI, WXMP_Error * wError );
+typedef XMPErrorID (*InitializePluginProc)( XMP_StringPtr moduleID, PluginAPIRef pluginAPI, WXMP_Error * wError );
 
 /** @brief Plugin Entry point.
  *
@@ -246,11 +334,13 @@ struct PluginAPI
  * 
  *  @param moduleID		It is the module identifier string which is present in plugin's resource 
  *						file 'MODULE_IDENTIFIER.txt". It should be same as the one which is present in plugin's library.
+ *  @param hostAPI		structure pointer to HostAPI which will be stored by the plugin.
  *  @param pluginAPI	structure pointer to PluginAPI which will be filled by the plugin.
+ *  @param wError		structure pointer to WXMP_Error which will be filled in case of an error.
  *  @return				kXMPErr_NoError on success otherwise error id of the failure.
  */
-DllExport XMPErrorID InitializePlugin( XMP_StringPtr moduleID, PluginAPIRef pluginAPI, WXMP_Error * wError );
-typedef XMPErrorID (*InitializePluginProc)( XMP_StringPtr moduleID, PluginAPIRef pluginAPI, WXMP_Error * wError );
+DllExport XMPErrorID InitializePlugin2( XMP_StringPtr moduleID, HostAPIRef hostAPI, PluginAPIRef pluginAPI, WXMP_Error * wError );
+typedef XMPErrorID (*InitializePlugin2Proc)( XMP_StringPtr moduleID, HostAPIRef hostAPI, PluginAPIRef pluginAPI, WXMP_Error * wError );
 
 #ifdef __cplusplus
 }

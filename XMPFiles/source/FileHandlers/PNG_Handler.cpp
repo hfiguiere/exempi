@@ -47,12 +47,12 @@ bool PNG_CheckFormat ( XMP_FileFormat format,
 	IgnoreParam(format); IgnoreParam(fileRef); IgnoreParam(parent);
 	XMP_Assert ( format == kXMP_PNGFile );
 
-	IOBuffer ioBuf;
+	if ( fileRef->Length() < PNG_SIGNATURE_LEN ) return false;
+	XMP_Uns8 buffer [PNG_SIGNATURE_LEN];
 
 	fileRef->Rewind();
-	if ( ! CheckFileSpace ( fileRef, &ioBuf, PNG_SIGNATURE_LEN ) ) return false;	// We need at least 8, the buffer is filled anyway.
-
-	if ( ! CheckBytes ( ioBuf.ptr, PNG_SIGNATURE_DATA, PNG_SIGNATURE_LEN ) ) return false;
+	fileRef->Read ( buffer, PNG_SIGNATURE_LEN );
+	if ( ! CheckBytes ( buffer, PNG_SIGNATURE_DATA, PNG_SIGNATURE_LEN ) ) return false;
 
 	return true;
 

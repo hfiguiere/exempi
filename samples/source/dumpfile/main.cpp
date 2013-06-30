@@ -31,6 +31,8 @@ const int DUMPFILEVERSION=2;
 #include <stdexcept>
 #include <iostream>
 #include <string>
+#include <cstring>
+#include <cstdio>
 #include <vector>
 #include <sstream>
 

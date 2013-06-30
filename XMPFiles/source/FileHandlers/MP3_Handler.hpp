@@ -63,7 +63,7 @@ private:
 	XMP_Uns8 majorVersion, minorVersion; // Version Number post ID3v2, i.e. 3 0 ==> ID3v2.3.0
 	bool hasID3Tag; //incoming file has an ID3 tag?
 	bool hasFooter;
-	bool legacyChanged; // tag rewrite certainly needed?
+	//bool legacyChanged; // tag rewrite certainly needed?
 
 	ID3Header id3Header;
 

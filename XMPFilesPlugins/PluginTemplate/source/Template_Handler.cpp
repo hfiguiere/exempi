@@ -83,6 +83,21 @@ const char* GetModuleIdentifier()
 	return kModuleIdentifier;
 }
 
+// This function will be called during initialization of the plugin.
+// Additional host API suite can be requested using RequestAPISuite().
+// The initialization will be aborted if false is returned.
+bool SetupPlugin()
+{
+	/*
+	 ExampleSuite* exampleSuite =
+	 	reinterpret_cast<ExampleSuite*>( RequestAPISuite( "exampleSuite", 1 ) );
+	 
+	 return (exampleSuite != NULL);
+	 */
+	
+	return true;
+}
+
 // All the file handlers present in this module will be registered. There may be many file handlers
 // inside one module. Only those file handlers which are registered here will be visible to XMPFiles.
 // This function need to be implemented by the plugin developer.

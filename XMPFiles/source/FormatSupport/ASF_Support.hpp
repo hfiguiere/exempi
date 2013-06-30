@@ -16,6 +16,7 @@
 #include "XMPFiles/source/XMPFiles_Impl.hpp"
 #include "XMPFiles/source/FormatSupport/Reconcile_Impl.hpp"
 #include "source/XIO.hpp"
+#include "source/XMP_ProgressTracker.hpp"
 
 // currently exclude LicenseURL from reconciliation
 #define Exclude_LicenseURL_Recon 1
@@ -187,7 +188,7 @@ public:
 	};
 
 	ASF_Support();
-	ASF_Support ( ASF_LegacyManager* legacyManager );
+	ASF_Support ( ASF_LegacyManager* legacyManager, XMP_ProgressTracker* _progressTracker);
 	virtual ~ASF_Support();
 
 	long OpenASF ( XMP_IO* fileRef, ObjectState & inOutObjectState );
@@ -215,6 +216,7 @@ public:
 private:
 
 	ASF_LegacyManager* legacyManager;
+	XMP_ProgressTracker* progressTracker;//not owned by ASF_Support
 	XMP_Uns64 posFileSizeInfo;
 
 	static std::string ReplaceString ( std::string& operand, std::string& str, int offset, int count );

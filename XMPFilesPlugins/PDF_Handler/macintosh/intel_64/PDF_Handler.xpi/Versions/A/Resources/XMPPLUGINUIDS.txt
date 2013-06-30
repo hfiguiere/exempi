@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<PluginResource>
+<PluginResource Architecture="x64">
 	<Handler
 		Name="adobe.coretech.xmp.minipdfl"
 		Version="1.00"
@@ -22,6 +22,7 @@
 			<HandlerFlag Name="kXMPFiles_ReturnsRawPacket" />
 			<HandlerFlag Name="kXMPFiles_HandlerOwnsFile" />
 			<HandlerFlag Name="kXMPFiles_AllowsSafeUpdate" />
+			<HandlerFlag Name="kXMPFiles_NeedsPreloading" />
 		</HandlerFlags>
 		<SerializeOptions>
 			<SerializeOption Name="kXMP_OmitPacketWrapper" />

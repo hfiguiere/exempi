@@ -22,7 +22,11 @@ static const XMP_Uns32 kPrmlSizeFix		= 282;		// always 282 bytes
 static const XMP_Uns32 kSizeFilePath	= 260;
 
 // Needed to be able to memcpy directly to this struct.
+#if SUNOS_SPARC || SUNOS_X86
+#pragma pack ( 1 )
+#else
 #pragma pack ( push, 1 )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 	struct PrmlBoxContent 
 	{
 		XMP_Uns32	mMagic;
@@ -34,7 +38,11 @@ static const XMP_Uns32 kSizeFilePath	= 260;
 		XMP_Uns32	mMacParID;
 		char		mFilePath[kSizeFilePath];
 	};
+#if SUNOS_SPARC || SUNOS_X86
+#pragma pack ( )
+#else
 #pragma pack ( pop )
+#endif //#if SUNOS_SPARC || SUNOS_X86
 
 //-----------------------------------------------------------------------------
 // 

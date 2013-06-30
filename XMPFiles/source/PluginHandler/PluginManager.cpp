@@ -57,7 +57,7 @@ static XMPFileHandler* Plugin_MetaHandlerCTor ( FileHandlerSharedPtr handler, XM
 		XMP_Throw ( "Plugin not loaded", kXMPErr_InternalFailure );
 	}
 
-	handler->getModule()->getPluginAPIs()->mInitializeSessionProc ( handler->getUID().c_str(), parent->filePath.c_str(), (XMP_Uns32)parent->format, (XMP_Uns32)handler->getHandlerFlags(), (XMP_Uns32)parent->openFlags, &object, &error );
+	handler->getModule()->getPluginAPIs()->mInitializeSessionProc ( handler->getUID().c_str(), parent->GetFilePath().c_str(), (XMP_Uns32)parent->format, (XMP_Uns32)handler->getHandlerFlags(), (XMP_Uns32)parent->openFlags, &object, &error );
 	CheckError ( error );
 
 	FileHandlerInstance* instance = new FileHandlerInstance ( object, handler, parent );
@@ -87,12 +87,12 @@ static bool Plugin_CheckFileFormat ( FileHandlerSharedPtr handler, XMP_StringPtr
 		// call into plugin if owning handler or if manifest has no CheckFormat entry
 		if ( fileRef == 0 || handler->getCheckFormatSize() == 0) {
 
-			bool ok;
+			XMP_Bool ok;
 			WXMP_Error error;
 			CheckSessionFileFormatProc checkProc = handler->getModule()->getPluginAPIs()->mCheckFileFormatProc;
 			checkProc ( handler->getUID().c_str(), filePath, fileRef, &ok, &error );
 			CheckError ( error );
-			return ok;
+			return ConvertXMP_BoolToBool( ok );
 
 		} else {
 
@@ -123,10 +123,11 @@ static bool Plugin_CheckFileFormat ( FileHandlerSharedPtr handler, XMP_StringPtr
 
 					// Check if byteSeq is hexadecimal byte sequence, e.g 0x03045100
 					
-					bool isHex = ( (checkFormat.mLength > 2) &&
+					bool isHex = ( (checkFormat.mLength > 0 ) &&
+								   (checkFormat.mByteSeq.size() == (2 + 2*checkFormat.mLength) &&
 								   (checkFormat.mByteSeq[0] == '0') &&
-								   (checkFormat.mByteSeq[1] == 'x') &&
-								   (checkFormat.mByteSeq.size() == (2 + 2*checkFormat.mLength)) );
+								   (checkFormat.mByteSeq[1] == 'x') )
+								   );
 
 					if ( ! isHex ) {
 
@@ -184,7 +185,7 @@ static bool Plugin_CheckFolderFormat( FileHandlerSharedPtr handler,
 									  const std::string & leafName,
 									  XMPFiles * parent )
 {
-	bool result = false;
+	XMP_Bool result = false;
 
 	if ( handler != 0 ) 
 	{
@@ -194,7 +195,7 @@ static bool Plugin_CheckFolderFormat( FileHandlerSharedPtr handler,
 		CheckError( error );
 	}
 
-	return result;
+	return ConvertXMP_BoolToBool( result );
 
 }
 
@@ -226,7 +227,8 @@ static bool Plugin_CheckFolderFormat_Replacement( XMP_FileFormat format,
 
 PluginManager* PluginManager::msPluginManager = 0;
 
-PluginManager::PluginManager( const std::string& pluginDir, const std::string& plugins ) : mPluginDir ( pluginDir )
+PluginManager::PluginManager( const std::string& pluginDir, const std::string& plugins )
+: mPluginDir ( pluginDir )
 {
 
 	const std::size_t count = sizeof(kLibraryExtensions) / sizeof(kLibraryExtensions[0]);
@@ -303,10 +305,9 @@ PluginManager::~PluginManager()
 	mPluginDir.clear();
 	mExtensions.clear();
 	mPluginsNeeded.clear();
-	mModules.clear();
 	mHandlers.clear();
 	mSessions.clear();
-	
+
 	terminateHostAPI();
 }
 
@@ -321,6 +322,18 @@ static bool registerHandler( XMP_FileFormat format, FileHandlerSharedPtr handler
 	CheckFileFormatProc chkFileFormat		= NULL;
 	CheckFolderFormatProc chkFolderFormat	= NULL;
 	XMPFileHandlerCTor hdlCtor				= NULL;
+
+	if ( handler->getHandlerFlags() & kXMPFiles_NeedsPreloading )
+	{
+		try
+		{
+			handler->load();
+		}
+		catch ( ... )
+		{
+			return false;
+		}
+	}
 
 	if( handler->getOverwriteHandler() )
 	{
@@ -374,6 +387,7 @@ void PluginManager::initialize( const std::string& pluginDir, const std::string&
 	{
 		HandlerRegistry & hdlrReg = HandlerRegistry::getInstance();
 		if( msPluginManager == 0 ) msPluginManager = new PluginManager( pluginDir, plugins );
+		msPluginManager->initializeHostAPI();
 
 		msPluginManager->doScan( 2 );
 
@@ -430,16 +444,31 @@ void PluginManager::addFileHandler( XMP_FileFormat format, FileHandlerSharedPtr 
 		}
 
 		//
-		// if there is already a standard handler or a replacement handler for the file format
-		// then just ignore it. The first one wins.
 		//
-		if( handler->getOverwriteHandler() )
+		// if there is already a standard handler or a replacement handler for the file format
+		// then use the one with the highest version. If both versions are the same the first one wins.
+		//
+		FileHandlerSharedPtr& existingHandler =
+			handler->getOverwriteHandler() ? handlerMap[format].mReplacementHandler : handlerMap[format].mStandardHandler;
+
+		if( ! existingHandler )
 		{
-			if( handlerMap[format].mReplacementHandler.get() == NULL )	handlerMap[format].mReplacementHandler = handler;
+			existingHandler = handler;
 		}
 		else
 		{
-			if( handlerMap[format].mStandardHandler.get() == NULL )	handlerMap[format].mStandardHandler = handler;
+			if( existingHandler->getUID() == handler->getUID() )
+			{
+				if( existingHandler->getVersion() < handler->getVersion() )
+				{
+					existingHandler = handler;	// replace older handler
+				}
+			}
+			else
+			{
+				// TODO: notify client that two plugin handlers try to handle the same file format
+				// -> need access to the global notification handler
+			}
 		}
 	}
 }
@@ -469,13 +498,13 @@ FileHandlerSharedPtr PluginManager::getFileHandler( XMP_FileFormat format, Handl
 }
 
 // =================================================================================================
-	
-static XMP_ReadWriteLock sPluginManagerRWLock;
+
+static XMP_ReadWriteLock sSessionMapPluginManagerRWLock;
 
 void PluginManager::addHandlerInstance( SessionRef session, FileHandlerInstancePtr handler )
 {
 	if ( msPluginManager != 0 ) {
-		XMP_AutoLock(&sPluginManagerRWLock, kXMP_WriteLock);
+		XMP_AutoLock lock(&sSessionMapPluginManagerRWLock, kXMP_WriteLock);
 		SessionMap & sessionMap = msPluginManager->mSessions;
 		if ( sessionMap.find(session) == sessionMap.end() ) {
 			sessionMap[session] = handler;	
@@ -488,7 +517,7 @@ void PluginManager::addHandlerInstance( SessionRef session, FileHandlerInstanceP
 void PluginManager::removeHandlerInstance( SessionRef session )
 {
 	if ( msPluginManager != 0 ) {
-		XMP_AutoLock(&sPluginManagerRWLock, kXMP_WriteLock);
+		XMP_AutoLock lock(&sSessionMapPluginManagerRWLock, kXMP_WriteLock);
 		SessionMap & sessionMap = msPluginManager->mSessions;
 		sessionMap.erase ( session );
 	}
@@ -500,7 +529,7 @@ FileHandlerInstancePtr PluginManager::getHandlerInstance( SessionRef session )
 {
 	FileHandlerInstancePtr ret = 0;
 	if ( msPluginManager != 0 ) {
-		XMP_AutoLock(&sPluginManagerRWLock, kXMP_ReadLock);
+		XMP_AutoLock lock(&sSessionMapPluginManagerRWLock, kXMP_ReadLock);
 		ret = msPluginManager->mSessions[session];
 	}
 	return ret;
@@ -721,28 +750,6 @@ HostAPIRef PluginManager::getHostAPI( XMP_Uns32 version )
 	{
 		hostAPI = iter->second;
 	}
-	else
-	{
-		hostAPI				= new HostAPI();
-		hostAPI->mSize		= sizeof( HostAPI );
-		hostAPI->mVersion	= version;
-
-		switch( version )
-		{
-			case 1:	SetupHostAPI_V1( hostAPI );	break;
-
-			default:
-			{
-				delete hostAPI;
-				hostAPI = NULL;
-			}
-		}
-
-		if( hostAPI != NULL )
-		{
-			msPluginManager->mHostAPIs[ version ] = hostAPI;
-		}
-	}
 
 	return hostAPI;
 }
@@ -758,7 +765,10 @@ void PluginManager::terminateHostAPI()
 
 		switch( version )
 		{
-			case 1:
+		case 1:
+		case 2:
+		case 3:
+		case 4:
 			{
 				delete hostAPI->mFileIOAPI;
 				delete hostAPI->mStrAPI;
@@ -768,10 +778,48 @@ void PluginManager::terminateHostAPI()
 			}
 			break;
 
-			default:
+		default:
 			{
 				delete hostAPI;
 			}
+		}
+	}
+}
+
+void PluginManager::initializeHostAPI()
+{
+	HostAPIRef hostAPI = NULL;
+
+
+	for ( int i = 0; i < XMP_HOST_API_VERSION_4; i++ )
+	{
+		hostAPI				= new HostAPI();
+		hostAPI->mSize		= sizeof( HostAPI );
+		hostAPI->mVersion	= i + 1;
+
+		switch( hostAPI->mVersion )
+		{
+		case 1:
+			SetupHostAPI_V1( hostAPI );
+			break;
+
+		case 2:
+			SetupHostAPI_V2( hostAPI );
+			break;
+
+		case 3:
+			SetupHostAPI_V3( hostAPI );
+			break;
+
+		default:
+		case 4:
+			SetupHostAPI_V4( hostAPI );
+			break;
+		}
+
+		if( hostAPI != NULL )
+		{
+			msPluginManager->mHostAPIs[ hostAPI->mVersion ] = hostAPI;
 		}
 	}
 }

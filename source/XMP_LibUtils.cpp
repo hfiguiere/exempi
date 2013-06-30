@@ -35,6 +35,45 @@ extern "C" void Terminate_LibUtils(){
 }
 
 // =================================================================================================
+// Error notifications
+// =================================================================================================
+
+bool GenericErrorCallback::CheckLimitAndSeverity ( XMP_ErrorSeverity severity ) const
+{
+
+	if ( this->limit == 0 ) return true;	// Always notify if the limit is zero.
+	if ( severity < this->topSeverity ) return false;	// Don't notify, don't count.
+
+	if ( severity > this->topSeverity ) {
+		this->topSeverity = severity;
+		this->notifications = 0;
+	}
+
+	this->notifications += 1;
+	return (this->notifications <= this->limit);
+
+}	// GenericErrorCallback::CheckLimitAndSeverity
+
+// =================================================================================================
+
+void GenericErrorCallback::NotifyClient ( XMP_ErrorSeverity severity, XMP_Error & error, XMP_StringPtr filePath /*= 0 */ ) const
+{
+	bool notifyClient = CanNotify() && !error.IsNotified();
+	bool returnAndRecover (severity == kXMPErrSev_Recoverable);
+
+	if ( notifyClient ) {
+		error.SetNotified();
+		notifyClient = CheckLimitAndSeverity ( severity );
+		if ( notifyClient ) {
+			returnAndRecover &= ClientCallbackWrapper( filePath, severity, error.GetID(), error.GetErrMsg() );
+		}
+	}
+
+	if ( ! returnAndRecover ) XMP_Error_Throw ( error );
+
+}
+
+// =================================================================================================
 // Thread synchronization locks
 // =================================================================================================
 
@@ -126,7 +165,7 @@ void XMP_ReadWriteLock::Release()
 
 #if UseHomeGrownLock
 
-	#if XMP_MacBuild | XMP_UNIXBuild
+	#if XMP_MacBuild | XMP_UNIXBuild | XMP_iOSBuild
 
 		// -----------------------------------------------------------------------------------------
 
@@ -592,4 +631,49 @@ void XMP_NamespaceTable::Dump ( XMP_TextOutputProc outProc, void * refCon ) cons
 
 }	// XMP_NamespaceTable::Dump
 
+// =================================================================================================
+static XMP_Bool matchdigit ( XMP_StringPtr text ) {
+	if ( *text >= '0' && *text <= '9' )
+		return true;
+	return false;
+}
+
+/* matchhere: search for regexp at beginning of text */
+static XMP_Bool matchhere ( XMP_StringPtr regexp, XMP_StringPtr text ) {
+	if ( regexp[0] == '\0' )
+		return true;
+	if ( regexp[0] == '\\' && regexp[1] == 'd' ) {
+		if ( matchdigit(text) )
+			return matchhere ( regexp+2, text+1 );
+		else
+			return false;
+	}
+
+	if ( regexp[0] == '$' && regexp[1] == '\0' )
+		return *text == '\0';
+
+	if ( *text != '\0' && regexp[0] == *text )
+		return matchhere ( regexp+1, text+1 );
+	return 0;
+}
+
+/* match: search for regexp anywhere in text */
+static XMP_Bool match ( XMP_StringPtr regexp, XMP_StringPtr text ) {
+	if ( regexp[0] == '^' )
+		return matchhere ( regexp+1, text );
+	do {    /* must look even if string is empty */
+		if ( matchhere ( regexp, text ) )
+			return true;
+	} while ( *text++ != '\0' );
+	return false;
+}
+
+XMP_Bool XMP_RegExp::Match ( XMP_StringPtr s )
+{
+	if ( regExpStr.size() == 0 )
+		return true;
+	if ( s == NULL )
+		return false;
+	return match ( this->regExpStr.c_str(), s );
+}
 // =================================================================================================

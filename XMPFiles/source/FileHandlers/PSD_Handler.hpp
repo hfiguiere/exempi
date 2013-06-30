@@ -38,7 +38,8 @@ static const XMP_OptionBits kPSD_HandlerFlags = (kXMPFiles_CanInjectXMP |
                                                  kXMPFiles_CanReconcile |
                                                  kXMPFiles_AllowsOnlyXMP |
                                                  kXMPFiles_ReturnsRawPacket |
-                                                 kXMPFiles_AllowsSafeUpdate);
+                                                 kXMPFiles_AllowsSafeUpdate |
+												 kXMPFiles_CanNotifyProgress);
 
 class PSD_MetaHandler : public XMPFileHandler
 {

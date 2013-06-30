@@ -37,7 +37,8 @@ static const XMP_OptionBits kMPEG4_HandlerFlags = ( kXMPFiles_CanInjectXMP |
 													kXMPFiles_CanReconcile |
 													kXMPFiles_AllowsOnlyXMP |
 													kXMPFiles_ReturnsRawPacket |
-													kXMPFiles_AllowsSafeUpdate
+													kXMPFiles_AllowsSafeUpdate |
+													kXMPFiles_CanNotifyProgress
 												  );
 
 class MPEG4_MetaHandler : public XMPFileHandler

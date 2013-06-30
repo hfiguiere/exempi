@@ -19,6 +19,8 @@
 	#define snprintf _snprintf
 #endif
 
+#include "source/EndianUtils.hpp"
+
 #if XMP_WinBuild
 	#pragma warning ( disable : 4146 )	// unary minus operator applied to unsigned type
 	#pragma warning ( disable : 4800 )	// forcing value to bool 'true' or 'false'
@@ -387,7 +389,7 @@ ImportSingleTIFF_Short ( const TIFF_Manager::TagInfo & tagInfo, const bool nativ
 {
 	try {	// Don't let errors with one stop the others.
 
-		XMP_Uns16 binValue = *((XMP_Uns16*)tagInfo.dataPtr);
+		XMP_Uns16 binValue = GetUns16AsIs ( tagInfo.dataPtr );
 		if ( ! nativeEndian ) binValue = Flip2 ( binValue );
 
 		char strValue[20];
@@ -412,7 +414,7 @@ ImportSingleTIFF_Long ( const TIFF_Manager::TagInfo & tagInfo, const bool native
 {
 	try {	// Don't let errors with one stop the others.
 
-		XMP_Uns32 binValue = *((XMP_Uns32*)tagInfo.dataPtr);
+		XMP_Uns32 binValue = GetUns32AsIs ( tagInfo.dataPtr );
 		if ( ! nativeEndian ) binValue = Flip4 ( binValue );
 
 		char strValue[20];
@@ -438,8 +440,8 @@ ImportSingleTIFF_Rational ( const TIFF_Manager::TagInfo & tagInfo, const bool na
 	try {	// Don't let errors with one stop the others.
 
 		XMP_Uns32 * binPtr = (XMP_Uns32*)tagInfo.dataPtr;
-		XMP_Uns32 binNum   = binPtr[0];
-		XMP_Uns32 binDenom = binPtr[1];
+		XMP_Uns32 binNum   = GetUns32AsIs ( &binPtr[0] );
+		XMP_Uns32 binDenom = GetUns32AsIs ( &binPtr[1] );
 		if ( ! nativeEndian ) {
 			binNum = Flip4 ( binNum );
 			binDenom = Flip4 ( binDenom );
@@ -467,9 +469,14 @@ ImportSingleTIFF_SRational ( const TIFF_Manager::TagInfo & tagInfo, const bool n
 {
 	try {	// Don't let errors with one stop the others.
 
-		XMP_Int32 * binPtr = (XMP_Int32*)tagInfo.dataPtr;
-		XMP_Int32 binNum   = binPtr[0];
-		XMP_Int32 binDenom = binPtr[1];
+#if SUNOS_SPARC
+        XMP_Uns32  binPtr[2];
+        memcpy(&binPtr, tagInfo.dataPtr, sizeof(XMP_Uns32)*2);
+#else
+	XMP_Uns32 * binPtr = (XMP_Uns32*)tagInfo.dataPtr;
+#endif //#if SUNOS_SPARC
+		XMP_Int32 binNum   = GetUns32AsIs ( &binPtr[0] );
+		XMP_Int32 binDenom = GetUns32AsIs ( &binPtr[1] );
 		if ( ! nativeEndian ) {
 			Flip4 ( &binNum );
 			Flip4 ( &binDenom );
@@ -537,7 +544,7 @@ ImportSingleTIFF_Byte ( const TIFF_Manager::TagInfo & tagInfo,
 		XMP_Uns8 binValue = *((XMP_Uns8*)tagInfo.dataPtr);
 
 		char strValue[20];
-		snprintf ( strValue, sizeof(strValue), "%hu", binValue );	// AUDIT: Using sizeof(strValue) is safe.
+		snprintf ( strValue, sizeof(strValue), "%hu", (XMP_Uns16)binValue );	// AUDIT: Using sizeof(strValue) is safe.
 
 		xmp->SetProperty ( xmpNS, xmpProp, strValue );
 
@@ -561,7 +568,7 @@ ImportSingleTIFF_SByte ( const TIFF_Manager::TagInfo & tagInfo,
 		XMP_Int8 binValue = *((XMP_Int8*)tagInfo.dataPtr);
 
 		char strValue[20];
-		snprintf ( strValue, sizeof(strValue), "%hd", binValue );	// AUDIT: Using sizeof(strValue) is safe.
+		snprintf ( strValue, sizeof(strValue), "%hd", (short)binValue );	// AUDIT: Using sizeof(strValue) is safe.
 
 		xmp->SetProperty ( xmpNS, xmpProp, strValue );
 
@@ -815,8 +822,8 @@ ImportArrayTIFF_Rational ( const TIFF_Manager::TagInfo & tagInfo, const bool nat
 
 		for ( size_t i = 0; i < tagInfo.count; ++i, binPtr += 2 ) {
 
-			XMP_Uns32 binNum   = binPtr[0];
-			XMP_Uns32 binDenom = binPtr[1];
+			XMP_Uns32 binNum  = GetUns32AsIs ( &binPtr[0] );
+			XMP_Uns32 binDenom = GetUns32AsIs ( &binPtr[1] );
 			if ( ! nativeEndian ) {
 				binNum = Flip4 ( binNum );
 				binDenom = Flip4 ( binDenom );
@@ -936,7 +943,7 @@ ImportArrayTIFF_Byte ( const TIFF_Manager::TagInfo & tagInfo,
 			XMP_Uns8 binValue = *binPtr;
 
 			char strValue[20];
-			snprintf ( strValue, sizeof(strValue), "%hu", binValue );	// AUDIT: Using sizeof(strValue) is safe.
+			snprintf ( strValue, sizeof(strValue), "%hu", (XMP_Uns16)binValue );	// AUDIT: Using sizeof(strValue) is safe.
 
 			xmp->AppendArrayItem ( xmpNS, xmpProp, kXMP_PropArrayIsOrdered, strValue );
 
@@ -968,7 +975,7 @@ ImportArrayTIFF_SByte ( const TIFF_Manager::TagInfo & tagInfo,
 			XMP_Int8 binValue = *binPtr;
 
 			char strValue[20];
-			snprintf ( strValue, sizeof(strValue), "%hd", binValue );	// AUDIT: Using sizeof(strValue) is safe.
+			snprintf ( strValue, sizeof(strValue), "%hd", (short)binValue );	// AUDIT: Using sizeof(strValue) is safe.
 
 			xmp->AppendArrayItem ( xmpNS, xmpProp, kXMP_PropArrayIsOrdered, strValue );
 
@@ -1420,7 +1427,7 @@ ImportTIFF_Flash ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
 {
 	try {	// Don't let errors with one stop the others.
 
-		XMP_Uns16 binValue = *((XMP_Uns16*)tagInfo.dataPtr);
+		XMP_Uns16 binValue = GetUns16AsIs ( tagInfo.dataPtr );
 		if ( ! nativeEndian ) binValue = Flip2 ( binValue );
 
 		bool fired    = (bool)(binValue & 1);	// Avoid implicit 0/1 conversion.
@@ -1559,7 +1566,7 @@ ImportTIFF_CFATable ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
 		SXMPUtils::ComposeStructFieldPath ( xmpNS, xmpProp, kXMP_NS_EXIF, "Values", &arrayPath );
 
 		for ( size_t i = (columns * rows); i > 0; --i, ++bytePtr ) {
-			snprintf ( buffer, sizeof(buffer), "%hu", *bytePtr );	// AUDIT: Use of sizeof(buffer) is safe.
+			snprintf ( buffer, sizeof(buffer), "%hu", (XMP_Uns16)(*bytePtr) );	// AUDIT: Use of sizeof(buffer) is safe.
 			xmp->AppendArrayItem ( xmpNS, arrayPath.c_str(), kXMP_PropArrayIsOrdered, buffer );
 		}
 
@@ -1679,14 +1686,15 @@ ImportTIFF_GPSCoordinate ( const TIFF_Manager & tiff, const TIFF_Manager::TagInf
 			secDenom = Flip4 ( secDenom );
 		}
 		
-		degNum   = binPtr[0];
-		degDenom = binPtr[1];
+		degNum   = GetUns32AsIs ( &binPtr[0] );
+		degDenom = GetUns32AsIs ( &binPtr[1] );
+
 		if ( posInfo.count >= 2 ) {
-			minNum   = binPtr[2];
-			minDenom = binPtr[3];
+			minNum   = GetUns32AsIs ( &binPtr[2] );
+			minDenom = GetUns32AsIs ( &binPtr[3] );
 			if ( posInfo.count >= 3 ) {
-				secNum   = binPtr[4];
-				secDenom = binPtr[5];
+				secNum   = GetUns32AsIs ( &binPtr[4] );
+				secDenom = GetUns32AsIs ( &binPtr[5] );
 			}
 		}
 		
@@ -1790,12 +1798,12 @@ ImportTIFF_GPSTimeStamp ( const TIFF_Manager & tiff, const TIFF_Manager::TagInfo
 		if ( (dateStr[10] != 0)  && (dateStr[10] != ' ') ) return;
 
 		XMP_Uns32 * binPtr = (XMP_Uns32*)timeInfo.dataPtr;
-		XMP_Uns32 hourNum   = binPtr[0];
-		XMP_Uns32 hourDenom = binPtr[1];
-		XMP_Uns32 minNum    = binPtr[2];
-		XMP_Uns32 minDenom  = binPtr[3];
-		XMP_Uns32 secNum    = binPtr[4];
-		XMP_Uns32 secDenom  = binPtr[5];
+		XMP_Uns32 hourNum   = GetUns32AsIs ( &binPtr[0] );
+		XMP_Uns32 hourDenom = GetUns32AsIs ( &binPtr[1] );
+		XMP_Uns32 minNum    = GetUns32AsIs ( &binPtr[2] );
+		XMP_Uns32 minDenom  = GetUns32AsIs ( &binPtr[3] );
+		XMP_Uns32 secNum    = GetUns32AsIs ( &binPtr[4] );
+		XMP_Uns32 secDenom  = GetUns32AsIs ( &binPtr[5] );
 		if ( ! nativeEndian ) {
 			hourNum = Flip4 ( hourNum );
 			hourDenom = Flip4 ( hourDenom );
@@ -2116,7 +2124,8 @@ PhotoDataUtils::Import2WayExif ( const TIFF_Manager & exif, SXMPMeta * xmp, int 
 	found = exif.GetTag ( kTIFF_ExifIFD, kTIFF_ExifVersion, &tagInfo );
 	if ( found && (tagInfo.type == kTIFF_UndefinedType) && (tagInfo.count == 4) ) {
 		char str[5];
-		*((XMP_Uns32*)str) = *((XMP_Uns32*)tagInfo.dataPtr);
+
+		*((XMP_Uns32*)str) = GetUns32AsIs ( tagInfo.dataPtr );
 		str[4] = 0;
 		xmp->SetProperty ( kXMP_NS_EXIF, "ExifVersion", str );
 	}
@@ -2125,7 +2134,8 @@ PhotoDataUtils::Import2WayExif ( const TIFF_Manager & exif, SXMPMeta * xmp, int 
 	found = exif.GetTag ( kTIFF_ExifIFD, kTIFF_FlashpixVersion, &tagInfo );
 	if ( found && (tagInfo.type == kTIFF_UndefinedType) && (tagInfo.count == 4) ) {
 		char str[5];
-		*((XMP_Uns32*)str) = *((XMP_Uns32*)tagInfo.dataPtr);
+
+		*((XMP_Uns32*)str) = GetUns32AsIs ( tagInfo.dataPtr );
 		str[4] = 0;
 		xmp->SetProperty ( kXMP_NS_EXIF, "FlashpixVersion", str );
 	}

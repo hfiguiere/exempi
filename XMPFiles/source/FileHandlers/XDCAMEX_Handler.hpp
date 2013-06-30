@@ -46,6 +46,10 @@ class XDCAMEX_MetaHandler : public XMPFileHandler
 public:
 
 	bool GetFileModDate ( XMP_DateTime * modDate );
+	
+	void FillMetadataFiles ( std::vector<std::string> * metadataFiles );
+	void FillAssociatedResources ( std::vector<std::string> * resourceList );
+	bool IsMetadataWritable ( );
 
 	void CacheFileData();
 	void ProcessXMP();
@@ -61,7 +65,7 @@ public:
 
 private:
 
-	XDCAMEX_MetaHandler() : expat(0) {};	// Hidden on purpose.
+	XDCAMEX_MetaHandler() : expat(0), clipMetadata(0) {};	// Hidden on purpose.
 
 	bool MakeClipFilePath ( std::string * path, XMP_StringPtr suffix, bool checkFile = false );
 	bool MakeMediaproPath ( std::string * path, bool checkFile = false );
@@ -75,6 +79,7 @@ private:
 
 	std::string rootPath, clipName, xdcNS, legacyNS, clipUMID;
 
+	// Used to Parse the Non-XMP /non real time metadata file associated with the clip 
 	ExpatAdapter * expat;
 	XML_Node * clipMetadata;
 

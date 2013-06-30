@@ -135,7 +135,7 @@ AIFF_MetaHandler::AIFF_MetaHandler ( XMPFiles * _parent )
 	: mChunkBehavior(NULL), mChunkController(NULL),
 	mAiffMeta(), mXMPChunk(NULL),
 	mNameChunk(NULL), mAuthChunk(NULL),
-	mCprChunk(NULL), mAnnoChunk(NULL), mFileType(0)
+	mCprChunk(NULL), mAnnoChunk(NULL)
 {
 	this->parent = _parent;
 	this->handlerFlags = kAIFF_HandlerFlags;
@@ -368,9 +368,23 @@ void AIFF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		updateLegacyChunk( &mCprChunk, kChunk_CPR, AIFFMetadata::kCopyright );
 		updateLegacyChunk( &mAnnoChunk, kChunk_ANNO, AIFFMetadata::kAnnotation );
 	}
-
+	
+	XMP_ProgressTracker* progressTracker=this->parent->progressTracker;
+	// local progess tracking required because  for Handlers incapable of 
+	// kXMPFiles_CanRewrite XMPFiles call this Update method after making
+	// a copy of the orignal file
+	bool localProgressTracking=false;
+	if ( progressTracker != 0 )
+	{
+		if ( ! progressTracker->WorkInProgress() ) 
+		{
+			localProgressTracking = true;
+			progressTracker->BeginWork ();
+		}
+	}
 	//write tree back to file
-	mChunkController->writeFile( this->parent->ioRef );
+	mChunkController->writeFile( this->parent->ioRef ,progressTracker);
+	if ( localProgressTracking && progressTracker != 0 ) progressTracker->WorkComplete();
 
 	this->needsUpdate = false;	// Make sure this is only called once.
 }	// AIFF_MetaHandler::UpdateFile

@@ -13,16 +13,9 @@
 
 // =================================================================================================
 
-#if UnicodeTestBuild
-	#error "Never used."
-	//typedef unsigned char  UTF8Unit;
-	//typedef unsigned short UTF16Unit;
-	//typedef unsigned long  UTF32Unit;
-#else
-	typedef XMP_Uns8  UTF8Unit;
-	typedef XMP_Uns16 UTF16Unit;
-	typedef XMP_Uns32 UTF32Unit;
-#endif
+typedef XMP_Uns8  UTF8Unit;
+typedef XMP_Uns16 UTF16Unit;
+typedef XMP_Uns32 UTF32Unit;
 
 // -------------------------------------------------------------------------------------------------
 

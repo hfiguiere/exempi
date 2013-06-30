@@ -46,7 +46,6 @@ static const XMP_OptionBits kP2_HandlerFlags = (kXMPFiles_CanInjectXMP |
 												kXMPFiles_ReturnsRawPacket |
 												kXMPFiles_HandlerOwnsFile |
 												kXMPFiles_AllowsSafeUpdate |
-												kXMPFiles_UsesSidecarXMP |
 												kXMPFiles_FolderBasedFormat);
 
 class P2_MetaHandler : public XMPFileHandler
@@ -54,6 +53,9 @@ class P2_MetaHandler : public XMPFileHandler
 public:
 
 	bool GetFileModDate ( XMP_DateTime * modDate );
+	void FillMetadataFiles ( std::vector<std::string> * metadataFiles );
+	void FillAssociatedResources ( std::vector<std::string> * resourceList );
+	bool IsMetadataWritable ( );
 
 	void CacheFileData();
 	void ProcessXMP();
@@ -95,7 +97,7 @@ private:
 	void SetGPSPropertyFromLegacyXML  ( XML_NodePtr legacyLocationContext, bool digestFound, XMP_StringPtr propName, XMP_StringPtr legacyPropName );
 	void SetAltitudeFromLegacyXML  ( XML_NodePtr legacyLocationContext, bool digestFound );
 
-	XML_Node * ForceChildElement ( XML_Node * parent, XMP_StringPtr localName, int indent = 0 );
+	XML_Node * ForceChildElement ( XML_Node * parent, XMP_StringPtr localName, XMP_Int32 indent, XMP_Bool insertAtFront );
 
 	std::string rootPath, clipName, p2NS;
 

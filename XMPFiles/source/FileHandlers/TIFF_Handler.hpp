@@ -38,7 +38,8 @@ static const XMP_OptionBits kTIFF_HandlerFlags = (kXMPFiles_CanInjectXMP |
                                                   kXMPFiles_CanReconcile |
                                                   kXMPFiles_AllowsOnlyXMP |
                                                   kXMPFiles_ReturnsRawPacket |
-                                                  kXMPFiles_AllowsSafeUpdate);
+                                                  kXMPFiles_AllowsSafeUpdate |
+												  kXMPFiles_CanNotifyProgress);
 
 class TIFF_MetaHandler : public XMPFileHandler
 {

@@ -11,14 +11,15 @@
 * it to a human-readable log file. This is preferred over "dumb" packet scanning.
 */
 
+#include <cstdio>
+#include <vector>
 #include <string>
-#include <time.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdexcept>
-#include <errno.h>
 #include <cstring>
+#include <ctime>
+
+#include <cstdlib>
+#include <stdexcept>
+#include <cerrno>
 
 #if XMP_WinBuild
 	#pragma warning ( disable : 4127 )	// conditional expression is constant

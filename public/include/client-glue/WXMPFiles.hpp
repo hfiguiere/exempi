@@ -36,6 +36,32 @@ extern "C" {
     PropagateException ( wResult );             \
     XMPFilesRef result = XMPFilesRef(wResult.ptrResult)
 
+static XMP_Bool WrapProgressReport ( XMP_ProgressReportProc proc, void * context,
+								 float elapsedTime, float fractionDone, float secondsToGo )
+{
+	bool ok;
+	try {
+		ok = (*proc) ( context, elapsedTime, fractionDone, secondsToGo );
+	} catch ( ... ) {
+		ok = false;
+	}
+	return ConvertBoolToXMP_Bool( ok );
+}
+
+// =================================================================================================
+
+static XMP_Bool WrapFilesErrorNotify ( XMPFiles_ErrorCallbackProc proc, void * context,
+	XMP_StringPtr filePath, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr message )
+{
+	bool ok;
+	try {
+		ok = (*proc) ( context, filePath, severity, cause, message );
+	} catch ( ... ) {
+		ok = false;
+	}
+	return ConvertBoolToXMP_Bool( ok );
+}
+
 // =================================================================================================
 
 #define zXMPFiles_GetVersionInfo_1(versionInfo) \
@@ -65,6 +91,12 @@ extern "C" {
 #define zXMPFiles_GetFileModDate_1(filePath,modDate,format,options) \
 	WXMPFiles_GetFileModDate_1 ( filePath, modDate, format, options, &wResult )
 
+#define zXMPFiles_GetAssociatedResources_1( filePath, resourceList, format, options, SetClientStringVector ) \
+	WXMPFiles_GetAssociatedResources_1 ( filePath, resourceList, format, options, SetClientStringVector, &wResult )
+
+#define zXMPFiles_IsMetadataWritable_1( filePath, writable, format, options ) \
+	WXMPFiles_IsMetadataWritable_1 ( filePath, writable, format, options, &wResult )
+
 #define zXMPFiles_OpenFile_1(filePath,format,openFlags) \
 	WXMPFiles_OpenFile_1 ( this->xmpFilesRef, filePath, format, openFlags, &wResult )
 
@@ -90,6 +122,21 @@ extern "C" {
 
 #define zXMPFiles_CanPutXMP_1(xmpRef,xmpPacket,xmpPacketLen) \
 	WXMPFiles_CanPutXMP_1 ( this->xmpFilesRef, xmpRef, xmpPacket, xmpPacketLen, &wResult )
+
+#define zXMPFiles_SetDefaultProgressCallback_1(proc,context,interval,sendStartStop) \
+	WXMPFiles_SetDefaultProgressCallback_1 ( WrapProgressReport, proc, context, interval, sendStartStop, &wResult )
+
+#define zXMPFiles_SetProgressCallback_1(proc,context,interval,sendStartStop) \
+	WXMPFiles_SetProgressCallback_1 ( this->xmpFilesRef, WrapProgressReport, proc, context, interval, sendStartStop, &wResult )
+
+#define zXMPFiles_SetDefaultErrorCallback_1(proc,context,limit) \
+	WXMPFiles_SetDefaultErrorCallback_1 ( WrapFilesErrorNotify, proc, context, limit, &wResult )
+
+#define zXMPFiles_SetErrorCallback_1(proc,context,limit) \
+	WXMPFiles_SetErrorCallback_1 ( this->xmpFilesRef, WrapFilesErrorNotify, proc, context, limit, &wResult )
+
+#define zXMPFiles_ResetErrorCallbackLimit_1(limit) \
+	WXMPFiles_ResetErrorCallbackLimit_1 ( this->xmpFilesRef, limit, &wResult )
 
 // =================================================================================================
 
@@ -126,6 +173,20 @@ extern void WXMPFiles_GetFileModDate_1 ( XMP_StringPtr    filePath,
 					                     XMP_FileFormat * format,	// ! Can be null.
 					                     XMP_OptionBits   options,
                       					 WXMP_Result *    result );
+
+
+extern void WXMPFiles_GetAssociatedResources_1 ( XMP_StringPtr             filePath,
+												 void *                    resourceList,
+												 XMP_FileFormat            format, 
+												 XMP_OptionBits            options, 
+					                             SetClientStringVectorProc SetClientStringVector,
+												 WXMP_Result *             result );
+
+extern void WXMPFiles_IsMetadataWritable_1 ( XMP_StringPtr    filePath,
+									         XMP_Bool *       writable, 
+									         XMP_FileFormat   format,
+									         XMP_OptionBits   options, 
+									         WXMP_Result *    result );
 
 extern void WXMPFiles_OpenFile_1 ( XMPFilesRef    xmpFilesRef,
                                    XMP_StringPtr  filePath,
@@ -176,6 +237,40 @@ extern void WXMPFiles_CanPutXMP_1 ( XMPFilesRef   xmpFilesRef,
                                     XMP_StringPtr xmpPacket,
                                     XMP_StringLen xmpPacketLen,
                                     WXMP_Result * result );
+
+extern void WXMPFiles_SetDefaultProgressCallback_1 ( XMP_ProgressReportWrapper wrapperproc,
+													 XMP_ProgressReportProc    clientProc,
+													 void *        context,
+													 float         interval,
+													 XMP_Bool      sendStartStop,
+													 WXMP_Result * result );
+
+extern void WXMPFiles_SetProgressCallback_1 ( XMPFilesRef   xmpFilesRef,
+											  XMP_ProgressReportWrapper wrapperproc,
+											  XMP_ProgressReportProc    clientProc,
+											  void *        context,
+											  float         interval,
+											  XMP_Bool      sendStartStop,
+											  WXMP_Result * result );
+
+// -------------------------------------------------------------------------------------------------
+
+extern void WXMPFiles_SetDefaultErrorCallback_1 ( XMPFiles_ErrorCallbackWrapper	wrapperProc,
+												  XMPFiles_ErrorCallbackProc	clientProc,
+												  void *						context,
+												  XMP_Uns32						limit,
+												  WXMP_Result *					wResult );
+
+extern void WXMPFiles_SetErrorCallback_1 ( XMPFilesRef						xmpRef,
+										   XMPFiles_ErrorCallbackWrapper	wrapperProc,
+										   XMPFiles_ErrorCallbackProc		clientProc,
+										   void *							context,
+										   XMP_Uns32						limit,
+										   WXMP_Result *					wResult );
+
+extern void WXMPFiles_ResetErrorCallbackLimit_1 ( XMPFilesRef				xmpRef,
+												  XMP_Uns32					limit,
+												  WXMP_Result *				wResult );
 
 // =================================================================================================
 

@@ -81,7 +81,10 @@ ExpatAdapter::ExpatAdapter ( bool useGlobalNamespaces ) : parser(0), registeredN
 	#endif
 
 	this->parser = XML_ParserCreateNS ( 0, FullNameSeparator );
-	if ( this->parser == 0 ) XMP_Throw ( "Failure creating Expat parser", kXMPErr_ExternalFailure );
+	if ( this->parser == 0 ) {
+		XMP_Error error(kXMPErr_NoMemory, "Failure creating Expat parser" );
+		this->NotifyClient ( kXMPErrSev_ProcessFatal, error );
+	}
 	
 	if ( useGlobalNamespaces ) {
 		this->registeredNamespaces = sRegisteredNamespaces;
@@ -143,7 +146,10 @@ void ExpatAdapter::ParseBuffer ( const void * buffer, size_t length, bool last /
 	status = XML_Parse ( this->parser, (const char *)buffer, length, last );
 	
 	#if BanAllEntityUsage
-		if ( this->isAborted ) XMP_Throw ( "DOCTYPE is not allowed", kXMPErr_BadXML );
+		if ( this->isAborted ) {
+			XMP_Error error(kXMPErr_BadXML, "DOCTYPE is not allowed" )
+			this->NotifyClient ( kXMPErrSev_Recoverable, error );
+		}
 	#endif
 
 	if ( status != XML_STATUS_OK ) {
@@ -171,7 +177,8 @@ void ExpatAdapter::ParseBuffer ( const void * buffer, size_t length, bool last /
 
 		#endif
 
-		XMP_Throw ( errMsg, kXMPErr_BadXML );
+		XMP_Error error(kXMPErr_BadXML, errMsg);
+		this->NotifyClient ( kXMPErrSev_Recoverable, error );
 
 	}
 	
@@ -218,7 +225,10 @@ static void SetQualName ( ExpatAdapter * thiz, XMP_StringPtr fullName, XML_Node 
 		if ( node->ns == "http://purl.org/dc/1.1/" ) node->ns = "http://purl.org/dc/elements/1.1/";
 
 		bool found = thiz->registeredNamespaces->GetPrefix ( node->ns.c_str(), &prefix, &prefixLen );
-		if ( ! found ) XMP_Throw ( "Unknown URI in Expat full name", kXMPErr_ExternalFailure );
+		if ( ! found ) {
+			XMP_Error error(kXMPErr_ExternalFailure, "Unknown URI in Expat full name" );
+			thiz->NotifyClient ( kXMPErrSev_OperationFatal, error );
+		}
 		node->nsPrefixLen = prefixLen;	// ! Includes the ':'.
 		
 		node->name = prefix;
@@ -302,7 +312,10 @@ static void StartElementHandler ( void * userData, XMP_StringPtr name, XMP_Strin
 	
 	size_t attrCount = 0;
 	for ( XMP_StringPtr* a = attrs; *a != 0; ++a ) ++attrCount;
-	if ( (attrCount & 1) != 0 )	XMP_Throw ( "Expat attribute info has odd length", kXMPErr_ExternalFailure );
+	if ( (attrCount & 1) != 0 ) {
+		XMP_Error error(kXMPErr_ExternalFailure, "Expat attribute info has odd length");
+		thiz->NotifyClient ( kXMPErrSev_OperationFatal, error );
+	}
 	attrCount = attrCount/2;	// They are name/value pairs.
 	
 	#if XMP_DebugBuild & DumpXMLParseEvents

@@ -15,10 +15,12 @@
 #include "XMPFiles/source/XMPFiles_Impl.hpp"
 #include "source/XMPFiles_IO.hpp"
 #include "source/XIO.hpp"
+#include "source/IOUtils.hpp"
 
 #include "XMPFiles/source/FileHandlers/XDCAMEX_Handler.hpp"
 #include "XMPFiles/source/FormatSupport/XDCAM_Support.hpp"
 #include "third-party/zuid/interfaces/MD5.h"
+#include "XMPFiles/source/FormatSupport/PackageFormat_Support.hpp"
 
 using namespace std;
 
@@ -212,7 +214,7 @@ XMPFileHandler * XDCAMEX_MetaHandlerCTor ( XMPFiles * parent )
 // XDCAMEX_MetaHandler::XDCAMEX_MetaHandler
 // ========================================
 
-XDCAMEX_MetaHandler::XDCAMEX_MetaHandler ( XMPFiles * _parent ) : expat(0)
+XDCAMEX_MetaHandler::XDCAMEX_MetaHandler ( XMPFiles * _parent ) : expat(0),clipMetadata(0)
 {
 	this->parent = _parent;	// Inherited, can't set in the prefix.
 	this->handlerFlags = kXDCAMEX_HandlerFlags;
@@ -222,7 +224,7 @@ XDCAMEX_MetaHandler::XDCAMEX_MetaHandler ( XMPFiles * _parent ) : expat(0)
 
 	if ( this->parent->tempPtr == 0 ) {
 		// The CheckFormat call might have been skipped.
-		this->parent->tempPtr = CreatePseudoClipPath ( this->parent->filePath );
+		this->parent->tempPtr = CreatePseudoClipPath ( this->parent->GetFilePath() );
 	}
 
 	this->rootPath.assign ( (char*) this->parent->tempPtr );
@@ -351,7 +353,8 @@ void XDCAMEX_MetaHandler::MakeLegacyDigest ( std::string * digestStr )
 void XDCAMEX_MetaHandler::CleanupLegacyXML()
 {
 
-	if ( this->expat != 0 ) { delete ( this->expat ); this->expat = 0; }
+	delete this->expat;
+	this->expat = 0;
 
 	clipMetadata = 0;	// ! Was a pointer into the expat tree.
 
@@ -407,6 +410,152 @@ bool XDCAMEX_MetaHandler::GetFileModDate ( XMP_DateTime * modDate )
 
 }	// XDCAMEX_MetaHandler::GetFileModDate
 
+// Adds all the associated resources for the specified clip only (not related spanned ones) 
+static void FillClipAssociatedResources( std::vector<std::string> * resourceList, std::string &clipPath, std::string &clipName )
+{
+	std::string filePath;
+	std::string spannedClipFolderPath = clipPath + clipName + kDirChar;
+	
+	std::string clipPathNoExt = spannedClipFolderPath + clipName;
+	// Get the files present inside clip folder.
+	std::vector<std::string> regExpStringVec;
+	std::string regExpString;
+	regExpString = "^" + clipName + ".MP4$";
+	regExpStringVec.push_back(regExpString);
+	regExpString = "^" + clipName + "M\\d\\d.XMP$";
+	regExpStringVec.push_back(regExpString);
+	regExpString = "^" + clipName + "M\\d\\d.XML$";
+	regExpStringVec.push_back(regExpString);
+	regExpString = "^" + clipName + "I\\d\\d.PPN$";
+	regExpStringVec.push_back(regExpString);
+	regExpString = "^" + clipName + "R\\d\\d.BIM$";
+	regExpStringVec.push_back(regExpString);
+	regExpString = "^" + clipName + ".SMI$";
+	regExpStringVec.push_back(regExpString);
+
+	IOUtils::GetMatchingChildren (*resourceList, spannedClipFolderPath, regExpStringVec, false, true, true );
+
+}
+
+
+// =================================================================================================
+// XDCAMEX_MetaHandler::FillAssociatedResources
+// ======================================
+void XDCAMEX_MetaHandler::FillAssociatedResources ( std::vector<std::string> * resourceList )
+{
+	// The possible associated resources:
+	//	BPAV/
+	//		MEDIAPRO.XML	
+	//		CUEUP.XML
+	//		CLPR/
+	//			MIXXXX_YY:			MI is MachineID, XXXX is TakeSerial, 
+	//								YY is ClipSuffix(as single take can be divided across multiple clips.)
+	//								In case of spanning, all the clip folders starting from "MIXXXX_" are looked for.
+	//				MIXXXX_YY.MP4
+	//				MIXXXX_YYMNN.XML	NN is a counter which will start from from 01 and can go upto 99 based 
+	//									on number of files present in this folder with same extension.
+	//				MIXXXX_YYMNN.XMP
+	//				MIXXXX_YYINN.PPN
+	//				MIXXXX_YYRNN.BIM
+	//				MXXXX_YY.SMI
+	//		TAKR/
+	//			MIXXXX:
+	//				MIXXXXMNN.XML		NN is a counter which will start from from 01 and can go upto 99 based 
+	//									on number of files present in this folder with same extension.
+	//				MIXXXX.SMI
+	//				MIXXXXUNN.SMI		NN is a counter which goes from 01 to N-1 where N is number of media, this
+	//									take is divided into. For Nth, MIXXXX.SMI shall be picked up.
+	XMP_VarString bpavPath = this->rootPath + kDirChar + "BPAV" + kDirChar;
+	XMP_VarString filePath;
+	//Add RootPath
+	filePath = this->rootPath + kDirChar;
+	PackageFormat_Support::AddResourceIfExists ( resourceList, filePath );
+
+	// Get the files present directly inside BPAV folder.
+	filePath = bpavPath + "MEDIAPRO.XML";
+	PackageFormat_Support::AddResourceIfExists ( resourceList, filePath );
+	filePath = bpavPath + "MEDIAPRO.BUP";
+	PackageFormat_Support::AddResourceIfExists ( resourceList, filePath );
+	filePath = bpavPath + "CUEUP.XML";
+	PackageFormat_Support::AddResourceIfExists ( resourceList, filePath );
+	filePath = bpavPath + "CUEUP.BUP";
+	PackageFormat_Support::AddResourceIfExists ( resourceList, filePath );
+
+	XMP_VarString clipPath = bpavPath + "CLPR" + kDirChar;
+	size_t clipSuffixIndex = this->clipName.find_last_of('_');
+	XMP_VarString takeName = this->clipName.substr(0, clipSuffixIndex);
+
+	// Add spanned clip files. 
+	// Here, we iterate over all the folders present inside "/BPAV/CLPR/" and whose name starts from
+	// "MIXXXX_". All valid files present inside such folders are added to the list.
+	XMP_VarString regExpString;
+	regExpString = "^" + takeName + "_\\d\\d$";
+	XMP_StringVector list;
+
+	IOUtils::GetMatchingChildren ( list, clipPath, regExpString, true, false, false );
+	size_t spaningClipsCount = list.size();
+	for ( size_t index = 0; index < spaningClipsCount; index++ ) {
+		FillClipAssociatedResources ( resourceList, clipPath, list[index] );
+	}
+	list.clear();
+
+	size_t sizeWithoutTakeFiles = resourceList->size();
+	XMP_VarString takeFolderPath = bpavPath + "TAKR" + kDirChar + takeName + kDirChar;
+	XMP_StringVector regExpStringVec;
+
+	// Get the files present inside take folder.
+	regExpString = "^" + takeName + "M\\d\\d.XML$";
+	regExpStringVec.push_back ( regExpString );
+	regExpString = "^" + takeName + "U\\d\\d.SMI$";
+	regExpStringVec.push_back ( regExpString );
+	regExpString = "^" + takeName + ".SMI$";
+	regExpStringVec.push_back ( regExpString );
+	IOUtils::GetMatchingChildren ( *resourceList, takeFolderPath, regExpStringVec, false, true, true );
+
+	if ( sizeWithoutTakeFiles == resourceList->size() )
+	{
+		// no Take files added to resource list. But "TAKR" folder is necessary to recognize this format
+		// so let's add it to the list.
+		filePath = bpavPath + "TAKR" + kDirChar;
+		PackageFormat_Support::AddResourceIfExists(resourceList, filePath);
+	}
+}	// XDCAMEX_MetaHandler::FillAssociatedResources
+
+// =================================================================================================
+// XDCAMEX_MetaHandler::FillMetadataFiles
+// ======================================
+void XDCAMEX_MetaHandler::FillMetadataFiles ( std::vector<std::string> * metadataFiles )
+{
+	std::string noExtPath, filePath;
+
+	noExtPath = rootPath + kDirChar + "BPAV" + kDirChar + "CLPR" +
+						   kDirChar + clipName + kDirChar + clipName;
+
+	filePath = noExtPath + "M01.XMP";
+	metadataFiles->push_back ( filePath );
+	filePath = noExtPath + "M01.XML";
+	metadataFiles->push_back ( filePath );
+	filePath = rootPath + kDirChar + "BPAV" + kDirChar + "MEDIAPRO.XML";
+	metadataFiles->push_back ( filePath );
+
+}	// 	FillMetadataFiles_XDCAM_EX
+
+// =================================================================================================
+// XDCAMEX_MetaHandler::IsMetadataWritable
+// =======================================
+
+bool XDCAMEX_MetaHandler::IsMetadataWritable ( )
+{
+	std::vector<std::string> metadataFiles;
+	FillMetadataFiles(&metadataFiles);
+	std::vector<std::string>::iterator itr = metadataFiles.begin();
+	// Check whether sidecar is writable, if not then check if it can be created.
+	XMP_Bool xmpWritable = Host_IO::Writable( itr->c_str(), true );
+	// Check for legacy metadata file.
+	XMP_Bool xmlWritable = Host_IO::Writable( (++itr)->c_str(), false );
+	return ( xmlWritable && xmpWritable );
+}// XDCAMEX_MetaHandler::IsMetadataWritable
+
 // =================================================================================================
 // XDCAMEX_MetaHandler::CacheFileData
 // ==================================
@@ -423,15 +572,16 @@ void XDCAMEX_MetaHandler::CacheFileData()
 
 	std::string xmpPath;
 	this->MakeClipFilePath ( &xmpPath, "M01.XMP" );
-	if ( Host_IO::GetFileMode ( xmpPath.c_str() ) != Host_IO::kFMode_IsFile ) return;	// No XMP.
+	if ( ! Host_IO::Exists ( xmpPath.c_str() ) ) return;	// No XMP.
 
-	// Read the entire .XMP file.
+	// Read the entire .XMP file. We know the XMP exists, New_XMPFiles_IO is supposed to return 0
+	// only if the file does not exist.
 
 	bool readOnly = XMP_OptionIsClear ( this->parent->openFlags, kXMPFiles_OpenForUpdate );
 
 	XMP_Assert ( this->parent->ioRef == 0 );
 	XMPFiles_IO* xmpFile =  XMPFiles_IO::New_XMPFiles_IO ( xmpPath.c_str(), readOnly );
-	if ( xmpFile == 0 ) return;	// The open failed.
+	if ( xmpFile == 0 ) XMP_Throw ( "XDCAMEX XMP file open failure", kXMPErr_InternalFailure );
 	this->parent->ioRef = xmpFile;
 
 	XMP_Int64 xmpLen = xmpFile->Length();
@@ -463,7 +613,7 @@ void XDCAMEX_MetaHandler::GetTakeDuration ( const std::string & takeURI, std::st
 	// *** Better yet, avoid this cruft with self-cleaning objects.
 	#define CleanupAndExit	\
 		{									\
-			if ( expat != 0 ) delete expat;	\
+			delete expatMediaPro;	        \
 			takeXMLFile.Close();			\
 			return;							\
 		}
@@ -500,22 +650,22 @@ void XDCAMEX_MetaHandler::GetTakeDuration ( const std::string & takeURI, std::st
 	if ( hostRef == Host_IO::noFileRef ) return;	// The open failed.
 	XMPFiles_IO takeXMLFile ( hostRef, takePath.c_str(), Host_IO::openReadOnly );
 
-	ExpatAdapter * expat = XMP_NewExpatAdapter ( ExpatAdapter::kUseLocalNamespaces );
-	if ( this->expat == 0 ) return;
+	ExpatAdapter * expatMediaPro = XMP_NewExpatAdapter ( ExpatAdapter::kUseLocalNamespaces );
+	if ( expatMediaPro == 0 ) return;
 
 	XMP_Uns8 buffer [64*1024];
 	while ( true ) {
 		XMP_Int32 ioCount = takeXMLFile.Read ( buffer, sizeof(buffer) );
 		if ( ioCount == 0 ) break;
-		expat->ParseBuffer ( buffer, ioCount, false /* not the end */ );
+		expatMediaPro->ParseBuffer ( buffer, ioCount, false /* not the end */ );
 	}
 
-	expat->ParseBuffer ( 0, 0, true );	// End the parse.
+	expatMediaPro->ParseBuffer ( 0, 0, true );	// End the parse.
 	takeXMLFile.Close();
 
 	// Get the root node of the XML tree.
 
-	XML_Node & mediaproXMLTree = expat->tree;
+	XML_Node & mediaproXMLTree = expatMediaPro->tree;
 	for ( size_t i = 0, limit = mediaproXMLTree.content.size(); i < limit; ++i ) {
 		if ( mediaproXMLTree.content[i]->kind == kElemNode ) {
 			takeRootElem = mediaproXMLTree.content[i];
@@ -568,7 +718,7 @@ void XDCAMEX_MetaHandler::GetTakeUMID ( const std::string& clipUMID,
 	// *** Better yet, avoid this cruft with self-cleaning objects.
 	#define CleanupAndExit	\
 		{									\
-			if (expat != 0) delete expat;	\
+			delete expatMediaPro;	        \
 			mediaproXMLFile.Close();		\
 			return;							\
 		}
@@ -593,22 +743,22 @@ void XDCAMEX_MetaHandler::GetTakeUMID ( const std::string& clipUMID,
 	if ( hostRef == Host_IO::noFileRef ) return;	// The open failed.
 	XMPFiles_IO mediaproXMLFile ( hostRef, mediapropath.c_str(), Host_IO::openReadOnly );
 
-	ExpatAdapter * expat = XMP_NewExpatAdapter ( ExpatAdapter::kUseLocalNamespaces );
-	if ( this->expat == 0 ) return;
+	ExpatAdapter * expatMediaPro = XMP_NewExpatAdapter ( ExpatAdapter::kUseLocalNamespaces );
+	if ( expatMediaPro == 0 ) return;
 
 	XMP_Uns8 buffer [64*1024];
 	while ( true ) {
 		XMP_Int32 ioCount = mediaproXMLFile.Read ( buffer, sizeof(buffer) );
 		if ( ioCount == 0 ) break;
-		expat->ParseBuffer ( buffer, ioCount, false /* not the end */ );
+		expatMediaPro->ParseBuffer ( buffer, ioCount, false /* not the end */ );
 	}
 
-	expat->ParseBuffer ( 0, 0, true );	// End the parse.
+	expatMediaPro->ParseBuffer ( 0, 0, true );	// End the parse.
 	mediaproXMLFile.Close();
 
 	// Get the root node of the XML tree.
 
-	XML_Node & mediaproXMLTree = expat->tree;
+	XML_Node & mediaproXMLTree = expatMediaPro->tree;
 	for ( size_t i = 0, limit = mediaproXMLTree.content.size(); i < limit; ++i ) {
 		if ( mediaproXMLTree.content[i]->kind == kElemNode ) {
 			mediaproRootElem = mediaproXMLTree.content[i];

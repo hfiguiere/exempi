@@ -22,6 +22,7 @@
 #include "source/UnicodeInlines.incl_cpp"
 #include "XMPFiles/source/FormatSupport/Reconcile_Impl.hpp"
 #include "source/XIO.hpp"
+#include "source/EndianUtils.hpp"
 
 // =================================================================================================
 

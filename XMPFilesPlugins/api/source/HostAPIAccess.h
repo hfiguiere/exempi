@@ -10,11 +10,23 @@
 #ifndef __HostAPIAccess_h__
 #define __HostAPIAccess_h__	1
 #include "HostAPI.h"
+#include <string>
 
 namespace XMP_PLUGIN
 {
 
+/** @brief Sets the host API struct for the plugin
+ *
+ *  The HostAPI struct will be passed in from the host during plugin initialization.
+ *  The struct will contain a mVersion field which contains the actual version of the host API.
+ *  As the plugin might be newer than the plugin host the plugin must always check if
+ *  a host function is available before calling into the host.
+ *
+ *  @param hostAPI The HostAPI struct. The struct can be smaller than expected.
+ *  @return True if the hostAPI was accepted by the plugin.
+ */
 bool SetHostAPI( HostAPIRef hostAPI );
+
 
 /** @class IOAdapter
  *  @brief This class deals with file I/O. It's a wrapper class over host API's functions hostAPI->mFileIOAPI.
@@ -170,11 +182,24 @@ bool CheckFormatStandard( SessionRef session, XMP_FileFormat format, const Strin
  * @param session		File handler session  (should refer to replacement handler)
  * @param format		The file format identifier
  * @param path			Path to the file that should be proceeded
- * @param meta			Reference to XMPMeta instance. Will be populated with the XMP as read by the standard file handler
+ * @param xmpStr		Reference to serialized XMP packet. Will be populated with the XMP Packet as read by the standard file handler
  * @param containsXMP	Returns true if the standard handler detected XMP
  * @return				true on success
  */
-bool GetXMPStandard( SessionRef session, XMP_FileFormat format, const StringPtr path, XMPMetaRef meta, bool* containsXMP );
+bool GetXMPStandard( SessionRef session, XMP_FileFormat format, const StringPtr path, std::string& xmpStr, bool* containsXMP );
+
+/** @brief Request additional API suite from the host.
+ *
+ *  RequestAPISuite should be called during plugin initialization time
+ *  to request additional versioned APIs from the plugin host. If the name or version
+ *  of the requested API suite is unknown NULL is returned.
+ *
+ *  @param apiName The name of the API suite.
+ *  @param apiVersion The version of the API suite.
+ *  @return pointer to the suite struct or NULL if name/version is unknown.
+ */	
+void* RequestAPISuite( const char* apiName, XMP_Uns32 apiVersion );
+
 
 } //namespace XMP_PLUGIN
 

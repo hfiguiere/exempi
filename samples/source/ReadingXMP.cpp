@@ -12,7 +12,10 @@
 * and examining it through the XMP object.
 */
 
+#include <cstdio>
+#include <vector>
 #include <string>
+#include <cstring>
 
 // Must be defined to instantiate template classes
 #define TXMP_STRING_TYPE std::string 

@@ -7,13 +7,14 @@
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
 
+#include "HostAPIAccess.h"
 #include "PluginBase.h"
+#include "PluginHandler.h"
 #include "PluginRegistry.h"
 
 namespace XMP_PLUGIN
 {
 
-#define PLUGIN_VERSION	1 
 #define XMP_MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -74,9 +75,8 @@ static XMPErrorID Static_SetHostAPI( HostAPIRef hostAPI, WXMP_Error * wError )
 
 	wError->mErrorID = kXMPErr_SetHostAPI;
 
-	if( hostAPI && hostAPI->mVersion == PLUGIN_VERSION )
+	if( SetHostAPI( hostAPI ) )
 	{
-		SetHostAPI( hostAPI );
 		wError->mErrorID = kXMPErr_NoError;
 	}
 	
@@ -132,7 +132,7 @@ static XMPErrorID Static_TerminateSession( SessionRef session, WXMP_Error * wErr
 
 // ============================================================================
 
-static XMPErrorID Static_CheckFileFormat( XMP_StringPtr uid, XMP_StringPtr filePath, XMP_IORef fileRef, bool * value, WXMP_Error * wError )
+static XMPErrorID Static_CheckFileFormat( XMP_StringPtr uid, XMP_StringPtr filePath, XMP_IORef fileRef, XMP_Bool * value, WXMP_Error * wError )
 {
 	if( wError == NULL )	return kXMPErr_BadParam;
 
@@ -154,7 +154,7 @@ static XMPErrorID Static_CheckFileFormat( XMP_StringPtr uid, XMP_StringPtr fileP
 
 // ============================================================================
 
-static XMPErrorID Static_CheckFolderFormat( XMP_StringPtr uid, XMP_StringPtr rootPath, XMP_StringPtr gpName, XMP_StringPtr parentName, XMP_StringPtr leafName, bool * value, WXMP_Error * wError )
+static XMPErrorID Static_CheckFolderFormat( XMP_StringPtr uid, XMP_StringPtr rootPath, XMP_StringPtr gpName, XMP_StringPtr parentName, XMP_StringPtr leafName, XMP_Bool * value, WXMP_Error * wError )
 {
 	if( wError == NULL )	return kXMPErr_BadParam;
 
@@ -175,7 +175,7 @@ static XMPErrorID Static_CheckFolderFormat( XMP_StringPtr uid, XMP_StringPtr roo
 
 // ============================================================================
 
-static XMPErrorID Static_GetFileModDate ( SessionRef session, bool * ok, XMP_DateTime * modDate, WXMP_Error * wError )
+static XMPErrorID Static_GetFileModDate ( SessionRef session, XMP_Bool * ok, XMP_DateTime * modDate, WXMP_Error * wError )
 {
 	if( wError == NULL )	return kXMPErr_BadParam;
 
@@ -221,7 +221,7 @@ static XMPErrorID Static_CacheFileData( SessionRef session, XMP_IORef fileRef, X
 
 // ============================================================================
 
-static XMPErrorID Static_UpdateFile( SessionRef session, XMP_IORef fileRef, bool doSafeUpdate, XMP_StringPtr xmpStr, WXMP_Error * wError )
+static XMPErrorID Static_UpdateFile( SessionRef session, XMP_IORef fileRef, XMP_Bool doSafeUpdate, XMP_StringPtr xmpStr, WXMP_Error * wError )
 {
 	if( wError == NULL )	return kXMPErr_BadParam;
 
@@ -232,7 +232,7 @@ static XMPErrorID Static_UpdateFile( SessionRef session, XMP_IORef fileRef, bool
 	{
 		if(thiz)
 		{
-			thiz->updateFile( fileRef, doSafeUpdate, xmpStr );
+			thiz->updateFile( fileRef, ConvertXMP_BoolToBool( doSafeUpdate ), xmpStr );
 			wError->mErrorID = kXMPErr_NoError;
 		}
 	}
@@ -295,6 +295,129 @@ static XMPErrorID Static_ExportFromXMP( SessionRef session, XMPMetaRef xmp, WXMP
 
 // ============================================================================
 
+static XMPErrorID Static_FillMetadataFiles( SessionRef session, StringVectorRef metadataFiles,
+	SetStringVectorProc SetStringVector, WXMP_Error * wError )
+{
+	if( wError == NULL )	return kXMPErr_BadParam;
+
+	wError->mErrorID = kXMPErr_PluginFillMetadataFiles;
+
+	PluginBase* thiz = (PluginBase*) session;
+	try
+	{
+		if(thiz)
+		{
+			thiz->FillMetadataFiles(metadataFiles, SetStringVector);
+			wError->mErrorID = kXMPErr_NoError;
+		}
+	}
+	catch( ... )
+	{
+		HandleException( wError );
+	}
+
+	return wError->mErrorID;
+}
+
+
+static XMPErrorID Static_FillAssociatedResources( SessionRef session, StringVectorRef resourceList,
+	SetStringVectorProc SetStringVector, WXMP_Error * wError )
+{
+	if( wError == NULL )	return kXMPErr_BadParam;
+
+	wError->mErrorID = kXMPErr_PluginFillAssociatedResources;
+
+	PluginBase* thiz = (PluginBase*) session;
+	try
+	{
+		if(thiz)
+		{
+			thiz->FillAssociatedResources(resourceList, SetStringVector);
+			wError->mErrorID = kXMPErr_NoError;
+		}
+	}
+	catch( ... )
+	{
+		HandleException( wError );
+	}
+
+	return wError->mErrorID;
+}
+
+static XMPErrorID Static_ImportToXMPString( SessionRef session, XMP_StringPtr* xmpStr, WXMP_Error * wError )
+{
+	if( wError == NULL )	return kXMPErr_BadParam;
+
+	wError->mErrorID = kXMPErr_PluginImportToXMP;
+	
+	PluginBase* thiz = (PluginBase*) session;
+	try
+	{
+		if(thiz)
+		{
+			thiz->importToXMP( xmpStr );
+			wError->mErrorID = kXMPErr_NoError;
+		}
+	}
+	catch( ... )
+	{
+		HandleException( wError );
+	}
+
+	return wError->mErrorID;
+}
+
+// ============================================================================
+
+static XMPErrorID Static_ExportFromXMPString( SessionRef session, XMP_StringPtr xmpStr, WXMP_Error * wError )
+{
+	if( wError == NULL )	return kXMPErr_BadParam;
+
+	wError->mErrorID = kXMPErr_PluginExportFromXMP;
+
+	PluginBase* thiz = (PluginBase*) session;
+	try
+	{
+		if(thiz)
+		{
+			thiz->exportFromXMP( xmpStr );
+			wError->mErrorID = kXMPErr_NoError;
+		}
+	}
+	catch( ... )
+	{
+		HandleException( wError );
+	}
+
+	return wError->mErrorID;
+}
+
+
+static XMPErrorID Static_IsMetadataWritable( SessionRef session, XMP_Bool * result, WXMP_Error * wError )
+{
+	if( wError == NULL || result == NULL )	return kXMPErr_BadParam;
+
+	wError->mErrorID = kXMPErr_PluginIsMetadataWritable;
+
+	PluginBase* thiz = (PluginBase*) session;
+	try
+	{
+		if(thiz)
+		{
+			*result = false;
+			*result = ConvertBoolToXMP_Bool( thiz->IsMetadataWritable( ) );
+			wError->mErrorID = kXMPErr_NoError;
+		}
+	}
+	catch( ... )
+	{
+		HandleException( wError );
+	}
+
+	return wError->mErrorID;
+}
+// ============================================================================
+
 XMPErrorID InitializePlugin( XMP_StringPtr moduleID, PluginAPIRef pluginAPI, WXMP_Error * wError )
 {
 	if( wError == NULL )	return kXMPErr_BadParam;
@@ -303,6 +426,7 @@ XMPErrorID InitializePlugin( XMP_StringPtr moduleID, PluginAPIRef pluginAPI, WXM
 	
 	if( !pluginAPI || moduleID == NULL )
 	{
+		wError->mErrorID = kXMPErr_BadParam;
 		wError->mErrorMsg = "pluginAPI or moduleID is NULL";
 		return wError->mErrorID;
 	}
@@ -319,11 +443,15 @@ XMPErrorID InitializePlugin( XMP_StringPtr moduleID, PluginAPIRef pluginAPI, WXM
 	
 		RegisterFileHandlers(); // Register all file handlers
 
-		// Initialize all the registered file handlers
-		if( PluginRegistry::initialize() )
+		bool initialized = PluginRegistry::initialize(); // Initialize all the registered file handlers
+
+		if( initialized )
 		{
-			pluginAPI->mVersion = PLUGIN_VERSION;
-			pluginAPI->mSize = sizeof(PluginAPI);
+			XMP_Uns32 size = sizeof(*pluginAPI);
+			
+			// The pluginAPI struct from the (older) host might be smaller than expected
+			// so make sure that we don't write over the end of the struct.
+			pluginAPI->mVersion = XMP_PLUGIN_VERSION;
 			
 			pluginAPI->mTerminatePluginProc = Static_TerminatePlugin;
 			pluginAPI->mSetHostAPIProc      = Static_SetHostAPI;
@@ -340,6 +468,29 @@ XMPErrorID InitializePlugin( XMP_StringPtr moduleID, PluginAPIRef pluginAPI, WXM
 
 			pluginAPI->mImportToXMPProc = Static_ImportToXMP;
 			pluginAPI->mExportFromXMPProc = Static_ExportFromXMP;
+			
+			// version 2
+			if( pluginAPI->mSize > offsetof( PluginAPI, mFillMetadataFilesProc ) )
+			{
+				pluginAPI->mFillMetadataFilesProc = Static_FillMetadataFiles;
+				pluginAPI->mImportToXMPStringProc = Static_ImportToXMPString;
+				pluginAPI->mExportFromXMPStringProc = Static_ExportFromXMPString;
+				pluginAPI->mFillAssociatedResourcesProc = Static_FillAssociatedResources;
+			}
+			
+			// version 3
+			if( pluginAPI->mSize > offsetof( PluginAPI, mIsMetadataWritableProc ) )
+			{
+				pluginAPI->mIsMetadataWritableProc = Static_IsMetadataWritable;
+			}
+			
+			// Compatibility hack for CS6 (plugin version 1):
+			// set mVersion to 1 if pluginAPI is for version 1
+			// because in CS6 plugin version is used to determine the hostAPI version.
+			if (pluginAPI->mSize <= offsetof( PluginAPI, mFillMetadataFilesProc ))
+			{
+				pluginAPI->mVersion = 1;
+			}
 
 			wError->mErrorID = kXMPErr_NoError;
 		}
@@ -349,6 +500,53 @@ XMPErrorID InitializePlugin( XMP_StringPtr moduleID, PluginAPIRef pluginAPI, WXM
 		HandleException( wError );
 	}
 	
+	return wError->mErrorID;
+}
+	
+// ============================================================================
+
+XMPErrorID InitializePlugin2( XMP_StringPtr moduleID, HostAPIRef hostAPI, PluginAPIRef pluginAPI, WXMP_Error * wError )
+{
+	if( wError == NULL )
+	{
+		return kXMPErr_BadParam;	
+	}
+	
+	if( hostAPI == NULL )
+	{
+		wError->mErrorID = kXMPErr_BadParam;
+		wError->mErrorMsg = "hostAPI is NULL";
+		return wError->mErrorID;
+	}
+	
+	wError->mErrorID = kXMPErr_PluginInitialized;
+	
+	try
+	{
+		if( SetHostAPI(hostAPI) )
+		{
+			if( SetupPlugin() )
+			{
+				if( InitializePlugin( moduleID, pluginAPI, wError ) )
+				{
+					wError->mErrorID = kXMPErr_NoError;
+				}
+			}
+			else
+			{
+				wError->mErrorMsg = "SetupPlugin failed";
+			}
+		}
+		else
+		{
+			wError->mErrorMsg = "SetHostAPI failed";			
+		}
+	}
+	catch( ... )
+	{
+		HandleException( wError );
+	}
+
 	return wError->mErrorID;
 }
 

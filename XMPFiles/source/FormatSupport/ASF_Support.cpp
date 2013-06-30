@@ -30,11 +30,11 @@ int IsEqualGUID ( const GUID& guid1, const GUID& guid2 )
 }
 #endif
 
-ASF_Support::ASF_Support() : legacyManager(0), posFileSizeInfo(0) {}
+ASF_Support::ASF_Support() : legacyManager(0),progressTracker(0), posFileSizeInfo(0) {}
 
-ASF_Support::ASF_Support ( ASF_LegacyManager* _legacyManager ) : posFileSizeInfo(0)
+ASF_Support::ASF_Support ( ASF_LegacyManager* _legacyManager,XMP_ProgressTracker* _progressTracker ) 
+	:legacyManager(_legacyManager),progressTracker(_progressTracker), posFileSizeInfo(0)
 {
-	legacyManager = _legacyManager;
 }
 
 ASF_Support::~ASF_Support()
@@ -645,7 +645,11 @@ bool ASF_Support::WriteHeaderObject ( XMP_IO* sourceRef, XMP_IO* destRef, const 
 
 		// if we are operating on the same file (in-place update), place pointer before writing
 		if ( sourceRef == destRef ) destRef->Seek ( object.pos, kXMP_SeekFromStart );
-
+		if ( this->progressTracker != 0 ) 
+		{
+			XMP_Assert ( this->progressTracker->WorkInProgress() );
+			this->progressTracker->AddTotalWork ( (float)header.size() );
+		}
 		// write header
 		destRef->Write ( header.c_str(), header.size() );
 
@@ -1139,7 +1143,7 @@ void ASF_LegacyManager::ImportLegacy ( SXMPMeta* xmp )
 	FromUTF16 ( (UTF16Unit*)fields[fieldDescription].c_str(), (fields[fieldDescription].size() / 2), &utf8, false );
 	if ( ! utf8.empty() ) xmp->SetLocalizedText ( kXMP_NS_DC, "description", "", "x-default", utf8.c_str(), kXMP_DeleteExisting );
 
-	if ( ! utf8.empty() ) xmp->SetProperty ( kXMP_NS_XMP_Rights, "WebStatement", fields[fieldCopyrightURL].c_str(), kXMP_DeleteExisting );
+	if ( ! fields[fieldCopyrightURL].empty() ) xmp->SetProperty ( kXMP_NS_XMP_Rights, "WebStatement", fields[fieldCopyrightURL].c_str(), kXMP_DeleteExisting );
 
 #if ! Exclude_LicenseURL_Recon
 	if ( ! fields[fieldLicenseURL].empty() ) xmp->SetProperty ( kXMP_NS_XMP_Rights, "Certificate", fields[fieldLicenseURL].c_str(), kXMP_DeleteExisting );

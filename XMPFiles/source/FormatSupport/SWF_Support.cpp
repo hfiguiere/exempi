@@ -127,7 +127,7 @@ XMP_Int64 SWF_IO::DecompressFileToMemory ( XMP_IO * fileIn, RawDataBlock * dataO
 	XMP_Int32 ioCount;
 	XMP_Int64 offsetIn;
 	const XMP_Int64 lengthIn = fileIn->Length();
-	XMP_Enforce ( (SWF_IO::HeaderPrefixSize <= lengthIn) && (lengthIn <= SWF_IO::MaxExpandedSize) );
+	XMP_Enforce ( ((XMP_Int64)SWF_IO::HeaderPrefixSize <= lengthIn) && (lengthIn <= SWF_IO::MaxExpandedSize) );
 	
 	// Set the uncompressed part of the header. Save the expanded size from the file.
 	

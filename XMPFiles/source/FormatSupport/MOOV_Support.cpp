@@ -272,6 +272,7 @@ void MOOV_Manager::ParseNestedBoxes ( BoxNode * parentNode, const std::string & 
 				case ISOMedia::k_edts : pathSuffix = "/edts"; break;
 				case ISOMedia::k_mdia : pathSuffix = "/mdia"; break;
 				case ISOMedia::k_minf : pathSuffix = "/minf"; break;
+				case ISOMedia::k_dinf : pathSuffix = "/dinf"; break;
 				case ISOMedia::k_stbl : pathSuffix = "/stbl"; break;
 			}
 		if ( pathSuffix != 0 ) {
