@@ -46,9 +46,13 @@ INCLUDES = -I$(top_srcdir) \
 
 AM_CPPFLAGS = -Wno-multichar\
 	-D@EXEMPI_PLATFORM_DEF@=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
+	-DXMP_StaticBuild=1 \
 	-D_FILE_OFFSET_BITS=64 -DHAVE_EXPAT_CONFIG_H=1 -DXML_STATIC=1
 
-libformatsupport_la_SOURCES = PSIR_FileWriter.cpp    Reconcile_Impl.cpp \
+libformatsupport_la_SOURCES = \
+	PackageFormat_Support.cpp PackageFormat_Support.hpp \
+	PostScript_Support.cpp PostScript_Support.hpp \
+	PSIR_FileWriter.cpp    Reconcile_Impl.cpp \
 	ReconcileTIFF.cpp    TIFF_MemoryReader.cpp \
 	IPTC_Support.cpp  PSIR_MemoryReader.cpp  ReconcileIPTC.cpp   \
 	RIFF.cpp RIFF.hpp ID3_Support.cpp ID3_Support.hpp\

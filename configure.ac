@@ -224,7 +224,6 @@ XMPFilesPlugins/PDF_Handler/Makefile
 samples/Makefile
 samples/source/Makefile
 samples/testfiles/Makefile
-build/Makefile
 public/Makefile
 public/include/Makefile
 public/include/client-glue/Makefile

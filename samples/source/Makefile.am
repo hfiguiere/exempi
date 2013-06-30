@@ -48,7 +48,7 @@ AM_CXXFLAGS = -fexceptions -funsigned-char -fPIC \
 AM_CPPFLAGS = -D@EXEMPI_PLATFORM_DEF@=1 -D_FILE_OFFSET_BITS=64
 XMPLIBS = $(top_builddir)/XMPCore/source/libXMPCore.la \
 	$(top_builddir)/XMPFiles/source/libXMPFiles.la \
-	$(top_builddir)/source/libxmpcommon.la -lexpat -lz \
+	$(top_builddir)/source/libxmpcommon.la -lexpat -lz -lrt \
 	$(top_builddir)/third-party/zuid/interfaces/libmd5.la \
 	-ldl
 
