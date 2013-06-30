@@ -37,8 +37,12 @@ static inline void MakeLowerCase ( std::string * str )
 void XIO::SplitLeafName ( std::string * path, std::string * leafName )
 {
 	size_t dirPos = path->size();
-	// Return if path is empty or just the slash
-	if ( dirPos == 0 || (dirPos == 1 && (*path)[dirPos-1] == kDirChar) ) 
+	// Return if path is empty or just the slash or DOT
+	if ( dirPos == 0 || (dirPos == 1 &&
+				     ((*path)[dirPos-1] == kDirChar
+					      || (*path)[dirPos-1] == '.')
+				     )
+		     )
 	{
 		leafName->erase();
 		path->erase();
