@@ -13,12 +13,13 @@
 #include <map>
 #include <list>
 #include <string>
-#include "EndianUtils.hpp"
-#include "globals.h"
-#include "XMP_Const.h" //needed for setKV convenience functions
-#include "Log.h"
 
-#include "LargeFileAccess.hpp"
+#include "source/EndianUtils.hpp"
+#include "public/include/XMP_Const.h" //needed for setKV convenience functions
+
+#include "samples/source/common/globals.h"
+#include "samples/source/common/Log.h"
+#include "samples/source/common/LargeFileAccess.hpp"
 void LFA_Throw ( const char* msg, int id );
 
 using namespace std;
@@ -193,6 +194,7 @@ public:
 
 	//returns true if there is such a node, false if not, error if it happens to be key-value pair
 	bool hasNode(const std::string key);
+	XMP_Int32 getNodeCount(const std::string key);
 };
 
 #endif

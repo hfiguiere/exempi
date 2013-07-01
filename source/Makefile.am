@@ -1,7 +1,7 @@
 #
 # exempi - Makefile.am
 #
-# Copyright (C) 2007 Hubert Figuiere
+# Copyright (C) 2007-2013 Hubert Figuiere
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,4 +35,31 @@
 #
 
 
-SUBDIRS = common XMPCore XMPFiles
+noinst_LTLIBRARIES = libxmpcommon.la
+
+INCLUDES = -I$(top_srcdir)
+
+AM_CXXFLAGS = -Wno-multichar -Wno-ctor-dtor-privacy \
+	-funsigned-char -fexceptions
+AM_CPPFLAGS = \
+	-D@EXEMPI_PLATFORM_DEF@=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
+	-DXMP_StaticBuild=1 \
+	-D_FILE_OFFSET_BITS=64 -DHAVE_EXPAT_CONFIG_H=1 -DXML_STATIC=1
+
+
+
+noinst_HEADERS = UnicodeConversions.hpp ExpatAdapter.hpp EndianUtils.hpp\
+	XMLParserAdapter.hpp XMPFiles_IO.hpp Endian.h Host_IO.hpp XIO.hpp
+
+
+libxmpcommon_la_SOURCES = UnicodeInlines.incl_cpp UnicodeConversions.cpp\
+	XML_Node.cpp XMPFiles_IO.cpp \
+	XMP_LibUtils.hpp XMP_LibUtils.cpp \
+	XIO.cpp Host_IO-POSIX.cpp \
+	XMP_ProgressTracker.hpp XMP_ProgressTracker.cpp \
+	PerfUtils.hpp PerfUtils.cpp \
+	IOUtils.hpp IOUtils.cpp \
+	$(NULL)
+
+
+EXTRA_DIST = Host_IO-POSIX.cpp Host_IO-Win.cpp

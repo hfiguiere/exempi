@@ -11,7 +11,10 @@
 * Demonstrates how to open a file for update, and modifying the contained XMP before writing it back to the file.
 */
 
+#include <cstdio>
+#include <vector>
 #include <string>
+#include <cstring>
 
 // Must be defined to instantiate template classes
 #define TXMP_STRING_TYPE std::string 
@@ -20,15 +23,14 @@
 #define XMP_INCLUDE_XMPFILES 1 
 
 // Ensure XMP templates are instantiated
-#include "XMP.incl_cpp"
+#include "public/include/XMP.incl_cpp"
 
 // Provide access to the API
-#include "XMP.hpp"
-
-#include <string.h>
+#include "public/include/XMP.hpp"
 
 #include <iostream>
 #include <fstream>
+#include <string.h>
 
 using namespace std; 
 

@@ -1,5 +1,5 @@
 // =================================================================================================
-// Copyright 2008 Adobe Systems Incorporated
+// Copyright 2002-2008 Adobe Systems Incorporated
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
@@ -10,7 +10,8 @@
 #ifndef XMPQE_DUMPFILE_H
 #define XMPQE_DUMPFILE_H
 
-#include "TagTree.h"
+#include "samples/source/common/TagTree.h"
+#define IsNumeric( ch ) (ch >='0' && ch<='9' )
 
 class DumpFile {
 public:

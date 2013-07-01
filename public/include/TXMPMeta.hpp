@@ -100,7 +100,7 @@ public:
 
     // =============================================================================================
     // Constuctors and destructor
-    // =========================
+    // ==========================
 
     // ---------------------------------------------------------------------------------------------
     /// \name Constructors and destructor
@@ -1671,6 +1671,65 @@ public:
     // ---------------------------------------------------------------------------------------------
     /// \brief Not implemented
     void SetObjectOptions ( XMP_OptionBits options );
+
+    /// @}
+
+    // =============================================================================================
+    // Error notifications
+    // ===================
+
+    // ---------------------------------------------------------------------------------------------
+    /// \name Error notifications
+    /// @{
+	///
+	/// From the beginning through version 5.5, XMP Tookit errors result in throwing an \c XMP_Error
+	/// exception. For the most part exceptions were thrown early and thus API calls aborted as soon
+	/// as an error was detected. Starting in version 5.5, support has been added for notifications
+	/// of errors arising in calls to \c TXMPMeta functions.
+	///
+	/// A client can register an error notification callback function for a \c TXMPMeta object. This
+	/// can be done as a global default or individually to each object. The global default applies
+	/// to all objects created after it is registered. Within the object there is no difference
+	/// between the global default or explicitly registered callback. The callback function returns
+	/// a \c bool value indicating if recovery should be attempted (true) or an exception thrown
+	/// (false). If no callback is registered, a best effort at recovery and continuation will be
+	/// made with an exception thrown if recovery is not possible.
+	///
+	/// The number of notifications delivered for a given TXMPMeta object can be limited. This is
+	/// intended to reduce chatter from multiple or cascading errors. The limit is set when the
+	/// callback function is registered. This limits the number of notifications of the highest
+	/// severity delivered or less. If a higher severity error occurs, the counting starts again.
+	/// The limit and counting can be reset at any time, see \c ResetErrorCallbackLimit.
+	
+	//  --------------------------------------------------------------------------------------------
+	/// @brief SetDefaultErrorCallback() registers a global default error notification callback.
+	///
+	/// @param proc The client's callback function.
+	///
+	/// @param context Client-provided context for the callback.
+	///
+	/// @param limit A limit on the number of notifications to be delivered.
+	
+	static void SetDefaultErrorCallback ( XMPMeta_ErrorCallbackProc proc, void* context = 0, XMP_Uns32 limit = 1 );
+	
+	//  --------------------------------------------------------------------------------------------
+	/// @brief SetErrorCallback() registers an error notification callback.
+	///
+	/// @param proc The client's callback function.
+	///
+	/// @param context Client-provided context for the callback.
+	///
+	/// @param limit A limit on the number of notifications to be delivered.
+	
+	void SetErrorCallback ( XMPMeta_ErrorCallbackProc proc, void* context = 0, XMP_Uns32 limit = 1 );
+	
+	//  --------------------------------------------------------------------------------------------
+	/// @brief ResetErrorCallbackLimit() resets the error notification limit and counting. It has no
+	/// effect if an error notification callback function is not registered. 
+	///
+	/// @param limit A limit on the number of notifications to be delivered.
+	
+	void ResetErrorCallbackLimit ( XMP_Uns32 limit = 1 );
 
     /// @}
 

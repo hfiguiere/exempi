@@ -12,7 +12,10 @@
 * and examining it through the XMP object.
 */
 
+#include <cstdio>
+#include <vector>
 #include <string>
+#include <cstring>
 
 // Must be defined to instantiate template classes
 #define TXMP_STRING_TYPE std::string 
@@ -21,10 +24,10 @@
 #define XMP_INCLUDE_XMPFILES 1 
 
 // Ensure XMP templates are instantiated
-#include "XMP.incl_cpp"
+#include "public/include/XMP.incl_cpp"
 
 // Provide access to the API
-#include "XMP.hpp"
+#include "public/include/XMP.hpp"
 
 #include <iostream>
 #include <fstream>

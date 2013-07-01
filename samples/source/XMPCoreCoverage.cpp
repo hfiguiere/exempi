@@ -10,21 +10,22 @@
 * Demonstrates syntax and usage by exercising most of the API functions of XMPCore Toolkit SDK component, 
 * using a sample XMP Packet that contains all of the different property and attribute types.
 */
+#include <cstdio>
+#include <vector>
 #include <string>
+#include <cstring>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include <cstring>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <time.h>
+#include <cstdlib>
+#include <cerrno>
+#include <ctime>
 
 #define TXMP_STRING_TYPE	std::string
 
-#include "XMP.hpp"
-#include "XMP.incl_cpp"
+#include "public/include/XMP.hpp"
+#include "public/include/XMP.incl_cpp"
 
 using namespace std;
 
@@ -1669,7 +1670,7 @@ static void DoXMPCoreCoverage ( FILE * log )
 		fprintf ( log, "CatenateArrayItems, no commas : %s\n", tmpStr1.c_str() );
 		
 		tmpStr2.erase();
-		SXMPUtils::CatenateArrayItems ( meta, kNS1, "Array1", " ; ", "[]", kXMPUtil_AllowCommas, &tmpStr2 );
+		SXMPUtils::CatenateArrayItems ( meta, kNS1, "Array1", " ; ", "\"", kXMPUtil_AllowCommas, &tmpStr2 );
 		fprintf ( log, "CatenateArrayItems, allow commas : %s\n", tmpStr2.c_str() );
 
 		SXMPUtils::SeparateArrayItems ( &meta, kNS1, "Array2-1", kXMP_NoOptions, tmpStr1.c_str() );

@@ -4,7 +4,7 @@
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
 // of the Adobe license agreement accompanying it.
-// 
+//
 // =================================================================================================
 
 #ifndef XMPQE_GLOBALS_H
@@ -12,14 +12,18 @@
 
 	#include <string>
 
+	#include <cstdlib>	// Various libraries needed for gcc 4.x builds.
+	#include <cstring>
+	#include <cstdio>
+
 	//sanity check platform/endianess
-	#if !defined(WIN_ENV) && !defined(MAC_ENV) && !defined(UNIX_ENV) 
-		#error "XMP environment error - must define one of MAC_ENV, WIN_ENV, or UNIX_ENV"
+	#if !defined(WIN_ENV) && !defined(MAC_ENV) && !defined(UNIX_ENV) && !defined(IOS_ENV)
+		#error "XMP environment error - must define one of MAC_ENV, WIN_ENV, UNIX_ENV or IOS_ENV"
 	#endif
 
 	#ifdef WIN_ENV
 		#define XMPQE_LITTLE_ENDIAN 1
-	#elif defined(MAC_ENV)
+	#elif (defined(MAC_ENV) || defined(IOS_ENV))
 		#if __BIG_ENDIAN__
 			#define XMPQE_BIG_ENDIAN 1
 		#elif __LITTLE_ENDIAN__
@@ -60,17 +64,19 @@
 		const std::string MAC_OMNI_BUGINESE("A?B?C<85>D??E");
 	#else
 		// a *correctly* degraded omni-string (non-BMP-char to ?)
-		const std::string DEG_OMNI_BUGINESE("A?B?C<C3 96>D?E"); 
+		const std::string DEG_OMNI_BUGINESE("A?B?C<C3 96>D?E");
 		// ditto albeit MacRoman encoding
 		const std::string MAC_OMNI_BUGINESE("A?B?C<85>D?E");
 	#endif
-	//  -> #issue# the non-BMP character in OMNI_STRING between D and E gets converted 
+	//  -> #issue# the non-BMP character in OMNI_STRING between D and E gets converted
 	//      into two question marks (wrong) , not into one (correct)
 
-	const char OEAEUE_UTF8_CSTRING[]={0xC3, 0x84, 0xC3, 0x96, 0xC3, 0x9C,'\0'};
-	const std::string AEOEUE_UTF8(OEAEUE_UTF8_CSTRING);
+	const char AEOEUE_WIN_LOCAL_CSTRING[]={0xC4,0xD6,0xDC,'\0'};
+	const char AEOEUE_MAC_LOCAL_CSTRING[]={0x80,0x85,0x86,'\0'};
+	const char AEOEUE_UTF8_CSTRING[]={0xC3, 0x84, 0xC3, 0x96, 0xC3, 0x9C,'\0'};
+	const std::string AEOEUE_UTF8(AEOEUE_UTF8_CSTRING);
 	const std::string AEOEUE_UTF8_BUGINESE("<C3 84 C3 96 C3 9C>");
-	
+
 	const std::string AEOEUE_WIN_LOCAL_BUGINESE("<C4 D6 DC>");
 	const std::string AEOEUE_MAC_LOCAL_BUGINESE("<80 85 86>");
 
@@ -79,9 +85,11 @@
 	const std::string AEOEUE_LATIN1_MOJIBAKE_BUGINESE("<C2 80 C2 85 C2 86>");
 
 	#if MAC_ENV
+		const std::string AEOEUE_LOCAL = std::string(AEOEUE_MAC_LOCAL_CSTRING);
 		const std::string AEOEUE_WIN_LOCAL_TO_UTF8 = AEOEUE_MAC_MOJIBAKE_BUGINESE;
 		const std::string AEOEUE_MAC_LOCAL_TO_UTF8 = AEOEUE_UTF8_BUGINESE;
 	#elif WIN_ENV
+		const std::string AEOEUE_LOCAL = std::string(AEOEUE_WIN_LOCAL_CSTRING);
 		const std::string AEOEUE_WIN_LOCAL_TO_UTF8 = AEOEUE_UTF8_BUGINESE;
 		const std::string AEOEUE_MAC_LOCAL_TO_UTF8 = AEOEUE_WIN_MOJIBAKE_BUGINESE;
 	#else

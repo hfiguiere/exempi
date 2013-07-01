@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-<title>XMP-Toolkit-SDK-5.1.2: XMP_Const.h File Reference</title>
+<title>XMP-Toolkit-SDK-CC201306: XMP_Const.h File Reference</title>
 <link href="xmp.css" rel="stylesheet" type="text/css">
 <link href="tabs.css" rel="stylesheet" type="text/css">
 </head><body>
@@ -68,6 +68,7 @@ window.onload = initDynSections;
 <a href="#_details">More...</a></p>
 <code>#include &quot;XMP_Environment.h&quot;</code><br/>
 <code>#include &lt;stddef.h&gt;</code><br/>
+<code>#include &lt;vector&gt;</code><br/>
 <div class="dynheader">
 Include dependency graph for XMP_Const.h:</div>
 <div class="dynsection">
@@ -170,6 +171,9 @@ Include dependency graph for XMP_Const.h:</div>
 <tr><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab794d3d798daf75a963398347dcbb79b"></a><!-- doxytag: member="XMP_Const.h::kXMP_NS_IPTCCore" ref="ab794d3d798daf75a963398347dcbb79b" args="" -->
 #define&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#ab794d3d798daf75a963398347dcbb79b">kXMP_NS_IPTCCore</a>&nbsp;&nbsp;&nbsp;&quot;http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/&quot;</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The XML namespace for the IPTC Core schema. <br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a12ca045d4c12992ec8f6c1003523de20"></a><!-- doxytag: member="XMP_Const.h::kXMP_NS_IPTCExt" ref="a12ca045d4c12992ec8f6c1003523de20" args="" -->
+#define&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#a12ca045d4c12992ec8f6c1003523de20">kXMP_NS_IPTCExt</a>&nbsp;&nbsp;&nbsp;&quot;http://iptc.org/std/Iptc4xmpExt/2008-02-29/&quot;</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The XML namespace for the IPTC Extension schema. <br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a276fac0f70893607afa3f09030ad84c7"></a><!-- doxytag: member="XMP_Const.h::kXMP_NS_RDF" ref="a276fac0f70893607afa3f09030ad84c7" args="" -->
 #define&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#a276fac0f70893607afa3f09030ad84c7">kXMP_NS_RDF</a>&nbsp;&nbsp;&nbsp;&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot;</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The XML namespace for RDF. <br/></td></tr>
@@ -250,6 +254,10 @@ typedef struct <a class="el" href="structXMP__VersionInfo.html">XMP_VersionInfo<
 <tr><td class="memItemLeft" align="right" valign="top">typedef XMP_Int32&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#a05b81829c04746826f4f85fbac76e3dd">XMP_Status</a></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">typedef <a class="el" href="XMP__Const_8h.html#a05b81829c04746826f4f85fbac76e3dd">XMP_Status</a>(*&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#a8ce3570e6e5ac14cd603e96fa9d2936f">XMP_TextOutputProc</a> )(void *refCon, <a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> buffer, <a class="el" href="XMP__Const_8h.html#a9f7dcc184f901c713274edfdac5bcc9a">XMP_StringLen</a> bufferSize)</td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">typedef bool(*&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#aa2738ce2fca7f1809b12834b1b5e2d0e">XMP_AbortProc</a> )(void *arg)</td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">typedef bool(*&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#af18be2d0c8accad813e0d8962da24b4e">XMP_ProgressReportProc</a> )(void *context, float elapsedTime, float fractionDone, float secondsToGo)</td></tr>
+<tr><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="abfd6246a6ce8ef90c7fc600b456f3ea9"></a><!-- doxytag: member="XMP_Const.h::XMP_ProgressReportWrapper" ref="abfd6246a6ce8ef90c7fc600b456f3ea9" args=")(XMP_ProgressReportProc proc, void *context, float elapsedTime, float fractionDone, float secondsToGo)" -->
+typedef XMP_Bool(*&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#abfd6246a6ce8ef90c7fc600b456f3ea9">XMP_ProgressReportWrapper</a> )(<a class="el" href="XMP__Const_8h.html#af18be2d0c8accad813e0d8962da24b4e">XMP_ProgressReportProc</a> proc, void *context, float elapsedTime, float fractionDone, float secondsToGo)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Internal: The signature of a client-side wrapper for the progress report callback. <br/></td></tr>
 <tr><td colspan="2"><h2>Enumerations</h2></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">enum &nbsp;</td><td class="memItemRight" valign="bottom">{ <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adf764cbdea00d65edcd07bb9953ad2b7a511551ce156d5fd96c26ad464b837801">kXMP_TimeWestOfUTC</a> =  -1, 
@@ -332,6 +340,8 @@ typedef struct <a class="el" href="structXMP__VersionInfo.html">XMP_VersionInfo<
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a61dadd085c1777f559549e05962b2c9ea041dc6b7b8684be7112ae40f5f259ebb">kXMP_UseCompactFormat</a> =  0x0040UL, 
 <br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a61dadd085c1777f559549e05962b2c9ea15e3fb0e64614c574ed554f2f72c0a5d">kXMP_UseCanonicalFormat</a> =  0x0080UL, 
+<br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a61dadd085c1777f559549e05962b2c9ea0b659b3b544c7a5a076fbd3132cd7f7a">kXMP_IncludeThumbnailPad</a> =  0x0100UL, 
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a61dadd085c1777f559549e05962b2c9eadb35599da481cc22ea6342b7b4de6bc6">kXMP_ExactPacketLength</a> =  0x0200UL, 
@@ -411,6 +421,9 @@ typedef struct <a class="el" href="structXMP__VersionInfo.html">XMP_VersionInfo<
  }</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><p>Option bit flags for <code><a class="el" href="classTXMPUtils.html#a40c645803530662e08d042b4b7c6190d" title="RemoveProperties() removes multiple properties from an XMP object.">TXMPUtils::RemoveProperties()</a></code> and <code>TXMPUtils::AppendProperties()</code>. </p>
  <a href="XMP__Const_8h.html#a385c44f6fb256e5716a2302a5b940388">More...</a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">enum &nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#a84d76d32dd4ef90e5a90cf759b7e563f">SeekMode</a> </td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><p>Seek mode constants for use with XMP_IO and inside XMPFiles library code. </p>
+<br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">enum &nbsp;</td><td class="memItemRight" valign="bottom">{ <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035da17ab6d429c1550eb3cc16d2e544b78eb">kXMP_PDFFile</a> =  0x50444620UL, 
 <br/>
@@ -454,9 +467,13 @@ typedef struct <a class="el" href="structXMP__VersionInfo.html">XMP_VersionInfo<
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035da89e6282c3f0c8966d788500f5d8eaa91">kXMP_MPEG4File</a> =  0x4D503420UL, 
 <br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035da4b3477bdc53fae1511104fc54f88d134">kXMP_MXFFile</a> =  0x4D584620UL, 
+<br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035da78c62f7c10b16b1a862d93f6226a4622">kXMP_WMAVFile</a> =  0x574D4156UL, 
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035daf093d01e7e9cc55a7d1e204498521fc3">kXMP_AIFFFile</a> =  0x41494646UL, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035daab032aa36aec082c6b3a8300548346f5">kXMP_REDFile</a> =  0x52454420UL, 
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035dabad9584845edf66f2f8fc3c336977e34">kXMP_P2File</a> =  0x50322020UL, 
 <br/>
@@ -469,6 +486,8 @@ typedef struct <a class="el" href="structXMP__VersionInfo.html">XMP_VersionInfo<
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035dafc5ff976e78df2d79d651de818b011f2">kXMP_AVCHDFile</a> =  0x41564844UL, 
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035daa0edb070c11f87c3dad9f8f7a83b9b5e">kXMP_SonyHDVFile</a> =  0x53484456UL, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035dafa11d905db1236494e555956cb2f90ef">kXMP_CanonXFFile</a> =  0x434E5846UL, 
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#abc5c98fcc1211af2b80116dd6e0a035da542634e6051139c44fd7b92d08c64760">kXMP_HTMLFile</a> =  0x48544D4CUL, 
 <br/>
@@ -555,7 +574,11 @@ typedef struct <a class="el" href="structXMP__VersionInfo.html">XMP_VersionInfo<
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#aaf105ae5beaca1dee30ae54530691fcead3027b786992e2a4762a4fa37c92943c">kXMPFiles_UsesSidecarXMP</a> =  0x00000800, 
 <br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#aaf105ae5beaca1dee30ae54530691fceaa2a6a4b744b40055387234632b688fcd">kXMPFiles_FolderBasedFormat</a> =  0x00001000
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#aaf105ae5beaca1dee30ae54530691fceaa2a6a4b744b40055387234632b688fcd">kXMPFiles_FolderBasedFormat</a> =  0x00001000, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#aaf105ae5beaca1dee30ae54530691fcea17578d45ae3c09a8d08189ea544052b1">kXMPFiles_CanNotifyProgress</a> =  0x00002000, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#aaf105ae5beaca1dee30ae54530691fcea798c55f5144eedde76f8329a056210b2">kXMPFiles_NeedsPreloading</a> =  0x00004000
 <br/>
  }</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><p>Option bit flags for <code><a class="el" href="classTXMPFiles.html#acb9e16a1477ec67fa6da6d736a9bc131" title="GetFormatInfo() reports what features are supported for a specific file format.">TXMPFiles::GetFormatInfo()</a></code>. </p>
@@ -566,6 +589,8 @@ typedef struct <a class="el" href="structXMP__VersionInfo.html">XMP_VersionInfo<
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a80155586fa275b28773c9b203f52cabaa91fa388b3888bcb6a68615537b66a49b">kXMPFiles_OpenForUpdate</a> =  0x00000002, 
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a80155586fa275b28773c9b203f52cabaaa58279b2b1311242e7374117f455bb96">kXMPFiles_OpenOnlyXMP</a> =  0x00000004, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a80155586fa275b28773c9b203f52cabaab8cbbeef0e99d246907a4375766e21a2">kXMPFiles_ForceGivenHandler</a> =  0x00000008, 
 <br/>
 &nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#a80155586fa275b28773c9b203f52cabaa0bef4db2ecdaf82a85df9e9d417aab18">kXMPFiles_OpenStrictly</a> =  0x00000010, 
 <br/>
@@ -584,89 +609,6 @@ typedef struct <a class="el" href="structXMP__VersionInfo.html">XMP_VersionInfo<
  }</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><p>Option bit flags for <code><a class="el" href="classTXMPFiles.html#aeca89170c7aa3e2d56e30bff04dd7927" title="CloseFile() explicitly closes an opened file.">TXMPFiles::CloseFile()</a></code>. </p>
  <a href="XMP__Const_8h.html#a6b7b47dd702d9e331586d485013fd1ea">More...</a><br/></td></tr>
-<tr><td colspan="2"><div class="groupHeader">Errors Exception handling</div></td></tr>
-<tr><td colspan="2"><div class="groupText"><p><a class="anchor" id="amgrpae9f409568adfec85efb85b2145d3a6e"></a> XMP Tookit errors result in throwing an <code><a class="el" href="classXMP__Error.html" title="XMP Toolkit error, associates an error code with a descriptive error string.">XMP_Error</a></code> exception. Any exception thrown within the XMP Toolkit is caught in the toolkit and rethrown as an <code><a class="el" href="classXMP__Error.html" title="XMP Toolkit error, associates an error code with a descriptive error string.">XMP_Error</a></code>.</p>
-<p>The <code><a class="el" href="classXMP__Error.html" title="XMP Toolkit error, associates an error code with a descriptive error string.">XMP_Error</a></code> class contains a numeric code and an English explanation. New numeric codes may be added at any time. There are typically many possible explanations for each numeric code. The explanations try to be precise about the specific circumstances causing the error.</p>
-<dl class="note"><dt><b>Note:</b></dt><dd>The explanation string is for debugging use only. It must not be shown to users in a final product. It is written for developers not users, and never localized. </dd></dl>
-</div></td></tr>
-<tr><td class="memItemLeft" align="right" valign="top">enum &nbsp;</td><td class="memItemRight" valign="bottom">{ <br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a14813595824de97382fffeae7b6fe581">kXMPErr_Unknown</a> =  0, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960acd9fa1b621efafd5b218e3a785cbeda1">kXMPErr_TBD</a> =  1, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960ac7ac408582c194cc723a24acb8b4e4c3">kXMPErr_Unavailable</a> =  2, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a115f3d761d2cad952aab23f35cbdf3a1">kXMPErr_BadObject</a> =  3, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a52d197a8b0af3c55f16958162a4132f1">kXMPErr_BadParam</a> =  4, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a716956a038782e595ce61d3fbdd1a25a">kXMPErr_BadValue</a> =  5, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a14bd6c24087d280c722c1a044eec27d6">kXMPErr_AssertFailure</a> =  6, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960aa856bb36a9742d8542b483e00fc6511b">kXMPErr_EnforceFailure</a> =  7, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a3de1ac8f4e4afb705d5a4654cb9579e2">kXMPErr_Unimplemented</a> =  8, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a8babbd758d2c64fd04e85fa48e0675c0">kXMPErr_InternalFailure</a> =  9, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a14342c486ddf394ebc110a446becbfa7">kXMPErr_Deprecated</a> =  10, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a82941dc15c6ccde6b8fb2f9cc85c2eeb">kXMPErr_ExternalFailure</a> =  11, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960ac4ba7b1a57629e4994a0f7a515d51195">kXMPErr_UserAbort</a> =  12, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a5322df07e2a7792824d2468c4837f1cb">kXMPErr_StdException</a> =  13, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960aac7558097a1f5a0f99097199f1bf8ff4">kXMPErr_UnknownException</a> =  14, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a69eb7fef422fbca62cdbc554afffd813">kXMPErr_NoMemory</a> =  15, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a2bc66eec6ce830979089d5c336f75539">kXMPErr_BadSchema</a> =  101, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a3f1efec0aa5452f43c55c05aba616ef7">kXMPErr_BadXPath</a> =  102, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a40ca77d98bd366442bb8d438c420a444">kXMPErr_BadOptions</a> =  103, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a31adb57da79b4fb1f1f5f999ec740010">kXMPErr_BadIndex</a> =  104, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a2584fc813bfcd9158b7adf28a3454bb9">kXMPErr_BadIterPosition</a> =  105, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a052b1b525fba7da8c98be5c135f434b8">kXMPErr_BadParse</a> =  106, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960ac4f936ff6788ce17f6098b7cbda77ed9">kXMPErr_BadSerialize</a> =  107, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960aa0a05e07925d1f3daf5f36f6da0840f8">kXMPErr_BadFileFormat</a> =  108, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a10fa053f279fed01b075f34a70f11795">kXMPErr_NoFileHandler</a> =  109, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960aa9c1c20e53db12b20068d830a8990c0b">kXMPErr_TooLargeForJPEG</a> =  110, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960ac57f1cf1c24778536fd32972e87334c5">kXMPErr_BadXML</a> =  201, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a5464b823e619618d9aa58433cdb45a8e">kXMPErr_BadRDF</a> =  202, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a211bb632ed1264d9e2236f35c6414821">kXMPErr_BadXMP</a> =  203, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a078c69d0d76f25187a11981a2552b179">kXMPErr_EmptyIterator</a> =  204, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960ac4cf86fa29624c5e19111e09a97fe05f">kXMPErr_BadUnicode</a> =  205, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960aecd25299aa177de7bc7f3674fcf2e22d">kXMPErr_BadTIFF</a> =  206, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960ad685e1f839e3bc53dfc55611a0803cee">kXMPErr_BadJPEG</a> =  207, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960ad98fc9a9c050e9fc19c3af9c8abb2d6d">kXMPErr_BadPSD</a> =  208, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a1606a687cb790af16dc561b2a8f2e6a3">kXMPErr_BadPSIR</a> =  209, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a23b2d7cab10b3d80549e6b60855bb15e">kXMPErr_BadIPTC</a> =  210, 
-<br/>
-&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960ad596daed4ac92f8bf7871669d03effad">kXMPErr_BadMPEG</a> =  211
-<br/>
- }</td></tr>
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><p>Exception code constants. </p>
- <a href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960">More...</a><br/></td></tr>
 <tr><td colspan="2"><h2>General scalar types and constants</h2></td></tr>
 <tr><td colspan="2"><p><a class="anchor" id="amgrpb4bdc9c90f0bce40e87dab7c308120ef"></a> </p>
 <br/><br/></td></tr>
@@ -696,6 +638,131 @@ typedef XMP_Uns32&nbsp;</td><td class="memItemRight" valign="bottom"><a class="e
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">The type for a collection of 32 flag bits. Individual flags are defined as enum value bit masks; see <code><a class="el" href="XMP__Const_8h.html#a99fb83031ce9923c84392b4e92f956b5aab51f87b5c48f47f5cefb9e03293dafb" title="The XML string form of the property value is a URI, use rdf:resource attribute. DISCOURAGED...">kXMP_PropValueIsURI</a></code> and following. A number of macros provide common set or set operations, such as <code>XMP_PropIsSimple</code>. For other tests use an expression like <code>options &amp; kXMP_&lt;theOption&gt;</code>. When passing multiple option flags use the bitwise-OR operator. '|', not the arithmatic plus, '+'. <br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a377e4a668de99ce6ed176cef5aaf3fcd"></a><!-- doxytag: member="XMP_Const.h::XMP_TriState" ref="a377e4a668de99ce6ed176cef5aaf3fcd" args="" -->
 typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriState</b></td></tr>
+<tr><td colspan="2"><h2>Error notification and Exceptions</h2></td></tr>
+<tr><td colspan="2"><p><a class="anchor" id="amgrp4159f4d87a6d8a59a860a0926f6ad12b"></a> From the beginning through version 5.5, XMP Tookit errors result in throwing an <code><a class="el" href="classXMP__Error.html" title="XMP Toolkit error, associates an error code with a descriptive error string.">XMP_Error</a></code> exception. For the most part exceptions were thrown early and thus API calls aborted as soon as an error was detected. Starting in version 5.5, support has been added for notifications of errors arising in calls to <code><a class="el" href="classTXMPMeta.html" title="API for access to the XMP Toolkit core services.">TXMPMeta</a></code> and <code><a class="el" href="classTXMPFiles.html" title="API for access to the main (document-level) metadata in a file.">TXMPFiles</a></code> functions.</p>
+<p>A client can register an error notification callback function for a <code><a class="el" href="classTXMPMeta.html" title="API for access to the XMP Toolkit core services.">TXMPMeta</a></code> or <code><a class="el" href="classTXMPFiles.html" title="API for access to the main (document-level) metadata in a file.">TXMPFiles</a></code> object. This can be done as a global default or individually to each object. The global default applies to all objects created after it is registered. Within the object there is no difference between the global default or explicitly registered callback. The callback function returns a <code>bool</code> value indicating if recovery should be attempted (true) or an exception thrown (false). If no callback is registered, a best effort at recovery and continuation will be made with an exception thrown if recovery is not possible. More details can be found in the <code><a class="el" href="classTXMPMeta.html" title="API for access to the XMP Toolkit core services.">TXMPMeta</a></code> and <code><a class="el" href="classTXMPFiles.html" title="API for access to the main (document-level) metadata in a file.">TXMPFiles</a></code> documentation.</p>
+<p>The <code><a class="el" href="classXMP__Error.html" title="XMP Toolkit error, associates an error code with a descriptive error string.">XMP_Error</a></code> class contains a numeric code and an English explanation. New numeric codes may be added at any time. There are typically many possible explanations for each numeric code. The explanations try to be precise about the specific circumstances causing the error.</p>
+<dl class="note"><dt><b>Note:</b></dt><dd>The explanation string is for debugging use only. It must not be shown to users in a final product. It is written for developers not users, and never localized. </dd></dl>
+<br/><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">enum &nbsp;</td><td class="memItemRight" valign="bottom">{ <br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a068fdc8c88dcce62a7b42788a572af61">kXMPErrSev_Recoverable</a> =  0, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960afb962bdcf570af9aef4e32b5f279d1a4">kXMPErrSev_OperationFatal</a> =  1, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a2bd1ff3ba036640f0c76d68a03cf94f7">kXMPErrSev_FileFatal</a> =  2, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960a768126806f8c7b7c107314610125deb3">kXMPErrSev_ProcessFatal</a> =  3
+<br/>
+ }</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><p>Severity codes for error notifications. </p>
+ <a href="XMP__Const_8h.html#af9bdc3014f3d54c426b6d2df10de4960">More...</a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">enum &nbsp;</td><td class="memItemRight" valign="bottom">{ <br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409ae2aec0f3b8db282cbba40e4bcf746ba9">kXMPErr_NoError</a> =  -1, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a14813595824de97382fffeae7b6fe581">kXMPErr_Unknown</a> =  0, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409acd9fa1b621efafd5b218e3a785cbeda1">kXMPErr_TBD</a> =  1, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409ac7ac408582c194cc723a24acb8b4e4c3">kXMPErr_Unavailable</a> =  2, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a115f3d761d2cad952aab23f35cbdf3a1">kXMPErr_BadObject</a> =  3, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a52d197a8b0af3c55f16958162a4132f1">kXMPErr_BadParam</a> =  4, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a716956a038782e595ce61d3fbdd1a25a">kXMPErr_BadValue</a> =  5, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a14bd6c24087d280c722c1a044eec27d6">kXMPErr_AssertFailure</a> =  6, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409aa856bb36a9742d8542b483e00fc6511b">kXMPErr_EnforceFailure</a> =  7, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a3de1ac8f4e4afb705d5a4654cb9579e2">kXMPErr_Unimplemented</a> =  8, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a8babbd758d2c64fd04e85fa48e0675c0">kXMPErr_InternalFailure</a> =  9, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a14342c486ddf394ebc110a446becbfa7">kXMPErr_Deprecated</a> =  10, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a82941dc15c6ccde6b8fb2f9cc85c2eeb">kXMPErr_ExternalFailure</a> =  11, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409ac4ba7b1a57629e4994a0f7a515d51195">kXMPErr_UserAbort</a> =  12, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a5322df07e2a7792824d2468c4837f1cb">kXMPErr_StdException</a> =  13, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409aac7558097a1f5a0f99097199f1bf8ff4">kXMPErr_UnknownException</a> =  14, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a69eb7fef422fbca62cdbc554afffd813">kXMPErr_NoMemory</a> =  15, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a5227060f282a86c8ea1a944107751dd1">kXMPErr_ProgressAbort</a> =  16, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a2bc66eec6ce830979089d5c336f75539">kXMPErr_BadSchema</a> =  101, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a3f1efec0aa5452f43c55c05aba616ef7">kXMPErr_BadXPath</a> =  102, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a40ca77d98bd366442bb8d438c420a444">kXMPErr_BadOptions</a> =  103, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a31adb57da79b4fb1f1f5f999ec740010">kXMPErr_BadIndex</a> =  104, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a2584fc813bfcd9158b7adf28a3454bb9">kXMPErr_BadIterPosition</a> =  105, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a052b1b525fba7da8c98be5c135f434b8">kXMPErr_BadParse</a> =  106, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409ac4f936ff6788ce17f6098b7cbda77ed9">kXMPErr_BadSerialize</a> =  107, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409aa0a05e07925d1f3daf5f36f6da0840f8">kXMPErr_BadFileFormat</a> =  108, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a10fa053f279fed01b075f34a70f11795">kXMPErr_NoFileHandler</a> =  109, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409aa9c1c20e53db12b20068d830a8990c0b">kXMPErr_TooLargeForJPEG</a> =  110, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a2874a5dcddf253a17d75a147b2ed4933">kXMPErr_NoFile</a> =  111, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a577b0e80acf44125f0dc49e5885e0824">kXMPErr_FilePermission</a> =  112, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409aa2f19dfd8ce27b5713c79e34f2052e40">kXMPErr_DiskSpace</a> =  113, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a2a17df0c0b690f5b7829bc4ca16efce2">kXMPErr_ReadError</a> =  114, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409afca1d169d7e3cb3ba84c81700c1b9b22">kXMPErr_WriteError</a> =  115, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409aacc6262e9c1fd1a64e3d10cedfb7dcb1">kXMPErr_BadBlockFormat</a> =  116, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a0819111429c734ca5ef895c193846351">kXMPErr_FilePathNotAFile</a> =  117, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409ad9d8c98663e3ead894841807ab4548f8">kXMPErr_RejectedFileExtension</a> =  118, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409ac57f1cf1c24778536fd32972e87334c5">kXMPErr_BadXML</a> =  201, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a5464b823e619618d9aa58433cdb45a8e">kXMPErr_BadRDF</a> =  202, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a211bb632ed1264d9e2236f35c6414821">kXMPErr_BadXMP</a> =  203, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a078c69d0d76f25187a11981a2552b179">kXMPErr_EmptyIterator</a> =  204, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409ac4cf86fa29624c5e19111e09a97fe05f">kXMPErr_BadUnicode</a> =  205, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409aecd25299aa177de7bc7f3674fcf2e22d">kXMPErr_BadTIFF</a> =  206, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409ad685e1f839e3bc53dfc55611a0803cee">kXMPErr_BadJPEG</a> =  207, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409ad98fc9a9c050e9fc19c3af9c8abb2d6d">kXMPErr_BadPSD</a> =  208, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a1606a687cb790af16dc561b2a8f2e6a3">kXMPErr_BadPSIR</a> =  209, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a23b2d7cab10b3d80549e6b60855bb15e">kXMPErr_BadIPTC</a> =  210, 
+<br/>
+&nbsp;&nbsp;<a class="el" href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409ad596daed4ac92f8bf7871669d03effad">kXMPErr_BadMPEG</a> =  211
+<br/>
+ }</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><p><a class="el" href="classXMP__Error.html" title="XMP Toolkit error, associates an error code with a descriptive error string.">XMP_Error</a> exception code constants. </p>
+ <a href="XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409">More...</a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae4a7c9347994883250dc440566eb9f52"></a><!-- doxytag: member="XMP_Const.h::XMP_ErrorSeverity" ref="ae4a7c9347994883250dc440566eb9f52" args="" -->
+typedef XMP_Uns8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_ErrorSeverity</b></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">typedef bool(*&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#a6027ee7b7d17a0fec636f812c5346af7">XMPMeta_ErrorCallbackProc</a> )(void *context, XMP_ErrorSeverity severity, XMP_Int32 cause, <a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> message)</td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">typedef bool(*&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#aaceb0287e961c16649487db026bcfc61">XMPFiles_ErrorCallbackProc</a> )(void *context, <a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> filePath, XMP_ErrorSeverity severity, XMP_Int32 cause, <a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> message)</td></tr>
+<tr><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a900dba8ffc9d1d9b89f4e83ac601679b"></a><!-- doxytag: member="XMP_Const.h::XMPMeta_ErrorCallbackWrapper" ref="a900dba8ffc9d1d9b89f4e83ac601679b" args=")(XMPMeta_ErrorCallbackProc clientProc, void *context, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr message)" -->
+typedef XMP_Bool(*&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="XMP__Const_8h.html#a900dba8ffc9d1d9b89f4e83ac601679b">XMPMeta_ErrorCallbackWrapper</a> )(<a class="el" href="XMP__Const_8h.html#a6027ee7b7d17a0fec636f812c5346af7">XMPMeta_ErrorCallbackProc</a> clientProc, void *context, XMP_ErrorSeverity severity, XMP_Int32 cause, <a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> message)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Internal: The signatures of client-side wrappers for the error notification callbacks. <br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af8bbbdebf56e55915803c29441b4e35a"></a><!-- doxytag: member="XMP_Const.h::XMPFiles_ErrorCallbackWrapper" ref="af8bbbdebf56e55915803c29441b4e35a" args=")(XMPFiles_ErrorCallbackProc clientProc, void *context, XMP_StringPtr filePath, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr message)" -->
+typedef XMP_Bool(*&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMPFiles_ErrorCallbackWrapper</b> )(<a class="el" href="XMP__Const_8h.html#aaceb0287e961c16649487db026bcfc61">XMPFiles_ErrorCallbackProc</a> clientProc, void *context, <a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> filePath, XMP_ErrorSeverity severity, XMP_Int32 cause, <a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> message)</td></tr>
 </table>
 <hr/><a name="_details"></a><h2>Detailed Description</h2>
 <p>Common C/C++ types and constants for the XMP toolkit. </p>
@@ -1412,6 +1479,31 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 
 </div>
 </div>
+<a class="anchor" id="af18be2d0c8accad813e0d8962da24b4e"></a><!-- doxytag: member="XMP_Const.h::XMP_ProgressReportProc" ref="af18be2d0c8accad813e0d8962da24b4e" args=")(void *context, float elapsedTime, float fractionDone, float secondsToGo)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef bool(*  <a class="el" href="XMP__Const_8h.html#af18be2d0c8accad813e0d8962da24b4e">XMP_ProgressReportProc</a>)(void *context, float elapsedTime, float fractionDone, float secondsToGo)</td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+<p>The signature of a client-defined callback for progress report notifications.</p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>context</em>&nbsp;</td><td>A pointer used to carry client-private context.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>elapsedTime</em>&nbsp;</td><td>The time in seconds since the progress reporting started.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>fractionDone</em>&nbsp;</td><td>A float value estimating the amount of work already done, in the range of 0.0 to 1.0. A value of 0.0 is given if the amount is not known, this happens if there is no estimate total for the total work. The units of work are not defined, but should usually be related to the number of bytes of I/O. This will go backwards if total work estimate changes.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>secondsToGo</em>&nbsp;</td><td>A float value estimating the number of seconds left to complete the file operation. A value of 0.0 is given if the amount is not known, this happens if the amount of total work is unknown. This can go backwards according to throughput or if work estimate changes.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="return"><dt><b>Returns:</b></dt><dd>True if the file operation should continue, false if it should be aborted with an exception being thrown from the XMPFiles library back to the original caller.</dd></dl>
+<dl class="see"><dt><b>See also:</b></dt><dd><code><a class="el" href="classTXMPFiles.html#a83335ee20bb3ea543c8c86a5757a7753" title="SetDefaultProgressCallback() sets a global default for progress tracking. This is...">TXMPFiles::SetDefaultProgressCallback()</a></code> and <code><a class="el" href="classTXMPFiles.html#aa283e2a1c16918c86148446859ed1a2d" title="SetProgressCallback() sets the progress notification callback for the associated...">TXMPFiles::SetProgressCallback()</a></code> </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="a05b81829c04746826f4f85fbac76e3dd"></a><!-- doxytag: member="XMP_Const.h::XMP_Status" ref="a05b81829c04746826f4f85fbac76e3dd" args="" -->
 <div class="memitem">
 <div class="memproto">
@@ -1464,6 +1556,47 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 
 </div>
 </div>
+<a class="anchor" id="aaceb0287e961c16649487db026bcfc61"></a><!-- doxytag: member="XMP_Const.h::XMPFiles_ErrorCallbackProc" ref="aaceb0287e961c16649487db026bcfc61" args=")(void *context, XMP_StringPtr filePath, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr message)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef bool(*  <a class="el" href="XMP__Const_8h.html#aaceb0287e961c16649487db026bcfc61">XMPFiles_ErrorCallbackProc</a>)(void *context, <a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> filePath, XMP_ErrorSeverity severity, XMP_Int32 cause, <a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> message)</td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+<p>The signature of a client-defined callback for <a class="el" href="classTXMPFiles.html" title="API for access to the main (document-level) metadata in a file.">TXMPFiles</a> error notifications.</p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>context</em>&nbsp;</td><td>A pointer used to carry client-private context.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>filePath</em>&nbsp;</td><td>The path for the file involved in the error.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>severity</em>&nbsp;</td><td>The severity of the error, see the <code>XMP_ErrorSeverity</code> values.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>cause</em>&nbsp;</td><td>A numeric code for the cause of the error, from the <a class="el" href="classXMP__Error.html" title="XMP Toolkit error, associates an error code with a descriptive error string.">XMP_Error</a> exception codes. Codes used with <a class="el" href="classTXMPFiles.html" title="API for access to the main (document-level) metadata in a file.">TXMPFiles</a> error notifications: </p>
+<ul>
+<li><code>kXMPErr_NoFile</code> - A file does not exist </li>
+<li><code>kXMPErr_FilePermission</code> - A file exists but cannot be opened </li>
+<li><code>kXMPErr_FilePathNotAFile</code> - A path exists which is not a file </li>
+<li><code>dXMPErr_RejectedFileExtension</code> - Any Operation called on rejected file extension </li>
+<li><code>KXMPErr_NoFileHandler</code> - No suitable handler is found for the file </li>
+<li><code>kXMPErr_DiskSpace</code> - A file write fails due to lack of disk space </li>
+<li><code>kXMPErr_ReadError</code> - A file read fails </li>
+<li><code>kXMPErr_WriteError</code> - A file write fails for some other reason than space </li>
+<li><code>kXMPErr_BadFileFormat</code> - A file is corrupt or ill-formed </li>
+<li><code>kXMPErr_BadBlockFormat</code> - A portion of a file is corrupt or ill-formed </li>
+<li><code>kXMPErr_BadValue</code> - An XMP or non-XMP metadata item has an invalid value </li>
+<li><code>kXMPErr_NoMemory</code> - A heap allocation failure</li>
+</ul>
+</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>message</em>&nbsp;</td><td>An explanation of the error, for debugging use only. This should not be displayed to users in a final product.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="return"><dt><b>Returns:</b></dt><dd>True if the operation should continue with a best effort attempt at recovery, false if it should be aborted with an exception thrown from the library back to the original caller. Recovery is possible only if the severity is kXMPErrSev_Recoverable, an exception will be thrown on return from the callback in all other cases.</dd></dl>
+<dl class="see"><dt><b>See also:</b></dt><dd><code><a class="el" href="classTXMPFiles.html#accc6c1cef9f124f6c5ed360251aa5aa7" title="SetDefaultErrorCallback() registers a global default error notification callback...">TXMPFiles::SetDefaultErrorCallback()</a></code> and <code><a class="el" href="classTXMPFiles.html#a43a98633a0090fb4ade76edf24302ab1" title="SetErrorCallback() registers an error notification callback.">TXMPFiles::SetErrorCallback()</a></code> </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="aa4bca98ad67d7a62c60cb13dbbab0f25"></a><!-- doxytag: member="XMP_Const.h::XMPFilesRef" ref="aa4bca98ad67d7a62c60cb13dbbab0f25" args="" -->
 <div class="memitem">
 <div class="memproto">
@@ -1489,6 +1622,39 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 </div>
 <div class="memdoc">
 <p>An "ABI safe" pointer to the internal part of an XMP iteration object. Use to pass an XMP iteration object across client DLL boundaries. See <code><a class="el" href="classTXMPIterator.html" title="API for access to the XMP Toolkit iteration services.">TXMPIterator</a></code>. </p>
+
+</div>
+</div>
+<a class="anchor" id="a6027ee7b7d17a0fec636f812c5346af7"></a><!-- doxytag: member="XMP_Const.h::XMPMeta_ErrorCallbackProc" ref="a6027ee7b7d17a0fec636f812c5346af7" args=")(void *context, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr message)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef bool(*  <a class="el" href="XMP__Const_8h.html#a6027ee7b7d17a0fec636f812c5346af7">XMPMeta_ErrorCallbackProc</a>)(void *context, XMP_ErrorSeverity severity, XMP_Int32 cause, <a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> message)</td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+<p>The signature of a client-defined callback for <a class="el" href="classTXMPMeta.html" title="API for access to the XMP Toolkit core services.">TXMPMeta</a> error notifications.</p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>context</em>&nbsp;</td><td>A pointer used to carry client-private context.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>severity</em>&nbsp;</td><td>The severity of the error, see the <code>XMP_ErrorSeverity</code> values.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>cause</em>&nbsp;</td><td>A numeric code for the cause of the error, from the <a class="el" href="classXMP__Error.html" title="XMP Toolkit error, associates an error code with a descriptive error string.">XMP_Error</a> exception codes. Codes used with <a class="el" href="classTXMPMeta.html" title="API for access to the XMP Toolkit core services.">TXMPMeta</a> error notifications: </p>
+<ul>
+<li><code>kXMPErr_BadXML</code> - An XML syntax error found during parsing. </li>
+<li><code>kXMPErr_BadRDF</code> - A syntax or semantic parsing error in the XMP subset of RDF. </li>
+<li><code>kXMPErr_BadXMP</code> - A semantic XMP data model error. </li>
+<li><code>kXMPErr_BadValue</code> - An XMP value error, wrong type, out of range, etc. </li>
+<li><code>kXMPErr_NoMemory</code> - A heap allocation failure.</li>
+</ul>
+</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>message</em>&nbsp;</td><td>An explanation of the error, for debugging use only. This should not be displayed to users in a final product.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="return"><dt><b>Returns:</b></dt><dd>True if the operation should continue with a best effort attempt at recovery, false if it should be aborted with an exception thrown from the library back to the original caller. Recovery is possible only if the severity is kXMPErrSev_Recoverable, an exception will be thrown on return from the callback in all other cases.</dd></dl>
+<dl class="see"><dt><b>See also:</b></dt><dd><code><a class="el" href="classTXMPMeta.html#a1e90e0c8cd8c5670267bb693cf3660fe" title="SetDefaultErrorCallback() registers a global default error notification callback...">TXMPMeta::SetDefaultErrorCallback()</a></code> and <code><a class="el" href="classTXMPMeta.html#aee41442af4f049c1d6698fc27ce854d0" title="SetErrorCallback() registers an error notification callback.">TXMPMeta::SetErrorCallback()</a></code> </dd></dl>
 
 </div>
 </div>
@@ -1669,11 +1835,17 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 <tr><td valign="top"><em><a class="anchor" id="abc5c98fcc1211af2b80116dd6e0a035da89e6282c3f0c8966d788500f5d8eaa91"></a><!-- doxytag: member="kXMP_MPEG4File" ref="abc5c98fcc1211af2b80116dd6e0a035da89e6282c3f0c8966d788500f5d8eaa91" args="" -->kXMP_MPEG4File</em>&nbsp;</td><td>
 <p>Public file format constant: 'MP4 ', ISO 14494-12 and -14. </p>
 </td></tr>
+<tr><td valign="top"><em><a class="anchor" id="abc5c98fcc1211af2b80116dd6e0a035da4b3477bdc53fae1511104fc54f88d134"></a><!-- doxytag: member="kXMP_MXFFile" ref="abc5c98fcc1211af2b80116dd6e0a035da4b3477bdc53fae1511104fc54f88d134" args="" -->kXMP_MXFFile</em>&nbsp;</td><td>
+<p>Public file format constant: 'MXF '. </p>
+</td></tr>
 <tr><td valign="top"><em><a class="anchor" id="abc5c98fcc1211af2b80116dd6e0a035da78c62f7c10b16b1a862d93f6226a4622"></a><!-- doxytag: member="kXMP_WMAVFile" ref="abc5c98fcc1211af2b80116dd6e0a035da78c62f7c10b16b1a862d93f6226a4622" args="" -->kXMP_WMAVFile</em>&nbsp;</td><td>
 <p>Public file format constant: 'WMAV', Windows Media Audio and Video. </p>
 </td></tr>
 <tr><td valign="top"><em><a class="anchor" id="abc5c98fcc1211af2b80116dd6e0a035daf093d01e7e9cc55a7d1e204498521fc3"></a><!-- doxytag: member="kXMP_AIFFFile" ref="abc5c98fcc1211af2b80116dd6e0a035daf093d01e7e9cc55a7d1e204498521fc3" args="" -->kXMP_AIFFFile</em>&nbsp;</td><td>
 <p>Public file format constant: 'AIFF'. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="abc5c98fcc1211af2b80116dd6e0a035daab032aa36aec082c6b3a8300548346f5"></a><!-- doxytag: member="kXMP_REDFile" ref="abc5c98fcc1211af2b80116dd6e0a035daab032aa36aec082c6b3a8300548346f5" args="" -->kXMP_REDFile</em>&nbsp;</td><td>
+<p>Public file format constant: 'RED ', RED file format. </p>
 </td></tr>
 <tr><td valign="top"><em><a class="anchor" id="abc5c98fcc1211af2b80116dd6e0a035dabad9584845edf66f2f8fc3c336977e34"></a><!-- doxytag: member="kXMP_P2File" ref="abc5c98fcc1211af2b80116dd6e0a035dabad9584845edf66f2f8fc3c336977e34" args="" -->kXMP_P2File</em>&nbsp;</td><td>
 <p>Public file format constant: 'P2 ', a collection not really a single file. </p>
@@ -1692,6 +1864,9 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 </td></tr>
 <tr><td valign="top"><em><a class="anchor" id="abc5c98fcc1211af2b80116dd6e0a035daa0edb070c11f87c3dad9f8f7a83b9b5e"></a><!-- doxytag: member="kXMP_SonyHDVFile" ref="abc5c98fcc1211af2b80116dd6e0a035daa0edb070c11f87c3dad9f8f7a83b9b5e" args="" -->kXMP_SonyHDVFile</em>&nbsp;</td><td>
 <p>Public file format constant: 'SHDV', a collection not really a single file. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="abc5c98fcc1211af2b80116dd6e0a035dafa11d905db1236494e555956cb2f90ef"></a><!-- doxytag: member="kXMP_CanonXFFile" ref="abc5c98fcc1211af2b80116dd6e0a035dafa11d905db1236494e555956cb2f90ef" args="" -->kXMP_CanonXFFile</em>&nbsp;</td><td>
+<p>Public file format constant: 'CNXF', a collection not really a single file. </p>
 </td></tr>
 <tr><td valign="top"><em><a class="anchor" id="abc5c98fcc1211af2b80116dd6e0a035da542634e6051139c44fd7b92d08c64760"></a><!-- doxytag: member="kXMP_HTMLFile" ref="abc5c98fcc1211af2b80116dd6e0a035da542634e6051139c44fd7b92d08c64760" args="" -->kXMP_HTMLFile</em>&nbsp;</td><td>
 <p>Public file format constant: 'HTML'. </p>
@@ -1874,6 +2049,12 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 <tr><td valign="top"><em><a class="anchor" id="aaf105ae5beaca1dee30ae54530691fceaa2a6a4b744b40055387234632b688fcd"></a><!-- doxytag: member="kXMPFiles_FolderBasedFormat" ref="aaf105ae5beaca1dee30ae54530691fceaa2a6a4b744b40055387234632b688fcd" args="" -->kXMPFiles_FolderBasedFormat</em>&nbsp;</td><td>
 <p>The format is folder oriented, for example the P2 video format. </p>
 </td></tr>
+<tr><td valign="top"><em><a class="anchor" id="aaf105ae5beaca1dee30ae54530691fcea17578d45ae3c09a8d08189ea544052b1"></a><!-- doxytag: member="kXMPFiles_CanNotifyProgress" ref="aaf105ae5beaca1dee30ae54530691fcea17578d45ae3c09a8d08189ea544052b1" args="" -->kXMPFiles_CanNotifyProgress</em>&nbsp;</td><td>
+<p>The file Handler is capable of notifying progress notifications. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="aaf105ae5beaca1dee30ae54530691fcea798c55f5144eedde76f8329a056210b2"></a><!-- doxytag: member="kXMPFiles_NeedsPreloading" ref="aaf105ae5beaca1dee30ae54530691fcea798c55f5144eedde76f8329a056210b2" args="" -->kXMPFiles_NeedsPreloading</em>&nbsp;</td><td>
+<p>The plugin handler is not capable for delay loading. </p>
+</td></tr>
 </table>
 </dd>
 </dl>
@@ -1901,6 +2082,9 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 </td></tr>
 <tr><td valign="top"><em><a class="anchor" id="a80155586fa275b28773c9b203f52cabaaa58279b2b1311242e7374117f455bb96"></a><!-- doxytag: member="kXMPFiles_OpenOnlyXMP" ref="a80155586fa275b28773c9b203f52cabaaa58279b2b1311242e7374117f455bb96" args="" -->kXMPFiles_OpenOnlyXMP</em>&nbsp;</td><td>
 <p>Only the XMP is wanted, allows space/time optimizations. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="a80155586fa275b28773c9b203f52cabaab8cbbeef0e99d246907a4375766e21a2"></a><!-- doxytag: member="kXMPFiles_ForceGivenHandler" ref="a80155586fa275b28773c9b203f52cabaab8cbbeef0e99d246907a4375766e21a2" args="" -->kXMPFiles_ForceGivenHandler</em>&nbsp;</td><td>
+<p>Force use of the given handler (format), do not even verify the format. </p>
 </td></tr>
 <tr><td valign="top"><em><a class="anchor" id="a80155586fa275b28773c9b203f52cabaa0bef4db2ecdaf82a85df9e9d417aab18"></a><!-- doxytag: member="kXMPFiles_OpenStrictly" ref="a80155586fa275b28773c9b203f52cabaa0bef4db2ecdaf82a85df9e9d417aab18" args="" -->kXMPFiles_OpenStrictly</em>&nbsp;</td><td>
 <p>Be strict about only attempting to use the designated file handler, no fallback to other handlers. </p>
@@ -1956,118 +2140,19 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 </div>
 <div class="memdoc">
 
-<p>Exception code constants. </p>
+<p>Severity codes for error notifications. </p>
 <dl><dt><b>Enumerator: </b></dt><dd><table border="0" cellspacing="2" cellpadding="0">
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a14813595824de97382fffeae7b6fe581"></a><!-- doxytag: member="kXMPErr_Unknown" ref="af9bdc3014f3d54c426b6d2df10de4960a14813595824de97382fffeae7b6fe581" args="" -->kXMPErr_Unknown</em>&nbsp;</td><td>
-<p>Generic unknown error. </p>
+<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a068fdc8c88dcce62a7b42788a572af61"></a><!-- doxytag: member="kXMPErrSev_Recoverable" ref="af9bdc3014f3d54c426b6d2df10de4960a068fdc8c88dcce62a7b42788a572af61" args="" -->kXMPErrSev_Recoverable</em>&nbsp;</td><td>
+<p>Partial recovery and continuation is possible. </p>
 </td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960acd9fa1b621efafd5b218e3a785cbeda1"></a><!-- doxytag: member="kXMPErr_TBD" ref="af9bdc3014f3d54c426b6d2df10de4960acd9fa1b621efafd5b218e3a785cbeda1" args="" -->kXMPErr_TBD</em>&nbsp;</td><td>
-<p>Generic undefined error. </p>
+<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960afb962bdcf570af9aef4e32b5f279d1a4"></a><!-- doxytag: member="kXMPErrSev_OperationFatal" ref="af9bdc3014f3d54c426b6d2df10de4960afb962bdcf570af9aef4e32b5f279d1a4" args="" -->kXMPErrSev_OperationFatal</em>&nbsp;</td><td>
+<p>Recovery is not possible, an exception will be thrown aborting the API call. </p>
 </td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960ac7ac408582c194cc723a24acb8b4e4c3"></a><!-- doxytag: member="kXMPErr_Unavailable" ref="af9bdc3014f3d54c426b6d2df10de4960ac7ac408582c194cc723a24acb8b4e4c3" args="" -->kXMPErr_Unavailable</em>&nbsp;</td><td>
-<p>Generic unavailable error. </p>
+<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a2bd1ff3ba036640f0c76d68a03cf94f7"></a><!-- doxytag: member="kXMPErrSev_FileFatal" ref="af9bdc3014f3d54c426b6d2df10de4960a2bd1ff3ba036640f0c76d68a03cf94f7" args="" -->kXMPErrSev_FileFatal</em>&nbsp;</td><td>
+<p>Recovery is not possible, an exception will be thrown, the file is corrupt and possibly unusable. </p>
 </td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a115f3d761d2cad952aab23f35cbdf3a1"></a><!-- doxytag: member="kXMPErr_BadObject" ref="af9bdc3014f3d54c426b6d2df10de4960a115f3d761d2cad952aab23f35cbdf3a1" args="" -->kXMPErr_BadObject</em>&nbsp;</td><td>
-<p>Generic bad object error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a52d197a8b0af3c55f16958162a4132f1"></a><!-- doxytag: member="kXMPErr_BadParam" ref="af9bdc3014f3d54c426b6d2df10de4960a52d197a8b0af3c55f16958162a4132f1" args="" -->kXMPErr_BadParam</em>&nbsp;</td><td>
-<p>Generic bad parameter error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a716956a038782e595ce61d3fbdd1a25a"></a><!-- doxytag: member="kXMPErr_BadValue" ref="af9bdc3014f3d54c426b6d2df10de4960a716956a038782e595ce61d3fbdd1a25a" args="" -->kXMPErr_BadValue</em>&nbsp;</td><td>
-<p>Generic bad value error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a14bd6c24087d280c722c1a044eec27d6"></a><!-- doxytag: member="kXMPErr_AssertFailure" ref="af9bdc3014f3d54c426b6d2df10de4960a14bd6c24087d280c722c1a044eec27d6" args="" -->kXMPErr_AssertFailure</em>&nbsp;</td><td>
-<p>Generic assertion failure. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960aa856bb36a9742d8542b483e00fc6511b"></a><!-- doxytag: member="kXMPErr_EnforceFailure" ref="af9bdc3014f3d54c426b6d2df10de4960aa856bb36a9742d8542b483e00fc6511b" args="" -->kXMPErr_EnforceFailure</em>&nbsp;</td><td>
-<p>Generic enforcement failure. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a3de1ac8f4e4afb705d5a4654cb9579e2"></a><!-- doxytag: member="kXMPErr_Unimplemented" ref="af9bdc3014f3d54c426b6d2df10de4960a3de1ac8f4e4afb705d5a4654cb9579e2" args="" -->kXMPErr_Unimplemented</em>&nbsp;</td><td>
-<p>Generic unimplemented error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a8babbd758d2c64fd04e85fa48e0675c0"></a><!-- doxytag: member="kXMPErr_InternalFailure" ref="af9bdc3014f3d54c426b6d2df10de4960a8babbd758d2c64fd04e85fa48e0675c0" args="" -->kXMPErr_InternalFailure</em>&nbsp;</td><td>
-<p>Generic internal failure. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a14342c486ddf394ebc110a446becbfa7"></a><!-- doxytag: member="kXMPErr_Deprecated" ref="af9bdc3014f3d54c426b6d2df10de4960a14342c486ddf394ebc110a446becbfa7" args="" -->kXMPErr_Deprecated</em>&nbsp;</td><td>
-<p>Generic deprecated error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a82941dc15c6ccde6b8fb2f9cc85c2eeb"></a><!-- doxytag: member="kXMPErr_ExternalFailure" ref="af9bdc3014f3d54c426b6d2df10de4960a82941dc15c6ccde6b8fb2f9cc85c2eeb" args="" -->kXMPErr_ExternalFailure</em>&nbsp;</td><td>
-<p>Generic external failure. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960ac4ba7b1a57629e4994a0f7a515d51195"></a><!-- doxytag: member="kXMPErr_UserAbort" ref="af9bdc3014f3d54c426b6d2df10de4960ac4ba7b1a57629e4994a0f7a515d51195" args="" -->kXMPErr_UserAbort</em>&nbsp;</td><td>
-<p>Generic user abort error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a5322df07e2a7792824d2468c4837f1cb"></a><!-- doxytag: member="kXMPErr_StdException" ref="af9bdc3014f3d54c426b6d2df10de4960a5322df07e2a7792824d2468c4837f1cb" args="" -->kXMPErr_StdException</em>&nbsp;</td><td>
-<p>Generic standard exception. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960aac7558097a1f5a0f99097199f1bf8ff4"></a><!-- doxytag: member="kXMPErr_UnknownException" ref="af9bdc3014f3d54c426b6d2df10de4960aac7558097a1f5a0f99097199f1bf8ff4" args="" -->kXMPErr_UnknownException</em>&nbsp;</td><td>
-<p>Generic unknown exception. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a69eb7fef422fbca62cdbc554afffd813"></a><!-- doxytag: member="kXMPErr_NoMemory" ref="af9bdc3014f3d54c426b6d2df10de4960a69eb7fef422fbca62cdbc554afffd813" args="" -->kXMPErr_NoMemory</em>&nbsp;</td><td>
-<p>Generic out-of-memory error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a2bc66eec6ce830979089d5c336f75539"></a><!-- doxytag: member="kXMPErr_BadSchema" ref="af9bdc3014f3d54c426b6d2df10de4960a2bc66eec6ce830979089d5c336f75539" args="" -->kXMPErr_BadSchema</em>&nbsp;</td><td>
-<p>Bad schema parameter. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a3f1efec0aa5452f43c55c05aba616ef7"></a><!-- doxytag: member="kXMPErr_BadXPath" ref="af9bdc3014f3d54c426b6d2df10de4960a3f1efec0aa5452f43c55c05aba616ef7" args="" -->kXMPErr_BadXPath</em>&nbsp;</td><td>
-<p>Bad XPath parameter. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a40ca77d98bd366442bb8d438c420a444"></a><!-- doxytag: member="kXMPErr_BadOptions" ref="af9bdc3014f3d54c426b6d2df10de4960a40ca77d98bd366442bb8d438c420a444" args="" -->kXMPErr_BadOptions</em>&nbsp;</td><td>
-<p>Bad options parameter. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a31adb57da79b4fb1f1f5f999ec740010"></a><!-- doxytag: member="kXMPErr_BadIndex" ref="af9bdc3014f3d54c426b6d2df10de4960a31adb57da79b4fb1f1f5f999ec740010" args="" -->kXMPErr_BadIndex</em>&nbsp;</td><td>
-<p>Bad index parameter. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a2584fc813bfcd9158b7adf28a3454bb9"></a><!-- doxytag: member="kXMPErr_BadIterPosition" ref="af9bdc3014f3d54c426b6d2df10de4960a2584fc813bfcd9158b7adf28a3454bb9" args="" -->kXMPErr_BadIterPosition</em>&nbsp;</td><td>
-<p>Bad iteration position. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a052b1b525fba7da8c98be5c135f434b8"></a><!-- doxytag: member="kXMPErr_BadParse" ref="af9bdc3014f3d54c426b6d2df10de4960a052b1b525fba7da8c98be5c135f434b8" args="" -->kXMPErr_BadParse</em>&nbsp;</td><td>
-<p>XML parsing error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960ac4f936ff6788ce17f6098b7cbda77ed9"></a><!-- doxytag: member="kXMPErr_BadSerialize" ref="af9bdc3014f3d54c426b6d2df10de4960ac4f936ff6788ce17f6098b7cbda77ed9" args="" -->kXMPErr_BadSerialize</em>&nbsp;</td><td>
-<p>Serialization error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960aa0a05e07925d1f3daf5f36f6da0840f8"></a><!-- doxytag: member="kXMPErr_BadFileFormat" ref="af9bdc3014f3d54c426b6d2df10de4960aa0a05e07925d1f3daf5f36f6da0840f8" args="" -->kXMPErr_BadFileFormat</em>&nbsp;</td><td>
-<p>File format error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a10fa053f279fed01b075f34a70f11795"></a><!-- doxytag: member="kXMPErr_NoFileHandler" ref="af9bdc3014f3d54c426b6d2df10de4960a10fa053f279fed01b075f34a70f11795" args="" -->kXMPErr_NoFileHandler</em>&nbsp;</td><td>
-<p>No file handler found for format. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960aa9c1c20e53db12b20068d830a8990c0b"></a><!-- doxytag: member="kXMPErr_TooLargeForJPEG" ref="af9bdc3014f3d54c426b6d2df10de4960aa9c1c20e53db12b20068d830a8990c0b" args="" -->kXMPErr_TooLargeForJPEG</em>&nbsp;</td><td>
-<p>Data too large for JPEG file format. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960ac57f1cf1c24778536fd32972e87334c5"></a><!-- doxytag: member="kXMPErr_BadXML" ref="af9bdc3014f3d54c426b6d2df10de4960ac57f1cf1c24778536fd32972e87334c5" args="" -->kXMPErr_BadXML</em>&nbsp;</td><td>
-<p>XML format error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a5464b823e619618d9aa58433cdb45a8e"></a><!-- doxytag: member="kXMPErr_BadRDF" ref="af9bdc3014f3d54c426b6d2df10de4960a5464b823e619618d9aa58433cdb45a8e" args="" -->kXMPErr_BadRDF</em>&nbsp;</td><td>
-<p>RDF format error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a211bb632ed1264d9e2236f35c6414821"></a><!-- doxytag: member="kXMPErr_BadXMP" ref="af9bdc3014f3d54c426b6d2df10de4960a211bb632ed1264d9e2236f35c6414821" args="" -->kXMPErr_BadXMP</em>&nbsp;</td><td>
-<p>XMP format error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a078c69d0d76f25187a11981a2552b179"></a><!-- doxytag: member="kXMPErr_EmptyIterator" ref="af9bdc3014f3d54c426b6d2df10de4960a078c69d0d76f25187a11981a2552b179" args="" -->kXMPErr_EmptyIterator</em>&nbsp;</td><td>
-<p>Empty iterator. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960ac4cf86fa29624c5e19111e09a97fe05f"></a><!-- doxytag: member="kXMPErr_BadUnicode" ref="af9bdc3014f3d54c426b6d2df10de4960ac4cf86fa29624c5e19111e09a97fe05f" args="" -->kXMPErr_BadUnicode</em>&nbsp;</td><td>
-<p>Unicode error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960aecd25299aa177de7bc7f3674fcf2e22d"></a><!-- doxytag: member="kXMPErr_BadTIFF" ref="af9bdc3014f3d54c426b6d2df10de4960aecd25299aa177de7bc7f3674fcf2e22d" args="" -->kXMPErr_BadTIFF</em>&nbsp;</td><td>
-<p>TIFF format error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960ad685e1f839e3bc53dfc55611a0803cee"></a><!-- doxytag: member="kXMPErr_BadJPEG" ref="af9bdc3014f3d54c426b6d2df10de4960ad685e1f839e3bc53dfc55611a0803cee" args="" -->kXMPErr_BadJPEG</em>&nbsp;</td><td>
-<p>JPEG format error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960ad98fc9a9c050e9fc19c3af9c8abb2d6d"></a><!-- doxytag: member="kXMPErr_BadPSD" ref="af9bdc3014f3d54c426b6d2df10de4960ad98fc9a9c050e9fc19c3af9c8abb2d6d" args="" -->kXMPErr_BadPSD</em>&nbsp;</td><td>
-<p>PSD format error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a1606a687cb790af16dc561b2a8f2e6a3"></a><!-- doxytag: member="kXMPErr_BadPSIR" ref="af9bdc3014f3d54c426b6d2df10de4960a1606a687cb790af16dc561b2a8f2e6a3" args="" -->kXMPErr_BadPSIR</em>&nbsp;</td><td>
-<p>PSIR format error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a23b2d7cab10b3d80549e6b60855bb15e"></a><!-- doxytag: member="kXMPErr_BadIPTC" ref="af9bdc3014f3d54c426b6d2df10de4960a23b2d7cab10b3d80549e6b60855bb15e" args="" -->kXMPErr_BadIPTC</em>&nbsp;</td><td>
-<p>IPTC format error. </p>
-</td></tr>
-<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960ad596daed4ac92f8bf7871669d03effad"></a><!-- doxytag: member="kXMPErr_BadMPEG" ref="af9bdc3014f3d54c426b6d2df10de4960ad596daed4ac92f8bf7871669d03effad" args="" -->kXMPErr_BadMPEG</em>&nbsp;</td><td>
-<p>MPEG format error. </p>
+<tr><td valign="top"><em><a class="anchor" id="af9bdc3014f3d54c426b6d2df10de4960a768126806f8c7b7c107314610125deb3"></a><!-- doxytag: member="kXMPErrSev_ProcessFatal" ref="af9bdc3014f3d54c426b6d2df10de4960a768126806f8c7b7c107314610125deb3" args="" -->kXMPErrSev_ProcessFatal</em>&nbsp;</td><td>
+<p>Recovery is not possible, an exception will be thrown, the entire process should be aborted. </p>
 </td></tr>
 </table>
 </dd>
@@ -2144,6 +2229,167 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 </td></tr>
 <tr><td valign="top"><em><a class="anchor" id="a99fb83031ce9923c84392b4e92f956b5ae154b58429b257b18963ba3503e67974"></a><!-- doxytag: member="kXMP_ImplReservedMask" ref="a99fb83031ce9923c84392b4e92f956b5ae154b58429b257b18963ba3503e67974" args="" -->kXMP_ImplReservedMask</em>&nbsp;</td><td>
 <p>Mask for bits that are reserved for transient use by the implementation. </p>
+</td></tr>
+</table>
+</dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409"></a><!-- doxytag: member="XMP_Const.h::@20" ref="adb49720dc49f7d4e4cf9adbf2948e409" args="" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">anonymous enum</td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p><a class="el" href="classXMP__Error.html" title="XMP Toolkit error, associates an error code with a descriptive error string.">XMP_Error</a> exception code constants. </p>
+<dl><dt><b>Enumerator: </b></dt><dd><table border="0" cellspacing="2" cellpadding="0">
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409ae2aec0f3b8db282cbba40e4bcf746ba9"></a><!-- doxytag: member="kXMPErr_NoError" ref="adb49720dc49f7d4e4cf9adbf2948e409ae2aec0f3b8db282cbba40e4bcf746ba9" args="" -->kXMPErr_NoError</em>&nbsp;</td><td>
+<p>Generic error codes. </p>
+<p>No error </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a14813595824de97382fffeae7b6fe581"></a><!-- doxytag: member="kXMPErr_Unknown" ref="adb49720dc49f7d4e4cf9adbf2948e409a14813595824de97382fffeae7b6fe581" args="" -->kXMPErr_Unknown</em>&nbsp;</td><td>
+<p>Generic unknown error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409acd9fa1b621efafd5b218e3a785cbeda1"></a><!-- doxytag: member="kXMPErr_TBD" ref="adb49720dc49f7d4e4cf9adbf2948e409acd9fa1b621efafd5b218e3a785cbeda1" args="" -->kXMPErr_TBD</em>&nbsp;</td><td>
+<p>Generic undefined error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409ac7ac408582c194cc723a24acb8b4e4c3"></a><!-- doxytag: member="kXMPErr_Unavailable" ref="adb49720dc49f7d4e4cf9adbf2948e409ac7ac408582c194cc723a24acb8b4e4c3" args="" -->kXMPErr_Unavailable</em>&nbsp;</td><td>
+<p>Generic unavailable error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a115f3d761d2cad952aab23f35cbdf3a1"></a><!-- doxytag: member="kXMPErr_BadObject" ref="adb49720dc49f7d4e4cf9adbf2948e409a115f3d761d2cad952aab23f35cbdf3a1" args="" -->kXMPErr_BadObject</em>&nbsp;</td><td>
+<p>Generic bad object error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a52d197a8b0af3c55f16958162a4132f1"></a><!-- doxytag: member="kXMPErr_BadParam" ref="adb49720dc49f7d4e4cf9adbf2948e409a52d197a8b0af3c55f16958162a4132f1" args="" -->kXMPErr_BadParam</em>&nbsp;</td><td>
+<p>Generic bad parameter error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a716956a038782e595ce61d3fbdd1a25a"></a><!-- doxytag: member="kXMPErr_BadValue" ref="adb49720dc49f7d4e4cf9adbf2948e409a716956a038782e595ce61d3fbdd1a25a" args="" -->kXMPErr_BadValue</em>&nbsp;</td><td>
+<p>Generic bad value error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a14bd6c24087d280c722c1a044eec27d6"></a><!-- doxytag: member="kXMPErr_AssertFailure" ref="adb49720dc49f7d4e4cf9adbf2948e409a14bd6c24087d280c722c1a044eec27d6" args="" -->kXMPErr_AssertFailure</em>&nbsp;</td><td>
+<p>Generic assertion failure. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409aa856bb36a9742d8542b483e00fc6511b"></a><!-- doxytag: member="kXMPErr_EnforceFailure" ref="adb49720dc49f7d4e4cf9adbf2948e409aa856bb36a9742d8542b483e00fc6511b" args="" -->kXMPErr_EnforceFailure</em>&nbsp;</td><td>
+<p>Generic enforcement failure. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a3de1ac8f4e4afb705d5a4654cb9579e2"></a><!-- doxytag: member="kXMPErr_Unimplemented" ref="adb49720dc49f7d4e4cf9adbf2948e409a3de1ac8f4e4afb705d5a4654cb9579e2" args="" -->kXMPErr_Unimplemented</em>&nbsp;</td><td>
+<p>Generic unimplemented error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a8babbd758d2c64fd04e85fa48e0675c0"></a><!-- doxytag: member="kXMPErr_InternalFailure" ref="adb49720dc49f7d4e4cf9adbf2948e409a8babbd758d2c64fd04e85fa48e0675c0" args="" -->kXMPErr_InternalFailure</em>&nbsp;</td><td>
+<p>Generic internal failure. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a14342c486ddf394ebc110a446becbfa7"></a><!-- doxytag: member="kXMPErr_Deprecated" ref="adb49720dc49f7d4e4cf9adbf2948e409a14342c486ddf394ebc110a446becbfa7" args="" -->kXMPErr_Deprecated</em>&nbsp;</td><td>
+<p>Generic deprecated error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a82941dc15c6ccde6b8fb2f9cc85c2eeb"></a><!-- doxytag: member="kXMPErr_ExternalFailure" ref="adb49720dc49f7d4e4cf9adbf2948e409a82941dc15c6ccde6b8fb2f9cc85c2eeb" args="" -->kXMPErr_ExternalFailure</em>&nbsp;</td><td>
+<p>Generic external failure. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409ac4ba7b1a57629e4994a0f7a515d51195"></a><!-- doxytag: member="kXMPErr_UserAbort" ref="adb49720dc49f7d4e4cf9adbf2948e409ac4ba7b1a57629e4994a0f7a515d51195" args="" -->kXMPErr_UserAbort</em>&nbsp;</td><td>
+<p>Generic user abort error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a5322df07e2a7792824d2468c4837f1cb"></a><!-- doxytag: member="kXMPErr_StdException" ref="adb49720dc49f7d4e4cf9adbf2948e409a5322df07e2a7792824d2468c4837f1cb" args="" -->kXMPErr_StdException</em>&nbsp;</td><td>
+<p>Generic standard exception. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409aac7558097a1f5a0f99097199f1bf8ff4"></a><!-- doxytag: member="kXMPErr_UnknownException" ref="adb49720dc49f7d4e4cf9adbf2948e409aac7558097a1f5a0f99097199f1bf8ff4" args="" -->kXMPErr_UnknownException</em>&nbsp;</td><td>
+<p>Generic unknown exception. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a69eb7fef422fbca62cdbc554afffd813"></a><!-- doxytag: member="kXMPErr_NoMemory" ref="adb49720dc49f7d4e4cf9adbf2948e409a69eb7fef422fbca62cdbc554afffd813" args="" -->kXMPErr_NoMemory</em>&nbsp;</td><td>
+<p>Generic out-of-memory error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a5227060f282a86c8ea1a944107751dd1"></a><!-- doxytag: member="kXMPErr_ProgressAbort" ref="adb49720dc49f7d4e4cf9adbf2948e409a5227060f282a86c8ea1a944107751dd1" args="" -->kXMPErr_ProgressAbort</em>&nbsp;</td><td>
+<p>Progress reporting callback requested abort. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a2bc66eec6ce830979089d5c336f75539"></a><!-- doxytag: member="kXMPErr_BadSchema" ref="adb49720dc49f7d4e4cf9adbf2948e409a2bc66eec6ce830979089d5c336f75539" args="" -->kXMPErr_BadSchema</em>&nbsp;</td><td>
+<p>Bad schema parameter. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a3f1efec0aa5452f43c55c05aba616ef7"></a><!-- doxytag: member="kXMPErr_BadXPath" ref="adb49720dc49f7d4e4cf9adbf2948e409a3f1efec0aa5452f43c55c05aba616ef7" args="" -->kXMPErr_BadXPath</em>&nbsp;</td><td>
+<p>Bad XPath parameter. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a40ca77d98bd366442bb8d438c420a444"></a><!-- doxytag: member="kXMPErr_BadOptions" ref="adb49720dc49f7d4e4cf9adbf2948e409a40ca77d98bd366442bb8d438c420a444" args="" -->kXMPErr_BadOptions</em>&nbsp;</td><td>
+<p>Bad options parameter. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a31adb57da79b4fb1f1f5f999ec740010"></a><!-- doxytag: member="kXMPErr_BadIndex" ref="adb49720dc49f7d4e4cf9adbf2948e409a31adb57da79b4fb1f1f5f999ec740010" args="" -->kXMPErr_BadIndex</em>&nbsp;</td><td>
+<p>Bad index parameter. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a2584fc813bfcd9158b7adf28a3454bb9"></a><!-- doxytag: member="kXMPErr_BadIterPosition" ref="adb49720dc49f7d4e4cf9adbf2948e409a2584fc813bfcd9158b7adf28a3454bb9" args="" -->kXMPErr_BadIterPosition</em>&nbsp;</td><td>
+<p>Bad iteration position. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a052b1b525fba7da8c98be5c135f434b8"></a><!-- doxytag: member="kXMPErr_BadParse" ref="adb49720dc49f7d4e4cf9adbf2948e409a052b1b525fba7da8c98be5c135f434b8" args="" -->kXMPErr_BadParse</em>&nbsp;</td><td>
+<p>XML parsing error (deprecated). </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409ac4f936ff6788ce17f6098b7cbda77ed9"></a><!-- doxytag: member="kXMPErr_BadSerialize" ref="adb49720dc49f7d4e4cf9adbf2948e409ac4f936ff6788ce17f6098b7cbda77ed9" args="" -->kXMPErr_BadSerialize</em>&nbsp;</td><td>
+<p>Serialization error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409aa0a05e07925d1f3daf5f36f6da0840f8"></a><!-- doxytag: member="kXMPErr_BadFileFormat" ref="adb49720dc49f7d4e4cf9adbf2948e409aa0a05e07925d1f3daf5f36f6da0840f8" args="" -->kXMPErr_BadFileFormat</em>&nbsp;</td><td>
+<p>File format error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a10fa053f279fed01b075f34a70f11795"></a><!-- doxytag: member="kXMPErr_NoFileHandler" ref="adb49720dc49f7d4e4cf9adbf2948e409a10fa053f279fed01b075f34a70f11795" args="" -->kXMPErr_NoFileHandler</em>&nbsp;</td><td>
+<p>No file handler found for format. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409aa9c1c20e53db12b20068d830a8990c0b"></a><!-- doxytag: member="kXMPErr_TooLargeForJPEG" ref="adb49720dc49f7d4e4cf9adbf2948e409aa9c1c20e53db12b20068d830a8990c0b" args="" -->kXMPErr_TooLargeForJPEG</em>&nbsp;</td><td>
+<p>Data too large for JPEG file format. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a2874a5dcddf253a17d75a147b2ed4933"></a><!-- doxytag: member="kXMPErr_NoFile" ref="adb49720dc49f7d4e4cf9adbf2948e409a2874a5dcddf253a17d75a147b2ed4933" args="" -->kXMPErr_NoFile</em>&nbsp;</td><td>
+<p>A file does not exist. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a577b0e80acf44125f0dc49e5885e0824"></a><!-- doxytag: member="kXMPErr_FilePermission" ref="adb49720dc49f7d4e4cf9adbf2948e409a577b0e80acf44125f0dc49e5885e0824" args="" -->kXMPErr_FilePermission</em>&nbsp;</td><td>
+<p>A file exists but cannot be opened. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409aa2f19dfd8ce27b5713c79e34f2052e40"></a><!-- doxytag: member="kXMPErr_DiskSpace" ref="adb49720dc49f7d4e4cf9adbf2948e409aa2f19dfd8ce27b5713c79e34f2052e40" args="" -->kXMPErr_DiskSpace</em>&nbsp;</td><td>
+<p>A file write failed due to lack of disk space. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a2a17df0c0b690f5b7829bc4ca16efce2"></a><!-- doxytag: member="kXMPErr_ReadError" ref="adb49720dc49f7d4e4cf9adbf2948e409a2a17df0c0b690f5b7829bc4ca16efce2" args="" -->kXMPErr_ReadError</em>&nbsp;</td><td>
+<p>A file read failed. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409afca1d169d7e3cb3ba84c81700c1b9b22"></a><!-- doxytag: member="kXMPErr_WriteError" ref="adb49720dc49f7d4e4cf9adbf2948e409afca1d169d7e3cb3ba84c81700c1b9b22" args="" -->kXMPErr_WriteError</em>&nbsp;</td><td>
+<p>A file write failed for a reason other than lack of disk space. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409aacc6262e9c1fd1a64e3d10cedfb7dcb1"></a><!-- doxytag: member="kXMPErr_BadBlockFormat" ref="adb49720dc49f7d4e4cf9adbf2948e409aacc6262e9c1fd1a64e3d10cedfb7dcb1" args="" -->kXMPErr_BadBlockFormat</em>&nbsp;</td><td>
+<p>A block of a file is ill-formed, e.g. invalid IPTC-IIM in a photo. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a0819111429c734ca5ef895c193846351"></a><!-- doxytag: member="kXMPErr_FilePathNotAFile" ref="adb49720dc49f7d4e4cf9adbf2948e409a0819111429c734ca5ef895c193846351" args="" -->kXMPErr_FilePathNotAFile</em>&nbsp;</td><td>
+<p>File Path is not a file. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409ad9d8c98663e3ead894841807ab4548f8"></a><!-- doxytag: member="kXMPErr_RejectedFileExtension" ref="adb49720dc49f7d4e4cf9adbf2948e409ad9d8c98663e3ead894841807ab4548f8" args="" -->kXMPErr_RejectedFileExtension</em>&nbsp;</td><td>
+<p>Rejected File extension. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409ac57f1cf1c24778536fd32972e87334c5"></a><!-- doxytag: member="kXMPErr_BadXML" ref="adb49720dc49f7d4e4cf9adbf2948e409ac57f1cf1c24778536fd32972e87334c5" args="" -->kXMPErr_BadXML</em>&nbsp;</td><td>
+<p>XML format error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a5464b823e619618d9aa58433cdb45a8e"></a><!-- doxytag: member="kXMPErr_BadRDF" ref="adb49720dc49f7d4e4cf9adbf2948e409a5464b823e619618d9aa58433cdb45a8e" args="" -->kXMPErr_BadRDF</em>&nbsp;</td><td>
+<p>RDF format error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a211bb632ed1264d9e2236f35c6414821"></a><!-- doxytag: member="kXMPErr_BadXMP" ref="adb49720dc49f7d4e4cf9adbf2948e409a211bb632ed1264d9e2236f35c6414821" args="" -->kXMPErr_BadXMP</em>&nbsp;</td><td>
+<p>XMP format error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a078c69d0d76f25187a11981a2552b179"></a><!-- doxytag: member="kXMPErr_EmptyIterator" ref="adb49720dc49f7d4e4cf9adbf2948e409a078c69d0d76f25187a11981a2552b179" args="" -->kXMPErr_EmptyIterator</em>&nbsp;</td><td>
+<p>Empty iterator. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409ac4cf86fa29624c5e19111e09a97fe05f"></a><!-- doxytag: member="kXMPErr_BadUnicode" ref="adb49720dc49f7d4e4cf9adbf2948e409ac4cf86fa29624c5e19111e09a97fe05f" args="" -->kXMPErr_BadUnicode</em>&nbsp;</td><td>
+<p>Unicode error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409aecd25299aa177de7bc7f3674fcf2e22d"></a><!-- doxytag: member="kXMPErr_BadTIFF" ref="adb49720dc49f7d4e4cf9adbf2948e409aecd25299aa177de7bc7f3674fcf2e22d" args="" -->kXMPErr_BadTIFF</em>&nbsp;</td><td>
+<p>TIFF format error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409ad685e1f839e3bc53dfc55611a0803cee"></a><!-- doxytag: member="kXMPErr_BadJPEG" ref="adb49720dc49f7d4e4cf9adbf2948e409ad685e1f839e3bc53dfc55611a0803cee" args="" -->kXMPErr_BadJPEG</em>&nbsp;</td><td>
+<p>JPEG format error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409ad98fc9a9c050e9fc19c3af9c8abb2d6d"></a><!-- doxytag: member="kXMPErr_BadPSD" ref="adb49720dc49f7d4e4cf9adbf2948e409ad98fc9a9c050e9fc19c3af9c8abb2d6d" args="" -->kXMPErr_BadPSD</em>&nbsp;</td><td>
+<p>PSD format error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a1606a687cb790af16dc561b2a8f2e6a3"></a><!-- doxytag: member="kXMPErr_BadPSIR" ref="adb49720dc49f7d4e4cf9adbf2948e409a1606a687cb790af16dc561b2a8f2e6a3" args="" -->kXMPErr_BadPSIR</em>&nbsp;</td><td>
+<p>PSIR format error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409a23b2d7cab10b3d80549e6b60855bb15e"></a><!-- doxytag: member="kXMPErr_BadIPTC" ref="adb49720dc49f7d4e4cf9adbf2948e409a23b2d7cab10b3d80549e6b60855bb15e" args="" -->kXMPErr_BadIPTC</em>&nbsp;</td><td>
+<p>IPTC format error. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="adb49720dc49f7d4e4cf9adbf2948e409ad596daed4ac92f8bf7871669d03effad"></a><!-- doxytag: member="kXMPErr_BadMPEG" ref="adb49720dc49f7d4e4cf9adbf2948e409ad596daed4ac92f8bf7871669d03effad" args="" -->kXMPErr_BadMPEG</em>&nbsp;</td><td>
+<p>MPEG format error. </p>
 </td></tr>
 </table>
 </dd>
@@ -2241,6 +2487,9 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 </td></tr>
 <tr><td valign="top"><em><a class="anchor" id="a61dadd085c1777f559549e05962b2c9ea041dc6b7b8684be7112ae40f5f259ebb"></a><!-- doxytag: member="kXMP_UseCompactFormat" ref="a61dadd085c1777f559549e05962b2c9ea041dc6b7b8684be7112ae40f5f259ebb" args="" -->kXMP_UseCompactFormat</em>&nbsp;</td><td>
 <p>Use a compact form of RDF. </p>
+</td></tr>
+<tr><td valign="top"><em><a class="anchor" id="a61dadd085c1777f559549e05962b2c9ea15e3fb0e64614c574ed554f2f72c0a5d"></a><!-- doxytag: member="kXMP_UseCanonicalFormat" ref="a61dadd085c1777f559549e05962b2c9ea15e3fb0e64614c574ed554f2f72c0a5d" args="" -->kXMP_UseCanonicalFormat</em>&nbsp;</td><td>
+<p>Use a canonical form of RDF. </p>
 </td></tr>
 <tr><td valign="top"><em><a class="anchor" id="a61dadd085c1777f559549e05962b2c9ea0b659b3b544c7a5a076fbd3132cd7f7a"></a><!-- doxytag: member="kXMP_IncludeThumbnailPad" ref="a61dadd085c1777f559549e05962b2c9ea0b659b3b544c7a5a076fbd3132cd7f7a" args="" -->kXMP_IncludeThumbnailPad</em>&nbsp;</td><td>
 <p>Include a padding allowance for a thumbnail image. </p>
@@ -2409,6 +2658,6 @@ typedef XMP_Int8&nbsp;</td><td class="memItemRight" valign="bottom"><b>XMP_TriSt
 </div>
 </div>
 <hr size="1"><address style="text-align: right;"><small>
-XMP-Toolkit-SDK-5.1.2 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
+XMP-Toolkit-SDK-CC201306 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
 </body>
 </html>

@@ -16,28 +16,30 @@
 
 #include <stdexcept>
 #include <iostream>
-#include <string>
+#include <cstdio>
 #include <vector>
-#include <sstream>
+#include <string>
 #include <cstring>
+#include <sstream>
 
+#include "samples/source/common/globals.h"
+#include "samples/source/common/Log.h"
+#include "samples/source/common/LargeFileAccess.hpp"
 //some global constants / sanity checking
-#include "globals.h"
+
 
 #define EXENAME "xmpcommand"
 
 //XMP related
 #define TXMP_STRING_TYPE std::string
 #define XMP_INCLUDE_XMPFILES 1
-#include "XMP.hpp"
-#include "XMP.incl_cpp"		//include in EXACTLY one source file (i.e. main, in Action gets you trouble...)
+#include "public/include/XMP.hpp"
+#include "public/include/XMP.incl_cpp"		//include in EXACTLY one source file (i.e. main, in Action gets you trouble...)
 
 //QE related
-#include "Actions.h"
-#include "Log.h"
-#include "LargeFileAccess.hpp"
+#include "samples/source/xmpcommand/Actions.h"
 // -help output
-#include "PrintUsage.h"
+#include "samples/source/xmpcommand/PrintUsage.h"
 
 
 namespace XMPQE {

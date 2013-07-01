@@ -21,6 +21,7 @@
 #define XMP_MethodIntro(Class,ResultType) template <class tStringObj> XMP_Inline ResultType Class<tStringObj>
 
 typedef void (* SetClientStringProc) ( void * clientPtr, XMP_StringPtr valuePtr, XMP_StringLen valueLen );
+typedef void (* SetClientStringVectorProc) ( void * clientPtr, XMP_StringPtr * arrayPtr, XMP_Uns32 stringCount );
 
 struct WXMP_Result {
     XMP_StringPtr errMessage;

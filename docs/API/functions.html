@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-<title>XMP-Toolkit-SDK-5.1.2: Class Members</title>
+<title>XMP-Toolkit-SDK-CC201306: Class Members</title>
 <link href="xmp.css" rel="stylesheet" type="text/css">
 <link href="tabs.css" rel="stylesheet" type="text/css">
 </head><body>
@@ -272,11 +272,17 @@ Here is a list of all documented class members with links to the class documenta
 <li>GetArrayItem()
 : <a class="el" href="classTXMPMeta.html#ac64a4251d157937f69b73f2ffac4f7cc">TXMPMeta&lt; tStringObj &gt;</a>
 </li>
+<li>GetAssociatedResources()
+: <a class="el" href="classTXMPFiles.html#a03e6c681e827666690f0e5567b0b2a8a">TXMPFiles&lt; tStringObj &gt;</a>
+</li>
 <li>GetErrMsg()
 : <a class="el" href="classXMP__Error.html#a9a3560c67612dec9a6ca37c34eb2c153">XMP_Error</a>
 </li>
 <li>GetFileInfo()
 : <a class="el" href="classTXMPFiles.html#af9931d081cb19f98c81e41786030765b">TXMPFiles&lt; tStringObj &gt;</a>
+</li>
+<li>GetFileModDate()
+: <a class="el" href="classTXMPFiles.html#a0de588c4b98086206b3a5d737012106d">TXMPFiles&lt; tStringObj &gt;</a>
 </li>
 <li>GetFormatInfo()
 : <a class="el" href="classTXMPFiles.html#acb9e16a1477ec67fa6da6d736a9bc131">TXMPFiles&lt; tStringObj &gt;</a>
@@ -288,8 +294,8 @@ Here is a list of all documented class members with links to the class documenta
 : <a class="el" href="classXMP__Error.html#a56aaa6fc6644ccfc9470ae1af8f3a8cd">XMP_Error</a>
 </li>
 <li>GetInternalRef()
-: <a class="el" href="classTXMPMeta.html#afbfebded0b85b08bd9c5ba0d7dae07e0">TXMPMeta&lt; tStringObj &gt;</a>
-, <a class="el" href="classTXMPFiles.html#a311fc36fdf7270fe05b1c531cdbbd009">TXMPFiles&lt; tStringObj &gt;</a>
+: <a class="el" href="classTXMPFiles.html#a311fc36fdf7270fe05b1c531cdbbd009">TXMPFiles&lt; tStringObj &gt;</a>
+, <a class="el" href="classTXMPMeta.html#afbfebded0b85b08bd9c5ba0d7dae07e0">TXMPMeta&lt; tStringObj &gt;</a>
 </li>
 <li>GetLocalizedText()
 : <a class="el" href="classTXMPMeta.html#aeefe49bbf669770d769f4fe0ea566bd0">TXMPMeta&lt; tStringObj &gt;</a>
@@ -371,6 +377,12 @@ Here is a list of all documented class members with links to the class documenta
 <li>isDebug
 : <a class="el" href="structXMP__VersionInfo.html#af1643d86f32f5a5a275dc9c5ba843018">XMP_VersionInfo</a>
 </li>
+<li>IsMetadataWritable()
+: <a class="el" href="classTXMPFiles.html#a6dfa135d53143d45e5ff22efa554398e">TXMPFiles&lt; tStringObj &gt;</a>
+</li>
+<li>IsNotified()
+: <a class="el" href="classXMP__Error.html#a5a0651a9615a6a60e467a96ddb43a6bb">XMP_Error</a>
+</li>
 </ul>
 
 
@@ -412,6 +424,9 @@ Here is a list of all documented class members with links to the class documenta
 </li>
 <li>Next()
 : <a class="el" href="classTXMPIterator.html#a124a1dd1ab3ff0d236e4d4b967dafcd9">TXMPIterator&lt; tStringObj &gt;</a>
+</li>
+<li>notified
+: <a class="el" href="classXMP__Error.html#a2b884dfb0b39689d1cf95105eadc4571">XMP_Error</a>
 </li>
 </ul>
 
@@ -457,6 +472,10 @@ Here is a list of all documented class members with links to the class documenta
 <li>RemoveProperties()
 : <a class="el" href="classTXMPUtils.html#a40c645803530662e08d042b4b7c6190d">TXMPUtils&lt; tStringObj &gt;</a>
 </li>
+<li>ResetErrorCallbackLimit()
+: <a class="el" href="classTXMPFiles.html#a8e37b25dd1cba1e9a3f45037022717f2">TXMPFiles&lt; tStringObj &gt;</a>
+, <a class="el" href="classTXMPMeta.html#a31c7ef089e8fadff122044afa27d200a">TXMPMeta&lt; tStringObj &gt;</a>
+</li>
 </ul>
 
 
@@ -476,11 +495,25 @@ Here is a list of all documented class members with links to the class documenta
 <li>SetArrayItem()
 : <a class="el" href="classTXMPMeta.html#a15720ee8e732232fa25989870cf99846">TXMPMeta&lt; tStringObj &gt;</a>
 </li>
+<li>SetDefaultErrorCallback()
+: <a class="el" href="classTXMPFiles.html#accc6c1cef9f124f6c5ed360251aa5aa7">TXMPFiles&lt; tStringObj &gt;</a>
+, <a class="el" href="classTXMPMeta.html#a1e90e0c8cd8c5670267bb693cf3660fe">TXMPMeta&lt; tStringObj &gt;</a>
+</li>
+<li>SetDefaultProgressCallback()
+: <a class="el" href="classTXMPFiles.html#a83335ee20bb3ea543c8c86a5757a7753">TXMPFiles&lt; tStringObj &gt;</a>
+</li>
+<li>SetErrorCallback()
+: <a class="el" href="classTXMPFiles.html#a43a98633a0090fb4ade76edf24302ab1">TXMPFiles&lt; tStringObj &gt;</a>
+, <a class="el" href="classTXMPMeta.html#aee41442af4f049c1d6698fc27ce854d0">TXMPMeta&lt; tStringObj &gt;</a>
+</li>
 <li>SetGlobalOptions()
 : <a class="el" href="classTXMPMeta.html#ae7bb38d9b3857b08106630a386b47332">TXMPMeta&lt; tStringObj &gt;</a>
 </li>
 <li>SetLocalizedText()
-: <a class="el" href="classTXMPMeta.html#af9531b949a462f5663b1f3fd99464c19">TXMPMeta&lt; tStringObj &gt;</a>
+: <a class="el" href="classTXMPMeta.html#a81273a152fb7b19e99c62ee39bf723f2">TXMPMeta&lt; tStringObj &gt;</a>
+</li>
+<li>SetNotified()
+: <a class="el" href="classXMP__Error.html#a9c368db94ca63ad7b9b118051d1f8897">XMP_Error</a>
 </li>
 <li>SetObjectName()
 : <a class="el" href="classTXMPMeta.html#acf1935be8e4849976dfc02325424960a">TXMPMeta&lt; tStringObj &gt;</a>
@@ -488,8 +521,11 @@ Here is a list of all documented class members with links to the class documenta
 <li>SetObjectOptions()
 : <a class="el" href="classTXMPMeta.html#a92055b3ae18dfd5e5491108f59318f17">TXMPMeta&lt; tStringObj &gt;</a>
 </li>
+<li>SetProgressCallback()
+: <a class="el" href="classTXMPFiles.html#aa283e2a1c16918c86148446859ed1a2d">TXMPFiles&lt; tStringObj &gt;</a>
+</li>
 <li>SetProperty()
-: <a class="el" href="classTXMPMeta.html#acc50625611f6aad405aa47197b6d0055">TXMPMeta&lt; tStringObj &gt;</a>
+: <a class="el" href="classTXMPMeta.html#a1dfd6a08ebfd1a6364b3a7b6584bcc28">TXMPMeta&lt; tStringObj &gt;</a>
 </li>
 <li>SetProperty_Bool()
 : <a class="el" href="classTXMPMeta.html#a9521e3838272ec501ffdb60ff3eb482f">TXMPMeta&lt; tStringObj &gt;</a>
@@ -587,6 +623,6 @@ Here is a list of all documented class members with links to the class documenta
 </ul>
 </div>
 <hr size="1"><address style="text-align: right;"><small>
-XMP-Toolkit-SDK-5.1.2 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
+XMP-Toolkit-SDK-CC201306 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
 </body>
 </html>

@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-<title>XMP-Toolkit-SDK-5.1.2: TXMPFiles&lt; tStringObj &gt; Class Template Reference</title>
+<title>XMP-Toolkit-SDK-CC201306: TXMPFiles&lt; tStringObj &gt; Class Template Reference</title>
 <link href="xmp.css" rel="stylesheet" type="text/css">
 <link href="tabs.css" rel="stylesheet" type="text/css">
 </head><body>
@@ -102,7 +102,7 @@ window.onload = initDynSections;
 <tr><td class="memItemLeft" align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#ada77eab74c3440659db3122f6ec8b7f4">PutXMP</a> (const tStringObj &amp;xmpPacket)</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#ad3f7babdc07c7de0d0cd9a3362b4710a" title="PutXMP() updates the XMP metadata in this object without writing out the file.">PutXMP()</a></code> updates the XMP metadata in this object without writing out the file, using a string object for input.  <a href="#ada77eab74c3440659db3122f6ec8b7f4"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a502ed01119e0421413e773f4f42683ec">PutXMP</a> (<a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> xmpPacket, <a class="el" href="XMP__Const_8h.html#a9f7dcc184f901c713274edfdac5bcc9a">XMP_StringLen</a> xmpLength=kXMP_UseNullTermination)</td></tr>
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#ad3f7babdc07c7de0d0cd9a3362b4710a" title="PutXMP() updates the XMP metadata in this object without writing out the file.">PutXMP()</a></code> updates the XMP metadata in this object without writing out the file, using a string object and optional length.  <a href="#a502ed01119e0421413e773f4f42683ec"></a><br/></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#ad3f7babdc07c7de0d0cd9a3362b4710a" title="PutXMP() updates the XMP metadata in this object without writing out the file.">PutXMP()</a></code> updates the XMP metadata in this object without writing out the file,  <a href="#a502ed01119e0421413e773f4f42683ec"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a29a11a1539d6300da3fb4c7e9ea02bb6">CanPutXMP</a> (const SXMPMeta &amp;xmpObj)</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#a29a11a1539d6300da3fb4c7e9ea02bb6" title="CanPutXMP() reports whether this file can be updated with a specific XMP packet.">CanPutXMP()</a></code> reports whether this file can be updated with a specific XMP packet.  <a href="#a29a11a1539d6300da3fb4c7e9ea02bb6"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a1d3f32c2b95659ada198775e2f67c808">CanPutXMP</a> (const tStringObj &amp;xmpPacket)</td></tr>
@@ -119,6 +119,10 @@ window.onload = initDynSections;
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Initializes the XMPFiles library; must be called before creating an <code>SXMPFiles</code> object.  <a href="#a0874bbbf41c9490abfb613bfe297327d"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">static bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a794e1830a84a6328eaa1995ba5aa6874">Initialize</a> (<a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a> options)</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Initializes the XMPFiles library; must be called before creating an <code>SXMPFiles</code> object.  <a href="#a794e1830a84a6328eaa1995ba5aa6874"></a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">static bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#abf0defebf7ca7d2cba7aed3c5dc107df">Initialize</a> (const char *pluginFolder, const char *plugins=NULL)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Initializes the XMPFiles library; must be called before creating an <code>SXMPFiles</code> object.  <a href="#abf0defebf7ca7d2cba7aed3c5dc107df"></a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">static bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#acc4b3bc2109fa98b4083df0d974f7dfb">Initialize</a> (<a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a> options, const char *pluginFolder, const char *plugins=NULL)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Initializes the XMPFiles library; must be called before creating an <code>SXMPFiles</code> object.  <a href="#acc4b3bc2109fa98b4083df0d974f7dfb"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">static void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a1e8de80c252b60b332dc4bc524139fd8">Terminate</a> ()</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Terminates use of the XMPFiles library.  <a href="#a1e8de80c252b60b332dc4bc524139fd8"></a><br/></td></tr>
 <tr><td colspan="2"><div class="groupHeader">File handler information</div></td></tr>
@@ -133,6 +137,12 @@ window.onload = initDynSections;
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#a07b7c4b44fb0e0a7d115ddd5ba22f926" title="CheckFileFormat() tries to determine the format of a file.">CheckFileFormat()</a></code> tries to determine the format of a file.  <a href="#a07b7c4b44fb0e0a7d115ddd5ba22f926"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">static <a class="el" href="XMP__Const_8h.html#a300d9a9189cb4ddb6970d05389f5c28e">XMP_FileFormat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a7f505664c41d7304fb757d6009b0751c">CheckPackageFormat</a> (<a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> folderPath)</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#a7f505664c41d7304fb757d6009b0751c" title="CheckPackageFormat() tries to determine the format of a &quot;package&quot; folder...">CheckPackageFormat()</a></code> tries to determine the format of a "package" folder.  <a href="#a7f505664c41d7304fb757d6009b0751c"></a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">static bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a0de588c4b98086206b3a5d737012106d">GetFileModDate</a> (<a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> filePath, <a class="el" href="structXMP__DateTime.html">XMP_DateTime</a> *modDate, <a class="el" href="XMP__Const_8h.html#a300d9a9189cb4ddb6970d05389f5c28e">XMP_FileFormat</a> *format=0, <a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a> options=0)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#a0de588c4b98086206b3a5d737012106d" title="GetFileModDate() returns the last modification date of all files that are returned...">GetFileModDate()</a></code> returns the last modification date of all files that are returned by <code><a class="el" href="classTXMPFiles.html#a03e6c681e827666690f0e5567b0b2a8a" title="GetAssociatedResources() returns a list of files and folders associated to filePath...">GetAssociatedResources()</a></code>  <a href="#a0de588c4b98086206b3a5d737012106d"></a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">static bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a03e6c681e827666690f0e5567b0b2a8a">GetAssociatedResources</a> (<a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> filePath, std::vector&lt; tStringObj &gt; *resourceList, <a class="el" href="XMP__Const_8h.html#a300d9a9189cb4ddb6970d05389f5c28e">XMP_FileFormat</a> format=kXMP_UnknownFile, <a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a> options=0)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#a03e6c681e827666690f0e5567b0b2a8a" title="GetAssociatedResources() returns a list of files and folders associated to filePath...">GetAssociatedResources()</a></code> returns a list of files and folders associated to filePath.  <a href="#a03e6c681e827666690f0e5567b0b2a8a"></a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">static bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a6dfa135d53143d45e5ff22efa554398e">IsMetadataWritable</a> (<a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> filePath, bool *writable, <a class="el" href="XMP__Const_8h.html#a300d9a9189cb4ddb6970d05389f5c28e">XMP_FileFormat</a> format=kXMP_UnknownFile, <a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a> options=0)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#a6dfa135d53143d45e5ff22efa554398e" title="IsMetadataWritable() returns true if metadata can be updated for the given media...">IsMetadataWritable()</a></code> returns true if metadata can be updated for the given media path.  <a href="#a6dfa135d53143d45e5ff22efa554398e"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#afcd21cfe5d6f13c648c5541e161919cb">OpenFile</a> (<a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a> filePath, <a class="el" href="XMP__Const_8h.html#a300d9a9189cb4ddb6970d05389f5c28e">XMP_FileFormat</a> format=kXMP_UnknownFile, <a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a> openFlags=0)</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#afcd21cfe5d6f13c648c5541e161919cb" title="OpenFile() opens a file for metadata access.">OpenFile()</a></code> opens a file for metadata access.  <a href="#afcd21cfe5d6f13c648c5541e161919cb"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">bool&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#acfef1688f3a62e2f465bb3a27da7b4ac">OpenFile</a> (const tStringObj &amp;filePath, <a class="el" href="XMP__Const_8h.html#a300d9a9189cb4ddb6970d05389f5c28e">XMP_FileFormat</a> format=kXMP_UnknownFile, <a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a> openFlags=0)</td></tr>
@@ -143,6 +153,24 @@ window.onload = initDynSections;
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#af9931d081cb19f98c81e41786030765b" title="GetFileInfo() retrieves basic information about an opened file.">GetFileInfo()</a></code> retrieves basic information about an opened file.  <a href="#af9931d081cb19f98c81e41786030765b"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a7b86c130fdbd54b5ac158ec3fee93777">SetAbortProc</a> (<a class="el" href="XMP__Const_8h.html#aa2738ce2fca7f1809b12834b1b5e2d0e">XMP_AbortProc</a> abortProc, void *abortArg)</td></tr>
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#a7b86c130fdbd54b5ac158ec3fee93777" title="SetAbortProc() registers a callback function used to check for a user-signaled abort...">SetAbortProc()</a></code> registers a callback function used to check for a user-signaled abort.  <a href="#a7b86c130fdbd54b5ac158ec3fee93777"></a><br/></td></tr>
+<tr><td colspan="2"><h2>Progress notifications</h2></td></tr>
+<tr><td colspan="2"><p><a class="anchor" id="amgrp89f625ebe0c163ac32fbbb1a4dd476f3"></a> These functions allow track the progress of file operations. Initially only file updates are tracked, these all occur within calls to SXMPFiles::CloseFile. There are no plans to track other operations at this time. Tracking support must be added to specific file handlers, there are no guarantees about which handlers will have support. To simplify the logic only file writes will be estimated and measured. </p>
+<br/><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">static void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a83335ee20bb3ea543c8c86a5757a7753">SetDefaultProgressCallback</a> (<a class="el" href="XMP__Const_8h.html#af18be2d0c8accad813e0d8962da24b4e">XMP_ProgressReportProc</a> proc, void *context=0, float interval=1.0, bool sendStartStop=false)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#a83335ee20bb3ea543c8c86a5757a7753" title="SetDefaultProgressCallback() sets a global default for progress tracking. This is...">SetDefaultProgressCallback()</a></code> sets a global default for progress tracking. This is used as a default for XMPFiles (library) objects created after the default is set. This does not affect the callback for new SXMPFiles (client) objects with an existing XMPFiles object.  <a href="#a83335ee20bb3ea543c8c86a5757a7753"></a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#aa283e2a1c16918c86148446859ed1a2d">SetProgressCallback</a> (<a class="el" href="XMP__Const_8h.html#af18be2d0c8accad813e0d8962da24b4e">XMP_ProgressReportProc</a> proc, void *context=0, float interval=1.0, bool sendStartStop=false)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><code><a class="el" href="classTXMPFiles.html#aa283e2a1c16918c86148446859ed1a2d" title="SetProgressCallback() sets the progress notification callback for the associated...">SetProgressCallback()</a></code> sets the progress notification callback for the associated XMPFiles (library) object.  <a href="#aa283e2a1c16918c86148446859ed1a2d"></a><br/></td></tr>
+<tr><td colspan="2"><h2>Error notifications</h2></td></tr>
+<tr><td colspan="2"><p><a class="anchor" id="amgrpb9b1c1c0b1b4992a1cbdde7ae0d6e01a"></a> From the beginning through version 5.5, XMP Toolkit errors result in throwing an <code><a class="el" href="classXMP__Error.html" title="XMP Toolkit error, associates an error code with a descriptive error string.">XMP_Error</a></code> exception. For the most part exceptions were thrown early and thus API calls aborted as soon as an error was detected. Starting in version 5.5, support has been added for notifications of errors arising in calls to <code><a class="el" href="classTXMPFiles.html" title="API for access to the main (document-level) metadata in a file.">TXMPFiles</a></code> functions.</p>
+<p>A client can register an error notification callback function for a <code>TXMPFile</code> object. This can be done as a global default or individually to each object. The global default applies to all objects created after it is registered. Within the object there is no difference between the global default or explicitly registered callback. The callback function returns a <code>bool</code> value indicating if recovery should be attempted (true) or an exception thrown (false). If no callback is registered, a best effort at recovery and continuation will be made with an exception thrown if recovery is not possible.</p>
+<p>The number of notifications delivered for a given <a class="el" href="classTXMPFiles.html" title="API for access to the main (document-level) metadata in a file.">TXMPFiles</a> object can be limited. This is intended to reduce chatter from multiple or cascading errors. The limit is set when the callback function is registered. This limits the number of notifications of the highest severity delivered or less. If a higher severity error occurs, the counting starts again. The limit and counting can be reset at any time, see <code>ResetErrorCallbackLimit</code>. </p>
+<br/><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">static void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#accc6c1cef9f124f6c5ed360251aa5aa7">SetDefaultErrorCallback</a> (<a class="el" href="XMP__Const_8h.html#aaceb0287e961c16649487db026bcfc61">XMPFiles_ErrorCallbackProc</a> proc, void *context=0, XMP_Uns32 limit=1)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><a class="el" href="classTXMPFiles.html#accc6c1cef9f124f6c5ed360251aa5aa7" title="SetDefaultErrorCallback() registers a global default error notification callback...">SetDefaultErrorCallback()</a> registers a global default error notification callback.  <a href="#accc6c1cef9f124f6c5ed360251aa5aa7"></a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a43a98633a0090fb4ade76edf24302ab1">SetErrorCallback</a> (<a class="el" href="XMP__Const_8h.html#aaceb0287e961c16649487db026bcfc61">XMPFiles_ErrorCallbackProc</a> proc, void *context=0, XMP_Uns32 limit=1)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><a class="el" href="classTXMPFiles.html#a43a98633a0090fb4ade76edf24302ab1" title="SetErrorCallback() registers an error notification callback.">SetErrorCallback()</a> registers an error notification callback.  <a href="#a43a98633a0090fb4ade76edf24302ab1"></a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTXMPFiles.html#a8e37b25dd1cba1e9a3f45037022717f2">ResetErrorCallbackLimit</a> (XMP_Uns32 limit=1)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight"><a class="el" href="classTXMPFiles.html#a8e37b25dd1cba1e9a3f45037022717f2" title="ResetErrorCallbackLimit() resets the error notification limit and counting. It has...">ResetErrorCallbackLimit()</a> resets the error notification limit and counting. It has no effect if an error notification callback function is not registered.  <a href="#a8e37b25dd1cba1e9a3f45037022717f2"></a><br/></td></tr>
 </table>
 <hr/><a name="_details"></a><h2>Detailed Description</h2>
 <h3>template&lt;class tStringObj&gt;<br/>
@@ -538,6 +566,60 @@ template&lt;class tStringObj&gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="a03e6c681e827666690f0e5567b0b2a8a"></a><!-- doxytag: member="TXMPFiles::GetAssociatedResources" ref="a03e6c681e827666690f0e5567b0b2a8a" args="(XMP_StringPtr filePath, std::vector&lt; tStringObj &gt; *resourceList, XMP_FileFormat format=kXMP_UnknownFile, XMP_OptionBits options=0)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">static bool <a class="el" href="classTXMPFiles.html">TXMPFiles</a>&lt; tStringObj &gt;::GetAssociatedResources </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a>&nbsp;</td>
+          <td class="paramname"> <em>filePath</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; tStringObj &gt; *&nbsp;</td>
+          <td class="paramname"> <em>resourceList</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#a300d9a9189cb4ddb6970d05389f5c28e">XMP_FileFormat</a>&nbsp;</td>
+          <td class="paramname"> <em>format</em> = <code>kXMP_UnknownFile</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a>&nbsp;</td>
+          <td class="paramname"> <em>options</em> = <code>0</code></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td><code> [static]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p><code><a class="el" href="classTXMPFiles.html#a03e6c681e827666690f0e5567b0b2a8a" title="GetAssociatedResources() returns a list of files and folders associated to filePath...">GetAssociatedResources()</a></code> returns a list of files and folders associated to filePath. </p>
+<p><code>GetAssociatedResources</code> is provided to locate all files that are associated to the given filePath such as sidecar-based XMP or folder-based video packages.If a smart handler can be selected (not fallback packet scanning) then a list of file/folder paths is returned for the related files that can be safely copied/imported to a different location, keeping intact metadata(XMP and non-XMP),content and the necessary folder structure of the format. The necessary folder structure here is the structure that is needed to uniquely identify a folder-based format.The filePath and format parameters are exactly as would be used for OpenFile. In the simple embedded XMP case just one path is returned. In the simple sidecar case one or two paths will be returned, one if there is no sidecar XMP and two if sidecar XMP exists. For folder-based handlers paths to all associated files is returned, including the files and folders necessary to identify the format.In general, all the returned paths are existent.In case of folder based video formats the first associated resource in the resourceList is the root folder.</p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>filePath</em>&nbsp;</td><td>A path exactly as would be passed to <code>OpenFile</code>.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>resourceList</em>&nbsp;</td><td>Address of a vector of strings to receive all associated resource paths.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>format</em>&nbsp;</td><td>A format hint as would be passed to <code>OpenFile</code>.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>options</em>&nbsp;</td><td>An optional set of option flags. The only defined one is <code>kXMPFiles_ForceGivenHandler</code>, used to shortcut the handler selection logic if the caller is certain of the format.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="return"><dt><b>Returns:</b></dt><dd>Returns true if the file path is valid to select a smart handler, false for an invalid path or if fallback packet scanning would be selected. Can also return false for unexpected errors that prevent knowledge of the file usage. </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="af9931d081cb19f98c81e41786030765b"></a><!-- doxytag: member="TXMPFiles::GetFileInfo" ref="af9931d081cb19f98c81e41786030765b" args="(tStringObj *filePath=0, XMP_OptionBits *openFlags=0, XMP_FileFormat *format=0, XMP_OptionBits *handlerFlags=0)" -->
 <div class="memitem">
 <div class="memproto">
@@ -588,6 +670,60 @@ template&lt;class tStringObj&gt; </div>
   </dd>
 </dl>
 <dl class="return"><dt><b>Returns:</b></dt><dd>True if the file object is in the open state; that is, <code><a class="el" href="classTXMPFiles.html#afcd21cfe5d6f13c648c5541e161919cb" title="OpenFile() opens a file for metadata access.">OpenFile()</a></code> has been called but <code><a class="el" href="classTXMPFiles.html#aeca89170c7aa3e2d56e30bff04dd7927" title="CloseFile() explicitly closes an opened file.">CloseFile()</a></code> has not. False otherwise. Even if the file object is open, the actual disk file might be closed in the host file-system sense; see <code><a class="el" href="classTXMPFiles.html#afcd21cfe5d6f13c648c5541e161919cb" title="OpenFile() opens a file for metadata access.">OpenFile()</a></code>. </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="a0de588c4b98086206b3a5d737012106d"></a><!-- doxytag: member="TXMPFiles::GetFileModDate" ref="a0de588c4b98086206b3a5d737012106d" args="(XMP_StringPtr filePath, XMP_DateTime *modDate, XMP_FileFormat *format=0, XMP_OptionBits options=0)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">static bool <a class="el" href="classTXMPFiles.html">TXMPFiles</a>&lt; tStringObj &gt;::GetFileModDate </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a>&nbsp;</td>
+          <td class="paramname"> <em>filePath</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structXMP__DateTime.html">XMP_DateTime</a> *&nbsp;</td>
+          <td class="paramname"> <em>modDate</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#a300d9a9189cb4ddb6970d05389f5c28e">XMP_FileFormat</a> *&nbsp;</td>
+          <td class="paramname"> <em>format</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a>&nbsp;</td>
+          <td class="paramname"> <em>options</em> = <code>0</code></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td><code> [static]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p><code><a class="el" href="classTXMPFiles.html#a0de588c4b98086206b3a5d737012106d" title="GetFileModDate() returns the last modification date of all files that are returned...">GetFileModDate()</a></code> returns the last modification date of all files that are returned by <code><a class="el" href="classTXMPFiles.html#a03e6c681e827666690f0e5567b0b2a8a" title="GetAssociatedResources() returns a list of files and folders associated to filePath...">GetAssociatedResources()</a></code> </p>
+<p>Returns the most recent O/S file modification date of all associated files. In the typical case of a single file containing embedded XMP, returned date value is the modification date of the same file. For sidecar and folder based video packages, returned date value is the modification date of that associated file which was updated last.</p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>filePath</em>&nbsp;</td><td>A path exactly as would be passed to <code>OpenFile</code>.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>modDate</em>&nbsp;</td><td>A required pointer to return the last modification date.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>format</em>&nbsp;</td><td>A format hint as would be passed to <code>OpenFile</code>.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>options</em>&nbsp;</td><td>An optional set of option flags. The only defined one is <code>kXMPFiles_ForceGivenHandler</code>, used to shortcut the handler selection logic if the caller is certain of the format.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="return"><dt><b>Returns:</b></dt><dd>Returns true if the file path is valid to select a smart handler, false for an invalid path or if fallback packet scanning would be selected. </dd></dl>
 
 </div>
 </div>
@@ -741,6 +877,97 @@ template&lt;class tStringObj&gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="acc4b3bc2109fa98b4083df0d974f7dfb"></a><!-- doxytag: member="TXMPFiles::Initialize" ref="acc4b3bc2109fa98b4083df0d974f7dfb" args="(XMP_OptionBits options, const char *pluginFolder, const char *plugins=NULL)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">static bool <a class="el" href="classTXMPFiles.html">TXMPFiles</a>&lt; tStringObj &gt;::Initialize </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a>&nbsp;</td>
+          <td class="paramname"> <em>options</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&nbsp;</td>
+          <td class="paramname"> <em>pluginFolder</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&nbsp;</td>
+          <td class="paramname"> <em>plugins</em> = <code>NULL</code></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td><code> [static]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>Initializes the XMPFiles library; must be called before creating an <code>SXMPFiles</code> object. </p>
+<p>This overload of <a class="el" href="classTXMPFiles.html#a794e1830a84a6328eaa1995ba5aa6874" title="Initializes the XMPFiles library; must be called before creating an SXMPFiles object...">TXMPFiles::Initialize( XMP_OptionBits options )</a> accepts plugin directory and name of the plug-ins as a comma separated list to load the file handler plug-ins. If plugins == NULL, then all plug-ins present in the plug-in directory will be loaded.</p>
+<p>The main action is to activate the available smart file handlers. Must be called before using any methods except <code><a class="el" href="classTXMPFiles.html#a6e521c034728b59ab55213a9d8203d1e" title="GetVersionInfo() retrieves version information for the XMPFiles component.">GetVersionInfo()</a></code>.</p>
+<p>This function is static; make the call directly from the concrete class (<code>SXMPFiles</code>).</p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>options</em>&nbsp;</td><td>Option flags to control the initialization actions. </td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>pluginFolder</em>&nbsp;</td><td>Pugin directorty to load the file handler plug-ins. </td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>plugins</em>&nbsp;</td><td>Comma sepearted list of plug-ins which should be loaded from the plug-in directory. If plugin == NULL, then all plug-ins availbale in the plug-in directory will be loaded.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="return"><dt><b>Returns:</b></dt><dd>True on success. </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="abf0defebf7ca7d2cba7aed3c5dc107df"></a><!-- doxytag: member="TXMPFiles::Initialize" ref="abf0defebf7ca7d2cba7aed3c5dc107df" args="(const char *pluginFolder, const char *plugins=NULL)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">static bool <a class="el" href="classTXMPFiles.html">TXMPFiles</a>&lt; tStringObj &gt;::Initialize </td>
+          <td>(</td>
+          <td class="paramtype">const char *&nbsp;</td>
+          <td class="paramname"> <em>pluginFolder</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&nbsp;</td>
+          <td class="paramname"> <em>plugins</em> = <code>NULL</code></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td><code> [static]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>Initializes the XMPFiles library; must be called before creating an <code>SXMPFiles</code> object. </p>
+<p>This overload of <a class="el" href="classTXMPFiles.html#a0874bbbf41c9490abfb613bfe297327d" title="Initializes the XMPFiles library; must be called before creating an SXMPFiles object...">TXMPFiles::Initialize()</a> accepts plugin directory and name of the plug-ins as a comma separated list to load the file handler plug-ins. If plugins == NULL, then all plug-ins present in the plug-in directory will be loaded.</p>
+<p>The main action is to activate the available smart file handlers. Must be called before using any methods except <code><a class="el" href="classTXMPFiles.html#a6e521c034728b59ab55213a9d8203d1e" title="GetVersionInfo() retrieves version information for the XMPFiles component.">GetVersionInfo()</a></code>.</p>
+<p>This function is static; make the call directly from the concrete class (<code>SXMPFiles</code>).</p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>pluginFolder</em>&nbsp;</td><td>Pugin directorty to load the file handler plug-ins. </td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>plugins</em>&nbsp;</td><td>Comma sepearted list of plug-ins which should be loaded from the plug-in directory. If plugin == NULL, then all plug-ins availbale in the plug-in directory will be loaded.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="return"><dt><b>Returns:</b></dt><dd>True on success. </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="a794e1830a84a6328eaa1995ba5aa6874"></a><!-- doxytag: member="TXMPFiles::Initialize" ref="a794e1830a84a6328eaa1995ba5aa6874" args="(XMP_OptionBits options)" -->
 <div class="memitem">
 <div class="memproto">
@@ -794,6 +1021,60 @@ template&lt;class tStringObj&gt; </div>
 <p>The main action is to activate the available smart file handlers. Must be called before using any methods except <code><a class="el" href="classTXMPFiles.html#a6e521c034728b59ab55213a9d8203d1e" title="GetVersionInfo() retrieves version information for the XMPFiles component.">GetVersionInfo()</a></code>.</p>
 <p>This function is static; make the call directly from the concrete class (<code>SXMPFiles</code>).</p>
 <dl class="return"><dt><b>Returns:</b></dt><dd>True on success. </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="a6dfa135d53143d45e5ff22efa554398e"></a><!-- doxytag: member="TXMPFiles::IsMetadataWritable" ref="a6dfa135d53143d45e5ff22efa554398e" args="(XMP_StringPtr filePath, bool *writable, XMP_FileFormat format=kXMP_UnknownFile, XMP_OptionBits options=0)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">static bool <a class="el" href="classTXMPFiles.html">TXMPFiles</a>&lt; tStringObj &gt;::IsMetadataWritable </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6">XMP_StringPtr</a>&nbsp;</td>
+          <td class="paramname"> <em>filePath</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool *&nbsp;</td>
+          <td class="paramname"> <em>writable</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#a300d9a9189cb4ddb6970d05389f5c28e">XMP_FileFormat</a>&nbsp;</td>
+          <td class="paramname"> <em>format</em> = <code>kXMP_UnknownFile</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#aeb865118433be92d88e5f49ed11487c8">XMP_OptionBits</a>&nbsp;</td>
+          <td class="paramname"> <em>options</em> = <code>0</code></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td><code> [static]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p><code><a class="el" href="classTXMPFiles.html#a6dfa135d53143d45e5ff22efa554398e" title="IsMetadataWritable() returns true if metadata can be updated for the given media...">IsMetadataWritable()</a></code> returns true if metadata can be updated for the given media path. </p>
+<p><code>IsMetadataWritable</code> is provided to check if metadata can be updated or written to the format.In the case of folder-based video formats only if all the metadata files can be written to, true is returned.In other words, false is returned for a partial-write state of metadata files in folder-based media formats.</p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>filePath</em>&nbsp;</td><td>A path exactly as would be passed to <code>OpenFile</code>.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>writable</em>&nbsp;</td><td>A pointer to the result flag. Is true if the metadata can be updated in the format, otherwise false.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>format</em>&nbsp;</td><td>A format hint as would be passed to <code>OpenFile</code>.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>options</em>&nbsp;</td><td>An optional set of option flags. The only defined one is <code>kXMPFiles_ForceGivenHandler</code>, used to shortcut the handler selection logic if the caller is certain of the format.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="return"><dt><b>Returns:</b></dt><dd>Returns true if the file path is valid to select a smart handler, false for an invalid path or if fallback packet scanning would be selected. </dd></dl>
 
 </div>
 </div>
@@ -949,8 +1230,8 @@ template&lt;class tStringObj&gt; </div>
 </div>
 <div class="memdoc">
 
-<p><code><a class="el" href="classTXMPFiles.html#ad3f7babdc07c7de0d0cd9a3362b4710a" title="PutXMP() updates the XMP metadata in this object without writing out the file.">PutXMP()</a></code> updates the XMP metadata in this object without writing out the file, using a string object and optional length. </p>
-<p>Overloads the basic form of the function, allowing you to pass the metadata as a string object instead of an XMP object. It is otherwise identical; see details in the canonical form.</p>
+<p><code><a class="el" href="classTXMPFiles.html#ad3f7babdc07c7de0d0cd9a3362b4710a" title="PutXMP() updates the XMP metadata in this object without writing out the file.">PutXMP()</a></code> updates the XMP metadata in this object without writing out the file, </p>
+<p>using a string object and optional length. Overloads the basic form of the function, allowing you to pass the metadata as a string object instead of an XMP object. It is otherwise identical; see details in the canonical form.</p>
 <dl><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>xmpPacket</em>&nbsp;</td><td>The new metadata as a <code>const char *</code> string containing an XMP packet.</td></tr>
@@ -1019,6 +1300,34 @@ template&lt;class tStringObj&gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="a8e37b25dd1cba1e9a3f45037022717f2"></a><!-- doxytag: member="TXMPFiles::ResetErrorCallbackLimit" ref="a8e37b25dd1cba1e9a3f45037022717f2" args="(XMP_Uns32 limit=1)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classTXMPFiles.html">TXMPFiles</a>&lt; tStringObj &gt;::ResetErrorCallbackLimit </td>
+          <td>(</td>
+          <td class="paramtype">XMP_Uns32&nbsp;</td>
+          <td class="paramname"> <em>limit</em> = <code>1</code></td>
+          <td>&nbsp;)&nbsp;</td>
+          <td></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p><a class="el" href="classTXMPFiles.html#a8e37b25dd1cba1e9a3f45037022717f2" title="ResetErrorCallbackLimit() resets the error notification limit and counting. It has...">ResetErrorCallbackLimit()</a> resets the error notification limit and counting. It has no effect if an error notification callback function is not registered. </p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>limit</em>&nbsp;</td><td>A limit on the number of notifications to be delivered. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a class="anchor" id="a7b86c130fdbd54b5ac158ec3fee93777"></a><!-- doxytag: member="TXMPFiles::SetAbortProc" ref="a7b86c130fdbd54b5ac158ec3fee93777" args="(XMP_AbortProc abortProc, void *abortArg)" -->
 <div class="memitem">
 <div class="memproto">
@@ -1058,6 +1367,200 @@ template&lt;class tStringObj&gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="accc6c1cef9f124f6c5ed360251aa5aa7"></a><!-- doxytag: member="TXMPFiles::SetDefaultErrorCallback" ref="accc6c1cef9f124f6c5ed360251aa5aa7" args="(XMPFiles_ErrorCallbackProc proc, void *context=0, XMP_Uns32 limit=1)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">static void <a class="el" href="classTXMPFiles.html">TXMPFiles</a>&lt; tStringObj &gt;::SetDefaultErrorCallback </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#aaceb0287e961c16649487db026bcfc61">XMPFiles_ErrorCallbackProc</a>&nbsp;</td>
+          <td class="paramname"> <em>proc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&nbsp;</td>
+          <td class="paramname"> <em>context</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">XMP_Uns32&nbsp;</td>
+          <td class="paramname"> <em>limit</em> = <code>1</code></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td><code> [static]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p><a class="el" href="classTXMPFiles.html#accc6c1cef9f124f6c5ed360251aa5aa7" title="SetDefaultErrorCallback() registers a global default error notification callback...">SetDefaultErrorCallback()</a> registers a global default error notification callback. </p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>proc</em>&nbsp;</td><td>The client's callback function.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>context</em>&nbsp;</td><td>Client-provided context for the callback.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>limit</em>&nbsp;</td><td>A limit on the number of notifications to be delivered. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="a83335ee20bb3ea543c8c86a5757a7753"></a><!-- doxytag: member="TXMPFiles::SetDefaultProgressCallback" ref="a83335ee20bb3ea543c8c86a5757a7753" args="(XMP_ProgressReportProc proc, void *context=0, float interval=1.0, bool sendStartStop=false)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">static void <a class="el" href="classTXMPFiles.html">TXMPFiles</a>&lt; tStringObj &gt;::SetDefaultProgressCallback </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#af18be2d0c8accad813e0d8962da24b4e">XMP_ProgressReportProc</a>&nbsp;</td>
+          <td class="paramname"> <em>proc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&nbsp;</td>
+          <td class="paramname"> <em>context</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&nbsp;</td>
+          <td class="paramname"> <em>interval</em> = <code>1.0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&nbsp;</td>
+          <td class="paramname"> <em>sendStartStop</em> = <code>false</code></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td><code> [static]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p><code><a class="el" href="classTXMPFiles.html#a83335ee20bb3ea543c8c86a5757a7753" title="SetDefaultProgressCallback() sets a global default for progress tracking. This is...">SetDefaultProgressCallback()</a></code> sets a global default for progress tracking. This is used as a default for XMPFiles (library) objects created after the default is set. This does not affect the callback for new SXMPFiles (client) objects with an existing XMPFiles object. </p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>proc</em>&nbsp;</td><td>The client's callback function. Can be zero to disable notifications.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>context</em>&nbsp;</td><td>A pointer used to carry client-private context.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>interval</em>&nbsp;</td><td>The desired number of seconds between notifications. Ideally the first notification is sent after this interval, then at each following multiple of this interval.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>sendStartStop</em>&nbsp;</td><td>A Boolean value indicating if initial and final notifications are wanted in addition to those at the reporting intervals. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="a43a98633a0090fb4ade76edf24302ab1"></a><!-- doxytag: member="TXMPFiles::SetErrorCallback" ref="a43a98633a0090fb4ade76edf24302ab1" args="(XMPFiles_ErrorCallbackProc proc, void *context=0, XMP_Uns32 limit=1)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classTXMPFiles.html">TXMPFiles</a>&lt; tStringObj &gt;::SetErrorCallback </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#aaceb0287e961c16649487db026bcfc61">XMPFiles_ErrorCallbackProc</a>&nbsp;</td>
+          <td class="paramname"> <em>proc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&nbsp;</td>
+          <td class="paramname"> <em>context</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">XMP_Uns32&nbsp;</td>
+          <td class="paramname"> <em>limit</em> = <code>1</code></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p><a class="el" href="classTXMPFiles.html#a43a98633a0090fb4ade76edf24302ab1" title="SetErrorCallback() registers an error notification callback.">SetErrorCallback()</a> registers an error notification callback. </p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>proc</em>&nbsp;</td><td>The client's callback function.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>context</em>&nbsp;</td><td>Client-provided context for the callback.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>limit</em>&nbsp;</td><td>A limit on the number of notifications to be delivered. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="aa283e2a1c16918c86148446859ed1a2d"></a><!-- doxytag: member="TXMPFiles::SetProgressCallback" ref="aa283e2a1c16918c86148446859ed1a2d" args="(XMP_ProgressReportProc proc, void *context=0, float interval=1.0, bool sendStartStop=false)" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class tStringObj&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classTXMPFiles.html">TXMPFiles</a>&lt; tStringObj &gt;::SetProgressCallback </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="XMP__Const_8h.html#af18be2d0c8accad813e0d8962da24b4e">XMP_ProgressReportProc</a>&nbsp;</td>
+          <td class="paramname"> <em>proc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&nbsp;</td>
+          <td class="paramname"> <em>context</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&nbsp;</td>
+          <td class="paramname"> <em>interval</em> = <code>1.0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&nbsp;</td>
+          <td class="paramname"> <em>sendStartStop</em> = <code>false</code></td><td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td><td></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p><code><a class="el" href="classTXMPFiles.html#aa283e2a1c16918c86148446859ed1a2d" title="SetProgressCallback() sets the progress notification callback for the associated...">SetProgressCallback()</a></code> sets the progress notification callback for the associated XMPFiles (library) object. </p>
+<dl><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>proc</em>&nbsp;</td><td>The client's callback function. Can be zero to disable notifications.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>context</em>&nbsp;</td><td>A pointer used to carry client-private context.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>interval</em>&nbsp;</td><td>The desired number of seconds between notifications. Ideally the first notification is sent after this interval, then at each following multiple of this interval.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>sendStartStop</em>&nbsp;</td><td>A Boolean value indicating if initial and final notifications are wanted in addition to those at the reporting intervals. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a class="anchor" id="a1e8de80c252b60b332dc4bc524139fd8"></a><!-- doxytag: member="TXMPFiles::Terminate" ref="a1e8de80c252b60b332dc4bc524139fd8" args="()" -->
 <div class="memitem">
 <div class="memproto">
@@ -1086,6 +1589,6 @@ template&lt;class tStringObj&gt; </div>
 </ul>
 </div>
 <hr size="1"><address style="text-align: right;"><small>
-XMP-Toolkit-SDK-5.1.2 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
+XMP-Toolkit-SDK-CC201306 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
 </body>
 </html>

@@ -11,18 +11,18 @@
 * using a sample XMP Packet that contains all of the different property and attribute types.
 */
 
+#include <cstdio>
 #include <vector>
 #include <string>
-#include <stdexcept>
-#include <errno.h>
-#include <time.h>
 #include <cstring>
-#include <cstdio>
+#include <stdexcept>
+#include <cerrno>
+#include <ctime>
 
 #define TXMP_STRING_TYPE std::string
 #define XMP_INCLUDE_XMPFILES 1
-#include "XMP.hpp"
-#include "XMP.incl_cpp"
+#include "public/include/XMP.hpp"
+#include "public/include/XMP.incl_cpp"
 
 using namespace std;
 

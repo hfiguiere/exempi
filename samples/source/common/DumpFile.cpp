@@ -16,7 +16,7 @@
 //     - PHOTOSHOP
 //     - JPEG2K
 //     - WMAV (ASF/WMA/WMV)
-//     - RIFF (AVI/WAV)
+//     - IFF/RIFF (AVI/WAV/RF64/AIFF/AIFF-C)
 //     - PNG
 //     - InDesign
 //     - MP3
@@ -29,12 +29,9 @@
 // DumpFile does depend on XMPCore and the packetscanner from XMPFiles. 
 
 #include <stdarg.h>
-#include <cstring>
-#include <cstdlib>
-#include "globals.h"
-#include "DumpFile.h"
-#include "LargeFileAccess.hpp"
-
+#include "samples/source/common/globals.h"
+#include "samples/source/common/DumpFile.h"
+#include "samples/source/common/LargeFileAccess.hpp"
 static const XMP_Uns32 CONST_INFINITE=(XMP_Uns32)(-1);
 
 // converts a (supposed) 8Bit-encoded String to Buginese
@@ -232,15 +229,11 @@ using namespace std;
 //! no use of XMPFiles
 //! no "XMP.incl_cpp" here, happens in Dumpfile/main.cpp resp. CppUnit/main.cpp
 #define TXMP_STRING_TYPE std::string
-#include "XMP.hpp"
-#include "XMP_Const.h"
+#include "public/include/XMP.hpp"
+#include "public/include/XMP_Const.h"
 
-//scanning routines - needed by PacketScan(...) routine for unknown files
-#include "XMPScanner.hpp"
-
-//  needed for logging
-#include "Log.h"
-
+#include "samples/source/common/XMPScanner.hpp"
+#include "samples/source/common/Log.h"
 //disabled warning (take-over)
 #if XMP_WinBuild
 	#pragma warning (disable : 4996)	// '...' was declared deprecated
@@ -945,6 +938,9 @@ static const XMP_Int64 kASFMinSize = 16;	// ! Not really accurate, but covers th
 
 static const XMP_Int64 kRIFFMinSize = 12;
 
+static const XMP_Int64 kPostScriptMinSize = 49;
+
+
 static const XMP_Int64 kInDesignMinSize = 2 * kINDD_PageSize;	// Two master pages.
 
 static const XMP_Int64 kISOMediaMinSize = 16;	// At least a minimal file type box.
@@ -952,6 +948,7 @@ static const XMP_Uns8  kISOMediaFTyp[]  = { 0x66, 0x74, 0x79, 0x70 };	// "ftyp"
 static const XMP_Uns32 kISOTag_ftyp   = 0x66747970UL;
 static const XMP_Uns32 kISOBrand_mp41 = 0x6D703431UL;
 static const XMP_Uns32 kISOBrand_mp42 = 0x6D703432UL;
+static const XMP_Uns32 kISOBrand_avc1 = 0x61766331UL;
 static const XMP_Uns32 kISOBrand_f4v  = 0x66347620UL;
 
 static const XMP_Uns32 kQTTag_XMP_    = 0x584D505FUL;
@@ -959,6 +956,8 @@ static const XMP_Uns32 kQTTag_XMP_    = 0x584D505FUL;
 static const XMP_Int64 kSWFMinSize = (8+2+4 + 2);	// Header with minimal rectangle and an End tag.
 
 static const XMP_Int64 kFLVMinSize = 9;	// Header with zero length data.
+
+static const XMP_Uns8  kPostScriptStart[] = { 0xC5, 0xD0, 0xD3, 0xC6 };
 
 static XMP_FileFormat
 CheckFileFormat ( const char * filePath, XMP_Uns8 * fileContent, XMP_Int64 fileSize )
@@ -996,6 +995,19 @@ CheckFileFormat ( const char * filePath, XMP_Uns8 * fileContent, XMP_Int64 fileS
 		if ( CheckBytes ( fileContent+8, "WAVE", 4 ) ) return kXMP_WAVFile;
 	}
 
+	if ( (fileSize >= kRIFFMinSize) && CheckBytes ( fileContent, "RF64", 4 ) ) {
+		if ( CheckBytes ( fileContent+8, "WAVE", 4 ) ) return kXMP_WAVFile;
+	}
+
+	if ( (fileSize >= kRIFFMinSize) && CheckBytes ( fileContent, "FORM", 4 ) ) {
+		if ( CheckBytes ( fileContent+8, "AIFF ", 4 ) ) return kXMP_AIFFFile;
+		if ( CheckBytes ( fileContent+8, "AIFC", 4 ) ) return kXMP_AIFFFile;
+	}
+
+	if ( (fileSize >= kPostScriptMinSize) && CheckBytes (fileContent, kPostScriptStart, 4) ) {
+		return kXMP_PostScriptFile;
+	}
+
 	if ( (fileSize >= kInDesignMinSize) && CheckBytes ( fileContent, kInDesign_MasterPageGUID, kInDesignGUIDSize ) ) {
 		return kXMP_InDesignFile;
 	}
@@ -1023,7 +1035,18 @@ CheckFileFormat ( const char * filePath, XMP_Uns8 * fileContent, XMP_Int64 fileS
 
 		for ( ; compatPtr < compatEnd; compatPtr += 4 ) {
 			XMP_Uns32 compatBrand = GetUns32BE (compatPtr);
-			if ( (compatBrand == kISOBrand_mp41) || (compatBrand == kISOBrand_mp42) ) return kXMP_MPEG4File;
+			switch ( compatBrand ) {
+			case kISOBrand_mp41:
+			case kISOBrand_mp42:
+			case kISOBrand_avc1:
+				return kXMP_MPEG4File;
+				break;
+
+			default:
+				break;
+
+			}
+
 		}
 
 	}
@@ -1439,7 +1462,7 @@ DumpOneIFD (int ifdIndex, XMP_Uns8 * ifdPtr, XMP_Uns8 * endPtr,
 			case kTIFF_Int8 :
 				if (valueCount == 1) {
 					value8 = *valuePtr;
-					//fno: show the hex value unsigned (memory representation)´and the decimal signed
+					//fno: show the hex value unsigned (memory representation) and the decimal signed
 					tree->addComment("hex value 0x%.2X", value8);
 					tree->changeValue( "%d" , *((XMP_Int8*)&value8));
 				}
@@ -1854,8 +1877,13 @@ digestInternationalTextSequence ( LFA_FileRef file, std::string isoPath, XMP_Int
 	tree->digest16u(file,isoPath+"language code",true,true);
 	(*remainingSize) -= 4;
 	if ( (*remainingSize) != miniBoxStringSize )
+	{
 		tree->addComment("WARNING: boxSize and miniBoxSize differ!");
-	tree->digestString( file, isoPath+"value", miniBoxStringSize, false );
+	}
+	else
+	{
+		tree->digestString( file, isoPath+"value", miniBoxStringSize, false );
+	}
 }
 
 /**
@@ -1916,7 +1944,9 @@ DumpISOBoxes ( LFA_FileRef file, XMP_Uns32 maxBoxLen, std::string _isoPath )
 			break;
 		}
 
-		std::string boxString( fromArgs( "%.4s" , &boxType ) );
+                XMP_Uns32 tempBoxType = GetUns32LE(&boxType);
+                std::string boxString( fromArgs( "%.4s" , &tempBoxType) );
+
 		// substitute mac-copyright signs with an easier-to-handle "(c)"
 		if ( boxString.at(0) == 0xA9 )
 			boxString = std::string("(c)") + boxString.substr(1);
@@ -1980,6 +2010,10 @@ DumpISOBoxes ( LFA_FileRef file, XMP_Uns32 maxBoxLen, std::string _isoPath )
 				{
 					XMP_Uns32 majorBrand = LFA_ReadUns32_LE( file );
 					XMP_Uns32 minorVersion = LFA_ReadUns32_LE( file );
+
+                    //data has been read in LE make it in BE
+                    majorBrand = GetUns32LE(&majorBrand);
+                    minorVersion = GetUns32LE(&minorVersion);
 
 					//Log::info( fromArgs( "major Brand:   '%.4s' (0x%.8X)" , &majorBrand, MakeUns32BE(majorBrand) ));
 					//Log::info( fromArgs( "minor Version: 0x%.8X" , MakeUns32BE(minorVersion) ) );
@@ -2221,9 +2255,7 @@ DumpISOBoxes ( LFA_FileRef file, XMP_Uns32 maxBoxLen, std::string _isoPath )
 
 			// (c)-style quicktime boxes and boxes of no interest:
 			default:
-				if ( (boxType & 0xA9) == 0xA9) // (c)something
-				{
-					if ( 0 == isoPath.compare( 0 , 20, "moov/udta/meta/ilst/"))
+				    if ( 0 == isoPath.compare( 0 , 20, "moov/udta/meta/ilst/"))
 					{ // => iTunes metadata (hunt for data childs)
 						// a container box, hunt for 'data' atom by recursion:
 						bool ok;
@@ -2234,16 +2266,12 @@ DumpISOBoxes ( LFA_FileRef file, XMP_Uns32 maxBoxLen, std::string _isoPath )
 					}
 					else if ( 0 == isoPath.compare( 0 , 10, "moov/udta/" ))
 					{ // => Quicktime metadata "international text sequence" ( size, language code, value )
-						digestInternationalTextSequence( file, isoPath, &remainingSize );
+							digestInternationalTextSequence( file, isoPath, &remainingSize );
 					} else
 					{
 						tree->addComment("WARNING: unknown flavor of (c)*** boxes, neither QT nor iTunes");
 					}			
 					break;
-				}
-				//boxes of no interest:
-
-				break;
 		}
 
 		bool ok;
@@ -2956,8 +2984,93 @@ static void setFixedBEXTField ( LFA_FileRef file, std::string propName, XMP_Int6
 		delete[] descriptionBuffer;
 }
 
+struct ChunkSize64 // declare ChunkSize64 structure
+{
+	XMP_Uns32 chunkId; // chunk ID (i.e. "big1" - this chunk is a big one)
+	XMP_Uns64 chunkSize; //
+};
+
+struct DataSize64Chunk // declare DataSize64Chunk structure
+{
+	XMP_Uns32 chunkId; // ds64
+	XMP_Uns32 chunkSize; // 4 byte size of the ds64 chunk
+	XMP_Uns64 riffSize; // size of RF64 block
+	XMP_Uns64 dataSize; // size of data chunk
+	XMP_Uns64 sampleCount; // sample count of fact chunk	
+	XMP_Uns32 tableLength; // number of valid entries in array "table"
+	std::vector< ChunkSize64 > table;
+};
+
+
+
+static XMP_Uns64 parseRF64( LFA_FileRef file, DataSize64Chunk* rf64Sizes )
+{
+	XMP_Int64 chunkPos= LFA_Tell( file );
+	rf64Sizes->chunkId = tree->digest32u( file, "", false );
+	std::string ds64ChunkID_ST( fromArgs( "%.4s" , &rf64Sizes->chunkId) );
+	assertMsg("Not a valid RF64 file!", ds64ChunkID_ST == "ds64");
+
+	rf64Sizes->chunkSize = tree->digest32u( file, "", false );
+
+	XMP_Uns32 bitCnt = 0;
+	rf64Sizes->riffSize = tree->digest64u( file, "", false );
+	rf64Sizes->dataSize = tree->digest64u( file, "", false );
+	rf64Sizes->sampleCount = tree->digest64u( file, "", false );
+
+	rf64Sizes->tableLength = tree->digest32u( file, "", false );
+
+	bitCnt = 28;
+	
+	for ( XMP_Uns32 i = 0; i < rf64Sizes->tableLength ; i++ )
+	{
+		ChunkSize64 tmp;
+		tmp.chunkId = tree->digest32u( file, "", false );
+		tmp.chunkSize = tree->digest64u( file, "", false );
+		rf64Sizes->table.push_back( tmp );
+		
+		bitCnt += 12;
+	}
+
+	// is there a rest to skip?
+	XMP_Uns32 rest = rf64Sizes->chunkSize - bitCnt;
+	if ( rest != 0 )
+	{
+		Skip( file, rest );
+	}
+	// return correct RIFF size
+	return rf64Sizes->riffSize;
+
+}
+
+static XMP_Uns64 getRealSize( bool isOutermost, std::string chunkID, LFA_FileRef file, DataSize64Chunk* sizeChunk)
+{
+	if ( isOutermost )
+	{
+		return parseRF64( file, sizeChunk );
+	}
+	else
+	{
+		if (chunkID == "data")
+		{
+			return sizeChunk->dataSize;
+		} else
+		{
+			// search table
+			for ( XMP_Uns32 i = 0; i < sizeChunk->tableLength ; i++ )
+			{
+				std::string idString( fromArgs( "%.4s" , &sizeChunk->table[i].chunkId ) );
+				if ( idString == chunkID )
+				{
+					return sizeChunk->table[i].chunkSize;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
 static void
-DumpRIFFChunk ( LFA_FileRef file, XMP_Int64 parentEnd, std::string origChunkPath )
+DumpRIFFChunk ( LFA_FileRef file, XMP_Int64 parentEnd, std::string origChunkPath, bool bigEndian=false, DataSize64Chunk* rf64Sizes = NULL )
 {
 
 	while ( LFA_Tell(file) < parentEnd )
@@ -2965,253 +3078,308 @@ DumpRIFFChunk ( LFA_FileRef file, XMP_Int64 parentEnd, std::string origChunkPath
 		bool isOutermost = origChunkPath.empty();
 
 		XMP_Int64 chunkPos= LFA_Tell( file );
-		XMP_Uns32 chunkID = tree->digest32u( file, "", false );
-		std::string idString( fromArgs( "%.4s" , &chunkID ) );
-		XMP_Int64 chunkSize = tree->digest32u( file, "", false ) // NB: XMPInt64 <- XMPUns32
-								+ 8; //adding size of id and length field itself
+		XMP_Int64 fileSize= LFA_Measure( file );
+		XMP_Int64 fileTail = fileSize - chunkPos;
 
-		// calculate size if size field seems broken
-		if (chunkSize > parentEnd)
-			chunkSize = parentEnd - chunkPos;
-
-		std::string chunkPath = isOutermost ? ( idString ) : (origChunkPath + "/" + idString);
-		
-		// check special case of trailing bytes not in a valid RIFF structure
-		if ( isOutermost && idString != "RIFF")
+		if ( fileTail < 8 )
 		{
-			//dump undefined bytes till the end of the file
 			tree->pushNode("** unknown bytes **");
-			tree->addOffset( file );
-			chunkSize = parentEnd - chunkPos; // get size through calculation (and not from size bytes) 
-			tree->addComment("size: 0x%llX", chunkSize );
-			Skip( file, chunkSize-8 );	// Already read the 8 byte header.
+			tree->addOffset( file );			
+			tree->addComment("size: 0x%llX", fileTail );
+			Skip( file, fileTail );	// Already read the 8 byte header.
 			tree->popNode();
-		} 
+		}
 		else
 		{
+			XMP_Uns32 tmp = tree->digest32u( file, "", true );
+			XMP_Uns32 chunkID = GetUns32BE(&tmp); // flip if necessary for LE systems
+
+			std::string idString( fromArgs( "%.4s" , &chunkID ) );
+
+			XMP_Int64 chunkSizeWOHeader = tree->digest32u( file, "", bigEndian );
+			XMP_Uns32 chunkType = 0;
+			std::string typeString = "";
 			// only RIFF and LIST contain subchunks...
-			bool hasSubChunks = (idString == "RIFF") || (idString == "LIST");
-			bool skipper=false;
+			bool hasSubChunks = (idString == "RIFF") || (idString == "RF64") ||(idString == "FORM") || (idString == "LIST")  || (idString == "APPL");
+
 			if (hasSubChunks)
-			{		
-				//get inner ID 'type' as in 'listType', 'fileType', ...
-				XMP_Uns32 chunkType = tree->digest32u( file );
-				std::string typeString( fromArgs( "%.4s" , &chunkType ) );
-
-				if ( isOutermost )
-					assertMsg("level-0 chunk must be AVI, AVIX or WAVE", 
-						( typeString == "AVI " ) || ( typeString == "AVIX" ) || ( typeString == "WAVE" ) );
-
-				chunkPath = chunkPath + ":" + typeString;
-
-				tree->pushNode(	chunkPath );
-				tree->addComment("offset 0x%llX, size 0x%llX", chunkPos , chunkSize);
-
-				if ( ( idString + ":" + typeString == "LIST:INFO" ) ||
-					 ( idString + ":" + typeString == "LIST:Tdat" ) ||
-					 ( idString + ":" + typeString == "RIFF:AVI " ) ||
-					 ( idString + ":" + typeString == "RIFF:AVIX" ) ||
-					 ( idString + ":" + typeString == "RIFF:WAVE" ) ||
-					 ( idString + ":" + typeString == "LIST:hdrl" ) ||
-					 ( idString + ":" + typeString == "LIST:strl" ) ||
-					 ( idString + ":" + typeString == "LIST:movi" ) 
-					 )
-				{
-					DumpRIFFChunk( file, LFA_Tell(file) + chunkSize - 12, chunkPath );	// recurse!
-				}
-				else
-				{
-					Skip( file, chunkSize - 12 ); // skip it !
-				}
-				tree->popNode();
+			{	
+				XMP_Uns32 tmp = tree->digest32u( file, "", true  );
+				chunkType = GetUns32BE(&tmp); // flip if necessary for LE systems
+				typeString =  fromArgs( "%.4s" , &chunkType ) ;
 			}
-			else if (idString.length() == 4) // check that we got a valid idString
-			{					
+			//get inner ID 'type' as in 'listType', 'fileType', ...
+			//XMP_Uns32 chunkType = tree->digest32u( file );
 
-				// now that LIST:movi gets dumped,
-				// skip some very frequent, irrelevant chunks, 
-				// otherwise the dump becomes unusably long...
-				std::string firstTwo = idString.substr(0,2);
-				std::string secondTwo = idString.substr(2,2);
-				if ( secondTwo == "db" || secondTwo == "dc" || secondTwo == "wb" ) // nb: _could_ colidde, requiring additional numeric test
-				{
-					 skipper = true;
-				}
-				
-				if ( ! skipper )
-				{
-					tree->pushNode(	chunkPath );
-					//Log::info( chunkPath );
-					tree->addComment("offset 0x%llX, size 0x%llX", chunkPos , chunkSize);
-				}
+			if ( chunkSizeWOHeader == 0xFFFFFFFF )  //RF64 size for children
+			{
+				chunkSizeWOHeader = getRealSize( isOutermost, idString, file, rf64Sizes );
+			}
 
-				// tackle chunks of interest //////////////////////////////////////////////
-				bool isListInfo =
-					( (origChunkPath == "RIFF:WAVE/LIST:INFO" || origChunkPath == "RIFF:AVI /LIST:INFO" )
-					&& idString.at(0) == 'I' ); // so far all mapping relevant props begin with "I"
+			XMP_Int64 chunkSize =  chunkSizeWOHeader + 8;// NB: XMPInt64 <- XMPUns32
+			//adding size of id and length field itself
 
-				bool isListTdat = (origChunkPath == "RIFF:WAVE/LIST:Tdat" || origChunkPath == "RIFF:AVI /LIST:Tdat")
-							&& idString.at(0) != 'J' ; // just exclude JUNK/Q
-
-				bool isDispChunk = 
-					( ( origChunkPath == "RIFF:WAVE" || origChunkPath == "RIFF:AVI ")
-						&& idString == "DISP" );
-
-				bool isBextChunk = 
-					( ( origChunkPath == "RIFF:WAVE" || origChunkPath == "RIFF:AVI ")
-						&& idString == "bext" );
-
-				bool isXMPchunk = false; //assume beforehand
-				if ( idString == "_PMX" ) 
-				{	// detour first, to detect xmp in wrong places
-					assertMsg( "XMP packet found in wrong place!", 
-						( origChunkPath == "RIFF:WAVE" || "RIFF:AVI" || "RIFF:AVIX" ) ); //be very linient here.
-					isXMPchunk = true;
-				}
-
-				// deal with chunks of interest /////////////////////////////////////////////
-				// a little prelude for disp chunk
-				if ( isDispChunk )
-				{	
-					XMP_Uns32 dispChunkType = LFA_ReadUns32_LE(file);
-					// only dispChunks starting with a 0x0001 are of interest to us.
-					// others do exist and are not an error
-
-					if ( dispChunkType != 0x0001 )
-						isDispChunk = false;
-
-					chunkSize -= 4;
-				}
-
-				if ( isListInfo || isListTdat || isDispChunk )
-				{
-					// dump that string:
-					std::string value;
-
-					if ( chunkSize > 8 ) // aka skip for empty chunks
-					{
-						// first check if the string is zero terminated
-						LFA_Seek( file , chunkSize - 8 - 1, SEEK_CUR ); // jump to last char
-						bool zeroTerm =  (LFA_ReadUns8( file ) == 0);
-						LFA_Seek( file , -(chunkSize - 8 ), SEEK_CUR ); //jump back
-						// some strings are zero-terminated (so despite initial length they are "c-strings"
-						// others are not ( "pascal strings" if you will.
-						// must cater to both: zero-terminated-ness should not affect resulting value.
-						
-						// Samy: also dump out the zero termination. Needed for testing
-						
-						if (zeroTerm)
-						{
-							// read string without zero (last char)
-							value = tree->digestString( file, "" , chunkSize - 8 - 1, false );						
-							tree->addComment(" zero terminated");
-							LFA_ReadUns8( file ); // skip the zero
-						} 					
-						else
-						{
-							// read string including last char
-							value = tree->digestString( file, "" , chunkSize - 8 , false );						
-							tree->addComment(" not zero terminated");						
-						}
-						tree->changeValue( value );
-					}
-
-					tree->changeValue( value );
-				}
-				else if ( isXMPchunk )
-				{
-					tree->pushNode("XMP packet");
-
-					tree->addOffset( file );
-					tree->addComment("packet size: 0x%llX", chunkSize - 8 );
-					Skip( file, chunkSize - 8 );
-					tree->addComment("packet end: 0x%llX", LFA_Tell( file ) );
-					
-					tree->popNode();
-				}
-				else if ( isBextChunk )
-				{
-					tree->pushNode("bext chunk");
-					tree->addOffset( file );
-					tree->addComment("packet size: 0x%llX", chunkSize - 8 );
-
-					// I assume that the minimum BEXT chunk size is 602:
-					// > 8 + ( 256+32+32+10+8+4+4+2+64+190+0 )
-					// ans = 610
-					const XMP_Int64 MIN_BEXT_SIZE = 610;
-					assertMsg("minimum Berx Chunk Size", chunkSize >= MIN_BEXT_SIZE );
-					XMP_Int64 BEXT_CodingHistorySize = chunkSize - MIN_BEXT_SIZE;
-
-					setFixedBEXTField ( file, chunkPath+".Description"          , 256 );
-					setFixedBEXTField ( file, chunkPath+".Originator"           , 32  );
-					setFixedBEXTField ( file, chunkPath+".OriginatorReference"  , 32  );
-					setFixedBEXTField ( file, chunkPath+".OriginationDate"      , 10  );
-					setFixedBEXTField ( file, chunkPath+".OriginationTime"      , 8   );
+			// calculate size if size field seems broken
+			if (chunkSize > parentEnd)
+				chunkSize = parentEnd - chunkPos;			
 			
-					tree->digest32u( file, chunkPath+".TimeReferenceLow", false, true );  // DWORD == 32 Bit
-					tree->digest32u( file, chunkPath+".TimeReferenceHigh", false, true ); // DWORD == 32 Bit
 
-					tree->digest16u( file, chunkPath+".Version", false, true );
-					
-					// UMID has 64 bytes:
-					tree->digestString(file, chunkPath+".UMID",64);
-					//tree->digest32u( file, chunkPath+".UMID_0-4", false, true );
-					//tree->setKeyValue( "UMID_5-59" );
-					//Skip( file, 64 - 4 - 4 );
-					//tree->digest32u( file, chunkPath+".UMID_60-63", false, true );
-
-					tree->setKeyValue( chunkPath+".Reserved" );
-					Skip( file, 190 );
-					
-					if ( BEXT_CodingHistorySize )
-					{
-						setFixedBEXTField ( file, chunkPath+".CodingHistory"          , BEXT_CodingHistorySize );
-						
-						//tree->setKeyValue( chunkPath+".CodingHistory" ); // not bothering details.
-						tree->addComment( "( 0x%llx bytes ) ", BEXT_CodingHistorySize );
-						//Skip( file, BEXT_CodingHistorySize );
-					}
-
-					tree->addComment("packet end: 0x%llX", LFA_Tell( file ) );				
-					tree->popNode();
-				}
-				else
-				{
-					Skip( file, chunkSize - 8 ); // skip remainder of chunk ( id, length already digested )
-					assertMsg(  fromArgs( "inner chunk size too big, curPos:0x%llx, parentEnd:0x%llx", 
-										LFA_Tell(file), 
-										parentEnd ), 
-								LFA_Tell(file) <= parentEnd );				
-				}			
-		
-				if ( ! skipper )
-					tree->popNode();
-			}
+			std::string chunkPath = isOutermost ? ( idString ) : (origChunkPath + "/" + idString);
+			
+			
+			// check special case of trailing bytes not in a valid RIFF structure
+			if ( isOutermost && idString != "RIFF"&& idString != "FORM" && idString != "RF64")
+			{
+				//dump undefined bytes till the end of the file
+				tree->pushNode("** unknown bytes **");
+				chunkSize = parentEnd - chunkPos; // get size through calculation (and not from size bytes) 
+				tree->addComment("offset 0x%llX, size: 0x%llX",chunkPos,  chunkSize );
+				Skip( file, chunkSize-8 );	// Already read the 8 byte header.
+				tree->popNode();
+			} 
 			else
 			{
-				//dump undefined bytes in LIST
-				tree->pushNode("** unknown bytes **");
-				tree->addOffset( file );
-				tree->addComment("size: 0x%llX", chunkSize );
-				Skip( file, chunkSize - 8 );
-				tree->popNode();
-			}
-
-			if ( LFA_Tell(file) % 2 == 1 ) // if odd file position, add pad byte.
-			{
-				XMP_Uns8 padByte = LFA_ReadUns8( file );
-					if (!skipper)
+				
+				bool skipper=false;
+				if (hasSubChunks)
+				{	
+					if ( isOutermost )
 					{
-						if ( 0 != padByte ) 
-							tree->addComment(" (non-zero pad byte!)");
-						else 
-							tree->addComment(" (pad byte)");
-						// Samy: add pad byte comment
+						assertMsg("level-0 chunk must be AVI, AVIX, WAVE, AIFF, AIFC", 
+							( typeString == "AVI " ) || ( typeString == "AVIX" ) || ( typeString == "WAVE" )
+							||( typeString == "AIFF" ) || ( typeString == "AIFC"));					
 					}
+
+					chunkPath = chunkPath + ":" + typeString;
+
+					tree->pushNode(	chunkPath );
+					tree->addComment("offset 0x%llX, size 0x%llX, size(w/o header) 0x%llX", chunkPos , chunkSize, chunkSizeWOHeader);
+
+					if ( isOutermost && idString == "RF64" )
+					{
+						tree->pushNode(	"RF64/ds64" );
+						tree->addComment("offset 0x%llX, size 0x%X, size(w/o header) 0x%X", chunkPos + 12, rf64Sizes->chunkSize + 8, rf64Sizes->chunkSize);
+						tree->setKeyValue( "riffSize", fromArgs( "0x%llX" , rf64Sizes->riffSize )) ;
+						tree->setKeyValue( "dataSize", fromArgs( "0x%llX" , rf64Sizes->dataSize )) ;
+						tree->setKeyValue( "sampleCount", fromArgs( "0x%llX" , rf64Sizes->sampleCount )) ;
+						tree->setKeyValue( "tableLength", fromArgs( "0x%X" , rf64Sizes->tableLength )) ;
+						tree->popNode();
+
+						DumpRIFFChunk( file, LFA_Tell(file) + chunkSize - 12 - rf64Sizes->chunkSize - 8 /* filesize + riff chunk size - riff header(12) - rf64 header(8) */, chunkPath, bigEndian, rf64Sizes );	// recurse!
+					}
+					if ( ( idString + ":" + typeString == "LIST:INFO" ) ||
+						 ( idString + ":" + typeString == "LIST:Tdat" ) ||
+						 ( idString + ":" + typeString == "RIFF:AVI " ) ||
+						 ( idString + ":" + typeString == "RIFF:AVIX" ) ||
+						 ( idString + ":" + typeString == "RIFF:WAVE" ) ||
+						 ( idString + ":" + typeString == "FORM:AIFF" ) ||
+						 ( idString + ":" + typeString == "FORM:AIFC" ) ||
+						 ( idString + ":" + typeString == "LIST:hdrl" ) ||
+						 ( idString + ":" + typeString == "LIST:strl" ) ||
+						 ( idString + ":" + typeString == "LIST:movi" ) 
+						 )
+					{						
+						DumpRIFFChunk( file, LFA_Tell(file) + chunkSize - 12, chunkPath, bigEndian, rf64Sizes );	// recurse!
+					}
+					else
+					{
+						Skip( file, chunkSize - 12 ); // skip it !
+					}
+					tree->popNode();
+				}
+				else if (idString.length() == 4) // check that we got a valid idString
+				{					
+
+					// now that LIST:movi gets dumped,
+					// skip some very frequent, irrelevant chunks, 
+					// otherwise the dump becomes unusably long...
+					std::string firstTwo = idString.substr(0,2);
+					std::string secondTwo = idString.substr(2,2);
+					if ( secondTwo == "db" || secondTwo == "dc" || secondTwo == "wb" ) // nb: _could_ colidde, requiring additional numeric test
+					{
+						 skipper = true;
+					}
+					
+					if ( ! skipper )
+					{
+						tree->pushNode(	chunkPath );
+						//Log::info( chunkPath );
+						tree->addComment("offset 0x%llX, size 0x%llX, size(w/o header) 0x%llX", chunkPos , chunkSize, chunkSizeWOHeader);
+					}
+
+					// tackle chunks of interest //////////////////////////////////////////////
+					bool isListInfo =
+						( (origChunkPath == "RIFF:WAVE/LIST:INFO" || origChunkPath == "RIFF:AVI /LIST:INFO" )
+						&& idString.at(0) == 'I' ); // so far all mapping relevant props begin with "I"
+
+					bool isListTdat = (origChunkPath == "RIFF:WAVE/LIST:Tdat" || origChunkPath == "RIFF:AVI /LIST:Tdat")
+								&& idString.at(0) != 'J' ; // just exclude JUNK/Q
+
+					bool isDispChunk = 
+						( ( origChunkPath == "RIFF:WAVE" || origChunkPath == "RIFF:AVI ")
+							&& idString == "DISP" );
+
+					bool isBextChunk = 
+						( ( origChunkPath == "RIFF:WAVE" || origChunkPath == "RIFF:AVI ")
+							&& idString == "bext" );
+
+					bool isXMPchunk = false; //assume beforehand
+					if ( idString == "_PMX" ) 
+					{	// detour first, to detect xmp in wrong places
+						assertMsg( "XMP packet found in wrong place!", 
+							( origChunkPath == "RIFF:WAVE" || "RIFF:AVI" || "RIFF:AVIX" ) ); //be very linient here.
+						isXMPchunk = true;
+					}
+
+					// deal with chunks of interest /////////////////////////////////////////////
+					// a little prelude for disp chunk
+					if ( isDispChunk )
+					{	
+						XMP_Uns32 dispChunkType = LFA_ReadUns32_LE(file);
+						// only dispChunks starting with a 0x0001 are of interest to us.
+						// others do exist and are not an error
+
+						if ( dispChunkType != 0x0001 )
+							isDispChunk = false;
+
+						chunkSize -= 4;
+					}
+
+					if ( isListInfo || isListTdat || isDispChunk )
+					{
+						// dump that string:
+						std::string value;
+
+						if ( chunkSize > 8 ) // aka skip for empty chunks
+						{
+							// first check if the string is zero terminated
+							LFA_Seek( file , chunkSize - 8 - 1, SEEK_CUR ); // jump to last char
+							bool zeroTerm =  (LFA_ReadUns8( file ) == 0);
+							LFA_Seek( file , -(chunkSize - 8 ), SEEK_CUR ); //jump back
+							// some strings are zero-terminated (so despite initial length they are "c-strings"
+							// others are not ( "pascal strings" if you will.
+							// must cater to both: zero-terminated-ness should not affect resulting value.
+							if (zeroTerm)
+							{
+								// read string without zero (last char)
+								value = tree->digestString( file, "" , chunkSize - 8 - 1, false );						
+								tree->addComment(" zero terminated");
+								LFA_ReadUns8( file ); // skip the zero
+							} 					
+							else
+							{
+								// read string including last char
+								value = tree->digestString( file, "" , chunkSize - 8 , false );						
+								tree->addComment(" not zero terminated");						
+							}
+							tree->changeValue( value );
+						}
+
+						tree->changeValue( value );
+					}
+					else if ( isXMPchunk )
+					{
+						tree->pushNode("XMP packet");
+
+						tree->addOffset( file );
+						tree->addComment("packet size: 0x%llX", chunkSize - 8 );
+						Skip( file, chunkSize - 8 );
+						tree->addComment("packet end: 0x%llX", LFA_Tell( file ) );
+						
+						tree->popNode();
+					}
+					else if ( isBextChunk )
+					{
+						tree->pushNode("bext chunk");
+						tree->addOffset( file );
+						tree->addComment("packet size: 0x%llX", chunkSize - 8 );
+
+						// I assume that the minimum BEXT chunk size is 602:
+						// > 8 + ( 256+32+32+10+8+4+4+2+64+190+0 )
+						// ans = 610
+						const XMP_Int64 MIN_BEXT_SIZE = 610;
+						assertMsg("minimum Berx Chunk Size", chunkSize >= MIN_BEXT_SIZE );
+						XMP_Int64 BEXT_CodingHistorySize = chunkSize - MIN_BEXT_SIZE;
+
+						setFixedBEXTField ( file, chunkPath+".Description"          , 256 );
+						setFixedBEXTField ( file, chunkPath+".Originator"           , 32  );
+						setFixedBEXTField ( file, chunkPath+".OriginatorReference"  , 32  );
+						setFixedBEXTField ( file, chunkPath+".OriginationDate"      , 10  );
+						setFixedBEXTField ( file, chunkPath+".OriginationTime"      , 8   );
+				
+						tree->digest32u( file, chunkPath+".TimeReferenceLow", false, true );  // DWORD == 32 Bit
+						tree->digest32u( file, chunkPath+".TimeReferenceHigh", false, true ); // DWORD == 32 Bit
+
+						tree->digest16u( file, chunkPath+".Version", false, true );
+						
+						// UMID has 64 bytes:
+						tree->digestString(file, chunkPath+".UMID",64);
+						//tree->digest32u( file, chunkPath+".UMID_0-4", false, true );
+						//tree->setKeyValue( "UMID_5-59" );
+						//Skip( file, 64 - 4 - 4 );
+						//tree->digest32u( file, chunkPath+".UMID_60-63", false, true );
+
+						tree->setKeyValue( chunkPath+".Reserved" );
+						Skip( file, 190 );
+						
+						if ( BEXT_CodingHistorySize )
+						{
+							setFixedBEXTField ( file, chunkPath+".CodingHistory"          , BEXT_CodingHistorySize );
+							
+							//tree->setKeyValue( chunkPath+".CodingHistory" ); // not bothering details.
+							tree->addComment( "( 0x%llx bytes ) ", BEXT_CodingHistorySize );
+							//Skip( file, BEXT_CodingHistorySize );
+						}
+
+						tree->addComment("packet end: 0x%llX", LFA_Tell( file ) );				
+						tree->popNode();
+					}
+					else
+					{
+						Skip( file, chunkSize - 8 ); // skip remainder of chunk ( id, length already digested )
+						assertMsg(  fromArgs( "inner chunk size too big, curPos:0x%llx, parentEnd:0x%llx", 
+											LFA_Tell(file), 
+											parentEnd ), 
+									LFA_Tell(file) <= parentEnd );				
+					}			
+			
+					if ( ! skipper )
+						tree->popNode();
+				}
+				else
+				{
+					//dump undefined bytes in LIST
+					tree->pushNode("** unknown bytes **");
+					tree->addOffset( file );
+					tree->addComment("size: 0x%llX", chunkSize );
+					Skip( file, chunkSize - 8 );
+					tree->popNode();
+				}
+
+				if ( LFA_Tell(file) % 2 == 1 ) // if odd file position, add pad byte.
+				{
+					if (LFA_Tell(file) == parentEnd)
+					{
+						// last pad byte is missing
+						tree->addComment(" (pad byte missing [bug 1521093])");
+					} 
+					else
+					{
+						XMP_Uns8 padByte = LFA_ReadUns8( file );
+						if (!skipper)
+						{
+							if ( 0 != padByte ) 
+								tree->addComment(" (non-zero pad byte!)");
+							else 
+								tree->addComment(" (pad byte)");
+						}
+					}
+				}
 			}
 		}
 	} // while
 
+	
 }	// DumpRIFFChunk
 
 // =================================================================================================
@@ -3219,9 +3387,15 @@ DumpRIFFChunk ( LFA_FileRef file, XMP_Int64 parentEnd, std::string origChunkPath
 static void
 DumpRIFF ( LFA_FileRef file, XMP_Int64 fileLen )
 {
-	DumpRIFFChunk ( file, fileLen, "" );
+	DataSize64Chunk rf64Sizes;
+	DumpRIFFChunk ( file, fileLen, "",false, &rf64Sizes );
 }
 
+static void
+DumpAIFF ( LFA_FileRef file, XMP_Int64 fileLen )
+{
+	DumpRIFFChunk ( file, fileLen, "", true );
+}
 // =================================================================================================
 
 static XMP_Uns32 crcTable[256];
@@ -3340,6 +3514,128 @@ DumpPNGChunk ( LFA_FileRef file, XMP_Uns32 pngLen, XMP_Uns32 chunkOffset )
 	return (8 + chunkLen + 4);
 
 }	// DumpPNGChunk
+
+// =================================================================================================
+
+static void
+DumpPS ( LFA_FileRef file, XMP_Uns32 fileLen )
+{
+	XMP_Int32 psOffset;
+	size_t psLength;
+
+	LFA_Seek ( file, 4, SEEK_SET ); // skip fileheader bytes
+	LFA_Read ( file,  &psOffset, 4, true );
+	LFA_Read ( file,  &psLength, 4, true );
+
+	tree->addComment(" psOffset: %d, psLength: %d", psOffset, psLength);
+
+	// jump to psOffset
+	Skip(file, (psOffset - 12));
+	
+	// get the header (everything till first %
+	
+	XMP_Int64 offset =  LFA_Tell(file);
+	std::string key, value;
+	char byte = LFA_GetChar(file);
+	bool eof = false;
+	while ( !eof )
+	{
+		key.clear();
+		key += byte; // add the first %
+		byte = LFA_GetChar(file);
+
+		while (byte != ' ' && byte != '\r') // get everthing until next space or LF
+		{
+			key += byte;
+			byte = LFA_GetChar(file);
+
+		}
+
+		//if (CheckBytes( key.c_str(), "%%EOF", 5))
+		if (key == "%%EOF")
+		{
+			eof = true;
+		}
+		else
+		{
+			byte = LFA_GetChar(file);
+			value.clear();
+			while (byte != '%') // get everthing until next %
+			{
+				value += byte;
+				byte = LFA_GetChar(file);
+			}
+		}
+		tree->pushNode(key);
+		tree->addOffset( file );
+	
+		//for now only store value for header 
+		if ( key =="%!PS-Adobe-3.0" )
+		{
+			tree->changeValue(value);
+		}
+	
+		tree->addComment("offset: %d", offset );
+		tree->addComment("size: 0x%llX", LFA_Tell(file)-offset );
+		tree->popNode();
+		
+		offset =  LFA_Tell(file);		
+	}
+	// Now just get everything else and store all keys that start with %
+
+
+	// get the key 
+	// start of the PostScript DSC header comment
+	
+	/*XMP_Uns8 buffer [11];
+	LFA_Read ( file,  &buffer, sizeof(buffer), true );
+
+	if (!CheckBytes( buffer, "%!PS-Adobe-", 11))
+	{
+		tree->comment ( "** Invalid PS, unknown PS file tag." );
+		return;
+	}
+
+	// Check the PostScript DSC major version number.
+	XMP_Uns8 byte;
+	LFA_Read ( file,  &byte, sizeof(byte), true );
+
+	psMajorVer = 0;
+	while ( IsNumeric( byte ) ) 
+	{
+		psMajorVer = (psMajorVer * 10) + (byte - '0');
+		if ( psMajorVer > 1000 ) {
+			tree->comment ( "** Invalid PS, Overflow." );
+			return;
+		};	// Overflow.
+		LFA_Read ( file,  &byte, sizeof(byte), true );
+	}
+	if ( psMajorVer < 3 ){
+		tree->comment ( "** Invalid PS, The version must be at least 3.0." );
+		return;
+	};	// The version must be at least 3.0.
+
+	if ( byte != '.' ){
+		tree->comment ( "** Invalid PS, No minor number" );
+		return;
+	};	// No minor number.
+	LFA_Read ( file,  &byte, sizeof(byte), true );
+
+	// Check the PostScript DSC minor version number.
+
+	psMinorVer = 0;
+	while ( IsNumeric( byte ) ) 
+	{
+		psMinorVer = (psMinorVer * 10) + (byte - '0');
+		if ( psMinorVer > 1000 ) {
+			tree->comment ( "** Invalid PS, Overflow." );
+			return;
+		};	// Overflow.
+		LFA_Read ( file,  &byte, sizeof(byte), true );
+	}
+
+	tree->addComment(" psMajor Version: %d, psMinor Version: %d", psMajorVer, psMinorVer);*/
+}
 
 // =================================================================================================
 
@@ -3534,7 +3830,7 @@ DumpSWF ( LFA_FileRef file, XMP_Uns32 swfLen )
 	XMP_Uns8  rectBits;
 	XMP_Uns16 frameRate, frameCount;
 	
-	ioCount = LFA_Read ( file,  buffer, sizeof(buffer), true);
+	ioCount = LFA_Read ( file,  buffer, sizeof(buffer), false);
 	if ( ioCount < 14 ) {
 		tree->comment ( "** Invalid SWF, file header is too short." );
 		return;
@@ -3551,7 +3847,7 @@ DumpSWF ( LFA_FileRef file, XMP_Uns32 swfLen )
 	fullLength  = GetUns32LE ( &buffer[4] );
 	rectBits    = buffer[8] >> 3;
 	
-	XMP_Uns32 rectBytes   = ((5 + 4*rectBits) + 7) >> 3;
+	XMP_Uns32 rectBytes = ((5 + (4 * rectBits)) / 8) + 1;
 	XMP_Uns32 headerBytes = 8 + rectBytes + 4;
 	
 	if ( ioCount < headerBytes ) {
@@ -3564,9 +3860,10 @@ DumpSWF ( LFA_FileRef file, XMP_Uns32 swfLen )
 	
 	// *** Someday decode the frame rectangle.
 	
-	tree->comment ( "File Header: %scompressed, version %d, full length %d, frame rate %d, frame count %d",
+	tree->pushNode(	"File Header" );
+	tree->addComment ( "%scompressed, version %d, full length %d, frame rate %d, frame count %d",
 					(isCompressed ? "" : "un"), fileVersion, fullLength, frameRate, frameCount );
-	
+	tree->popNode();
 	if ( isCompressed ) {
 		// *** Add support to decompress into a temp file.
 		tree->comment ( "** Ignoring compressed SWF contents." );
@@ -3583,7 +3880,9 @@ DumpSWF ( LFA_FileRef file, XMP_Uns32 swfLen )
 		// Read the tag header, extract the type and data length.
 		
 		LFA_Seek ( file, tagOffset, SEEK_SET );
-		ioCount = LFA_Read ( file,  buffer, sizeof(buffer), true);
+		ioCount = LFA_Read ( file,  buffer, sizeof(buffer), false);
+
+		
 		if ( ioCount < 2 ) {
 			tree->comment ( "** Invalid SWF, tag header is too short at offset %u (0x%X).", tagOffset, tagOffset );
 			break;
@@ -3620,20 +3919,19 @@ DumpSWF ( LFA_FileRef file, XMP_Uns32 swfLen )
 
 		if ( tagType == kSWF_FileAttributesTag ) {
 
-			if ( dataLength < 32 ) {
+			if ( dataLength < 4 ) {
 				tree->comment ( "** Invalid SWF, FileAttributes tag is too short at offset %u (0x%X).", tagOffset, tagOffset );
 				continue;
 			}
 			
-			XMP_Uns8 xmpFlag = buffer[headerLength+3];
+			XMP_Uns32 xmpFlag = GetUns32LE(&(buffer[headerLength])) & 0x10;
 			if ( xmpFlag != 0 ) {
 				hasMetadata = true;
-				if ( xmpFlag != 1 ) {
-					tree->comment ( "** Improper SWF, HasMetadata flag not 0/1 at tag offset %d (0x%X).", tagOffset, tagOffset );
-				}
 			}
 			
-			tree->comment ( "FileAttributes tag @ %d (0x%X), %s XMP", tagOffset, tagOffset, (hasMetadata ? "has" : "no") );
+			tree->pushNode(	"FileAttributes tag" );
+			tree->addComment ( "Offset %d (0x%X), %s XMP", tagOffset, tagOffset, (hasMetadata ? "has" : "no") );
+			tree->popNode( );
 
 		} else if ( tagType == kSWF_MetadataTag ) {
 
@@ -3642,24 +3940,25 @@ DumpSWF ( LFA_FileRef file, XMP_Uns32 swfLen )
 				continue;
 			}
 
-			tree->comment ( "Metadata tag @ %d (0x%X)", tagOffset, tagOffset );
-			
+			tree->pushNode(	"Metadata tag" );
+			tree->addComment ( "Offset %d (0x%X)", tagOffset, tagOffset );
+			tree->popNode( );
+
 			if ( sXMPPtr != 0 ) {
 				tree->comment ( "  ** Redundant Metadata tag" );
 			} else {
 				CaptureXMPF ( file, (tagOffset + headerLength), dataLength );
 			}
 
+			//if ( sXMPPtr != 0 ) DumpXMP ( "SWF Metadata tag (#77) XMP" );
+
 		} else {
-
-			// Only for deep debugging:
-			// tree->comment ( "Unspecified tag #%d @ %d (0x%X)", tagType, tagOffset, tagOffset );
-
+			tree->pushNode(	"tag #%d", tagType );
+			tree->addComment ( "Offset %d (0x%X)", tagOffset, tagOffset );
+			tree->popNode( );
 		}
 		
-	}
-
-	if ( sXMPPtr != 0 ) DumpXMP ( "SWF Metadata tag (#77) XMP" );
+	}	
 	
 }	// DumpSWF
 
@@ -3726,8 +4025,6 @@ static XMP_Uns32 DumpScriptDataValue ( LFA_FileRef file, XMP_Uns32 sdOffset, boo
 			ReadSDValue ( 2 );
 			u16 = GetUns16BE ( &buffer[0] );
 			ReadSDValue ( u16 );
-			//Samy: restrict to string under 4k. This was crashing for large XMP packets before, because addComment
-			// uses a fixed buffer with the size 4096
 			if (int(u16) < 4096 )
 			{
 				tree->addComment ( "string (%d) = \"%.*s\"", u16, u16, buffer );
@@ -4118,7 +4415,8 @@ DumpFLV ( LFA_FileRef file, XMP_Uns32 flvLen )
 		}
 		sprintf ( comment, "%s @ 0x%X, size=%d, time=%d, stream=%d", label, tagOffset, size, time, stream );
 
-		tree->pushNode ( comment );
+		tree->pushNode ( label );
+		tree->addComment ( comment );
 		
 		LFA_Seek ( file, (tagOffset+11+size), SEEK_SET );
 		ioCount = LFA_Read ( file,  buffer, 4, true );	// Back pointer plus tag header.
@@ -4185,10 +4483,16 @@ PrintID3Encoding ( XMP_Uns8 encoding, XMP_Uns8 * strPtr )
 struct ID3_Header {
 	char id3[3];
 	XMP_Uns8 vMajor, vMinor, flags;
-	XMP_Uns8 size[4];
+	XMP_Uns8 splitSize[4];
 };
 
-struct ID3_FrameHeader {
+struct ID3_v22_FrameHeader {
+	char id[3];
+	XMP_Uns8 sizeHigh;
+	XMP_Uns16 sizeLow;
+};
+
+struct ID3_v23_FrameHeader {
 	char id[4];
 	XMP_Uns32 size;
 	XMP_Uns16 flags;
@@ -4199,12 +4503,229 @@ struct ID3_FrameHeader {
 
 #define GetID3Size(ver,ptr)	((ver == 3) ? GetUns32BE(ptr) : GetSyncSafe32(ptr))
 
+// =================================================================================================
+
+static void DumpID3v22Frames ( LFA_FileRef file, XMP_Uns8 vMajor, XMP_Uns32 framePos, XMP_Uns32 frameEnd ) {
+
+	// Dump the frames in an ID3 v2.2 tag.
+
+	while ( (framePos < frameEnd) && ((frameEnd - framePos) >= 6) ) {
+
+		ID3_v22_FrameHeader frameHead;
+		LFA_Seek ( file, framePos, SEEK_SET );
+		LFA_Read ( file, &frameHead, sizeof(frameHead), true );
+
+		if ( CheckBytes ( frameHead.id, "\x0", 1 ) ) break;	// Assume into padding.
+		// FIXED: there could be just 1 or 2 or 3 bytes of padding total !!
+
+		XMP_Uns32 frameSize = ((XMP_Uns32)frameHead.sizeHigh << 16) + GetUns16BE(&frameHead.sizeLow);
+
+		tree->setKeyValue (
+				fromArgs ( "ID3v2:%.3s", frameHead.id ), "",	//no value yet, tree->changeValue() below
+				fromArgs ( "offset %d (0x%X), size %d", framePos, framePos, frameSize ) );
+
+		if ( frameSize == 0 ) {
+
+			// NOTHING TO DO HERE.
+			// i.e. on 0-byte frames, including known ones...
+			// ( i.e. the testcase of a (errorneous) TCON 0 byte frame )
+
+		} else if ( (frameHead.id[0] == 'T') ||(frameHead.id[0] == 'W')) { // Text and URL fields
+
+			CaptureFileData (file, 0, frameSize);
+			XMP_Uns8 encoding = 0;
+			XMP_Uns8 skip = 0;
+			if ( frameHead.id[0] == 'T' ) {	// URL field has no encoding byte
+				encoding = sDataPtr[0];
+				skip = 1;
+			}
+
+			bool bigEndian = PrintID3Encoding (encoding, (sDataPtr + skip));
+			if ( encoding == 0 ) {
+				tree->changeValue ( convert8Bit ( sDataPtr + skip, false, frameSize-skip ) );
+			} else {
+				tree->changeValue( convert16Bit( bigEndian, sDataPtr + skip, false, (frameSize - skip) ) );
+			}
+
+		} else if (CheckBytes (frameHead.id, "PRV", 3) && (frameSize >= 4)) {
+
+			// checking on the XMP packet
+			CaptureFileData ( file, 0, frameSize ); //NB: has side effect: sDataLen, sDataMax, sDataPtr
+			tree->changeValue ( convert8Bit ( sDataPtr, false, strlen((char*)sDataPtr) ) );
+			if ( CheckBytes ( sDataPtr, "XMP\x0", 4 ) ) {
+				CaptureXMPF ( file, (framePos + sizeof(frameHead) + 4), (frameSize - 4) );
+			}
+
+		} else if ( CheckBytes ( frameHead.id, "COM", 3 ) || CheckBytes ( frameHead.id, "ULT", 3 ) ) {
+
+			const char * descrLabel = "ID3v2:COM-descr";
+			if ( CheckBytes ( frameHead.id, "ULT", 3 ) ) descrLabel = "ID3v2:ULT-descr";
+
+			CaptureFileData ( file, 0, frameSize );
+			XMP_Uns8 * frameEnd2 = sDataPtr + frameSize;
+
+			XMP_Uns8   encoding = sDataPtr[0];
+			char *     lang     = (char*) (sDataPtr + 1);
+
+			tree->addComment ( "lang '%.3s'", lang );
+			bool bigEndian = PrintID3Encoding ( encoding, (sDataPtr + 4) );
+
+			if ( encoding == 0 ) {
+
+				XMP_Uns8 * descrPtr = sDataPtr + 4;
+				XMP_Uns8 * valuePtr = descrPtr;
+
+				while ( *valuePtr != 0 ) ++valuePtr;
+				++valuePtr;
+
+				size_t descrBytes = valuePtr - descrPtr - 1;
+				tree->changeValue ( convert8Bit ( valuePtr, false, frameEnd2 - valuePtr ) );
+				tree->setKeyValue ( descrLabel, convert8Bit ( descrPtr, false, descrBytes ).c_str() );
+
+			} else {
+
+				XMP_Uns16 * descrPtr = (XMP_Uns16*) (sDataPtr + 4);
+				XMP_Uns16 * valuePtr = descrPtr;
+				while ( *valuePtr != 0 ) ++valuePtr;
+				++valuePtr;
+
+				size_t descrBytes = 2 * (valuePtr - descrPtr - 1);
+				size_t valueBytes = 2 * ((XMP_Uns16*)frameEnd2 - valuePtr);
+
+				tree->changeValue (  convert16Bit ( bigEndian, (XMP_Uns8*) valuePtr, false, valueBytes ) );
+				tree->setKeyValue ( descrLabel, convert16Bit ( bigEndian, (XMP_Uns8*) descrPtr, false, descrBytes ).c_str() );
+
+			}
+
+		}
+
+		framePos += (sizeof(frameHead) + frameSize);
+
+	}
+
+	if ( framePos < frameEnd ) {
+		tree->setKeyValue ( "", "",
+			fromArgs ( "Padding assumed, offset %d (0x%X), size %d", framePos, framePos, (frameEnd - framePos) ) );
+	}
+
+}	// DumpID3v22Frames
+
+// =================================================================================================
+
+static void DumpID3v23Frames ( LFA_FileRef file, XMP_Uns8 vMajor, XMP_Uns32 framePos, XMP_Uns32 frameEnd ) {
+
+	// Dump the frames in an ID3 v2.3 or v2.4 tag.
+
+	while ( (framePos < frameEnd) && ((frameEnd - framePos) >= 10) ) {
+
+		ID3_v23_FrameHeader frameHead;
+		LFA_Seek ( file, framePos, SEEK_SET );
+		LFA_Read ( file, &frameHead, sizeof(frameHead), true );
+
+		if ( CheckBytes ( frameHead.id, "\x0", 1 ) ) break;	// Assume into padding.
+		// FIXED: there could be just 1 or 2 or 3 bytes of padding total !!
+
+		frameHead.size = GetID3Size ( vMajor, &frameHead.size );
+		frameHead.flags = GetUns16BE ( &frameHead.flags );
+
+		tree->setKeyValue (
+				fromArgs ( "ID3v2:%.4s", frameHead.id ), "",	//no value yet, tree->changeValue() below
+				fromArgs ( "offset %d (0x%X), size %d, flags 0x%.2X", framePos, framePos, frameHead.size, frameHead.flags ) );
+
+		if ( frameHead.size == 0 ) {
+
+			// NOTHING TO DO HERE.
+			// i.e. on 0-byte frames, including known ones...
+			// ( i.e. the testcase of a (errorneous) TCON 0 byte frame )
+
+		} else if ( (frameHead.id[0] == 'T') ||(frameHead.id[0] == 'W')) { // Text and URL fields
+
+			CaptureFileData (file, 0, frameHead.size);
+			XMP_Uns8 encoding = 0;
+			XMP_Uns8 skip = 0;
+			if ( frameHead.id[0] == 'T' ) {	// URL field has no encoding byte
+				encoding = sDataPtr[0];
+				skip = 1;
+			}
+
+			bool bigEndian = PrintID3Encoding (encoding, (sDataPtr + skip));
+			if ( (encoding == 0) || (encoding == 3) ) {
+				tree->changeValue ( convert8Bit( sDataPtr + skip, false, frameHead.size-skip ) );
+			} else if ((encoding == 1) || (encoding == 2)) {
+				tree->changeValue( convert16Bit( bigEndian, sDataPtr + skip, false, (frameHead.size - skip) ) );
+			}
+
+		} else if (CheckBytes (frameHead.id, "PRIV", 4) && (frameHead.size >= 4)) {
+
+			// checking on the XMP packet
+			CaptureFileData ( file, 0, frameHead.size ); //NB: has side effect: sDataLen, sDataMax, sDataPtr
+			tree->changeValue ( convert8Bit ( sDataPtr, false, strlen((char*)sDataPtr) ) );
+			if ( CheckBytes ( sDataPtr, "XMP\x0", 4 ) ) {
+				CaptureXMPF ( file, (framePos + sizeof(frameHead) + 4), (frameHead.size - 4) );
+			}
+
+		} else if ( CheckBytes ( frameHead.id, "COMM", 4 ) || CheckBytes ( frameHead.id, "USLT", 4 ) ) {
+
+			const char * descrLabel = "ID3v2:COMM-descr";
+			if ( CheckBytes ( frameHead.id, "USLT", 4 ) ) descrLabel = "ID3v2:USLT-descr";
+
+			CaptureFileData ( file, 0, frameHead.size );
+			XMP_Uns8 * frameEnd2 = sDataPtr + frameHead.size;
+
+			XMP_Uns8   encoding = sDataPtr[0];
+			char *     lang     = (char*) (sDataPtr + 1);
+
+			tree->addComment ( "lang '%.3s'", lang );
+			bool bigEndian = PrintID3Encoding ( encoding, (sDataPtr + 4) );
+
+			if ( (encoding == 0) || (encoding == 3) ) {
+
+				XMP_Uns8 * descrPtr = sDataPtr + 4;
+				XMP_Uns8 * valuePtr = descrPtr;
+
+				while ( *valuePtr != 0 ) ++valuePtr;
+				++valuePtr;
+
+				size_t descrBytes = valuePtr - descrPtr - 1;
+				tree->changeValue ( convert8Bit ( valuePtr, false, frameEnd2 - valuePtr ) );
+				tree->setKeyValue ( descrLabel, convert8Bit ( descrPtr, false, descrBytes ).c_str() );
+
+			} else if ( (encoding == 1) || (encoding == 2) ) {
+
+				XMP_Uns16 * descrPtr = (XMP_Uns16*) (sDataPtr + 4);
+				XMP_Uns16 * valuePtr = descrPtr;
+				while ( *valuePtr != 0 ) ++valuePtr;
+				++valuePtr;
+
+				size_t descrBytes = 2 * (valuePtr - descrPtr - 1);
+				size_t valueBytes = 2 * ((XMP_Uns16*)frameEnd2 - valuePtr);
+
+				tree->changeValue (  convert16Bit ( bigEndian, (XMP_Uns8*) valuePtr, false, valueBytes ) );
+				tree->setKeyValue ( descrLabel, convert16Bit ( bigEndian, (XMP_Uns8*) descrPtr, false, descrBytes ).c_str() );
+
+			}
+
+		}
+
+		framePos += (sizeof(frameHead) + frameHead.size);
+
+	}
+
+	if ( framePos < frameEnd ) {
+		tree->setKeyValue ( "", "",
+			fromArgs ( "Padding assumed, offset %d (0x%X), size %d", framePos, framePos, (frameEnd - framePos) ) );
+	}
+
+}	// DumpID3v23Frames
+
+// =================================================================================================
+
 static void
-DumpMP3 (LFA_FileRef file, XMP_Uns32 /*mp3Len*/)
+DumpMP3 ( LFA_FileRef file, XMP_Uns32 /*mp3Len*/ )
 {
 	// ** We're ignoring the effects of the unsync flag, and not checking the CRC (if present).
 	assert (sizeof(ID3_Header) == 10);
-	assert (sizeof(ID3_FrameHeader) == 10);
+	assert (sizeof(ID3_v23_FrameHeader) == 10);
 
 	// Detect ID3v1 header:
 	if ( LFA_Measure( file ) > 128 )
@@ -4244,7 +4765,7 @@ DumpMP3 (LFA_FileRef file, XMP_Uns32 /*mp3Len*/)
 		return;
 	}
 
-	XMP_Uns32 id3Len = GetSyncSafe32 (id3Head.size);
+	XMP_Uns32 id3Len = GetSyncSafe32 (id3Head.splitSize);
 	XMP_Uns32 framePos = sizeof(id3Head);	// The offset of the next (first) ID3 frame.
 	XMP_Uns32 frameEnd = framePos + id3Len;
 
@@ -4258,7 +4779,7 @@ DumpMP3 (LFA_FileRef file, XMP_Uns32 /*mp3Len*/)
 			((id3Head.flags & 0x10) ? ", has footer" : ""));
 	}
 
-	if ((id3Head.vMajor != 3) && (id3Head.vMajor != 4)) {
+	if ( (id3Head.vMajor < 2) || (id3Head.vMajor > 4) ) {
 		tree->addComment("   ** Unrecognized major version tree.");
 		tree->popNode();
 		return;
@@ -4270,158 +4791,71 @@ DumpMP3 (LFA_FileRef file, XMP_Uns32 /*mp3Len*/)
 	if (hasExtHeader) {
 		XMP_Uns32 extHeaderLen;
 
-
 		extHeaderLen = tree->digest32u(file);
 		extHeaderLen = GetID3Size (id3Head.vMajor, &extHeaderLen);
 		framePos += (4 + extHeaderLen);
 
-		if (id3Head.vMajor == 3) {
-
-			XMP_Uns16 extHeaderFlags;
-			LFA_Read ( file, &extHeaderFlags, 2, true );
-			extHeaderFlags = GetUns16BE (&extHeaderFlags);
-
-			XMP_Uns32 padLen;
-			LFA_Read ( file, &padLen, 4, true );
-			padLen = GetUns32BE (&padLen);
-
-			frameEnd -= padLen;
-
-			tree->pushNode("Extended header MajorV3 size %d, flags 0x%.4X, pad size %d",
-				extHeaderLen, extHeaderFlags, padLen);
-
-			if (extHeaderFlags & 0x8000) {
-				XMP_Uns32 crc;
-				LFA_Read ( file, &crc, 4, true );
-				crc = GetUns32BE (&crc);
-				tree->setKeyValue( "CRC" , fromArgs("0x%.8X", crc) );
+		switch ( id3Head.vMajor ) {
+		
+			case 2: {
+				// #error "implement"
+				break;
 			}
-			tree->popNode();
-
-		} else if (id3Head.vMajor == 4) {
-
-			XMP_Uns8 flagCount;
-			LFA_Read ( file, &flagCount, 1, true );
-
-			tree->pushNode("Extended header MajorV4 size %d, flag count %d", extHeaderLen, flagCount);
-
-			for (size_t i = 0; i < flagCount; ++i) {
-				XMP_Uns8 flag;
-				LFA_Read ( file, &flag, 1, true );
-				tree->setKeyValue( fromArgs( "Flag %.2d", flag ) , fromArgs( "0x%.2X", flag ) );
+				
+			case 3: {
+				XMP_Uns16 extHeaderFlags;
+				LFA_Read ( file, &extHeaderFlags, 2, true );
+				extHeaderFlags = GetUns16BE (&extHeaderFlags);
+	
+				XMP_Uns32 padLen;
+				LFA_Read ( file, &padLen, 4, true );
+				padLen = GetUns32BE (&padLen);
+	
+				frameEnd -= padLen;
+	
+				tree->pushNode("Extended header MajorV3 size %d, flags 0x%.4X, pad size %d",
+					extHeaderLen, extHeaderFlags, padLen);
+	
+				if (extHeaderFlags & 0x8000) {
+					XMP_Uns32 crc;
+					LFA_Read ( file, &crc, 4, true );
+					crc = GetUns32BE (&crc);
+					tree->setKeyValue( "CRC" , fromArgs("0x%.8X", crc) );
+				}
+				tree->popNode();
+				break;
 			}
-			tree->popNode();
-		} else
-		{ // ADDED
-			tree->addComment("unknown major version !");
+				
+			case 4: {
+				XMP_Uns8 flagCount;
+				LFA_Read ( file, &flagCount, 1, true );
+	
+				tree->pushNode("Extended header MajorV4 size %d, flag count %d", extHeaderLen, flagCount);
+	
+				for (size_t i = 0; i < flagCount; ++i) {
+					XMP_Uns8 flag;
+					LFA_Read ( file, &flag, 1, true );
+					tree->setKeyValue( fromArgs( "Flag %.2d", flag ) , fromArgs( "0x%.2X", flag ) );
+				}
+				tree->popNode();
+				break;
+			}
+			
+			default:
+				tree->addComment ( "unknown major version !" );
+				break;
+		
 		}
 
 	}
 
 	////////////////////////////////////////////////////
 	// Dump the ID3 frames
-	while (framePos < frameEnd) {
-		if ((frameEnd - framePos) < 10) break;	// Assume into ID3v2.4 padding.
-
-		ID3_FrameHeader frameHead;
-		LFA_Seek (file, framePos, SEEK_SET);
-		LFA_Read ( file, &frameHead, sizeof(frameHead), true);
-
-		if (CheckBytes (frameHead.id, "\x0", 1)) 
-			break;	// Assume into ID3v2.4 padding.
-		// FIXED: there could be just 1 or 2 or 3 bytes of padding total !!
-
-		frameHead.size = GetID3Size (id3Head.vMajor, &frameHead.size);
-		frameHead.flags = GetUns16BE (&frameHead.flags);
-
-		tree->setKeyValue(
-				fromArgs( "ID3v2:%.4s",frameHead.id),
-				"",	//no value yet, tree->changeValue() below
-				fromArgs( "offset %d (0x%X), size %d, flags 0x%.2X",
-						framePos, framePos, frameHead.size, frameHead.flags)
-				);
-
-		if ( frameHead.size == 0 )
-		{
-			// NOTHING TO DO HERE.
-			// i.e. on 0-byte frames, including known ones...
-			// ( i.e. the testcase of a (errorneous) TCON 0 byte frame )
-		}
-		else if ( (frameHead.id[0] == 'T') ||(frameHead.id[0] == 'W')) { // Text and URL fields
-			CaptureFileData (file, 0, frameHead.size);
-			XMP_Uns8 encoding = 0;
-			XMP_Uns8 skip = 0;
-			if ( frameHead.id[0] == 'T' ) // URL field has no encoding byte
-			{
-				encoding = sDataPtr[0];
-				skip = 1;
-			}
-
-			bool bigEndian = PrintID3Encoding (encoding, (sDataPtr + skip));
-			if ((encoding == 0) || (encoding == 3)) {
-				tree->changeValue( convert8Bit( sDataPtr + skip, false, frameHead.size-skip ) );
-			} else if ((encoding == 1) || (encoding == 2)) {
-				tree->changeValue( convert16Bit( bigEndian, sDataPtr + skip, false, (frameHead.size - skip) ) );
-			}
-
-		} else if (CheckBytes (frameHead.id, "PRIV", 4) && (frameHead.size >= 4)) {
-			// checking on the XMP packet
-			CaptureFileData (file, 0, frameHead.size); //NB: has side effect: sDataLen, sDataMax, sDataPtr
-			tree->changeValue( convert8Bit(sDataPtr,false,strlen((char*)sDataPtr) ));
-			if (CheckBytes (sDataPtr, "XMP\x0", 4)) {
-				CaptureXMPF (file, (framePos + 10 + 4), (frameHead.size - 4));
-			}
-
-		} else if (CheckBytes (frameHead.id, "COMM", 4) || CheckBytes (frameHead.id, "USLT", 4)) {
-			CaptureFileData (file, 0, frameHead.size);
-			XMP_Uns8 * frameEnd2 = sDataPtr + frameHead.size;
-
-			XMP_Uns8   encoding = sDataPtr[0];
-			char *     lang     = (char*) (sDataPtr + 1);
-
-			tree->addComment("lang '%.3s'", lang);
-			bool bigEndian = PrintID3Encoding (encoding, (sDataPtr + 4));
-
-			if ((encoding == 0) || (encoding == 3)) {
-				XMP_Uns8 * descrPtr = sDataPtr + 4;
-				XMP_Uns8 * valuePtr = descrPtr;
-
-				while (*valuePtr != 0)
-				{
-					++valuePtr;
-				}
-				++valuePtr;
-
-				size_t descrBytes = valuePtr - descrPtr - 1;
-				tree->changeValue( convert8Bit( valuePtr, false, frameEnd2 - valuePtr ) );
-				if (CheckBytes (frameHead.id, "COMM", 4)) {
-					tree->setKeyValue("ID3v2:COMM-descr", convert8Bit( descrPtr, false, descrBytes ).c_str() );
-				}
-
-			} else if ((encoding == 1) || (encoding == 2)) {
-
-				XMP_Uns16 * descrPtr = (XMP_Uns16*) (sDataPtr + 4);
-				XMP_Uns16 * valuePtr = descrPtr;
-				while (*valuePtr != 0)
-				{
-					++valuePtr;
-				}
-				++valuePtr;
-
-				size_t descrBytes = 2 * (valuePtr - descrPtr - 1);
-				size_t valueBytes = 2 * ((XMP_Uns16*)frameEnd2 - valuePtr);
-
-				tree->changeValue( convert16Bit( bigEndian, (XMP_Uns8*) valuePtr, false, valueBytes ) );
-				tree->setKeyValue("ID3v2:COMM-descr", convert16Bit( bigEndian, (XMP_Uns8*) descrPtr, false, descrBytes ).c_str() );
-			}
-		}
-		framePos += (sizeof(ID3_FrameHeader) + frameHead.size);
-	}
-
-	if (framePos < frameEnd) {
-		tree->setKeyValue("","",
-			fromArgs("Padding assumed, offset %d (0x%X), size %d",framePos, framePos, (frameEnd - framePos))
-			);
+	
+	if ( id3Head.vMajor == 2 ) {
+		DumpID3v22Frames ( file, id3Head.vMajor, framePos, frameEnd );
+	} else {
+		DumpID3v23Frames ( file, id3Head.vMajor, framePos, frameEnd );
 	}
 
 	if (sXMPPtr != 0) DumpXMP ("ID3 'PRIV' \"XMP\" frame");
@@ -4652,6 +5086,13 @@ void DumpFile::Scan (std::string filename, TagTree &tagTree, bool resetTree)
 		DumpRIFF ( fileRef, fileLen );
 		tagTree.popNode();
 
+	} else if ( format == kXMP_AIFFFile ) {
+
+		tagTree.pushNode ( "Dumping AIFF file" );
+		tagTree.addComment ( "size %lld (0x%llx)", fileLen, fileLen );	
+		DumpAIFF ( fileRef, fileLen );
+		tagTree.popNode();
+
 	} else if ( format == kXMP_MPEG4File || format == kXMP_MOVFile || format == kXMP_JPEG2KFile ) {
 		// all ISO formats ( MPEG4, MOV, JPEG2000) handled jointly,
 		// - no longer relying on any advance "isQT" flagging
@@ -4706,6 +5147,13 @@ void DumpFile::Scan (std::string filename, TagTree &tagTree, bool resetTree)
 	} else if ( format == kXMP_MPEGFile ) {
 
 		tagTree.comment ( "** Recognized MPEG-2 file type, but this is a pure sidecar solution. No legacy dump available at this time." );
+
+	} else if ( format == kXMP_PostScriptFile ) {
+
+		tagTree.pushNode ( "Dumping PostScript file" );
+		tagTree.addComment ( "size %lld (0x%llx)", fileLen, fileLen );	
+		DumpPS ( fileRef, fileLen );
+		tagTree.popNode();
 
 	} else if ( format == kXMP_UnknownFile ) {
 

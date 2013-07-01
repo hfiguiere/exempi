@@ -13,7 +13,7 @@
 
    #include <stddef.h>
 
-#if XMP_MacBuild		// ! No stdint.h on Windows and some UNIXes.
+#if XMP_MacBuild | XMP_iOSBuild	// ! No stdint.h on Windows and some UNIXes.
     #include <stdint.h>
 #endif
 #if XMP_UNIXBuild		// hopefully an inttypes.h on all UNIXes...
@@ -38,7 +38,7 @@ extern "C" {
 // case only the declarations of the XMP_... types needs to change, not all of the uses. These
 // types are used where fixed sizes are required in order to have a known ABI for a DLL build.
 
-#if XMP_MacBuild || defined(HAVE_STDINT_H)
+#if XMP_MacBuild || XMP_iOSBuild || defined(HAVE_STDINT_H)
 
     typedef int8_t   XMP_Int8;
     typedef int16_t  XMP_Int16;
@@ -50,7 +50,7 @@ extern "C" {
     typedef uint32_t XMP_Uns32;
     typedef uint64_t XMP_Uns64;
 
-#elif XMP_WinBuild 
+#elif XMP_WinBuild
 
     typedef signed char XMP_Int8;
     typedef signed short XMP_Int16;
@@ -63,7 +63,9 @@ extern "C" {
     typedef unsigned long long XMP_Uns64;
 
 #elif XMP_UNIXBuild
+
 	#if ! XMP_64
+
 		typedef signed char XMP_Int8;
 		typedef signed short XMP_Int16;
 		typedef signed long XMP_Int32;
@@ -73,7 +75,9 @@ extern "C" {
 		typedef unsigned short XMP_Uns16;
 		typedef unsigned long XMP_Uns32;
 		typedef unsigned long long XMP_Uns64;
+
 	#else
+
 		typedef signed char XMP_Int8;
 		typedef signed short XMP_Int16;
 		typedef signed int XMP_Int32;
@@ -83,15 +87,21 @@ extern "C" {
 		typedef unsigned short XMP_Uns16;
 		typedef unsigned int XMP_Uns32;
 		typedef unsigned long long XMP_Uns64;
+
 	#endif
 
 #else
 
-	#error "XMP environment error - must define one of XMP_MacBuild, XMP_WinBuild, or XMP_UNIXBuild"
+	#error "XMP environment error - must define one of XMP_MacBuild, XMP_WinBuild, XMP_UNIXBuild or XMP_iOSBuild"
 
 #endif
 
 typedef XMP_Uns8 XMP_Bool;
+
+const XMP_Uns8 kXMP_Bool_False = 0;
+
+#define ConvertXMP_BoolToBool(a) (a) != kXMP_Bool_False
+#define ConvertBoolToXMP_Bool(a) (a) ? !kXMP_Bool_False : kXMP_Bool_False
 
 /// An "ABI safe" pointer to the internal part of an XMP object. Use to pass an XMP object across
 /// client DLL boundaries. See \c TXMPMeta::GetInternalRef().
@@ -206,20 +216,20 @@ struct XMP_DateTime {
 
 	/// The second in the range 0..59.
     XMP_Int32 second;
-    
+
     /// Is the date portion meaningful?
     XMP_Bool hasDate;
-    
+
     /// Is the time portion meaningful?
     XMP_Bool hasTime;
-    
+
     /// Is the time zone meaningful?
     XMP_Bool hasTimeZone;
 
 	/// The "sign" of the time zone, \c #kXMP_TimeIsUTC (0) means UTC, \c #kXMP_TimeWestOfUTC (-1)
 	/// is west, \c #kXMP_TimeEastOfUTC (+1) is east.
     XMP_Int8 tzSign;
-    
+
 	/// The time zone hour in the range 0..23.
     XMP_Int32 tzHour;
 
@@ -231,7 +241,7 @@ struct XMP_DateTime {
 
 	#if __cplusplus
 		XMP_DateTime() : year(0), month(0), day(0), hour(0), minute(0), second(0),
-      hasDate(false), hasTime(false), hasTimeZone(false), tzSign(0), tzHour(0), tzMinute(0), nanoSecond(0) {};
+		                 hasDate(false), hasTime(false), hasTimeZone(false), tzSign(0), tzHour(0), tzMinute(0), nanoSecond(0) {};
 	#endif
 
 };
@@ -312,11 +322,15 @@ enum {
 #define kXMP_NS_ASF        "http://ns.adobe.com/asf/1.0/"
 #define kXMP_NS_WAV        "http://ns.adobe.com/xmp/wav/1.0/"
 #define kXMP_NS_BWF        "http://ns.adobe.com/bwf/bext/1.0/"
+#define kXMP_NS_AEScart    "http://ns.adobe.com/aes/cart/"
+#define kXMP_NS_RIFFINFO   "http://ns.adobe.com/riff/info/"
 
 #define kXMP_NS_XMP_Note   "http://ns.adobe.com/xmp/note/"
 
 #define kXMP_NS_AdobeStockPhoto "http://ns.adobe.com/StockPhoto/1.0/"
 #define kXMP_NS_CreatorAtom "http://ns.adobe.com/creatorAtom/1.0/"
+
+#define kXMP_NS_ExifEX		"http://cipa.jp/exif/1.0/"
 
 /// \name XML namespace constants for qualifiers and structured property fields.
 /// @{
@@ -371,6 +385,9 @@ enum {
 /// \def kXMP_NS_IPTCCore
 /// \brief The XML namespace for the IPTC Core schema.
 ///
+/// \def kXMP_NS_IPTCExt
+/// \brief The XML namespace for the IPTC Extension schema.
+///
 /// \def kXMP_NS_RDF
 /// \brief The XML namespace for RDF.
 ///
@@ -379,11 +396,14 @@ enum {
 ///
 /// @}
 
-#define kXMP_NS_DC              "http://purl.org/dc/elements/1.1/"
+#define kXMP_NS_DC             "http://purl.org/dc/elements/1.1/"
 
 #define kXMP_NS_IPTCCore       "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/"
+#define kXMP_NS_IPTCExt        "http://iptc.org/std/Iptc4xmpExt/2008-02-29/"
 
 #define kXMP_NS_DICOM          "http://ns.adobe.com/DICOM/"
+
+#define kXMP_NS_PLUS           "http://ns.useplus.org/ldf/xmp/1.0/"
 
 #define kXMP_NS_PDFA_Schema    "http://www.aiim.org/pdfa/ns/schema#"
 #define kXMP_NS_PDFA_Property  "http://www.aiim.org/pdfa/ns/property#"
@@ -680,6 +700,9 @@ enum {
 	/// Use a compact form of RDF.
     kXMP_UseCompactFormat    = 0x0040UL,
 
+	/// Use a canonical form of RDF.
+    kXMP_UseCanonicalFormat    = 0x0080UL,
+
 	/// Include a padding allowance for a thumbnail image.
     kXMP_IncludeThumbnailPad = 0x0100UL,
 
@@ -688,7 +711,7 @@ enum {
 
 	/// Omit all formatting whitespace.
     kXMP_OmitAllFormatting   = 0x0800UL,
-    
+
     /// Omit the x:xmpmeta element surrounding the rdf:RDF element.
     kXMP_OmitXMPMetaElement  = 0x1000UL,
 
@@ -763,7 +786,7 @@ enum {
 /// Option bit flags for \c TXMPUtils::CatenateArrayItems() and \c TXMPUtils::SeparateArrayItems().
 /// These option bits are shared with the accessor functions:
 ///   \li \c #kXMP_PropValueIsArray,
-///   \li \c #kXMP_PropArrayIsOrdered, 
+///   \li \c #kXMP_PropArrayIsOrdered,
 ///   \li \c #kXMP_PropArrayIsAlternate,
 ///   \li \c #kXMP_PropArrayIsAltText
 enum {
@@ -814,9 +837,12 @@ enum {
 // Types and Constants for XMPFiles
 // ================================
 
+/// Seek mode constants for use with XMP_IO and inside XMPFiles library code.
+enum SeekMode { kXMP_SeekFromStart, kXMP_SeekFromCurrent, kXMP_SeekFromEnd };
+
 /// File format constants for use with XMPFiles.
 enum {
-    
+
     // ! Hex used to avoid gcc warnings. Leave the constants so the text reads big endian. There
     // ! seems to be no decent way on UNIX to determine the target endianness at compile time.
     // ! Forcing it on the client isn't acceptable.
@@ -869,10 +895,14 @@ enum {
     kXMP_MPEG2File           = 0x4D503220UL,
 	/// Public file format constant: 'MP4 ', ISO 14494-12 and -14
     kXMP_MPEG4File           = 0x4D503420UL,
+	/// Public file format constant: 'MXF '
+    kXMP_MXFFile             = 0x4D584620UL,
 	/// Public file format constant: 'WMAV', Windows Media Audio and Video
     kXMP_WMAVFile            = 0x574D4156UL,
 	/// Public file format constant:  'AIFF'
     kXMP_AIFFFile            = 0x41494646UL,
+	/// Public file format constant:  'RED ', RED file format
+    kXMP_REDFile            = 0x52454420UL,
 	/// Public file format constant:  'P2  ', a collection not really a single file
     kXMP_P2File              = 0x50322020UL,
 	/// Public file format constant:  'XDCF', a collection not really a single file
@@ -885,6 +915,8 @@ enum {
     kXMP_AVCHDFile           = 0x41564844UL,
 	/// Public file format constant:  'SHDV', a collection not really a single file
     kXMP_SonyHDVFile         = 0x53484456UL,
+	/// Public file format constant:  'CNXF', a collection not really a single file
+    kXMP_CanonXFFile         = 0x434E5846UL,
 
 	/// Public file format constant: 'HTML'
     kXMP_HTMLFile            = 0x48544D4CUL,
@@ -1081,7 +1113,13 @@ enum {
     kXMPFiles_UsesSidecarXMP      = 0x00000800,
 
 	/// The format is folder oriented, for example the P2 video format.
-    kXMPFiles_FolderBasedFormat   = 0x00001000
+    kXMPFiles_FolderBasedFormat   = 0x00001000,
+
+	/// The file Handler is capable of notifying progress notifications
+    kXMPFiles_CanNotifyProgress   = 0x00002000,
+
+	/// The plugin handler is not capable for delay loading
+	kXMPFiles_NeedsPreloading      = 0x00004000
 
 };
 
@@ -1097,6 +1135,9 @@ enum {
 	/// Only the XMP is wanted, allows space/time optimizations.
     kXMPFiles_OpenOnlyXMP           = 0x00000004,
 
+	/// Force use of the given handler (format), do not even verify the format.
+    kXMPFiles_ForceGivenHandler     = 0x00000008,
+	
 	/// Be strict about only attempting to use the designated file handler, no fallback to other handlers.
     kXMPFiles_OpenStrictly          = 0x00000010,
 
@@ -1108,10 +1149,10 @@ enum {
 
 	/// Only packet scan files "known" to need scanning.
     kXMPFiles_OpenLimitedScanning   = 0x00000080,
-    
+
     /// Attempt to repair a file opened for update, default is to not open (throw an exception).
     kXMPFiles_OpenRepairFile        = 0x00000100
-   
+
 };
 
 /// Option bit flags for \c TXMPFiles::CloseFile().
@@ -1121,14 +1162,25 @@ enum {
 };
 
 // =================================================================================================
-// Exception codes
-// ===============
+// Error notification and Exceptions
+// =================================
 
-/// \name Errors Exception handling
+/// \name Error notification and Exceptions
 /// @{
 ///
-/// XMP Tookit errors result in throwing an \c XMP_Error exception. Any exception thrown within the
-/// XMP Toolkit is caught in the toolkit and rethrown as an \c XMP_Error.
+/// From the beginning through version 5.5, XMP Tookit errors result in throwing an \c XMP_Error
+/// exception. For the most part exceptions were thrown early and thus API calls aborted as soon as
+/// an error was detected. Starting in version 5.5, support has been added for notifications of
+/// errors arising in calls to \c TXMPMeta and \c TXMPFiles functions.
+///
+/// A client can register an error notification callback function for a \c TXMPMeta or \c TXMPFiles
+/// object. This can be done as a global default or individually to each object. The global default
+/// applies to all objects created after it is registered. Within the object there is no difference
+/// between the global default or explicitly registered callback. The callback function returns a
+/// \c bool value indicating if recovery should be attempted (true) or an exception thrown (false).
+/// If no callback is registered, a best effort at recovery and continuation will be made with an
+/// exception thrown if recovery is not possible. More details can be found in the \c TXMPMeta and
+/// \c TXMPFiles documentation.
 ///
 /// The \c XMP_Error class contains a numeric code and an English explanation. New numeric codes may
 /// be added at any time. There are typically many possible explanations for each numeric code. The
@@ -1136,7 +1188,93 @@ enum {
 ///
 /// \note The explanation string is for debugging use only. It must not be shown to users in a
 /// final product. It is written for developers not users, and never localized.
+
+typedef XMP_Uns8 XMP_ErrorSeverity;
+
+/// Severity codes for error notifications
+enum {
+    /// Partial recovery and continuation is possible.
+    kXMPErrSev_Recoverable    = 0,
+    /// Recovery is not possible, an exception will be thrown aborting the API call.
+    kXMPErrSev_OperationFatal = 1,
+    /// Recovery is not possible, an exception will be thrown, the file is corrupt and possibly unusable.
+    kXMPErrSev_FileFatal      = 2,
+    /// Recovery is not possible, an exception will be thrown, the entire process should be aborted.
+    kXMPErrSev_ProcessFatal   = 3
+};
+
+// -------------------------------------------------------------------------------------------------
+/// The signature of a client-defined callback for TXMPMeta error notifications.
 ///
+/// @param context A pointer used to carry client-private context.
+///
+/// @param severity The severity of the error, see the \c XMP_ErrorSeverity values.
+///
+/// @param cause A numeric code for the cause of the error, from the XMP_Error exception codes.
+/// Codes used with TXMPMeta error notifications:
+/// \li \c kXMPErr_BadXML - An XML syntax error found during parsing.
+/// \li \c kXMPErr_BadRDF - A syntax or semantic parsing error in the XMP subset of RDF.
+/// \li \c kXMPErr_BadXMP - A semantic XMP data model error.
+/// \li \c kXMPErr_BadValue - An XMP value error, wrong type, out of range, etc.
+/// \li \c kXMPErr_NoMemory - A heap allocation failure.
+///
+/// @param message An explanation of the error, for debugging use only. This should not be displayed
+/// to users in a final product.
+///
+/// @return True if the operation should continue with a best effort attempt at recovery, false if
+/// it should be aborted with an exception thrown from the library back to the original caller.
+/// Recovery is possible only if the severity is kXMPErrSev_Recoverable, an exception will be
+/// thrown on return from the callback in all other cases.
+///
+/// @see \c TXMPMeta::SetDefaultErrorCallback() and \c TXMPMeta::SetErrorCallback()
+
+typedef bool (* XMPMeta_ErrorCallbackProc) ( void* context, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr message );
+
+// -------------------------------------------------------------------------------------------------
+/// The signature of a client-defined callback for TXMPFiles error notifications.
+///
+/// @param context A pointer used to carry client-private context.
+///
+/// @param filePath The path for the file involved in the error.
+///
+/// @param severity The severity of the error, see the \c XMP_ErrorSeverity values.
+///
+/// @param cause A numeric code for the cause of the error, from the XMP_Error exception codes.
+/// Codes used with TXMPFiles error notifications:
+/// \li \c kXMPErr_NoFile - A file does not exist
+/// \li \c kXMPErr_FilePermission - A file exists but cannot be opened
+/// \li \c kXMPErr_FilePathNotAFile - A path exists which is not a file
+/// \li \c dXMPErr_RejectedFileExtension - Any Operation called on rejected file extension
+/// \li \c KXMPErr_NoFileHandler - No suitable handler is found for the file
+/// \li \c kXMPErr_DiskSpace - A file write fails due to lack of disk space
+/// \li \c kXMPErr_ReadError - A file read fails
+/// \li \c kXMPErr_WriteError - A file write fails for some other reason than space
+/// \li \c kXMPErr_BadFileFormat - A file is corrupt or ill-formed
+/// \li \c kXMPErr_BadBlockFormat - A portion of a file is corrupt or ill-formed
+/// \li \c kXMPErr_BadValue - An XMP or non-XMP metadata item has an invalid value
+/// \li \c kXMPErr_NoMemory - A heap allocation failure
+///
+/// @param message An explanation of the error, for debugging use only. This should not be displayed
+/// to users in a final product.
+///
+/// @return True if the operation should continue with a best effort attempt at recovery, false if
+/// it should be aborted with an exception thrown from the library back to the original caller.
+/// Recovery is possible only if the severity is kXMPErrSev_Recoverable, an exception will be
+/// thrown on return from the callback in all other cases.
+///
+/// @see \c TXMPFiles::SetDefaultErrorCallback() and \c TXMPFiles::SetErrorCallback()
+
+typedef bool (* XMPFiles_ErrorCallbackProc) ( void* context, XMP_StringPtr filePath, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr message );
+
+// -------------------------------------------------------------------------------------------------
+/// Internal: The signatures of client-side wrappers for the error notification callbacks.
+
+typedef XMP_Bool (* XMPMeta_ErrorCallbackWrapper) ( XMPMeta_ErrorCallbackProc clientProc, void* context,
+                                    	        XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr message );
+
+typedef XMP_Bool (* XMPFiles_ErrorCallbackWrapper) ( XMPFiles_ErrorCallbackProc clientProc, void* context,
+                                     	         XMP_StringPtr filePath, XMP_ErrorSeverity severity,
+                                    	         XMP_Int32 cause, XMP_StringPtr message );
 
 /// XMP Toolkit error, associates an error code with a descriptive error string.
 class XMP_Error {
@@ -1148,7 +1286,7 @@ public:
 	///
 	/// @param _errMsg The descriptive string, for debugging use only. It must not be shown to users
 	/// in a final product. It is written for developers, not users, and never localized.
-	XMP_Error ( XMP_Int32 _id, XMP_StringPtr _errMsg ) : id(_id), errMsg(_errMsg) {};
+	XMP_Error ( XMP_Int32 _id, XMP_StringPtr _errMsg ) : id(_id), errMsg(_errMsg), notified(false) {};
 
 	/// Retrieves the numeric code from an XMP_Error.
 	inline XMP_Int32     GetID() const     { return id; };
@@ -1156,20 +1294,31 @@ public:
 	/// Retrieves the descriptive string from an XMP_Error.
 	inline XMP_StringPtr GetErrMsg() const { return errMsg; };
 
+	/// Retrieves the information whether particular error is notified or not
+	inline XMP_Bool      IsNotified() const { return notified; }
+
+	/// Sets the notification status for an error
+	inline void          SetNotified() { notified = true; };
+
 private:
 	/// Exception code. See constants \c #kXMPErr_Unknown and following.
 	XMP_Int32     id;
 	/// Descriptive string, for debugging use only. It must not be shown to users in a final
 	/// product. It is written for developers, not users, and never localized.
 	XMP_StringPtr errMsg;
+	/// Variable to store whether this particular error is notified to user or not
+	XMP_Bool notified;
 };
 
-/// Exception code constants
+/// XMP_Error exception code constants
 enum {
 
-	// --------------------
-    // Generic error codes.
-   
+	//  --------------------
+    /// Generic error codes.
+
+	/// No error
+	kXMPErr_NoError          =  -1,
+
 	/// Generic unknown error
     kXMPErr_Unknown          =   0,
 	/// Generic undefined error
@@ -1202,6 +1351,8 @@ enum {
     kXMPErr_UnknownException =  14,
 	/// Generic out-of-memory error
     kXMPErr_NoMemory         =  15,
+	/// Progress reporting callback requested abort
+    kXMPErr_ProgressAbort    =  16,
 
 	// ------------------------------------
     // More specific parameter error codes.
@@ -1216,7 +1367,7 @@ enum {
     kXMPErr_BadIndex         = 104,
 	/// Bad iteration position
     kXMPErr_BadIterPosition  = 105,
-	/// XML parsing error
+	/// XML parsing error (deprecated)
     kXMPErr_BadParse         = 106,
 	/// Serialization error
     kXMPErr_BadSerialize     = 107,
@@ -1226,6 +1377,22 @@ enum {
     kXMPErr_NoFileHandler    = 109,
 	/// Data too large for JPEG file format
     kXMPErr_TooLargeForJPEG  = 110,
+    /// A file does not exist
+    kXMPErr_NoFile           = 111,
+    /// A file exists but cannot be opened
+    kXMPErr_FilePermission   = 112,
+    /// A file write failed due to lack of disk space
+    kXMPErr_DiskSpace        = 113,
+    /// A file read failed
+    kXMPErr_ReadError        = 114,
+    /// A file write failed for a reason other than lack of disk space
+    kXMPErr_WriteError       = 115,
+    /// A block of a file is ill-formed, e.g. invalid IPTC-IIM in a photo
+    kXMPErr_BadBlockFormat   = 116,
+    /// File Path is not a file
+    kXMPErr_FilePathNotAFile = 117,
+    /// Rejected File extension
+    kXMPErr_RejectedFileExtension = 118,
 
 	// -----------------------------------------------
     // File format and internal structure error codes.
@@ -1302,7 +1469,36 @@ typedef XMP_Status (* XMP_TextOutputProc) ( void *        refCon,
 ///
 /// @see \c TXMPFiles::SetAbortProc()
 
-typedef bool (* XMP_AbortProc) ( void * arg );	// Used by .
+typedef bool (* XMP_AbortProc) ( void * arg );
+
+// -------------------------------------------------------------------------------------------------
+/// The signature of a client-defined callback for progress report notifications.
+///
+/// @param context A pointer used to carry client-private context.
+///
+/// @param elapsedTime The time in seconds since the progress reporting started.
+///
+/// @param fractionDone A float value estimating the amount of work already done, in the range of
+/// 0.0 to 1.0. A value of 0.0 is given if the amount is not known, this happens if there is no
+/// estimate total for the total work. The units of work are not defined, but should usually be
+/// related to the number of bytes of I/O. This will go backwards if total work estimate changes.
+///
+/// @param secondsToGo A float value estimating the number of seconds left to complete the file
+/// operation. A value of 0.0 is given if the amount is not known, this happens if the amount of
+/// total work is unknown. This can go backwards according to throughput or if work estimate changes.
+///
+/// @return True if the file operation should continue, false if it should be aborted with an
+/// exception being thrown from the XMPFiles library back to the original caller.
+///
+/// @see \c TXMPFiles::SetDefaultProgressCallback() and \c TXMPFiles::SetProgressCallback()
+
+typedef bool (* XMP_ProgressReportProc) ( void * context, float elapsedTime, float fractionDone, float secondsToGo );
+
+// -------------------------------------------------------------------------------------------------
+/// Internal: The signature of a client-side wrapper for the progress report callback.
+
+typedef XMP_Bool (* XMP_ProgressReportWrapper) ( XMP_ProgressReportProc proc, void * context,
+											 float elapsedTime, float fractionDone, float secondsToGo );
 
 /// @}
 
@@ -1333,5 +1529,7 @@ typedef struct XMP_VersionInfo {
 #if __cplusplus
 } // extern "C"
 #endif
+
+#include <vector>
 
 #endif  // __XMP_Const_h__

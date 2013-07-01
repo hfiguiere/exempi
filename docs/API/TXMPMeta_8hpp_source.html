@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-<title>XMP-Toolkit-SDK-5.1.2: TXMPMeta.hpp Source File</title>
+<title>XMP-Toolkit-SDK-CC201306: TXMPMeta.hpp Source File</title>
 <link href="xmp.css" rel="stylesheet" type="text/css">
 <link href="tabs.css" rel="stylesheet" type="text/css">
 </head><body>
@@ -112,7 +112,7 @@ window.onload = initDynSections;
 <a name="l00100"></a>00100 
 <a name="l00101"></a>00101     <span class="comment">// =============================================================================================</span>
 <a name="l00102"></a>00102     <span class="comment">// Constuctors and destructor</span>
-<a name="l00103"></a>00103     <span class="comment">// =========================</span>
+<a name="l00103"></a>00103     <span class="comment">// ==========================</span>
 <a name="l00104"></a>00104 
 <a name="l00105"></a>00105     <span class="comment">// ---------------------------------------------------------------------------------------------</span>
 <a name="l00108"></a>00108 <span class="comment"></span>
@@ -560,23 +560,42 @@ window.onload = initDynSections;
 <a name="l01674"></a>01674 
 <a name="l01676"></a>01676 
 <a name="l01677"></a>01677     <span class="comment">// =============================================================================================</span>
-<a name="l01678"></a>01678 
-<a name="l01679"></a>01679     <a class="code" href="XMP__Const_8h.html#a549d5e2cbcb58302d3df840a0205283e">XMPMetaRef</a> xmpRef;  <span class="comment">// *** Should be private, see below.</span>
+<a name="l01678"></a>01678     <span class="comment">// Error notifications</span>
+<a name="l01679"></a>01679     <span class="comment">// ===================</span>
 <a name="l01680"></a>01680 
-<a name="l01681"></a>01681 <span class="keyword">private</span>:
-<a name="l01682"></a>01682 
-<a name="l01683"></a>01683 <span class="preprocessor">#if 0   // *** VS.Net and gcc seem to not handle the friend declarations properly.</span>
-<a name="l01684"></a>01684 <span class="preprocessor"></span>    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classTXMPIterator.html" title="API for access to the XMP Toolkit iteration services.">TXMPIterator</a> &lt;class tStringObj&gt;;
-<a name="l01685"></a>01685     <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classTXMPUtils.html" title="API for access to the XMP Toolkit utility services.">TXMPUtils</a> &lt;class tStringObj&gt;;
-<a name="l01686"></a>01686 <span class="preprocessor">#endif</span>
-<a name="l01687"></a>01687 <span class="preprocessor"></span>
-<a name="l01688"></a>01688     <span class="keyword">static</span> <span class="keywordtype">void</span> SetClientString ( <span class="keywordtype">void</span> * clientPtr, <a class="code" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6" title="The type for input string parameters. A const char *, a null-terminated UTF-8 string...">XMP_StringPtr</a> valuePtr, <a class="code" href="XMP__Const_8h.html#a9f7dcc184f901c713274edfdac5bcc9a" title="The type for string length parameters. A 32-bit unsigned integer, as big as will...">XMP_StringLen</a> valueLen );
-<a name="l01689"></a>01689 
-<a name="l01690"></a>01690 };  <span class="comment">// class TXMPMeta</span>
-<a name="l01691"></a>01691 
-<a name="l01692"></a>01692 <span class="preprocessor">#endif  // __TXMPMeta_hpp__</span>
+<a name="l01681"></a>01681     <span class="comment">// ---------------------------------------------------------------------------------------------</span>
+<a name="l01703"></a>01703 <span class="comment"></span>    
+<a name="l01704"></a>01704     <span class="comment">//  --------------------------------------------------------------------------------------------</span>
+<a name="l01712"></a>01712 <span class="comment"></span>    
+<a name="l01713"></a>01713     <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code" href="classTXMPMeta.html#a1e90e0c8cd8c5670267bb693cf3660fe" title="SetDefaultErrorCallback() registers a global default error notification callback...">SetDefaultErrorCallback</a> ( <a class="code" href="XMP__Const_8h.html#a6027ee7b7d17a0fec636f812c5346af7">XMPMeta_ErrorCallbackProc</a> proc, <span class="keywordtype">void</span>* context = 0, XMP_Uns32 limit = 1 );
+<a name="l01714"></a>01714     
+<a name="l01715"></a>01715     <span class="comment">//  --------------------------------------------------------------------------------------------</span>
+<a name="l01723"></a>01723 <span class="comment"></span>    
+<a name="l01724"></a>01724     <span class="keywordtype">void</span> <a class="code" href="classTXMPMeta.html#aee41442af4f049c1d6698fc27ce854d0" title="SetErrorCallback() registers an error notification callback.">SetErrorCallback</a> ( <a class="code" href="XMP__Const_8h.html#a6027ee7b7d17a0fec636f812c5346af7">XMPMeta_ErrorCallbackProc</a> proc, <span class="keywordtype">void</span>* context = 0, XMP_Uns32 limit = 1 );
+<a name="l01725"></a>01725     
+<a name="l01726"></a>01726     <span class="comment">//  --------------------------------------------------------------------------------------------</span>
+<a name="l01731"></a>01731 <span class="comment"></span>    
+<a name="l01732"></a>01732     <span class="keywordtype">void</span> <a class="code" href="classTXMPMeta.html#a31c7ef089e8fadff122044afa27d200a" title="ResetErrorCallbackLimit() resets the error notification limit and counting. It has...">ResetErrorCallbackLimit</a> ( XMP_Uns32 limit = 1 );
+<a name="l01733"></a>01733 
+<a name="l01735"></a>01735 
+<a name="l01736"></a>01736     <span class="comment">// =============================================================================================</span>
+<a name="l01737"></a>01737 
+<a name="l01738"></a>01738     <a class="code" href="XMP__Const_8h.html#a549d5e2cbcb58302d3df840a0205283e">XMPMetaRef</a> xmpRef;  <span class="comment">// *** Should be private, see below.</span>
+<a name="l01739"></a>01739 
+<a name="l01740"></a>01740 <span class="keyword">private</span>:
+<a name="l01741"></a>01741 
+<a name="l01742"></a>01742 <span class="preprocessor">#if 0   // *** VS.Net and gcc seem to not handle the friend declarations properly.</span>
+<a name="l01743"></a>01743 <span class="preprocessor"></span>    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classTXMPIterator.html" title="API for access to the XMP Toolkit iteration services.">TXMPIterator</a> &lt;class tStringObj&gt;;
+<a name="l01744"></a>01744     <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classTXMPUtils.html" title="API for access to the XMP Toolkit utility services.">TXMPUtils</a> &lt;class tStringObj&gt;;
+<a name="l01745"></a>01745 <span class="preprocessor">#endif</span>
+<a name="l01746"></a>01746 <span class="preprocessor"></span>
+<a name="l01747"></a>01747     <span class="keyword">static</span> <span class="keywordtype">void</span> SetClientString ( <span class="keywordtype">void</span> * clientPtr, <a class="code" href="XMP__Const_8h.html#ad439e3ceeb4590d310f6125aa12c6df6" title="The type for input string parameters. A const char *, a null-terminated UTF-8 string...">XMP_StringPtr</a> valuePtr, <a class="code" href="XMP__Const_8h.html#a9f7dcc184f901c713274edfdac5bcc9a" title="The type for string length parameters. A 32-bit unsigned integer, as big as will...">XMP_StringLen</a> valueLen );
+<a name="l01748"></a>01748 
+<a name="l01749"></a>01749 };  <span class="comment">// class TXMPMeta</span>
+<a name="l01750"></a>01750 
+<a name="l01751"></a>01751 <span class="preprocessor">#endif  // __TXMPMeta_hpp__</span>
 </pre></div></div>
 <hr size="1"><address style="text-align: right;"><small>
-XMP-Toolkit-SDK-5.1.2 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
+XMP-Toolkit-SDK-CC201306 documentation generated by&nbsp;<a href="http://www.doxygen.org/index.html">doxygen</a> 1.6.3</small></address>
 </body>
 </html>

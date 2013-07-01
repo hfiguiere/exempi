@@ -13,16 +13,19 @@
 * and modify properties with complex paths using the path composition utilities from the XMP API
 */
 
+#include <cstdio>
+#include <vector>
 #include <string>
+#include <cstring>
 
 // Must be defined to instantiate template classes
 #define TXMP_STRING_TYPE std::string
 
 // Ensure XMP templates are instantiated
-#include "XMP.incl_cpp"
+#include "public/include/XMP.incl_cpp"
 
 // Provide access to the API
-#include "XMP.hpp"
+#include "public/include/XMP.hpp"
 
 #include <iostream>
 #include <fstream>

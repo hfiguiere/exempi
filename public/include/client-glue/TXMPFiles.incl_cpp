@@ -55,6 +55,19 @@ SetClientString ( void * clientPtr, XMP_StringPtr valuePtr, XMP_StringLen valueL
 // -------------------------------------------------------------------------------------------------
 
 XMP_MethodIntro(TXMPFiles,void)::
+SetClientStringVector ( void * clientPtr, XMP_StringPtr * arrayPtr, XMP_Uns32 stringCount )
+{
+	std::vector<tStringObj>* clientVec = (std::vector<tStringObj>*) clientPtr;
+	clientVec->clear();
+	for ( XMP_Uns32 i = 0; i < stringCount; ++i ) {
+		tStringObj nextValue ( arrayPtr[i] );
+		clientVec->push_back ( nextValue );
+	}
+}
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPFiles,void)::
 GetVersionInfo ( XMP_VersionInfo * versionInfo )
 {
 	WrapNoCheckVoid ( zXMPFiles_GetVersionInfo_1 ( versionInfo ) );
@@ -72,9 +85,27 @@ Initialize()
 // -------------------------------------------------------------------------------------------------
 
 XMP_MethodIntro(TXMPFiles,bool)::
+Initialize( const char* pluginFolder, const char* plugins )
+{
+	WrapCheckBool ( ok, zXMPFiles_Initialize_2 ( 0, pluginFolder, plugins ) );
+	return ok;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPFiles,bool)::
 Initialize ( XMP_OptionBits options )
 {
 	WrapCheckBool ( ok, zXMPFiles_Initialize_1 ( options ) );
+	return ok;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPFiles,bool)::
+Initialize ( XMP_OptionBits options, const char* pluginFolder, const char* plugins )
+{
+	WrapCheckBool ( ok, zXMPFiles_Initialize_2 ( options, pluginFolder, plugins ) );
 	return ok;
 }
 
@@ -230,11 +261,54 @@ CheckPackageFormat ( XMP_StringPtr folderPath )
 }
 
 // -------------------------------------------------------------------------------------------------
+	
+XMP_MethodIntro(TXMPFiles,bool)::
+GetFileModDate ( XMP_StringPtr filePath, XMP_DateTime * modDate, XMP_FileFormat * format, XMP_OptionBits options )
+{
+	WrapCheckBool ( ok, zXMPFiles_GetFileModDate_1 ( filePath, modDate, format, options ) );
+	return ok;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPFiles,bool)::
+GetAssociatedResources ( XMP_StringPtr            filePath,
+                         std::vector<tStringObj>* resourceList,
+                         XMP_FileFormat           format /* = kXMP_UnknownFile */, 
+                         XMP_OptionBits           options /* = 0 */)
+{
+	WrapCheckBool ( ok, zXMPFiles_GetAssociatedResources_1 ( filePath, resourceList, format, options, SetClientStringVector ) );
+	return ok;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPFiles,bool)::
+IsMetadataWritable ( XMP_StringPtr  filePath,
+                     bool *         writable,    
+                     XMP_FileFormat format /* = kXMP_UnknownFile */,
+                     XMP_OptionBits options /* = 0 */)
+{
+	if ( writable)
+	{
+		XMP_Bool internalWritable = ConvertBoolToXMP_Bool( *writable );
+		WrapCheckBool ( ok, zXMPFiles_IsMetadataWritable_1 ( filePath, &internalWritable, format, options ) );
+		*writable = ConvertXMP_BoolToBool( internalWritable );
+		return ok;
+	}
+	else
+	{
+		WrapCheckBool ( ok, zXMPFiles_IsMetadataWritable_1 ( filePath, NULL, format, options ) );
+		return ok;
+	}
+}
+
+// -------------------------------------------------------------------------------------------------
 
 XMP_MethodIntro(TXMPFiles,bool)::
 OpenFile ( XMP_StringPtr  filePath,
 		   XMP_FileFormat format /* = kXMP_UnknownFile */,
-		   XMP_OptionBits openFlags /* =0 */ )
+		   XMP_OptionBits openFlags /* = 0 */ )
 {
 	WrapCheckBool ( ok, zXMPFiles_OpenFile_1 ( filePath, format, openFlags ) );
 	return ok;
@@ -245,15 +319,28 @@ OpenFile ( XMP_StringPtr  filePath,
 XMP_MethodIntro(TXMPFiles,bool)::
 OpenFile ( const tStringObj & filePath,
 		   XMP_FileFormat     format /* = kXMP_UnknownFile */,
-		   XMP_OptionBits     openFlags /* =0 */ )
+		   XMP_OptionBits     openFlags /* = 0 */ )
 {
 	return this->OpenFile ( filePath.c_str(), format, openFlags );
 }
 
 // -------------------------------------------------------------------------------------------------
 
+#if XMP_StaticBuild	// ! Client XMP_IO objects can only be used in static builds.
+XMP_MethodIntro(TXMPFiles,bool)::
+OpenFile ( XMP_IO *       clientIO,
+		   XMP_FileFormat format /* = kXMP_UnknownFile */,
+		   XMP_OptionBits openFlags /* = 0 */ )
+{
+	WrapCheckBool ( ok, zXMPFiles_OpenFile_2 ( clientIO, format, openFlags ) );
+	return ok;
+}
+#endif
+
+// -------------------------------------------------------------------------------------------------
+
 XMP_MethodIntro(TXMPFiles,void)::
-CloseFile ( XMP_OptionBits closeFlags /* =0 */ )
+CloseFile ( XMP_OptionBits closeFlags /* = 0 */ )
 {
 	WrapCheckVoid ( zXMPFiles_CloseFile_1 ( closeFlags ) );
 }
@@ -262,9 +349,9 @@ CloseFile ( XMP_OptionBits closeFlags /* =0 */ )
 
 XMP_MethodIntro(TXMPFiles,bool)::
 GetFileInfo ( tStringObj *     filePath /* = 0 */,
-		      XMP_OptionBits * openFlags /* =0 */,
+		      XMP_OptionBits * openFlags /* = 0 */,
 		      XMP_FileFormat * format /* = 0 */,
-		      XMP_OptionBits * handlerFlags /* =0 */ )
+		      XMP_OptionBits * handlerFlags /* = 0 */ )
 {
 	WrapCheckBool ( isOpen, zXMPFiles_GetFileInfo_1 ( filePath, openFlags, format, handlerFlags, SetClientString ) );
 	return isOpen;
@@ -284,14 +371,14 @@ SetAbortProc ( XMP_AbortProc abortProc,
 XMP_MethodIntro(TXMPFiles,bool)::
 GetXMP ( SXMPMeta *       xmpObj /* = 0 */,
     	 tStringObj *     xmpPacket /* = 0 */,
-    	 XMP_PacketInfo * packetInfo /* =0 */ )
+    	 XMP_PacketInfo * packetInfo /* = 0 */ )
 {
 	XMPMetaRef xmpRef = 0;
 	if ( xmpObj != 0 ) {
 		SXMPUtils::RemoveProperties ( xmpObj, 0, 0, kXMPUtil_DoAllProperties );	// *** Need an SXMPMeta::Clear method:
 		xmpRef = xmpObj->GetInternalRef();
 	}
-	
+
 	WrapCheckBool ( hasXMP, zXMPFiles_GetXMP_1 ( xmpRef, xmpPacket, packetInfo, SetClientString ) );
 	return hasXMP;
 }
@@ -346,6 +433,52 @@ XMP_MethodIntro(TXMPFiles,bool)::
 CanPutXMP ( const tStringObj & xmpPacket )
 {
 	return this->CanPutXMP ( xmpPacket.c_str(), (XMP_StringLen)xmpPacket.size() );
+}
+
+// =================================================================================================
+
+XMP_MethodIntro(TXMPFiles,void)::
+SetDefaultProgressCallback ( XMP_ProgressReportProc proc, void * context /* = 0 */,
+	                         float interval /* = 1.0 */, bool sendStartStop /* = false */ )
+{
+	XMP_Bool internalsendStartStop = ConvertBoolToXMP_Bool( sendStartStop );
+	WrapCheckVoid ( zXMPFiles_SetDefaultProgressCallback_1 ( proc, context, interval, internalsendStartStop ) );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPFiles,void)::
+SetProgressCallback ( XMP_ProgressReportProc proc, void * context /* = 0 */,
+	                  float interval /* = 1.0 */, bool sendStartStop /* = false */ )
+{
+	XMP_Bool internalsendStartStop = ConvertBoolToXMP_Bool( sendStartStop );
+	WrapCheckVoid ( zXMPFiles_SetProgressCallback_1 ( proc, context, interval, internalsendStartStop ) );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPFiles,void)::
+SetDefaultErrorCallback ( XMPFiles_ErrorCallbackProc proc,
+	                      void * context /* = 0 */, XMP_Uns32 limit /*= 1 */ )
+{
+	WrapCheckVoid ( zXMPFiles_SetDefaultErrorCallback_1 ( proc, context, limit ) );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPFiles,void)::
+SetErrorCallback ( XMPFiles_ErrorCallbackProc proc,
+	               void * context /* = 0 */, XMP_Uns32 limit /*= 1 */ )
+{
+	WrapCheckVoid ( zXMPFiles_SetErrorCallback_1 ( proc, context, limit ) );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+XMP_MethodIntro(TXMPFiles,void)::
+ResetErrorCallbackLimit ( XMP_Uns32 limit /* = 1 */ )
+{
+	WrapCheckVoid ( zXMPFiles_ResetErrorCallbackLimit_1 ( limit ) );
 }
 
 // =================================================================================================
