@@ -83,7 +83,7 @@ public:
 	mutable XMP_Uns32			notifications;
 	mutable XMP_ErrorSeverity	topSeverity;
 
-	GenericErrorCallback() : notifications(0), limit(1), topSeverity(kXMPErrSev_Recoverable) {};
+	GenericErrorCallback() : limit(1), notifications(0), topSeverity(kXMPErrSev_Recoverable) {};
 	virtual ~GenericErrorCallback() {};
 
 	void Clear() { this->notifications = 0; this->limit = 1; this->topSeverity = kXMPErrSev_Recoverable; };
