@@ -1,3 +1,7 @@
+2.2.2
+
+- Public header cleanup and documentation update.
+
 2.2.1 - 2013/06/29
 
 - Bug #54011: Use POSIX API for files on MacOS. (Misty De Meo)

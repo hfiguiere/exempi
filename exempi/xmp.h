@@ -40,7 +40,7 @@
 #define __EXEMPI_XMP_H_
 
 #include <stdlib.h>
-/* stdbool choke on Sun (bug# 14612) */
+/* stdbool choke on Sun (bug #14612) */
 #if !defined(__sun)
 #include <stdbool.h>
 #endif
@@ -53,29 +53,28 @@ extern "C" {
 #endif
 
 /* enums grafted from XMP_Const.h */
-	
 
 /** Option bits for xmp_files_open() */
 typedef enum {
 	XMP_OPEN_NOOPTION       = 0x00000000, /**< No open option */
 	XMP_OPEN_READ           = 0x00000001, /**< Open for read-only access. */
 	XMP_OPEN_FORUPDATE      = 0x00000002, /**< Open for reading and writing. */
-	XMP_OPEN_ONLYXMP        = 0x00000004, /**< Only the XMP is wanted, 
-										   * allows space/time optimizations. */
-	XMP_OPEN_CACHETNAIL     = 0x00000008, /**< Cache thumbnail if possible, 
-										   * GetThumbnail will be called. */
-	XMP_OPEN_STRICTLY       = 0x00000010, /**< Be strict about locating XMP 
-										   * and reconciling with other forms. */
-	XMP_OPEN_USESMARTHANDLER= 0x00000020, /**< Require the use of a smart 
-										   * handler. */
-	XMP_OPEN_USEPACKETSCANNING = 0x00000040, /**< Force packet scanning, 
-											  * don't use a smart handler. */
-	XMP_OPEN_LIMITSCANNING  = 0x00000080, /**< Only packet scan files "known" 
-										   * to need scanning. */
-	XMP_OPEN_REPAIR_FILE    = 0x00000100, /**< Attempt to repair a file opened for update, 
-										   * default is to not open (throw an exception). */
-	XMP_OPEN_INBACKGROUND   = 0x10000000  /**< Set if calling from background 
-										   * thread. */
+	XMP_OPEN_ONLYXMP        = 0x00000004, /**< Only the XMP is wanted,
+					       * allows space/time optimizations. */
+	XMP_OPEN_CACHETNAIL     = 0x00000008, /**< Cache thumbnail if possible,
+					       * GetThumbnail will be called. */
+	XMP_OPEN_STRICTLY       = 0x00000010, /**< Be strict about locating XMP
+					       * and reconciling with other forms. */
+	XMP_OPEN_USESMARTHANDLER= 0x00000020, /**< Require the use of a smart
+					       * handler. */
+	XMP_OPEN_USEPACKETSCANNING = 0x00000040, /**< Force packet scanning,
+						  * don't use a smart handler. */
+	XMP_OPEN_LIMITSCANNING  = 0x00000080, /**< Only packet scan files "known"
+					       * to need scanning. */
+	XMP_OPEN_REPAIR_FILE    = 0x00000100, /**< Attempt to repair a file opened for update,
+					       * default is to not open (throw an exception). */
+	XMP_OPEN_INBACKGROUND   = 0x10000000  /**< Set if calling from background
+					       * thread. */
 } XmpOpenFileOptions;
 
 /* bad work-around for a typo-fix in 1.99.8 
@@ -86,8 +85,8 @@ typedef enum {
 /** Option bits for xmp_files_close() */
 typedef enum {
 	XMP_CLOSE_NOOPTION      = 0x0000, /**< No close option */
-	XMP_CLOSE_SAFEUPDATE    = 0x0001  /**< Write into a temporary file and 
-									   * swap for crash safety. */
+	XMP_CLOSE_SAFEUPDATE    = 0x0001  /**< Write into a temporary file and
+					   * swap for crash safety. */
 } XmpCloseFileOptions;
 
 
@@ -97,21 +96,21 @@ typedef enum {
 	/* Public file formats. Hex used to avoid gcc warnings. */
 	/* ! Leave them as big endian. There seems to be no decent way on UNIX to determine the target */
 	/* ! endianness at compile time. Forcing it on the client isn't acceptable. */
-	
+
 	XMP_FT_PDF      = 0x50444620UL,  /* 'PDF ' */
 	XMP_FT_PS       = 0x50532020UL,  /* 'PS  ', general PostScript following DSC conventions. */
 	XMP_FT_EPS      = 0x45505320UL,  /* 'EPS ', encapsulated PostScript. */
-	
+
 	XMP_FT_JPEG     = 0x4A504547UL,  /* 'JPEG' */
 	XMP_FT_JPEG2K   = 0x4A505820UL,  /* 'JPX ', ISO 15444-1 */
 	XMP_FT_TIFF     = 0x54494646UL,  /* 'TIFF' */
 	XMP_FT_GIF      = 0x47494620UL,  /* 'GIF ' */
 	XMP_FT_PNG      = 0x504E4720UL,  /* 'PNG ' */
-    
+
 	XMP_FT_SWF      = 0x53574620UL,  /* 'SWF ' */
 	XMP_FT_FLA      = 0x464C4120UL,  /* 'FLA ' */
 	XMP_FT_FLV      = 0x464C5620UL,  /* 'FLV ' */
-	
+
 	XMP_FT_MOV      = 0x4D4F5620UL,  /* 'MOV ', Quicktime */
 	XMP_FT_AVI      = 0x41564920UL,  /* 'AVI ' */
 	XMP_FT_CIN      = 0x43494E20UL,  /* 'CIN ', Cineon */
@@ -166,26 +165,26 @@ typedef enum {
 
 
 typedef enum {
-	XMP_ITER_CLASSMASK      = 0x00FFUL,  /**< The low 8 bits are an enum of 
-																				* what data structure to iterate. */
-	XMP_ITER_PROPERTIES     = 0x0000UL,  /**< Iterate the property tree of 
-										  * a TXMPMeta object. */
+	XMP_ITER_CLASSMASK      = 0x00FFUL,  /**< The low 8 bits are an enum of
+					      * what data structure to iterate. */
+	XMP_ITER_PROPERTIES     = 0x0000UL,  /**< Iterate the property tree of
+					      * a TXMPMeta object. */
 	XMP_ITER_ALIASES        = 0x0001UL,  /**< Iterate the global alias table. */
 	XMP_ITER_NAMESPACES     = 0x0002UL,  /**< Iterate the global namespace table. */
-	XMP_ITER_JUSTCHILDREN   = 0x0100UL,  /**< Just do the immediate children 
-										  * of the root, default is subtree. */
-	XMP_ITER_JUSTLEAFNODES  = 0x0200UL,  /**< Just do the leaf nodes, default 
-										  * is all nodes in the subtree. */
-	XMP_ITER_JUSTLEAFNAME   = 0x0400UL,  /**< Return just the leaf part of the 
-										  * path, default is the full path. */
-	XMP_ITER_INCLUDEALIASES = 0x0800UL,  /**< Include aliases, default is just 
-										  * actual properties. */
+	XMP_ITER_JUSTCHILDREN   = 0x0100UL,  /**< Just do the immediate children
+					      * of the root, default is subtree. */
+	XMP_ITER_JUSTLEAFNODES  = 0x0200UL,  /**< Just do the leaf nodes, default
+					      * is all nodes in the subtree. */
+	XMP_ITER_JUSTLEAFNAME   = 0x0400UL,  /**< Return just the leaf part of the
+					      * path, default is the full path. */
+	XMP_ITER_INCLUDEALIASES = 0x0800UL,  /**< Include aliases, default is just
+					      * actual properties. */
 	XMP_ITER_OMITQUALIFIERS = 0x1000UL   /* Omit all qualifiers. */
 } XmpIterOptions;
 
 typedef enum {
-	XMP_ITER_SKIPSUBTREE   = 0x0001UL,  /**< Skip the subtree below the 
-										 * current node. */
+	XMP_ITER_SKIPSUBTREE   = 0x0001UL,  /**< Skip the subtree below the
+					     * current node. */
 	XMP_ITER_SKIPSIBLINGS  = 0x0002UL   /**< Skip the subtree below and remaining
 										 * siblings of the current node. */
 } XmpIterSkipOptions;
@@ -194,39 +193,39 @@ typedef enum {
 
 typedef enum {
   /** Options relating to the XML string form of the property value. */
-	XMP_PROP_VALUE_IS_URI     = 0x00000002UL, /**< The value is a URI, use 
-											   * rdf:resource attribute. 
-											   * DISCOURAGED */
+	XMP_PROP_VALUE_IS_URI     = 0x00000002UL, /**< The value is a URI, use
+						   * rdf:resource attribute.
+						   * DISCOURAGED */
 	/** Options relating to qualifiers attached to a property. */
 	XMP_PROP_HAS_QUALIFIERS   = 0x00000010UL, /**< The property has qualifiers,
-											   * includes rdf:type and 
-											   * xml:lang. */
-	XMP_PROP_IS_QUALIFIER     = 0x00000020UL, /**< This is a qualifier, 
-											   * includes rdf:type and 
-											   * xml:lang. */
-	XMP_PROP_HAS_LANG         = 0x00000040UL, /**< Implies XMP_PropHasQualifiers, 
-											   * property has xml:lang. */
-	XMP_PROP_HAS_TYPE         = 0x00000080UL, /**< Implies XMP_PropHasQualifiers, 
+						   * includes rdf:type and
+						   * xml:lang. */
+	XMP_PROP_IS_QUALIFIER     = 0x00000020UL, /**< This is a qualifier,
+						   * includes rdf:type and
+						   * xml:lang. */
+	XMP_PROP_HAS_LANG         = 0x00000040UL, /**< Implies XMP_PropHasQualifiers,
+						   * property has xml:lang. */
+	XMP_PROP_HAS_TYPE         = 0x00000080UL, /**< Implies XMP_PropHasQualifiers,
 						   * property has rdf:type. */
-	
+
 	/* Options relating to the data structure form. */
-	XMP_PROP_VALUE_IS_STRUCT = 0x00000100UL,  /**< The value is a structure 
+	XMP_PROP_VALUE_IS_STRUCT = 0x00000100UL,  /**< The value is a structure
 						   * with nested fields. */
-	XMP_PROP_VALUE_IS_ARRAY  = 0x00000200UL,  /**< The value is an array 
+	XMP_PROP_VALUE_IS_ARRAY  = 0x00000200UL,  /**< The value is an array
 						   * (RDF alt/bag/seq). */
-	XMP_PROP_ARRAY_IS_UNORDERED = XMP_PROP_VALUE_IS_ARRAY,  /**< The item order 
+	XMP_PROP_ARRAY_IS_UNORDERED = XMP_PROP_VALUE_IS_ARRAY,  /**< The item order
 								 * does not matter.*/
 	XMP_PROP_ARRAY_IS_ORDERED = 0x00000400UL, /**< Implies XMP_PropValueIsArray,
 						   * item order matters. */
 	XMP_PROP_ARRAY_IS_ALT    = 0x00000800UL,  /**< Implies XMP_PropArrayIsOrdered,
 						   * items are alternates. */
-	
+
 	/** Additional struct and array options. */
 	XMP_PROP_ARRAY_IS_ALTTEXT = 0x00001000UL,  /**< Implies kXMP_PropArrayIsAlternate,
 						    * items are localized text. */
 	XMP_PROP_ARRAY_INSERT_BEFORE = 0x00004000UL, /**< Used by array functions. */
 	XMP_PROP_ARRAY_INSERT_AFTER = 0x00008000UL,  /**< Used by array functions. */
-	
+
 	/* Other miscellaneous options. */
 	XMP_PROP_IS_ALIAS         = 0x00010000UL,  /**< This property is an alias name for another property. */
 	XMP_PROP_HAS_ALIASES      = 0x00020000UL,  /**< This property is the base value for a set of aliases. */
@@ -236,7 +235,7 @@ typedef enum {
 	/* kXMPUtil_AllowCommas   = 0x10000000UL,  ! Used by TXMPUtils::CatenateArrayItems and ::SeparateArrayItems. */
 	/* kXMP_DeleteExisting    = 0x20000000UL,  ! Used by TXMPMeta::SetXyz functions to delete any pre-existing property. */
 	/* kXMP_SchemaNode        = 0x80000000UL,  ! Returned by iterators - #define to avoid warnings */
-	
+
 	/* Masks that are multiple flags. */
 	XMP_PROP_ARRAY_FORM_MASK  = XMP_PROP_VALUE_IS_ARRAY	| XMP_PROP_ARRAY_IS_ORDERED | XMP_PROP_ARRAY_IS_ALT | XMP_PROP_ARRAY_IS_ALTTEXT,
 	XMP_PROP_COMPOSITE_MASK   = XMP_PROP_VALUE_IS_STRUCT | XMP_PROP_ARRAY_FORM_MASK,  /* Is it simple or composite (array or struct)? */
@@ -267,32 +266,32 @@ typedef enum {
 #define XMP_HAS_PROP_QUALIFIERS(opt)  (((opt) & XMP_PROP_HAS_QUALIFIERS) != 0)
 #define XMP_IS_PROP_QUALIFIER(opt)    (((opt) & XMP_PROP_IS_QUALIFIER) != 0)
 #define XMP_HAS_PROP_LANG(opt)        (((opt) & XMP_PROP_HAS_LANG) != 0)
-	
+
 #define XMP_IS_NODE_SCHEMA(opt)       (((opt) & XMP_SCHEMA_NODE) != 0)
 #define XMP_IS_PROP_ALIAS(opt)        (((opt) & XMP_PROP_IS_ALIAS) != 0)
 
 
 enum {  /* Options for xmp_serialize */
-	XMP_SERIAL_OMITPACKETWRAPPER   = 0x0010UL,  /**< Omit the XML packet 
-												 * wrapper. */
-	XMP_SERIAL_READONLYPACKET      = 0x0020UL,  /**< Default is a writeable 
-												 * packet. */
-	XMP_SERIAL_USECOMPACTFORMAT    = 0x0040UL,  /**< Use a compact form of 
-												 * RDF. */
-	
-	XMP_SERIAL_INCLUDETHUMBNAILPAD = 0x0100UL,  /**< Include a padding allowance 
-												 * for a thumbnail image. */
-	XMP_SERIAL_EXACTPACKETLENGTH   = 0x0200UL,  /**< The padding parameter is 
-												 * the overall packet length. */
-	XMP_SERIAL_WRITEALIASCOMMENTS  = 0x0400UL,  /**< Show aliases as XML 
-												 * comments. */
-	XMP_SERIAL_OMITALLFORMATTING   = 0x0800UL,  /**< Omit all formatting 
-												 * whitespace. */
-	
+	XMP_SERIAL_OMITPACKETWRAPPER   = 0x0010UL,  /**< Omit the XML packet
+						     * wrapper. */
+	XMP_SERIAL_READONLYPACKET      = 0x0020UL,  /**< Default is a writeable
+						     * packet. */
+	XMP_SERIAL_USECOMPACTFORMAT    = 0x0040UL,  /**< Use a compact form of
+						     * RDF. */
+
+	XMP_SERIAL_INCLUDETHUMBNAILPAD = 0x0100UL,  /**< Include a padding allowance
+						     * for a thumbnail image. */
+	XMP_SERIAL_EXACTPACKETLENGTH   = 0x0200UL,  /**< The padding parameter is
+						     * the overall packet length. */
+	XMP_SERIAL_WRITEALIASCOMMENTS  = 0x0400UL,  /**< Show aliases as XML
+						     * comments. */
+	XMP_SERIAL_OMITALLFORMATTING   = 0x0800UL,  /**< Omit all formatting
+						     * whitespace. */
+
 	_XMP_LITTLEENDIAN_BIT    = 0x0001UL,  /* ! Don't use directly, see the combined values below! */
 	_XMP_UTF16_BIT           = 0x0002UL,
 	_XMP_UTF32_BIT           = 0x0004UL,
-	
+
 	XMP_SERIAL_ENCODINGMASK        = 0x0007UL,
 	XMP_SERIAL_ENCODEUTF8          = 0UL,
 	XMP_SERIAL_ENCODEUTF16BIG      = _XMP_UTF16_BIT,
@@ -321,9 +320,9 @@ typedef struct _XmpDateTime {
 } XmpDateTime;
 
 /** Values used for tzSign field. */
-enum {  
+enum {
     XMP_TZ_WEST = -1, /**< West of UTC   */
-	XMP_TZ_UTC =  0,  /**< UTC           */
+    XMP_TZ_UTC =  0,  /**< UTC           */
     XMP_TZ_EAST = +1  /**< East of UTC   */
 };
 
@@ -352,7 +351,16 @@ bool xmp_files_open(XmpFilePtr xf, const char *, XmpOpenFileOptions options);
  */
 bool xmp_files_close(XmpFilePtr xf, XmpCloseFileOptions options);
 
+/** Get the XMP packet from the file
+ * @param xf the %XmpFilePtr to get the XMP packet from
+ * @return a newly allocated XmpPtr. Use %xmp_free to release it.
+ */
 XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf);
+
+/** File the XMP packet from the file
+ * @param xf the %XmpFilePtr to get the XMP packet from
+ * @param xmp the XMP Packet to fill. Must be valid.
+ */
 bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp);
 
 bool xmp_files_can_put_xmp(XmpFilePtr xf, XmpPtr xmp);
@@ -366,22 +374,25 @@ bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp);
  * @param[out] handler_flags the format options like from %xmp_files_get_format_info.
  * @return false in case of error.
  */
-bool xmp_files_get_file_info(XmpFilePtr xf, XmpStringPtr filePath, XmpOpenFileOptions *options,
-	XmpFileType * file_format, XmpFileFormatOptions *handler_flags);
+bool xmp_files_get_file_info(XmpFilePtr xf, XmpStringPtr filePath,
+			     XmpOpenFileOptions *options,
+			     XmpFileType * file_format,
+			     XmpFileFormatOptions *handler_flags);
 
 /** Free a XmpFilePtr
  * @param xf the file ptr. Cannot be NULL
  * @return false on error.
- * xmp_get_error() will give the error code.
+ * Calll %xmp_get_error to retrieve the error code.
  */
 bool xmp_files_free(XmpFilePtr xf);
 
-/** Get the format info 
+/** Get the format info
  * @param format type identifier
- * @param option the options for the file format handler
+ * @param options the options for the file format handler
  * @return false on error
  */
-bool xmp_files_get_format_info(XmpFileType format, XmpFileFormatOptions * options);
+bool xmp_files_get_format_info(XmpFileType format,
+			       XmpFileFormatOptions * options);
 
 /** Check the file format of a file. Use the same logic as in xmp_files_open()
  * @param filePath the path to the file
@@ -394,12 +405,12 @@ XmpFileType xmp_files_check_file_format(const char *filePath);
  *  @param namespaceURI the namespace URI to register
  *  @param suggestedPrefix the suggested prefix
  *  @param registeredPrefix the really registered prefix. Not necessarily
- *  %suggestedPrefix. 
+ *  %suggestedPrefix.
  *  @return true if success, false otherwise.
  */
-bool xmp_register_namespace(const char *namespaceURI, 
-							const char *suggestedPrefix,
-							XmpStringPtr registeredPrefix);
+bool xmp_register_namespace(const char *namespaceURI,
+			    const char *suggestedPrefix,
+			    XmpStringPtr registeredPrefix);
 
 
 /** Check is a namespace is registered
@@ -413,7 +424,7 @@ bool xmp_namespace_prefix(const char *ns, XmpStringPtr prefix);
 
 /** Check if a ns prefix is registered.
  *  @param prefix the prefix to check.
- *  @param ns the namespace associated if registered. Pass NULL 
+ *  @param ns the namespace associated if registered. Pass NULL
  *  if not interested.
  *  @return true if registered.
  *  NEW in 2.1
@@ -421,6 +432,9 @@ bool xmp_namespace_prefix(const char *ns, XmpStringPtr prefix);
 bool xmp_prefix_namespace_uri(const char *prefix, XmpStringPtr ns);
 
 
+/** Create a new empty XMP packet
+ * @return the packet pointer. Must be free with xmp_free()
+ */
 XmpPtr xmp_new_empty();
 
 /** Create a new XMP packet
@@ -441,8 +455,7 @@ XmpPtr xmp_copy(XmpPtr xmp);
  */
 bool xmp_free(XmpPtr xmp);
 
-/** Parse the XML passed through the buffer and load
- * it.
+/** Parse the XML passed through the buffer and load it.
  * @param xmp the XMP packet.
  * @param buffer the buffer.
  * @param len the length of the buffer.
@@ -457,8 +470,8 @@ bool xmp_parse(XmpPtr xmp, const char *buffer, size_t len);
  *                embedded XMP in place.
  * @return TRUE if success.
  */
-bool xmp_serialize(XmpPtr xmp, XmpStringPtr buffer, uint32_t options, 
-									 uint32_t padding);
+bool xmp_serialize(XmpPtr xmp, XmpStringPtr buffer, uint32_t options,
+		   uint32_t padding);
 
 /** Serialize the XMP Packet to the given buffer with formatting
  * @param xmp the XMP Packet
@@ -471,10 +484,10 @@ bool xmp_serialize(XmpPtr xmp, XmpStringPtr buffer, uint32_t options,
  * @param indent the initial indentation level
  * @return TRUE if success.
  */
-bool xmp_serialize_and_format(XmpPtr xmp, XmpStringPtr buffer, 
-							  uint32_t options, 
-							  uint32_t padding, const char *newline, 
-							  const char *tab, int32_t indent);
+bool xmp_serialize_and_format(XmpPtr xmp, XmpStringPtr buffer,
+			      uint32_t options,
+			      uint32_t padding, const char *newline,
+			      const char *tab, int32_t indent);
 
 
 /** Get an XMP property and it option bits from the XMP packet
@@ -485,25 +498,25 @@ bool xmp_serialize_and_format(XmpPtr xmp, XmpStringPtr buffer,
  * @param propsBits pointer to the option bits. Pass NULL if not needed
  * @return true if found
  */
-bool xmp_get_property(XmpPtr xmp, const char *schema, 
-					  const char *name, XmpStringPtr property,
-					  uint32_t *propsBits);
+bool xmp_get_property(XmpPtr xmp, const char *schema,
+		      const char *name, XmpStringPtr property,
+		      uint32_t *propsBits);
 
-bool xmp_get_property_date(XmpPtr xmp, const char *schema, 
-						   const char *name, XmpDateTime * property,
-						   uint32_t *propsBits);
-bool xmp_get_property_float(XmpPtr xmp, const char *schema, 
-							const char *name, double * property,
-							uint32_t *propsBits);
-bool xmp_get_property_bool(XmpPtr xmp, const char *schema, 
-							const char *name, bool * property,
-							uint32_t *propsBits);
-bool xmp_get_property_int32(XmpPtr xmp, const char *schema, 
-							const char *name, int32_t * property,
-							uint32_t *propsBits);
-bool xmp_get_property_int64(XmpPtr xmp, const char *schema, 
-							const char *name, int64_t * property,
-							uint32_t *propsBits);
+bool xmp_get_property_date(XmpPtr xmp, const char *schema,
+			   const char *name, XmpDateTime * property,
+			   uint32_t *propsBits);
+bool xmp_get_property_float(XmpPtr xmp, const char *schema,
+			    const char *name, double * property,
+			    uint32_t *propsBits);
+bool xmp_get_property_bool(XmpPtr xmp, const char *schema,
+			   const char *name, bool * property,
+			   uint32_t *propsBits);
+bool xmp_get_property_int32(XmpPtr xmp, const char *schema,
+			    const char *name, int32_t * property,
+			    uint32_t *propsBits);
+bool xmp_get_property_int64(XmpPtr xmp, const char *schema,
+			    const char *name, int64_t * property,
+			    uint32_t *propsBits);
 
 /** Get an item frpm an array property
  * @param xmp the xmp meta
@@ -514,9 +527,9 @@ bool xmp_get_property_int64(XmpPtr xmp, const char *schema,
  * @param propsBits the property bits. Pass NULL is unwanted.
  * @return TRUE if success.
  */
-bool xmp_get_array_item(XmpPtr xmp, const char *schema, 
-						const char *name, int32_t index, XmpStringPtr property,
-						uint32_t *propsBits);
+bool xmp_get_array_item(XmpPtr xmp, const char *schema,
+			const char *name, int32_t index, XmpStringPtr property,
+			uint32_t *propsBits);
 
 /** Set an XMP property in the XMP packet
  * @param xmp the XMP packet
@@ -526,9 +539,9 @@ bool xmp_get_array_item(XmpPtr xmp, const char *schema,
  * @param optionBits
  * @return false if failure
  */
-bool xmp_set_property(XmpPtr xmp, const char *schema, 
-					  const char *name, const char *value,
-					  uint32_t optionBits);
+bool xmp_set_property(XmpPtr xmp, const char *schema,
+		      const char *name, const char *value,
+		      uint32_t optionBits);
 
 /** Set a date XMP property in the XMP packet
  * @param xmp the XMP packet
@@ -538,9 +551,9 @@ bool xmp_set_property(XmpPtr xmp, const char *schema,
  * @param optionBits
  * @return false if failure
  */
-bool xmp_set_property_date(XmpPtr xmp, const char *schema, 
-						   const char *name, const XmpDateTime *value,
-						   uint32_t optionBits);
+bool xmp_set_property_date(XmpPtr xmp, const char *schema,
+			   const char *name, const XmpDateTime *value,
+			   uint32_t optionBits);
 
 /** Set a float XMP property in the XMP packet
  * @param xmp the XMP packet
@@ -550,22 +563,22 @@ bool xmp_set_property_date(XmpPtr xmp, const char *schema,
  * @param optionBits
  * @return false if failure
  */
-bool xmp_set_property_float(XmpPtr xmp, const char *schema, 
-							const char *name, double value,
-							uint32_t optionBits);
-bool xmp_set_property_bool(XmpPtr xmp, const char *schema, 
-							const char *name, bool value,
-							uint32_t optionBits);
-bool xmp_set_property_int32(XmpPtr xmp, const char *schema, 
-							const char *name, int32_t value,
-							uint32_t optionBits);
-bool xmp_set_property_int64(XmpPtr xmp, const char *schema, 
-							const char *name, int64_t value,
-							uint32_t optionBits);
+bool xmp_set_property_float(XmpPtr xmp, const char *schema,
+			    const char *name, double value,
+			    uint32_t optionBits);
+bool xmp_set_property_bool(XmpPtr xmp, const char *schema,
+			   const char *name, bool value,
+			   uint32_t optionBits);
+bool xmp_set_property_int32(XmpPtr xmp, const char *schema,
+			    const char *name, int32_t value,
+			    uint32_t optionBits);
+bool xmp_set_property_int64(XmpPtr xmp, const char *schema,
+			    const char *name, int64_t value,
+			    uint32_t optionBits);
 
-bool xmp_set_array_item(XmpPtr xmp, const char *schema, 
-						const char *name, int32_t index, const char *value,
-						uint32_t optionBits);
+bool xmp_set_array_item(XmpPtr xmp, const char *schema,
+			const char *name, int32_t index, const char *value,
+			uint32_t optionBits);
 
 /** Append a value to the XMP Property array in the XMP Packet provided
  * @param xmp the XMP packet
@@ -576,8 +589,8 @@ bool xmp_set_array_item(XmpPtr xmp, const char *schema,
  * @param optionBits option bits of the value itself.
  */
 bool xmp_append_array_item(XmpPtr xmp, const char *schema, const char *name,
-						   uint32_t arrayOptions, const char *value,
-						   uint32_t optionBits);
+			   uint32_t arrayOptions, const char *value,
+			   uint32_t optionBits);
 
 /** Delete a property from the XMP Packet provided
  * @param xmp the XMP packet
@@ -598,10 +611,10 @@ bool xmp_has_property(XmpPtr xmp, const char *schema, const char *name);
  * @param xmp the XMP packet
  * @param schema the schema
  * @param name the property name.
- * @param genericLang the generic language you may want as a fall back. 
+ * @param genericLang the generic language you may want as a fall back.
  * Can be NULL or empty.
  * @param specificLang the specific language you want. Can't be NULL or empty.
- * @param actualLang the actual language of the value. Can be NULL if 
+ * @param actualLang the actual language of the value. Can be NULL if
  * not wanted.
  * @param itemValue the localized value. Can be NULL if not wanted.
  * @param propBits the options flags describing the property. Can be NULL.
@@ -617,7 +630,7 @@ bool xmp_get_localized_text(XmpPtr xmp, const char *schema, const char *name,
  * @param xmp the XMP packet
  * @param schema the schema
  * @param name the property name.
- * @param genericLang the generic language you may want to set too. 
+ * @param genericLang the generic language you may want to set too.
  * Can be NULL or empty.
  * @param specificLang the specific language you want. Can't be NULL or empty.
  * @param value the localized value. Cannot be NULL.
@@ -625,17 +638,17 @@ bool xmp_get_localized_text(XmpPtr xmp, const char *schema, const char *name,
  * @return true if set, false otherwise.
  */
 bool xmp_set_localized_text(XmpPtr xmp, const char *schema, const char *name,
-							const char *genericLang, const char *specificLang,
-							const char *value, uint32_t optionBits);
+			    const char *genericLang, const char *specificLang,
+			    const char *value, uint32_t optionBits);
 
 
 
 bool xmp_delete_localized_text(XmpPtr xmp, const char *schema,
-							   const char *name, const char *genericLang,
-							   const char *specificLang);
+			       const char *name, const char *genericLang,
+			       const char *specificLang);
 
-/** Instanciate a new string 
- * @return the new instance. Must be freed with 
+/** Instanciate a new string
+ * @return the new instance. Must be freed with
  * xmp_string_free()
  */
 XmpStringPtr xmp_string_new();
@@ -647,18 +660,24 @@ void xmp_string_free(XmpStringPtr s);
 
 /** Get the C string from the XmpStringPtr
  * @param s the string object
- * @return the const char * for the XmpStringPtr. It 
+ * @return the const char * for the XmpStringPtr. It
  * belong to the object.
  */
 const char * xmp_string_cstr(XmpStringPtr s);
 
 
-/**
+/** Create a new iterator.
+ * @param xmp the packet
+ * @param schema the property schema
+ * @param propName the property name
+ * @param options
+ * @return an iterator must be freed with % xmp_iterator_free
  */
 XmpIteratorPtr xmp_iterator_new(XmpPtr xmp, const char * schema,
-								const char * propName, XmpIterOptions options);
+				const char * propName, XmpIterOptions options);
 
-/**
+/** Free an iterator.
+ * @param iter the iterator to free.
  */
 bool xmp_iterator_free(XmpIteratorPtr iter);
 
@@ -671,8 +690,8 @@ bool xmp_iterator_free(XmpIteratorPtr iter);
  * @return true if still something, false if none
  */
 bool xmp_iterator_next(XmpIteratorPtr iter, XmpStringPtr schema,
-					   XmpStringPtr propName, XmpStringPtr propValue,
-					   uint32_t *options);
+		       XmpStringPtr propName, XmpStringPtr propValue,
+		       uint32_t *options);
 
 
 /**
