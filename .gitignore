@@ -1,6 +1,7 @@
 Makefile
 Makefile.in
 *~
+TAGS
 config.guess
 config.sub
 config.log
