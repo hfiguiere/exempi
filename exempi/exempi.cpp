@@ -1,7 +1,7 @@
 /*
  * exempi - exempi.cpp
  *
- * Copyright (C) 2007-2009 Hubert Figuiere
+ * Copyright (C) 2007-2013 Hubert Figuiere
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,6 +49,7 @@
 #define TXMP_STRING_TYPE std::string
 #include "XMP.hpp"
 #include "XMP.incl_cpp"
+#include "XMPUtils.hpp"
 
 
 #if HAVE_NATIVE_TLS
@@ -128,17 +129,18 @@ static void set_error(const XMP_Error & e)
 
 #define RESET_ERROR set_error(0)
 
+// Hack: assign between XMP_DateTime and XmpDateTime
 #define ASSIGN(dst, src) \
-	dst.year = src.year; \
-	dst.month = src.month;\
-	dst.day = src.day; \
-	dst.hour = src.hour; \
-	dst.minute = src.minute; \
-	dst.second = src.second; \
-	dst.tzSign = src.tzSign; \
-	dst.tzHour = src.tzHour; \
-	dst.tzMinute = src.tzMinute; \
-	dst.nanoSecond = src.nanoSecond;
+	(dst).year = (src).year;		\
+	(dst).month = (src).month;		\
+	(dst).day = (src).day;			\
+	(dst).hour = (src).hour;		\
+	(dst).minute = (src).minute;		\
+	(dst).second = (src).second;		\
+	(dst).tzSign = (src).tzSign;		\
+	(dst).tzHour = (src).tzHour;		\
+	(dst).tzMinute = (src).tzMinute;	\
+	(dst).nanoSecond = (src).nanoSecond;
 
 
 
@@ -1063,6 +1065,23 @@ bool xmp_iterator_skip(XmpIteratorPtr iter, XmpIterSkipOptions options)
 	return true;
 }
 
+int xmp_datetime_compare(XmpDateTime* left, XmpDateTime* right)
+{
+	if(!left && !right) {
+		return 0;
+	}
+	if(!left) {
+		return -1;
+	}
+	if(!right) {
+		return 1;
+	}
+	XMP_DateTime _left;
+	ASSIGN(_left, *left);
+	XMP_DateTime _right;
+	ASSIGN(_right, *right);
+	return XMPUtils::CompareDateTime(_left, _right);
+}
 
 #ifdef __cplusplus
 }

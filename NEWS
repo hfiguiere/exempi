@@ -2,6 +2,7 @@
 
 - Public header cleanup and documentation update.
 - Update Doxygen config.
+- New: API xmp_datetime_compare().
 
 2.2.1 - 2013/06/29
 

@@ -307,7 +307,7 @@ typedef struct _XmpString *XmpStringPtr;
 typedef struct _XmpIterator *XmpIteratorPtr;
 
 typedef struct _XmpDateTime {
-	int32_t year;
+    int32_t year;
     int32_t month;      /* 1..12 */
     int32_t day;        /* 1..31 */
     int32_t hour;       /* 0..23 */
@@ -698,6 +698,14 @@ bool xmp_iterator_next(XmpIteratorPtr iter, XmpStringPtr schema,
  */
 bool xmp_iterator_skip(XmpIteratorPtr iter, XmpIterSkipOptions options);
 
+
+/** Compare two XmpDateTime
+ * @param left value
+ * @param right value
+ * @return if left < right, return < 0. If left > right, return > 0.
+ * if left == right, return 0.
+ */
+int xmp_datetime_compare(XmpDateTime* left, XmpDateTime* right);
 
 #ifdef __cplusplus
 }
