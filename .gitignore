@@ -23,6 +23,7 @@ shave-libtool
 .libs
 .deps
 libtool
+test-driver
 exempi/exempi-2.0.pc
 exempi/exempi
 exempi/tests/test.jpg
@@ -37,6 +38,8 @@ exempi/tests/test3
 exempi/tests/testinit
 exempi/tests/testfdo18635
 exempi/tests/testcpp
+exempi/tests/*.log
+exempi/tests/*.trs
 exempi/doc/Doxyfile
 samples/source/dumpmainxmp
 samples/source/dumpxmp
