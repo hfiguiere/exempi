@@ -1,7 +1,7 @@
 /*
  * exempi - test-exempi-core.cpp
  *
- * Copyright (C) 2007-2008 Hubert Figuiere
+ * Copyright (C) 2007-2013 Hubert Figuiere
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -163,42 +163,56 @@ int test_main(int argc, char *argv[])
 
 	BOOST_CHECK(xmp_get_property(xmp, NS_XAP, "Rating",
 				the_prop, NULL));
-	BOOST_CHECK(strcmp("3", xmp_string_cstr(the_prop)) == 0); 
-	
+	BOOST_CHECK(strcmp("3", xmp_string_cstr(the_prop)) == 0);
+
 	xmp_string_free(the_prop);
 
 	// testing date time get
 	XmpDateTime the_dt;
 	bool ret;
-	BOOST_CHECK(ret = xmp_get_property_date(xmp, NS_EXIF, "DateTimeOriginal", 
-											&the_dt, NULL));
+	BOOST_CHECK(ret = xmp_get_property_date(xmp, NS_EXIF,
+						"DateTimeOriginal",
+						&the_dt, NULL));
 	BOOST_CHECK(the_dt.year == 2006);
 	BOOST_CHECK(the_dt.minute == 20);
 	BOOST_CHECK(the_dt.tzSign == XMP_TZ_WEST);
 
+	// testing compare
+	XmpDateTime the_other_dt;
+	BOOST_CHECK(ret = xmp_get_property_date(xmp, NS_EXIF,
+						"DateTimeOriginal",
+						&the_other_dt, NULL));
+	BOOST_CHECK(xmp_datetime_compare(&the_dt, &the_other_dt) == 0);
+	the_other_dt.year++;
+	BOOST_CHECK(xmp_datetime_compare(&the_dt, &the_other_dt) < 0);
+	BOOST_CHECK(xmp_datetime_compare(&the_other_dt, &the_dt) > 0);
+	// NULL checks - this is Exempi API
+	BOOST_CHECK(xmp_datetime_compare(NULL, NULL) == 0);
+	BOOST_CHECK(xmp_datetime_compare(NULL, &the_other_dt) < 0);
+	BOOST_CHECK(xmp_datetime_compare(&the_other_dt, NULL) > 0);
 
 	// testing float get set
 	double float_value = 0.0;
-	BOOST_CHECK(xmp_get_property_float(xmp, NS_CAMERA_RAW_SETTINGS, 
-									   "SharpenRadius", &float_value, NULL));
+	BOOST_CHECK(xmp_get_property_float(xmp, NS_CAMERA_RAW_SETTINGS,
+					   "SharpenRadius", &float_value, NULL));
 	BOOST_CHECK(float_value == 1.0);
-	BOOST_CHECK(xmp_set_property_float(xmp, NS_CAMERA_RAW_SETTINGS, 
-									   "SharpenRadius", 2.5, 0));
-	BOOST_CHECK(xmp_get_property_float(xmp, NS_CAMERA_RAW_SETTINGS, 
-									   "SharpenRadius", &float_value, NULL));
+	BOOST_CHECK(xmp_set_property_float(xmp, NS_CAMERA_RAW_SETTINGS,
+					   "SharpenRadius", 2.5, 0));
+	BOOST_CHECK(xmp_get_property_float(xmp, NS_CAMERA_RAW_SETTINGS,
+					   "SharpenRadius", &float_value, NULL));
 	BOOST_CHECK(float_value == 2.5);
-	
+
 
 	// testing bool get set
 	bool bool_value = true;
-	BOOST_CHECK(xmp_get_property_bool(xmp, NS_CAMERA_RAW_SETTINGS, 
-									   "AlreadyApplied", &bool_value, NULL));
+	BOOST_CHECK(xmp_get_property_bool(xmp, NS_CAMERA_RAW_SETTINGS,
+					  "AlreadyApplied", &bool_value, NULL));
 	BOOST_CHECK(!bool_value);
-	BOOST_CHECK(xmp_set_property_bool(xmp, NS_CAMERA_RAW_SETTINGS, 
-									   "AlreadyApplied", true, 0));
-	BOOST_CHECK(xmp_get_property_bool(xmp, NS_CAMERA_RAW_SETTINGS, 
-									   "AlreadyApplied", &bool_value, NULL));
-	BOOST_CHECK(bool_value);	
+	BOOST_CHECK(xmp_set_property_bool(xmp, NS_CAMERA_RAW_SETTINGS,
+					  "AlreadyApplied", true, 0));
+	BOOST_CHECK(xmp_get_property_bool(xmp, NS_CAMERA_RAW_SETTINGS,
+					  "AlreadyApplied", &bool_value, NULL));
+	BOOST_CHECK(bool_value);
 
 	// testing int get set
 	int32_t value = 0;

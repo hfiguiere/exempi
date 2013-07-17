@@ -54,7 +54,8 @@ dnl 2.1.0 is the revision 5.2.0
 dnl 2.1.1 is the revision 5.2.1
 dnl 2.2.0 is the revision 5.2.2 -- no public API change
 dnl 2.2.1 is the revision 5.2.3 -- no public API change
-dnl 2.4.0 is the revision 7.4.0 -- UPDATE WHEN MERGING 2.3.0
+dnl 2.3.0 is the revision 6.3.0
+dnl 2.4.0 is the revision 7.4.0
 AC_SUBST([EXEMPI_REVISION], [0])
 AC_SUBST([EXEMPI_AGE],      [4])
 AC_SUBST([EXEMPI_CURRENT],  [7])

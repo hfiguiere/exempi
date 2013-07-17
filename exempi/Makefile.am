@@ -46,7 +46,11 @@ exempi_SOURCES = main.cpp
 exempi_CPPFLAGS = -I$(srcdir)/..
 exempi_LDADD = libexempi.la
 
-INCLUDES = -I$(top_srcdir)/public/include
+INCLUDES = -I$(top_srcdir)/public/include -I$(top_srcdir)/XMPCore/source \
+	-I$(top_srcdir)/build/ \
+	-I$(top_srcdir) \
+        -I$(top_srcdir)/source/common/ \
+	$(NULL)
 
 AM_CPPFLAGS = -Wall -D@EXEMPI_PLATFORM_DEF@=1
 lib_LTLIBRARIES = libexempi.la
