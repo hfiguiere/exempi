@@ -3,6 +3,7 @@
 - Public header cleanup and documentation update.
 - Update Doxygen config.
 - Bug #73058: Add missing include for MacOS.
+- Bug #72810: Fix typo in date test in MP3 handler.
 
 2.2.1 - 2013/06/29
 
