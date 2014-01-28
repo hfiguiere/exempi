@@ -409,7 +409,7 @@ XMP_Uns32 PSIR_FileWriter::UpdateMemoryResources ( void** dataPtr )
 		newLength += this->otherRsrcs[i].rsrcLength;
 	}
 
-	XMP_Uns8* newContent = (XMP_Uns8*) malloc ( newLength );
+	XMP_Uns8* newContent = newLength ? (XMP_Uns8*) malloc ( newLength ) : NULL;
 	if ( newContent == 0 ) XMP_Throw ( "Out of memory", kXMPErr_NoMemory );
 
 	// Fill in the new image resource block.

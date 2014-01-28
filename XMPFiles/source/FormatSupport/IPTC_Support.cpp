@@ -513,7 +513,7 @@ void IPTC_Writer::SetDataSet_UTF8 ( XMP_Uns8 dsNum, const void* utf8Ptr, XMP_Uns
 		}
 	}
 	
-	XMP_Uns8 * dataPtr = (XMP_Uns8*) malloc ( dataLen );
+	XMP_Uns8 * dataPtr = dataLen ? (XMP_Uns8*) malloc ( dataLen ) : NULL;
 	if ( dataPtr == 0 ) XMP_Throw ( "Out of memory", kXMPErr_NoMemory );
 	memcpy ( dataPtr, tempPtr, dataLen );	// AUDIT: Safe, malloc'ed dataLen bytes above.
 	
