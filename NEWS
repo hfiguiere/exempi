@@ -4,6 +4,8 @@
 - Update Doxygen config.
 - Bug #73058: Add missing include for MacOS.
 - Bug #72810: Fix typo in date test in MP3 handler.
+- Fix valgrind testing for xmpcore.sh
+- Fix delete / delete[] mismatch in ID3_Support.hpp
 
 2.2.1 - 2013/06/29
 
