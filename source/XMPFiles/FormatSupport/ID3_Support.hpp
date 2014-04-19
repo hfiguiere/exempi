@@ -575,7 +575,7 @@ namespace ID3_Support
 		void release()
 		{
 			if ( content )
-				delete content;
+				delete [] content;
 			content = 0;
 			contentSize = 0;
 		}
