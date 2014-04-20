@@ -846,6 +846,8 @@ char LFA_GetChar( LFA_FileRef file )
 
 #if XMP_MacBuild
 
+#include <stdlib.h>
+
 	// ---------------------------------------------------------------------------------------------
 
 	// On Mac OS X, POSIX open() can access resource forks by appending

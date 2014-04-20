@@ -440,7 +440,7 @@ void MP3_MetaHandler::ProcessXMP()
 			// or has same year but new day/month (checking existance month indicates both (day and month) in our case)
 			(( newDateTime.month != 0 ) && ( newDateTime.day != oldDateTime.day ||  newDateTime.month != oldDateTime.month )) ||
 			// or has same year and same date but different time
-			( newDateTime.hasTime && ( newDateTime.hour != oldDateTime.minute ||  newDateTime.hour != oldDateTime.minute )) )
+			( newDateTime.hasTime && ( newDateTime.hour != oldDateTime.hour ||  newDateTime.minute != oldDateTime.minute )) )
 		{
 			this->xmpObj.SetProperty_Date( kXMP_NS_XMP, "CreateDate", newDateTime );
 		} // ..else: keep old dateTime to don't loose data

@@ -43,7 +43,7 @@ check_PROGRAMS = testexempicore testserialise testwritenewprop \
 TESTS = testcore.sh testinit testexempicore testserialise testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
 	test3 testfdo18635 testcpp
-TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) BOOST_TEST_CATCH_SYSTEM_ERRORS=no @VALGRIND@
+TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) BOOST_TEST_CATCH_SYSTEM_ERRORS=no VALGRIND="$(VALGRIND)" @VALGRIND@
 endif
 check_SCRIPTS = testcore.sh
 

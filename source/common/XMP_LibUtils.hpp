@@ -40,8 +40,7 @@ typedef std::string XMP_VarString;
 extern "C" bool Initialize_LibUtils();
 extern "C" void Terminate_LibUtils();
 
-static void * ignorePtr = 0;
-#define IgnoreParam(p)	ignorePtr = (void*)&p
+#define IgnoreParam(p)	(void)p
 
 // The builtin offsetof macro sometimes violates C++ data member rules.
 #define XMP_OffsetOf(struct,field)	( (char*)(&((struct*)0x100)->field) - (char*)0x100 )
