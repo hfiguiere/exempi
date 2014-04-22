@@ -9,9 +9,16 @@
 
 2.3.0
 
+- New: API xmp_datetime_compare().
+
+2.2.2
+
 - Public header cleanup and documentation update.
 - Update Doxygen config.
-- New: API xmp_datetime_compare().
+- Bug #73058: Add missing include for MacOS.
+- Bug #72810: Fix typo in date test in MP3 handler.
+- Fix valgrind testing for xmpcore.sh
+- Fix delete / delete[] mismatch in ID3_Support.hpp
 
 2.2.1 - 2013/06/29
 

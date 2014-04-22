@@ -21,7 +21,7 @@ fi
 for i in $SAMPLES
 do
   echo "Running $DUMPMAINXMP_PROG $SAMPLES_DIR/$i"
-  $DUMPMAINXMP_PROG $SAMPLES_DIR/$i > /dev/null
+  $VALGRIND $DUMPMAINXMP_PROG $SAMPLES_DIR/$i > /dev/null
   if [ $? -ne 0 ] ; then
       echo "Failed"
       exit 255

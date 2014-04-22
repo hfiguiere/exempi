@@ -432,7 +432,7 @@ void MP3_MetaHandler::ProcessXMP()
 			bool haveNewDateTime = (newDateTime.year != 0) && 
 								   ( (newDateTime.year != oldDateTime.year) ||
 								     ( (newDateTime.month != 0 ) && ( (newDateTime.day != oldDateTime.day) || (newDateTime.month != oldDateTime.month) ) ) ||
-									 ( newDateTime.hasTime && ( (newDateTime.hour != oldDateTime.minute) || (newDateTime.hour != oldDateTime.minute) ) ) );
+									 ( newDateTime.hasTime && ( (newDateTime.hour != oldDateTime.hour) || (newDateTime.minute != oldDateTime.minute) ) ) );
 			if ( haveNewDateTime ) {
 				this->xmpObj.SetProperty_Date ( kXMP_NS_XMP, "CreateDate", newDateTime );
 			}
