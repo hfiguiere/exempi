@@ -37,6 +37,8 @@ exempi/tests/test3
 exempi/tests/testinit
 exempi/tests/testfdo18635
 exempi/tests/testcpp
+exempi/tests/test*.log
+exempi/tests/test*.trs
 exempi/doc/Doxyfile
 samples/source/dumpmainxmp
 samples/source/dumpxmp
