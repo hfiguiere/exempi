@@ -36,6 +36,7 @@ exempi/tests/test2
 exempi/tests/test3
 exempi/tests/testinit
 exempi/tests/testfdo18635
+exempi/tests/testfdo83313
 exempi/tests/testcpp
 exempi/tests/test*.log
 exempi/tests/test*.trs

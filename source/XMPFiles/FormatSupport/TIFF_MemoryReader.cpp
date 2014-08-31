@@ -90,7 +90,7 @@ void TIFF_MemoryReader::SortIFD ( TweakedIFDInfo* thisIFD )
 				// Move the out of order entry to position j+1, move the middle of the array down.
 				TweakedIFDEntry temp = ifdEntries[i];
 				++j;	// ! So the insertion index becomes j.
-				memcpy ( &ifdEntries[j+1], &ifdEntries[j], 12*(i-j) );	// AUDIT: Safe, moving less than i entries to a location before i.
+				memmove ( &ifdEntries[j+1], &ifdEntries[j], 12*(i-j) );	// FAILED -- AUDIT: Safe, moving less than i entries to a location before i.
 				ifdEntries[j] = temp;
 
 			}
