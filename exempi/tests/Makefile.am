@@ -39,15 +39,15 @@ INCLUDES = -I$(srcdir)/.. -I$(top_srcdir)/public/include -I$(top_srcdir)
 if WITH_UNIT_TEST
 check_PROGRAMS = testexempicore testserialise testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
-	test3 testinit testfdo18635 testcpp
+	test3 testinit testfdo18635 testfdo83313 testcpp
 TESTS = testcore.sh testinit testexempicore testserialise testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
-	test3 testfdo18635 testcpp
+	test3 testfdo18635 testfdo83313 testcpp
 TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) BOOST_TEST_CATCH_SYSTEM_ERRORS=no VALGRIND="$(VALGRIND)" @VALGRIND@
 endif
 check_SCRIPTS = testcore.sh
 
-check_DATA = test1.xmp fdo18635.jpg
+check_DATA = test1.xmp fdo18635.jpg fdo83313.jpg
 
 noinst_HEADERS = utils.h
 
@@ -90,6 +90,10 @@ test3_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
 testfdo18635_SOURCES = test-bgo.cpp utils.cpp
 testfdo18635_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
 testfdo18635_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
+
+testfdo83313_SOURCES = test-fdo83313.cpp utils.cpp
+testfdo83313_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+testfdo83313_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
 
 testcpp_SOURCES = testcpp.cpp utils.cpp
 testcpp_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
