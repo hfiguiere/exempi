@@ -96,14 +96,14 @@ void TIFF_MemoryReader::SortIFD ( TweakedIFDInfo* thisIFD )
 				#if ! SUNOS_SPARC
 					TweakedIFDEntry temp = ifdEntries[i];
 					++j;	// ! So the insertion index becomes j.
-					memcpy ( &ifdEntries[j+1], &ifdEntries[j], 12*(i-j) );	// AUDIT: Safe, moving less than i entries to a location before i.
+					memmove ( &ifdEntries[j+1], &ifdEntries[j], 12*(i-j) );	// FAILED -- AUDIT: Safe, moving less than i entries to a location before i.
 					ifdEntries[j] = temp;
 				#else
 					void * tempifdEntries = &ifdEntries[i];
 					TweakedIFDEntry temp;
 					memcpy ( &temp, tempifdEntries, sizeof(TweakedIFDEntry) );
 					++j;	// ! So the insertion index becomes j.
-					memcpy ( &ifdEntries[j+1], &ifdEntries[j], 12*(i-j) );	// AUDIT: Safe, moving less than i entries to a location before i.
+					memmove ( &ifdEntries[j+1], &ifdEntries[j], 12*(i-j) );	// FAILED -- AUDIT: Safe, moving less than i entries to a location before i.
 					tempifdEntries = &ifdEntries[j];
 					memcpy ( tempifdEntries, &temp, sizeof(TweakedIFDEntry) );
 				#endif
