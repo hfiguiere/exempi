@@ -36,7 +36,7 @@ extern "C" {
     PropagateException ( wResult );             \
     XMPFilesRef result = XMPFilesRef(wResult.ptrResult)
 
-static XMP_Bool WrapProgressReport ( XMP_ProgressReportProc proc, void * context,
+inline XMP_Bool WrapProgressReport ( XMP_ProgressReportProc proc, void * context,
 								 float elapsedTime, float fractionDone, float secondsToGo )
 {
 	bool ok;
@@ -50,7 +50,7 @@ static XMP_Bool WrapProgressReport ( XMP_ProgressReportProc proc, void * context
 
 // =================================================================================================
 
-static XMP_Bool WrapFilesErrorNotify ( XMPFiles_ErrorCallbackProc proc, void * context,
+inline XMP_Bool WrapFilesErrorNotify ( XMPFiles_ErrorCallbackProc proc, void * context,
 	XMP_StringPtr filePath, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr message )
 {
 	bool ok;

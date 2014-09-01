@@ -17,7 +17,7 @@ extern "C" {
 
 // =================================================================================================
 
-static XMP_Bool WrapErrorNotify ( XMPMeta_ErrorCallbackProc proc, void * context,
+inline XMP_Bool WrapErrorNotify ( XMPMeta_ErrorCallbackProc proc, void * context,
 							  XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr message )
 {
 	bool ok;

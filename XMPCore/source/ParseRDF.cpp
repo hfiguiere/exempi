@@ -311,16 +311,6 @@ GetRDFTermKind ( const XMP_VarString & name )
 // =================================================================================================
 
 static void
-RemoveChild ( XMP_Node * xmpParent, size_t index )
-{
-	XMP_Node * child = xmpParent->children[index];
-	xmpParent->children.erase ( xmpParent->children.begin() + index );
-	delete child;
-}
-
-// -------------------------------------------------------------------------------------------------
-
-static void
 RemoveQualifier ( XMP_Node * xmpParent, size_t index )
 {
 	XMP_Node * qualifier = xmpParent->qualifiers[index];
@@ -355,20 +345,6 @@ IsCoreSyntaxTerm ( RDFTermKind term )
 }
 
 // -------------------------------------------------------------------------------------------------
-// IsSyntaxTerm
-// ------------
-//
-// 7.2.3 syntaxTerms
-//		coreSyntaxTerms | rdf:Description | rdf:li
-
-static bool
-IsSyntaxTerm ( RDFTermKind term )
-{
-	if 	( (kRDFTerm_FirstSyntax <= term) && (term <= kRDFTerm_LastSyntax) ) return true;
-	return false;
-}
-
-// -------------------------------------------------------------------------------------------------
 // IsOldTerm
 // ---------
 //
@@ -383,20 +359,6 @@ IsOldTerm ( RDFTermKind term )
 }
 
 // -------------------------------------------------------------------------------------------------
-// IsNodeElementName
-// -----------------
-//
-// 7.2.5 nodeElementURIs
-//		anyURI - ( coreSyntaxTerms | rdf:li | oldTerms )
-
-static bool
-IsNodeElementName ( RDFTermKind term )
-{
-	if 	( (term == kRDFTerm_li) || IsOldTerm ( term ) ) return false;
-	return (! IsCoreSyntaxTerm ( term ));
-}
-
-// -------------------------------------------------------------------------------------------------
 // IsPropertyElementName
 // ---------------------
 //
@@ -407,20 +369,6 @@ static bool
 IsPropertyElementName ( RDFTermKind term )
 {
 	if 	( (term == kRDFTerm_Description) || IsOldTerm ( term ) ) return false;
-	return (! IsCoreSyntaxTerm ( term ));
-}
-
-// -------------------------------------------------------------------------------------------------
-// IsPropertyAttributeName
-// -----------------------
-//
-// 7.2.7 propertyAttributeURIs
-//		anyURI - ( coreSyntaxTerms | rdf:Description | rdf:li | oldTerms )
-
-static bool
-IsPropertyAttributeName ( RDFTermKind term )
-{
-	if 	( (term == kRDFTerm_Description) || (term == kRDFTerm_li) || IsOldTerm ( term ) ) return false;
 	return (! IsCoreSyntaxTerm ( term ));
 }
 

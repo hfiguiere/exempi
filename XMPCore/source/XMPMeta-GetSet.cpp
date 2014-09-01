@@ -1032,7 +1032,6 @@ XMPMeta::DeleteLocalizedText ( XMP_StringPtr schemaNS,
 	
 	XMP_Node * assocNode = 0;
 	size_t assocIndex;
-	size_t assocIsXDefault = false;
 	
 	if ( itemIsXDefault ) {
 
@@ -1051,7 +1050,6 @@ XMPMeta::DeleteLocalizedText ( XMP_StringPtr schemaNS,
 			if ( (qualNode->name == "xml:lang") && (qualNode->value == "x-default") ) {
 				assocNode = arrayNode->children[0];
 				assocIndex = 0;
-				assocIsXDefault = true;
 			}
 		}
 

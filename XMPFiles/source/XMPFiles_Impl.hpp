@@ -149,11 +149,11 @@ extern XMP_StringPtr  voidStringPtr;
 extern XMP_StringLen  voidStringLen;
 extern XMP_OptionBits voidOptionBits;
 
-static const XMP_Uns8 * kUTF8_PacketStart = (const XMP_Uns8 *) "<?xpacket begin=";
-static const XMP_Uns8 * kUTF8_PacketID    = (const XMP_Uns8 *) "W5M0MpCehiHzreSzNTczkc9d";
+#define kUTF8_PacketStart (const XMP_Uns8 *)"<?xpacket begin="
+#define kUTF8_PacketID    (const XMP_Uns8 *)"W5M0MpCehiHzreSzNTczkc9d"
 static const size_t     kUTF8_PacketHeaderLen = 51;	// ! strlen ( "<?xpacket begin='xxx' id='W5M0MpCehiHzreSzNTczkc9d'" )
 
-static const XMP_Uns8 * kUTF8_PacketTrailer    = (const XMP_Uns8 *) "<?xpacket end=\"w\"?>";
+#define kUTF8_PacketTrailer    (const XMP_Uns8 *)"<?xpacket end=\"w\"?>"
 static const size_t     kUTF8_PacketTrailerLen = 19;	// ! strlen ( kUTF8_PacketTrailer )
 
 struct FileExtMapping {

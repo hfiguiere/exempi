@@ -822,7 +822,9 @@ XMPMeta::Initialize()
 	XMP_Assert ( sizeof(XMP_Bool) == 1 );
 
 	XMP_Assert ( sizeof(XMP_OptionBits) == 4 );	// Check that option masking work on all 32 bits.
+#if XMP_DebugBuild
 	XMP_OptionBits flag = (XMP_OptionBits) (~0UL);
+#endif
 	XMP_Assert ( flag == (XMP_OptionBits)(-1L) );
 	XMP_Assert ( (flag ^ kXMP_PropHasLang) == 0xFFFFFFBFUL );
 	XMP_Assert ( (flag & ~kXMP_PropHasLang) == 0xFFFFFFBFUL );
@@ -949,11 +951,10 @@ XMPMeta::GetGlobalOptions()
 // ----------------
 
 /* class-static */ void
-XMPMeta::SetGlobalOptions ( XMP_OptionBits options )
+XMPMeta::SetGlobalOptions ( XMP_OptionBits /*options*/ )
 {
 
 	XMP_Throw ( "Unimplemented method XMPMeta::SetGlobalOptions", kXMPErr_Unimplemented );
-		void * p; p = &options;	// Avoid unused param warnings.
 
 }	// SetGlobalOptions
 
@@ -1176,11 +1177,10 @@ XMPMeta::GetObjectOptions() const
 // ----------------
 
 void
-XMPMeta::SetObjectOptions ( XMP_OptionBits options )
+XMPMeta::SetObjectOptions ( XMP_OptionBits /*options*/ )
 {
 
 	XMP_Throw ( "Unimplemented method XMPMeta::SetObjectOptions", kXMPErr_Unimplemented );
-		void * p; p = &options;	// Avoid unused param warnings.
 
 }	// SetObjectOptions
 

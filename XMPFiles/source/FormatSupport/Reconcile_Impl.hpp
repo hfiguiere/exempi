@@ -33,7 +33,7 @@ namespace ReconcileUtils {
 
 	// *** These ought to be with the Unicode conversions.
 
-	static const char * kHexDigits = "0123456789ABCDEF";
+	extern const char * kHexDigits;
 
 	bool IsASCII      ( const void * _textPtr, size_t textLen );
 	bool IsUTF8       ( const void * _textPtr, size_t textLen );

@@ -772,7 +772,10 @@ FindSchemaNode	( XMP_Node *		xmpTree,
 		try {
 			XMP_StringPtr prefixPtr;
 			XMP_StringLen prefixLen;
-			bool found = XMPMeta::GetNamespacePrefix ( nsURI, &prefixPtr, &prefixLen );	// *** Use map directly?
+#if XMP_DebugBuild
+			bool found =
+#endif
+                          XMPMeta::GetNamespacePrefix ( nsURI, &prefixPtr, &prefixLen );	// *** Use map directly?
 			XMP_Assert ( found );
 			schemaNode->value.assign ( prefixPtr, prefixLen );
 		} catch (...) {	// Don't leak schemaNode in case of an exception before adding it to the children vector.

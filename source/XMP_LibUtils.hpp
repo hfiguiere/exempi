@@ -510,7 +510,7 @@ private:
 #define IsHexDigit(ch)		( (('0' <= (ch)) && ((ch) <= '9')) || (('A' <= (ch)) && ((ch) <= 'F')) )
 #define HexDigitValue(ch)	( (((ch) - '0') < 10) ? ((ch) - '0') : ((ch) - 'A' + 10) )
 
-static const char * kTenSpaces = "          ";
+#define kTenSpaces "          "
 #define OutProcPadding(pad)	{ size_t padLen = (pad); 												\
 							  for ( ; padLen >= 10; padLen -= 10 ) OutProcNChars ( kTenSpaces, 10 );	\
 							  for ( ; padLen > 0; padLen -= 1 ) OutProcNChars ( " ", 1 ); }
@@ -535,7 +535,7 @@ static const char * kTenSpaces = "          ";
 #define OutProcHexByte(num)	{ snprintf ( buffer, sizeof(buffer), "%.2X", (num) ); /* AUDIT: Using sizeof for snprintf length is safe */	\
 							  XMP_Status _status = (*outProc) ( refCon, buffer, (XMP_StringLen)strlen(buffer) );  if ( _status != 0 ) return; }
 
-static const char * kIndent = "   ";
+#define kIndent "   "
 #define OutProcIndent(lev)	{ for ( size_t i = 0; i < (lev); ++i ) OutProcNChars ( kIndent, 3 ); }
 
 void DumpClearString ( const XMP_VarString & value, XMP_TextOutputProc outProc, void * refCon );

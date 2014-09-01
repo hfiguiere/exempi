@@ -16,6 +16,10 @@
 
 #include "source/UnicodeConversions.hpp"
 
+static const char * kTIFF_TypeNames[] = { "ShortOrLong", "BYTE", "ASCII", "SHORT", "LONG", "RATIONAL",
+										  "SBYTE", "UNDEFINED", "SSHORT", "SLONG", "SRATIONAL",
+										  "FLOAT", "DOUBLE" };
+
 // =================================================================================================
 /// \file TIFF_Support.cpp
 /// \brief Manager for parsing and serializing TIFF streams.

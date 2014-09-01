@@ -19,6 +19,8 @@
 	#include <CoreServices/CoreServices.h>
 #endif
 
+const char * ReconcileUtils::kHexDigits = "0123456789ABCDEF";
+
 // =================================================================================================
 /// \file Reconcile_Impl.cpp
 /// \brief Implementation utilities for the photo metadata reconciliation support.

@@ -20,6 +20,27 @@
 
 #define MIN(a,b)	((a) < (b) ? (a) : (b))
 
+#if !XMP_WinBuild
+	int stricmp ( const char * left, const char * right )	// Case insensitive ASCII compare.
+	{
+		char chL = *left;	// ! Allow for 0 passes in the loop (one string is empty).
+		char chR = *right;	// ! Return -1 for stricmp ( "a", "Z" ).
+
+		for ( ; (*left != 0) && (*right != 0); ++left, ++right ) {
+			chL = *left;
+			chR = *right;
+			if ( chL == chR ) continue;
+			if ( ('A' <= chL) && (chL <= 'Z') ) chL |= 0x20;
+			if ( ('A' <= chR) && (chR <= 'Z') ) chR |= 0x20;
+			if ( chL != chR ) break;
+		}
+
+		if ( chL == chR ) return 0;
+		if ( chL < chR ) return -1;
+		return 1;
+	}
+#endif
+
 namespace ID3_Support {
 
 // =================================================================================================
