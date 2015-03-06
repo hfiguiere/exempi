@@ -51,7 +51,8 @@ private:
 
 };
 
-extern "C" ExpatAdapter * XMP_NewExpatAdapter ( bool useGlobalNamespaces );
+extern "C" ExpatAdapter *
+XMP_PUBLIC XMP_NewExpatAdapter ( bool useGlobalNamespaces );
 
 // =================================================================================================
 

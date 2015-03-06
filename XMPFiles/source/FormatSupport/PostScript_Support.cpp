@@ -148,10 +148,8 @@ inline static bool SearchBBoxInTrailer(XMP_IO* fileRef,IOBuffer& ioBuf)
 				//skip chars till newline
 				if ( !  PostScript_Support::SkipUntilNewline( fileRef, ioBuf ) ) return false;
 			}
-			if (!bboxfoundintrailer)
-				return false;
-			else
-				break;
+
+			break;
 		} 
 		else if (  CheckBytes ( ioBuf.ptr, Uns8Ptr(kPSContainsBeginDocString.c_str()), kPSContainsBeginDocString.length() ) )
 		{
@@ -267,7 +265,8 @@ bool PostScript_Support::IsValidPSFile(XMP_IO*    fileRef,XMP_FileFormat &format
 			format=kXMP_PostScriptFile;
 			//return true if no "EPSF-" is found as it is a valid PS atleast
 			if ( ! CheckBytes ( ioBuf.ptr, Uns8Ptr("EPSF-"), 5 ) ) return true;
-		}
+
+		}//intentional fall through for further checking of unknown files
 		case kXMP_EPSFile:
 		{
 

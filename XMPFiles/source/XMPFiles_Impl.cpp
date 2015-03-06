@@ -502,3 +502,18 @@ XMP_OptionBits XMPFileHandler::GetSerializeOptions()
 }	// XMPFileHandler::GetSerializeOptions
 
 // =================================================================================================
+// XMPFileHandler::NotifyClient
+// ===================================
+//
+// Generic function for all the file handlers to replace existing exception throws
+//
+void XMPFileHandler::NotifyClient(GenericErrorCallback * errCBptr, XMP_ErrorSeverity severity, XMP_Error & error)
+{	
+	if (errCBptr)
+		errCBptr->NotifyClient( severity, error );
+	else {
+		if ( severity != kXMPErrSev_Recoverable )
+			throw error;
+	}
+}
+// =================================================================================================

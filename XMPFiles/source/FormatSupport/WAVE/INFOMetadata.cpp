@@ -189,6 +189,8 @@ XMP_Uns64 INFOMetadata::serialize( XMP_Uns8** outBuffer )
 				//		chunk id
 				//		chunk size
 				//
+				XMP_Validate( iter->second != NULL, "ERROR inserting serialize. iter->second is NULL.", kXMPErr_InternalFailure );
+				XMP_Assert(dynamic_cast<TValueObject<std::string>*>(iter->second) == static_cast<TValueObject<std::string>*>(iter->second));
 				TValueObject<std::string>* strObj = dynamic_cast<TValueObject<std::string>*>(iter->second);
 				std::string value	= strObj->getValue();
 				XMP_Uns32 id		= iter->first;

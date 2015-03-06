@@ -58,6 +58,8 @@ namespace ReconcileUtils {
 	#elif XMP_MacBuild
 		void UTF8ToMacEncoding ( XMP_Uns16 macScript, XMP_Uns16 macLang, const XMP_Uns8 * utf8Ptr, size_t utf8Len, std::string * host );
 		void MacEncodingToUTF8 ( XMP_Uns16 macScript, XMP_Uns16 macLang, const XMP_Uns8 * hostPtr, size_t hostLen, std::string * utf8 );
+    #elif XMP_iOSBuild
+        void IOSConvertEncoding(XMP_Uns32 srcEncoding, XMP_Uns32 destEncoding, const XMP_Uns8 * inputPtr, size_t inputLen, std::string * output);
 	#endif
 
 };	// ReconcileUtils

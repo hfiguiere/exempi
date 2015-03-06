@@ -19,8 +19,8 @@ exit /B 0)
 
 ECHO Enter your choice:
 ECHO 1. Clean
-ECHO 2. VC2010, 32 Bit Project
-ECHO 3. VC2010, 64 Bit Project
+ECHO 2. VC2011, 32 Bit Project
+ECHO 3. VC2011, 64 Bit Project
 ECHO 4. Build All
 
 
@@ -28,9 +28,9 @@ ECHO
 set /P choice=Enter your choice:
 
 IF "%choice%"=="1" GOTO CleanCMake
-IF "%choice%"=="2" GOTO 32VC2010
-IF "%choice%"=="3" GOTO 64VC2010
-IF "%choice%"=="4" GOTO 32VC2010
+IF "%choice%"=="2" GOTO 32VC2011
+IF "%choice%"=="3" GOTO 64VC2011
+IF "%choice%"=="4" GOTO 32VC2011
 
 
 ECHO Invalid Choice, Exiting
@@ -60,7 +60,7 @@ if exist cmake\XMPFilesCoverage\build rmdir /S /Q cmake\XMPFilesCoverage\build
 if exist cmake\XMPIterations\build_x64 rmdir /S /Q cmake\XMPIterations\build_x64
 if exist cmake\XMPIterations\build rmdir /S /Q cmake\XMPIterations\build
 
-if exist vc10 rmdir /S /Q vc10
+if exist vc11 rmdir /S /Q vc11
 if exist ..\target\windows rmdir /S /Q ..\target\windows
 if exist ..\target\windows_x64 rmdir /S /Q ..\target\windows_x64
 
@@ -69,15 +69,15 @@ pause
 exit /B 0
 
 
-:32VC2010
-set GENERATOR=Visual Studio 10
-set DIR=vc10\windows
+:32VC2011
+set GENERATOR=Visual Studio 11
+set DIR=vc11\windows
 set bit64=0
 GOTO GenerateNow
 
-:64VC2010
-set GENERATOR=Visual Studio 10 Win64
-set DIR=vc10\windows_x64
+:64VC2011
+set GENERATOR=Visual Studio 11 Win64
+set DIR=vc11\windows_x64
 set bit64=1
 GOTO GenerateNow
 
@@ -95,7 +95,7 @@ if errorlevel 1 ( cd ..\..\
 goto error)
 IF "%choice%"=="4" ( set choice="0"
 cd ..\..\
-goto 64VC2010
+goto 64VC2011
 )
 goto ok
 

@@ -57,6 +57,7 @@ enum {
 	kChunk_bext = 0x62657874,
 	kChunk_cart = 0x63617274,
 	kChunk_ds64 = 0x64733634,
+	kChunk_iXML = 0x69584D4C,
 
 	// AIFF
 	kChunk_APPL	= 0x4150504C,

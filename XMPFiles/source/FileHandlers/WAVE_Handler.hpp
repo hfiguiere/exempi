@@ -18,6 +18,7 @@
 #include "XMPFiles/source/FormatSupport/IFF/IChunkData.h"
 #include "source/Endian.h"
 #include "XMPFiles/source/FormatSupport/IFF/ChunkPath.h"
+#include "XMPFiles/source/FormatSupport/WAVE/iXMLMetadata.h"
 #include "XMPFiles/source/FormatSupport/WAVE/BEXTMetadata.h"
 #include "XMPFiles/source/FormatSupport/WAVE/CartMetadata.h"
 #include "XMPFiles/source/FormatSupport/WAVE/DISPMetadata.h"
@@ -110,6 +111,7 @@ private:
 	BEXTMetadata mBEXTMeta;
 	CartMetadata mCartMeta;
 	DISPMetadata mDISPMeta;
+	iXMLMetadata miXMLMeta;
 
 	// cr8r is not yet required for WAVE
 	// Cr8rMetadata mCr8rMeta;
@@ -121,6 +123,7 @@ private:
 	IChunkData *mBEXTChunk;
 	IChunkData *mCartChunk;
 	IChunkData *mDISPChunk;
+	IChunkData *miXMLChunk;
 
 	// cr8r is not yet required for WAVE
 	// IChunkData *mCr8rChunk;
@@ -133,7 +136,7 @@ private:
 	static const ChunkIdentifier kRIFFDisp[2];
 	static const ChunkIdentifier kRIFFBext[2];
 	static const ChunkIdentifier kRIFFCart[2];
-
+	static const ChunkIdentifier kRIFFiXML[2];
 	// cr8r is not yet required for WAVE
 	// static const ChunkIdentifier kWAVECr8r[2];
 
@@ -143,7 +146,7 @@ private:
 	static const ChunkIdentifier kRF64Disp[2];
 	static const ChunkIdentifier kRF64Bext[2];
 	static const ChunkIdentifier kRF64Cart[2];
-
+	static const ChunkIdentifier kRF64iXML[2];
 	// cr8r is not yet required for WAVE
 	// static const ChunkIdentifier kRF64Cr8r[2];
 	
@@ -161,6 +164,9 @@ private:
 
 	/** Path to cart chunk */
 	ChunkPath mWAVECartChunkPath;
+
+	/** Path to IXML chunk */
+	ChunkPath mWAVEiXMLChunkPath;
 
 	//cr8r is not yet required for WAVE
 	///** Path to Cr8r chunk */

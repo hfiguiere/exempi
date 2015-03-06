@@ -15,15 +15,7 @@ cmake_minimum_required(VERSION 2.8.6)
 # Shared config for XMP Samples
 # ==============================================================================
 
-#setting the root for XMP SDK
-if(NOT DEFINED XMP_ROOT)
-	set(XMP_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/${XMP_THIS_PROJECT_RELATIVEPATH})
-	#message (STATUS "XMP_ROOT is set to ---> ${XMP_ROOT}" )
-endif()
 
-if(NOT DEFINED COMMON_BUILD_SHARED_DIR)
-	set(COMMON_BUILD_SHARED_DIR ${XMP_ROOT}/build/shared) 
-endif()
 # Platform specific config
 if(UNIX)
   if(APPLE)
@@ -66,8 +58,6 @@ if(UNIX)
     set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG=1")
 
 	set(CMAKE_C_FLAGS "")
-	#include mac specific macros
-	include(${COMMON_BUILD_SHARED_DIR}/../XMP_Mac.cmake)
   else(APPLE)
 
 	# Linux -------------------------------------------
@@ -88,14 +78,12 @@ if(UNIX)
     set(CMAKE_CXX_FLAGS "${CXX_FLAGS} -Wno-ctor-dtor-privacy -fPIC -funsigned-char -fexceptions -Wno-multichar -Wno-implicit")
     set(CMAKE_CXX_FLAGS_DEBUG "-O0 -DDEBUG=1 -D_DEBUG=1")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG=1")
-	#add linux specific macros
-	include(${COMMON_BUILD_SHARED_DIR}/../XMP_Linux.cmake)
   endif(APPLE)
 else(UNIX)
   if(WIN32)
   
 	# Windows -------------------------------------------
-	set(BUILD_FOLDER "vc10")	
+	set(BUILD_FOLDER "vc11")	
 	set(XMPCORE_LIB "XMPCoreStatic")
 	set(XMPFILES_LIB "XMPFilesStatic")
 	set(LIB_EXT ".lib")
@@ -109,15 +97,14 @@ else(UNIX)
     
 	# config independend preprocessor defines
 	add_definitions(-DWIN_ENV=1 -DWIN32=1 -D_CONSOLE -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS=1 -D_SCL_SECURE_NO_WARNINGS=1 -DXMP_StaticBuild=1)
-	#add win specific macros
-	include(${COMMON_BUILD_SHARED_DIR}/../XMP_Win.cmake)   
+
   else(WIN32)
 	# unknown platform
 	MESSAGE(ERROR ": Unknown Platform")
   endif(WIN32)
 endif(UNIX)
 
-
+include(${XMP_ROOT}/build/ProductConfig.cmake)
 #including the shared configs
 set (COMPONENT XMP)
 include(${COMMON_BUILD_SHARED_DIR}/SharedConfig.cmake)

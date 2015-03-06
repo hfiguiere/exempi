@@ -198,7 +198,11 @@ public:
 
 private:
 
-	RDF_Parser() {};	// Hidden on purpose.
+	RDF_Parser() { 
+
+		errorCallback = NULL;
+
+	};	// Hidden on purpose.
 	
 	XMPMeta::ErrorCallbackInfo * errorCallback;
 
@@ -403,7 +407,7 @@ XMP_Node * RDF_Parser::AddChildNode ( XMP_Node * xmpParent, const XML_Node & xml
 		return 0;
 	}
 		
-	bool isArrayParent = (xmpParent->options & kXMP_PropValueIsArray);
+	bool isArrayParent = (xmpParent->options & kXMP_PropValueIsArray) !=0;
 	bool isArrayItem   = (xmlNode.name == "rdf:li");
 	bool isValueNode   = (xmlNode.name == "rdf:value");
 	XMP_OptionBits childOptions = 0;

@@ -120,6 +120,7 @@ bool PluginRegistry::terminate()
 		}
 		
 		delete msRegistry;
+		msRegistry = NULL;
 	}
 	return true;
 }

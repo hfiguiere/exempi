@@ -81,7 +81,7 @@ XMPFileHandler * PSD_MetaHandlerCTor ( XMPFiles * parent )
 // PSD_MetaHandler::PSD_MetaHandler
 // ================================
 
-PSD_MetaHandler::PSD_MetaHandler ( XMPFiles * _parent ) : iptcMgr(0), exifMgr(0), skipReconcile(false)
+PSD_MetaHandler::PSD_MetaHandler ( XMPFiles * _parent ) : iptcMgr(0), exifMgr(0), skipReconcile(false),imageWidth(0),imageHeight(0)
 {
 	this->parent = _parent;
 	this->handlerFlags = kPSD_HandlerFlags;
@@ -185,7 +185,9 @@ void PSD_MetaHandler::ProcessXMP()
 	// Set up everything for the legacy import, but don't do it yet. This lets us do a forced legacy
 	// import if the XMP packet gets parsing errors.
 
-	bool readOnly = ((this->parent->openFlags & kXMPFiles_OpenForUpdate) == 0);
+	bool readOnly = false;
+	if ( this->parent )
+		readOnly = ((this->parent->openFlags & kXMPFiles_OpenForUpdate) == 0);
 
 	if ( readOnly ) {
 		this->iptcMgr = new IPTC_Reader();

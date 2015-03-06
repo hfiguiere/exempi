@@ -246,10 +246,6 @@ bool Module::loadInternal()
 						errorMsg = "Plugin initialization failed.";
 					}
 				}
-				else
-				{
-					errorMsg = "Missing plugin entry point in plugin";
-				}
 			}
 
 			if( mLoaded != kModuleLoaded )

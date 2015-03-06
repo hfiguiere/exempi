@@ -488,20 +488,13 @@ void XDCAM_MetaHandler::SetSidecarPath()
 							( ( GetUns32BE(&buffer[12]) & 0xFFFF00FF ) == 0x01020000 )
 							)
 						{
-							// If cached MXF file name is present then use it otherwise 
-							// side car generated on case insensitive OS may not be read on case sensitive OS.
-							// For example, if file name is X.MXF then windows says X.mxf is same as X.MXF so
-							// we may land up generating side car name as X.mxf.xmp which will not be read on 
-							// Mac which will search specifically for X.MXF.xmp
-							XMP_VarString filePath = this->parent->GetFilePath();
-							XMP_VarString ext;
-							XIO::SplitFileExtension(&filePath, &ext);
-							if(ext == "MXF" || ext == "mxf")
+							std::string pathtomxfclip=Host_IO::GetCasePreservedName(mxfFilePath);
+							if ( pathtomxfclip != "" )
 							{
-								this->sidecarPath = this->parent->GetFilePath() + ".xmp";
-							}
-							else
-							{
+								std::string ext;
+								XIO::SplitFileExtension( &pathtomxfclip, &ext , false);
+								ext="."+ext;
+								MakeClipFilePath ( &mxfFilePath , ext.c_str() , false );
 								this->sidecarPath = mxfFilePath + ".xmp";
 							}
 						}
@@ -524,7 +517,7 @@ void XDCAM_MetaHandler::SetSidecarPath()
 // XDCAM_MetaHandler::XDCAM_MetaHandler
 // ====================================
 
-XDCAM_MetaHandler::XDCAM_MetaHandler ( XMPFiles * _parent ) : isFAM(false), expat(0)
+XDCAM_MetaHandler::XDCAM_MetaHandler ( XMPFiles * _parent ) : isFAM(false), expat(0),clipMetadata(NULL)
 {
 
 	this->parent = _parent;	// Inherited, can't set in the prefix.
@@ -737,7 +730,7 @@ bool XDCAM_MetaHandler::GetFileModDate ( XMP_DateTime * modDate )
 	ok = MakeMediaproPath ( &mediaproPath, true /* checkFile */ );
 	if ( ok ) ok = Host_IO::GetModifyDate ( mediaproPath.c_str(), &oneDate );
 	if ( ok ) {
-		if ( (! haveDate) || (*modDate < oneDate) ) *modDate = oneDate;
+		if ( (! haveDate) ) *modDate = oneDate;
 		haveDate = true;
 	}
 
@@ -870,7 +863,7 @@ bool XDCAM_MetaHandler::IsClipsPlanning ( std::string clipUmid , XMP_StringPtr p
 						{
 							XML_NodePtr materialNode = mgNode->GetNamedElement(  nameSpace, "Material" );
 							XMP_StringPtr materialType = materialNode->GetAttrValue ( "type" );
-							if ( XMP_LitMatch( materialType , "clip" ) ) 
+							if ( materialType  && XMP_LitMatch( materialType , "clip" ) ) 
 							{
 								XMP_StringPtr umidValue = materialNode->GetAttrValue ( "umidRef" );
 								if ( umidValue != 0 &&  XMP_LitMatch( umidValue , clipUmid.c_str()  ) )

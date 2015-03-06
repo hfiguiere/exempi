@@ -139,9 +139,8 @@ void TagTree::digest(LFA_FileRef file,const std::string key /*=NULL*/,
 										// require all == false => leave the throwing to this routine
 	if (numOfBytes != LFA_Read ( file, value, numOfBytes, false))	// saying 1,4 guarantes read as ordered (4,1 would not)
 		Log::error("could not read %d number of files (End of File reached?)",numOfBytes);
-
+#if !IOS_ENV
 	char* out=new char[2 + numOfBytes*3 + 5]; //'0x12 34 45 78 '   length formula: 2 ("0x") + numOfBytes x 3 + 5 (padding)
-	
 	if (!key.empty()) {
 		snprintf(out,3,"0x");
 		XMP_Int64 i; // *)
@@ -150,8 +149,19 @@ void TagTree::digest(LFA_FileRef file,const std::string key /*=NULL*/,
 		snprintf(&out[2+i*3],1,"%c",'\0'); // *) using i one more time (needed while bug 1613297 regarding snprintf not fixed)
 		setKeyValue(key,out);
 	}
+#else
+    char* out=new char[2 + numOfBytes*9 + 5]; //'0x12 34 45 78 '   length formula: 2 ("0x") + numOfBytes x 3 + 5 (padding)
+	if (!key.empty()) {
+		snprintf(out,3,"0x");
+		XMP_Int64 i; // *)
+		for (i=0; i < numOfBytes; i++)
+			snprintf(&out[2+i*9],10,"%.8X ",value[i]); //always must allow that extra 0-byte on mac (overwritten again and again)
+		snprintf(&out[2+i*9],1,"%c",'\0'); // *) using i one more time (needed while bug 1613297 regarding snprintf not fixed)
+		setKeyValue(key,out);
+	}
 
-	delete [] out;
+#endif
+    delete [] out;
 	if (!returnValue) delete [] value; //if we own it, we delete it
 }
 

@@ -11,6 +11,7 @@
 
 #include "source/Host_IO.hpp"
 #include "source/XMP_LibUtils.hpp"
+#include "source/XIO.hpp"
 #include "source/UnicodeConversions.hpp"
 
 #if XMP_WinBuild
@@ -33,8 +34,8 @@ static std::string & CorrectSlashes ( std::string & path );
 
 static bool Exists ( const std::string & widePath );
 static Host_IO::FileRef Open ( const std::string & widePath, bool readOnly );
+static Host_IO::FileRef OpenWithWriteShare ( const std::string & widePath, bool readOnly );
 static Host_IO::FileMode GetFileMode ( const std::string & widePath );
-static bool HaveWriteAccess( const std::string & widePath );
 
 // =================================================================================================
 // File operations
@@ -67,18 +68,20 @@ bool Host_IO::Writable( const char * path, bool checkCreationPossible )
 		switch ( ::GetFileMode( widePath ) )
 		{
 		case kFMode_IsFile:
-			if ( HaveWriteAccess( widePath ) ) {
-				// check for readonly attributes
-				DWORD fileAttrs = GetFileAttributesW ( (LPCWSTR) widePath.data() );
-				if ( fileAttrs & FILE_ATTRIBUTE_READONLY )
-					return false;
+			// open the file in write mode but with file_share_read | file_share_write
+			try
+			{
+				Host_IO::FileRef fileRef = Host_IO::noFileRef;
+				fileRef = ::OpenWithWriteShare( widePath, false );
+				if ( fileRef == Host_IO::noFileRef )
+					return false;// can not open in write mode.
+				Host_IO::Close ( fileRef );
 				return true;
 			}
-			return false;
-			break;
-
-		case kFMode_IsFolder:
-			return HaveWriteAccess( widePath );
+			catch ( ... )
+			{
+				return false;
+			}
 			break;
 
 		default:
@@ -88,22 +91,19 @@ bool Host_IO::Writable( const char * path, bool checkCreationPossible )
 	} 
 	else if ( checkCreationPossible )
 	{
-		// get the parent path
-		std::string utf8Path(path);
-		CorrectSlashes(utf8Path);
-		size_t pos = utf8Path.find_last_of('\\');
-		if (pos != std::string::npos)
+		// file doesn't exist. Let's check if we can create it temporarily.
+		bool created = false;
+		try
 		{
-			if (pos == 0)
-				utf8Path = utf8Path.substr(0, 1);
-			else
-				utf8Path = utf8Path.substr(0, pos);
+			created = Host_IO::Create ( path );
+			if ( created )
+				Host_IO::Delete ( path );
 		}
-		else
+		catch ( ... )
 		{
-			utf8Path = ".";
+			return false;
 		}
-		return Host_IO::Writable( utf8Path.c_str(), checkCreationPossible );
+		return created;
 	}
 	else
 		return true;
@@ -450,7 +450,9 @@ static DWORD kOtherAttrs = (FILE_ATTRIBUTE_DEVICE);
 Host_IO::FileMode Host_IO::GetFileMode ( const char * path )
 {
 	std::string utf16;	// GetFileAttributes wants native UTF-16.
-	GetWidePath ( path, utf16 );
+	if ( !GetWidePath ( path, utf16 ) )
+		XMP_Throw ( "Host_IO::GetFileMode, GetWidePath failure", kXMPErr_ExternalFailure );
+	
 	return ::GetFileMode( utf16 );
 }	// Host_IO::GetFileMode
 
@@ -476,10 +478,9 @@ Host_IO::FileMode Host_IO::GetChildMode ( const char * parentPath, const char * 
 
 Host_IO::FolderRef Host_IO::OpenFolder ( const char* folderPath )
 {
-
 	switch ( Host_IO::GetFileMode ( folderPath ) ) {
 
-		case Host_IO::kFMode_IsFolder :
+	case Host_IO::kFMode_IsFolder :
 		{
 			WIN32_FIND_DATAW childInfo;
 			std::string findPath = folderPath;
@@ -487,8 +488,8 @@ Host_IO::FolderRef Host_IO::OpenFolder ( const char* folderPath )
 			findPath += findPath[findPath.length() - 1] == '\\' ? "*" : "\\*";
 
 			std::string utf16;	// FindFirstFile wants native UTF-16.
-			GetWidePath ( findPath.c_str(), utf16 );
-
+			if ( !GetWidePath ( findPath.c_str(), utf16 ) )
+				XMP_Throw ( "Host_IO::OpenFolder, GetWidePath failure", kXMPErr_ExternalFailure );
 			Host_IO::FolderRef folder = FindFirstFileW ( (LPCWSTR) utf16.c_str(), &childInfo );
 			if ( folder == noFolderRef ) XMP_Throw ( "Host_IO::OpenFolder - FindFirstFileW failed", kXMPErr_ExternalFailure );
 			// The first child should be ".", which we want to ignore anyway.
@@ -497,11 +498,11 @@ Host_IO::FolderRef Host_IO::OpenFolder ( const char* folderPath )
 			return folder;
 		}
 
-		case Host_IO::kFMode_DoesNotExist :
-			return Host_IO::noFolderRef;
+	case Host_IO::kFMode_DoesNotExist :
+		return Host_IO::noFolderRef;
 
-		default :
-			XMP_Throw ( "Host_IO::OpenFolder, path is not a folder", kXMPErr_ExternalFailure );
+	default :
+		XMP_Throw ( "Host_IO::OpenFolder, path is not a folder", kXMPErr_ExternalFailure );
 
 	}
 
@@ -602,14 +603,12 @@ bool GetWidePath( const char* path, std::string & widePath ) {
 	}
 
 	widePath.clear();
-	const size_t utf8Len = utfPath.size();
-	const size_t maxLen = 2 * (utf8Len + 1);
+	const size_t maxLen =  MultiByteToWideChar ( CP_UTF8, 0, utfPath.c_str(), -1, (LPWSTR)0, (int)0 );
 
-	widePath.reserve ( maxLen );
-	widePath.assign ( maxLen, ' ' );
+	widePath.reserve ( maxLen * sizeof (WCHAR) );
+	widePath.assign ( maxLen * sizeof (WCHAR) , '\0' );
 	int wideLen = MultiByteToWideChar ( CP_UTF8, 0, utfPath.c_str(), -1, (LPWSTR)widePath.data(), (int)maxLen );
 	if ( wideLen == 0 ) return false;
-	widePath.append ( 2, '\0' );	// Make sure there are at least 2 final zero bytes.
 	return true;
 }
 
@@ -647,7 +646,7 @@ Host_IO::FileMode GetFileMode ( const std::string & widePath )
 Host_IO::FileRef Open ( const std::string & widePath, bool readOnly )
 {
 	DWORD access = GENERIC_READ;	// Assume read mode.
-	DWORD share  = FILE_SHARE_READ;
+	DWORD share  = FILE_SHARE_READ | FILE_SHARE_WRITE;
 
 	if ( ! readOnly ) {
 		access |= GENERIC_WRITE;
@@ -669,61 +668,152 @@ Host_IO::FileRef Open ( const std::string & widePath, bool readOnly )
 	}
 
 	return fileHandle;
-
-
 }
 
-bool HaveWriteAccess ( const std::string & widePath )
+Host_IO::FileRef OpenWithWriteShare ( const std::string & widePath, bool readOnly )
 {
-	bool writable = false;
+	DWORD access = GENERIC_READ;	// Assume read mode.
+	DWORD share  = FILE_SHARE_READ | FILE_SHARE_WRITE;
 
-	DWORD length = 0;
-	LPCWSTR pathLPtr = (LPCWSTR)widePath.data();
-	const static SECURITY_INFORMATION requestedFileInfomration =  OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
+	if ( ! readOnly ) {
+		access |= GENERIC_WRITE;
+	}
 
-	if (!::GetFileSecurityW( pathLPtr, requestedFileInfomration, NULL, NULL, &length ) && ERROR_INSUFFICIENT_BUFFER == ::GetLastError())
-	{
-		std::string tempBuffer;
-		tempBuffer.reserve(length);
-		PSECURITY_DESCRIPTOR security = (PSECURITY_DESCRIPTOR)tempBuffer.data();
-		if ( security && ::GetFileSecurity( pathLPtr, requestedFileInfomration, security, length, &length ) )
-		{
-			HANDLE hToken = NULL;
-			const static DWORD tokenDesiredAccess = TOKEN_IMPERSONATE | TOKEN_QUERY | TOKEN_DUPLICATE | STANDARD_RIGHTS_READ;
-			if ( !::OpenThreadToken( ::GetCurrentThread(), tokenDesiredAccess, TRUE, &hToken) )
-			{
-				if ( !::OpenProcessToken( GetCurrentProcess(), tokenDesiredAccess, &hToken ) )
-				{
-					XMP_Throw ( "Unable to get any thread or process token", kXMPErr_InternalFailure );
-				}
-			}
-
-			HANDLE hImpersonatedToken = NULL;
-			if ( ::DuplicateToken( hToken, SecurityImpersonation, &hImpersonatedToken ) )
-			{
-				GENERIC_MAPPING mapping = { 0xFFFFFFFF };
-				PRIVILEGE_SET privileges = { 0 };
-				DWORD grantedAccess = 0, privilegesLength = sizeof( privileges );
-				BOOL result = FALSE;
-
-				mapping.GenericRead = FILE_GENERIC_READ;
-				mapping.GenericWrite = FILE_GENERIC_WRITE;
-				mapping.GenericExecute = FILE_GENERIC_EXECUTE;
-				mapping.GenericAll = FILE_ALL_ACCESS;
-				
-				DWORD genericAccessRights = FILE_GENERIC_WRITE;
-				::MapGenericMask( &genericAccessRights, &mapping );
-				
-				if ( ::AccessCheck( security, hImpersonatedToken, genericAccessRights, &mapping, &privileges, &privilegesLength, &grantedAccess, &result ) )
-				{
-					writable = (result == TRUE);
-				}
-				::CloseHandle( hImpersonatedToken );
-			}
-			
-			::CloseHandle( hToken );
+	Host_IO::FileRef fileHandle;
+	fileHandle = CreateFileW ( (LPCWSTR)widePath.data(), access, share, 0, OPEN_EXISTING,
+		(FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS), 0 );
+	if ( fileHandle == INVALID_HANDLE_VALUE ) {
+		DWORD osCode = GetLastError();
+		if ( (osCode == ERROR_FILE_NOT_FOUND) || (osCode == ERROR_PATH_NOT_FOUND) || (osCode == ERROR_FILE_OFFLINE) ) {
+			return Host_IO::noFileRef;
+		} else if ( osCode == ERROR_ACCESS_DENIED ) {
+			XMP_Throw ( "Open, file permission error", kXMPErr_FilePermission );
+		} else {
+			XMP_Throw ( "Open, other failure", kXMPErr_ExternalFailure );
 		}
 	}
-	return writable;
+
+	return fileHandle;
+}
+
+static std::string ConstructPreservedPath( const std::string& inputPath )
+{
+	DWORD allocate_size,retValue;
+	std::string longpathname="\\\\?\\";
+	std::string networkpathsuffix="UNC\\";
+	std::string pathSep="\\";
+	std::string casePreservedPath,systempath,widePath,leafname;
+
+	if ( !  Host_IO::Exists( inputPath.c_str() ) )
+		XMP_Throw ( "Host_IO::GetCasePresevedLeafName, Invalid Path-Doesn't Exist", kXMPErr_ExternalFailure );
+	std::string utfPath ( inputPath );
+	CorrectSlashes ( utfPath);
+
+	size_t pos = 0;
+	bool isNetworkPath=false;
+	int skipServerAndShareName=0;
+	if ( ! longpathname.compare ( utfPath.substr ( 0, longpathname.length() ) ) )
+	{
+		pos = longpathname.length() ;
+		if ( ! networkpathsuffix.compare ( utfPath.substr ( pos, networkpathsuffix.length() ) ))
+		{
+			pos += networkpathsuffix.length() ;
+			isNetworkPath=true;
+		}
+		casePreservedPath = utfPath.substr ( 0 , pos ) ;
+	}
+	else
+	{
+		isNetworkPath=IsNetworkPath(utfPath);
+		if (isNetworkPath){ pos =2;casePreservedPath="\\\\";}
+	}
+	if (isNetworkPath) skipServerAndShareName=2;
+	bool loopvar=true;
+	while(loopvar) 
+	{
+		size_t newpos = utfPath.find_first_of( pathSep, pos );
+		if ( newpos ==  std::string::npos )
+		{
+			newpos = utfPath.length();
+			loopvar= false;
+		}
+		WIN32_FIND_DATAW fileInfo;
+		HANDLE  searchNext;
+		leafname=utfPath.substr(pos,newpos-pos );
+		skipServerAndShareName=(skipServerAndShareName<0)?0:skipServerAndShareName;
+		if (!( leafname=="" || leafname=="." || leafname==".." || leafname[newpos-pos-1]==':' || skipServerAndShareName-- ) )
+		{
+			std::string partialPath=utfPath.substr(0,newpos);
+			if ( ! GetWidePath(partialPath.c_str(), widePath) || widePath.length() == 0)
+				XMP_Throw ( "Host_IO::GetCasePresevedLeafName, cannot convert path", kXMPErr_ExternalFailure );
+			searchNext = ::FindFirstFileW ( (LPCWSTR) widePath.c_str(), &fileInfo );
+			if( searchNext == INVALID_HANDLE_VALUE || ! ::FindClose(searchNext) )
+				XMP_Throw ( "Host_IO::GetCasePresevedLeafName, cannot convert path", kXMPErr_ExternalFailure );
+			
+			allocate_size=::WideCharToMultiByte(CP_UTF8,0,fileInfo.cFileName,-1,NULL,0,NULL,NULL);
+			leafname.reserve(allocate_size);
+			leafname.assign ( allocate_size , 0 );
+			retValue=::WideCharToMultiByte(CP_UTF8,0,fileInfo.cFileName,-1,(LPSTR)leafname.data(),leafname.length(),NULL,NULL);
+			if ( ! retValue )
+				XMP_Throw ( "Host_IO::GetCasePresevedLeafName, cannot convert path", kXMPErr_ExternalFailure );
+		}
+		casePreservedPath += leafname.c_str() ;
+		if (loopvar)
+			casePreservedPath+=pathSep;
+		pos=newpos+1;
+	}
+	return casePreservedPath.c_str();
+}
+static bool ContainsNonASCIICodePoints( const std::string & value )
+{
+	size_t vallen=value.length();
+	for (size_t index=0;index<vallen;index++)
+	{
+		if ((unsigned char)value[index]>127)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+// =================================================================================================
+// Host_IO::GetCasePreservedName
+// =============================
+std::string Host_IO::GetCasePreservedName( const std::string& inputPath )
+{
+	if ( ! ContainsNonASCIICodePoints( inputPath ) )
+	{
+		DWORD allocate_size,retValue;
+		std::string widePath,systempath,longPathName,shortPathName;
+		if ( ! GetWidePath(inputPath.c_str(), widePath) || widePath.length() == 0)
+			XMP_Throw ( "Host_IO::GetCasePresevedLeafName, cannot convert path", kXMPErr_ExternalFailure );
+
+		allocate_size = ::GetShortPathNameW((LPCWSTR)(widePath.c_str()),NULL,0);
+		shortPathName.reserve ( allocate_size* sizeof(TCHAR) );
+		shortPathName.assign ( allocate_size* sizeof(TCHAR) , 0 );
+		retValue = ::GetShortPathNameW( ( LPCWSTR)(widePath.c_str()),(LPWSTR)shortPathName.data(),allocate_size);
+		if ( ! retValue )
+			XMP_Throw ( "Host_IO::GetCasePresevedLeafName, cannot convert path", kXMPErr_ExternalFailure );
+
+		allocate_size = ::GetLongPathNameW((LPCWSTR)(shortPathName.c_str()),NULL,0);
+		longPathName.reserve ( allocate_size* sizeof(TCHAR) );
+		longPathName.assign ( allocate_size* sizeof(TCHAR) , 0 );
+		retValue = ::GetLongPathNameW( ( LPCWSTR)(shortPathName.c_str()),(LPWSTR)longPathName.data(),allocate_size);
+		if ( ! retValue )
+			XMP_Throw ( "Host_IO::GetCasePresevedLeafName, cannot convert path", kXMPErr_ExternalFailure );
+
+		allocate_size=::WideCharToMultiByte(CP_UTF8,0,(LPWSTR)&longPathName[0],-1,NULL,0,NULL,NULL);
+		systempath.reserve(allocate_size+1);
+		systempath.assign ( allocate_size+1 , 0 );
+		retValue=::WideCharToMultiByte(CP_UTF8,0,(LPWSTR)&longPathName[0],-1,(LPSTR)systempath.data(),systempath.size(),NULL,NULL);
+		if ( ! retValue )
+			XMP_Throw ( "Host_IO::GetCasePresevedLeafName, cannot convert path", kXMPErr_ExternalFailure );
+
+		return systempath.c_str();
+	}
+	else
+	{
+		 return ConstructPreservedPath( inputPath );
+	}
 }
 

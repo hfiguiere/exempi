@@ -560,7 +560,10 @@ static size_t MoveLargestProperty ( XMPMeta & stdXMP, XMPMeta * extXMP, PropSize
 XMPUtils::Initialize()
 {
 
-	// Nothing at present.
+	if ( WhiteSpaceStrPtr == NULL ) {
+		WhiteSpaceStrPtr = new std::string();
+		WhiteSpaceStrPtr->append( " \t\n\r" );
+	}
 	return true;
 
 }	// Initialize
@@ -573,7 +576,8 @@ XMPUtils::Initialize()
 XMPUtils::Terminate() RELEASE_NO_THROW
 {
 
-	// Nothing at present.
+	delete WhiteSpaceStrPtr;
+	WhiteSpaceStrPtr = NULL;
 	return;
 
 }	// Terminate
@@ -1976,5 +1980,23 @@ XMPUtils::CompareDateTime ( const XMP_DateTime & _in_left,
 	return result;
 
 }	// CompareDateTime
+
+// =================================================================================================
+
+std::string& XMPUtils::Trim( std::string& string )
+{
+	size_t pos = string.find_last_not_of( *WhiteSpaceStrPtr );
+
+	if ( pos != std::string::npos ) {
+		string.erase( pos + 1 );
+		pos = string.find_first_not_of( *WhiteSpaceStrPtr );
+		if(pos != std::string::npos) string.erase(0, pos);
+	} else {
+		string.erase( string.begin(), string.end() );
+	}
+	return string;
+}
+
+std::string * XMPUtils::WhiteSpaceStrPtr = NULL;
 
 // =================================================================================================

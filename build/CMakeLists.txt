@@ -65,8 +65,7 @@ set(XMP_ROOT ${PROJECT_SOURCE_DIR}/..)
 # Shared config
 # ==============================================================================
 # setup some values before calling shared config
-set(XMP_THIS_PROJECT_RELATIVEPATH "..")
-include(${CMAKE_CURRENT_SOURCE_DIR}/${XMP_THIS_PROJECT_RELATIVEPATH}/build/XMP_Config.cmake)
+include(${XMP_ROOT}/build/XMP_Config.cmake)
 
 # ==============================================================================
 # Sub projects

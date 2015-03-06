@@ -76,6 +76,7 @@ public:
 	void SetAttrValue ( XMP_StringPtr attrName, XMP_StringPtr attrValue );
 
 	XMP_StringPtr GetLeafContentValue() const;
+	std::string* GetLeafContentPtr() const;
 	void SetLeafContentValue ( XMP_StringPtr value );
 	
 	size_t CountNamedElements ( XMP_StringPtr nsURI, XMP_StringPtr localName ) const;	// Number of child elements with this name.

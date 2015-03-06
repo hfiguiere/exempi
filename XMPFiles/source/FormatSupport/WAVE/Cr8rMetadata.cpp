@@ -79,8 +79,6 @@ void Cr8rMetadata::parse( const XMP_Uns8* chunkData, XMP_Uns64 size )
 {
 	if( size >= kCr8rSizeFix )
 	{
-		const LittleEndian& LE = LittleEndian::getInstance();
-
 		Cr8rBoxContent cr8r;
 		memset( &cr8r, 0, kCr8rSizeFix );
 

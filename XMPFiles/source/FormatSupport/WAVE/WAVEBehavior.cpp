@@ -431,7 +431,7 @@ WAVEBehavior::DS64* WAVEBehavior::getDS64( IChunkContainer& tree, XMP_IO* stream
 					ds64 = NULL;
 				}
 
-				if( ds64 != NULL && ds64->getID() == kChunk_ds64 )
+				if( rf64 != NULL && ds64 != NULL && ds64->getID() == kChunk_ds64 )
 				{
 					//
 					// Successfully read 'ds64' chunk.
@@ -439,7 +439,6 @@ WAVEBehavior::DS64* WAVEBehavior::getDS64( IChunkContainer& tree, XMP_IO* stream
 					// add chunk to the 'RF64' chunk
 					//
 					ds64->cacheChunkData( stream );
-
 					rf64->appendChild( ds64, false );
 				}
 				else
@@ -600,7 +599,7 @@ bool WAVEBehavior::parseDS64Chunk( const Chunk& ds64Chunk, WAVEBehavior::DS64& d
 		const XMP_Uns8* data;
 		XMP_Uns64 size = ds64Chunk.getData(&data);
 
-		memset( &ds64, 0, kMinimumDS64ChunkSize );
+		memset( &ds64, 0, kMinimumDS64ChunkSize);
 
 		//
 		// copy fix input data into RF64 block (except chunk size table)

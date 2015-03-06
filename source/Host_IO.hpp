@@ -110,6 +110,8 @@ namespace Host_IO {
 	bool Exists ( const char* filePath );
 	bool Writable ( const char* path, bool checkCreationPossible = false);
 	bool Create ( const char* filePath );	// Returns true if file exists or was created.
+
+	std::string GetCasePreservedName(const std::string& inputPath);
 	
 	bool GetModifyDate ( const char* filePath, XMP_DateTime* modifyDate );
 

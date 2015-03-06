@@ -103,6 +103,25 @@ const XMP_Uns8 kXMP_Bool_False = 0;
 #define ConvertXMP_BoolToBool(a) (a) != kXMP_Bool_False
 #define ConvertBoolToXMP_Bool(a) (a) ? !kXMP_Bool_False : kXMP_Bool_False
 
+static const XMP_Uns8 Min_XMP_Uns8		= ( (XMP_Uns8) 0x00 );
+static const XMP_Uns8 Max_XMP_Uns8		= ( (XMP_Uns8) 0xFF );
+static const XMP_Uns16 Min_XMP_Uns16	= ( (XMP_Uns16) 0x00 );
+static const XMP_Uns16 Max_XMP_Uns16	= ( (XMP_Uns16) 0xFFFF );
+static const XMP_Uns32 Min_XMP_Uns32	= ( (XMP_Uns32) 0x00 );
+static const XMP_Uns32 Max_XMP_Uns32	= ( (XMP_Uns32) 0xFFFFFFFF );
+static const XMP_Uns64 Min_XMP_Uns64	= ( (XMP_Uns64) 0x00 );
+static const XMP_Uns64 Max_XMP_Uns64	= ( (XMP_Uns64) 0xFFFFFFFFFFFFFFFFLL );
+
+static const XMP_Int8 Min_XMP_Int8		= ( (XMP_Int8) 0x80 );
+static const XMP_Int8 Max_XMP_Int8		= ( (XMP_Int8) 0x7F );
+static const XMP_Int16 Min_XMP_Int16	= ( (XMP_Int16) 0x8000 );
+static const XMP_Int16 Max_XMP_Int16	= ( (XMP_Int16) 0x7FFF );
+static const XMP_Int32 Min_XMP_Int32	= ( (XMP_Int32) 0x80000000 );
+static const XMP_Int32 Max_XMP_Int32	= ( (XMP_Int32) 0x7FFFFFFF );
+static const XMP_Int64 Min_XMP_Int64	= ( (XMP_Int64) 0x8000000000000000LL );
+static const XMP_Int64 Max_XMP_Int64	= ( (XMP_Int64) 0x7FFFFFFFFFFFFFFFLL );
+
+
 /// An "ABI safe" pointer to the internal part of an XMP object. Use to pass an XMP object across
 /// client DLL boundaries. See \c TXMPMeta::GetInternalRef().
 typedef struct __XMPMeta__ *        XMPMetaRef;
@@ -241,7 +260,7 @@ struct XMP_DateTime {
 
 	#if __cplusplus
 		XMP_DateTime() : year(0), month(0), day(0), hour(0), minute(0), second(0),
-		                 hasDate(false), hasTime(false), hasTimeZone(false), tzSign(0), tzHour(0), tzMinute(0), nanoSecond(0) {};
+		                 hasDate(false),hasTime(false), hasTimeZone(false), tzSign(0), tzHour(0), tzMinute(0), nanoSecond(0){};
 	#endif
 
 };
@@ -713,7 +732,10 @@ enum {
     kXMP_OmitAllFormatting   = 0x0800UL,
 
     /// Omit the x:xmpmeta element surrounding the rdf:RDF element.
-    kXMP_OmitXMPMetaElement  = 0x1000UL,
+	kXMP_OmitXMPMetaElement  = 0x1000UL,    
+	
+	/// Include a rdf Hash and Merged flag in x:xmpmeta element.
+	kXMP_IncludeRDFHash      = 0x2000UL,
 
     _XMP_LittleEndian_Bit    = 0x0001UL,  // ! Don't use directly, see the combined values below!
     _XMP_UTF16_Bit           = 0x0002UL,
@@ -1151,7 +1173,10 @@ enum {
     kXMPFiles_OpenLimitedScanning   = 0x00000080,
 
     /// Attempt to repair a file opened for update, default is to not open (throw an exception).
-    kXMPFiles_OpenRepairFile        = 0x00000100
+    kXMPFiles_OpenRepairFile        = 0x00000100,
+
+	/// When updating a file, spend the effort necessary to optimize file layout.
+	kXMPFiles_OptimizeFileLayout    = 0x00000200
 
 };
 

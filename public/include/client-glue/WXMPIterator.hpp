@@ -33,26 +33,26 @@ extern "C" {
 // -------------------------------------------------------------------------------------------------
 
 extern void
-WXMPIterator_PropCTor_1 ( XMPMetaRef     xmpRef,
+XMP_PUBLIC WXMPIterator_PropCTor_1 ( XMPMetaRef     xmpRef,
                           XMP_StringPtr  schemaNS,
                           XMP_StringPtr  propName,
                           XMP_OptionBits options,
                           WXMP_Result *  wResult );
 
 extern void
-WXMPIterator_TableCTor_1 ( XMP_StringPtr  schemaNS,
+XMP_PUBLIC WXMPIterator_TableCTor_1 ( XMP_StringPtr  schemaNS,
                            XMP_StringPtr  propName,
                            XMP_OptionBits options,
                            WXMP_Result *  wResult );
 
 extern void
-WXMPIterator_IncrementRefCount_1 ( XMPIteratorRef iterRef );
+XMP_PUBLIC WXMPIterator_IncrementRefCount_1 ( XMPIteratorRef iterRef );
 
 extern void
-WXMPIterator_DecrementRefCount_1 ( XMPIteratorRef iterRef );
+XMP_PUBLIC WXMPIterator_DecrementRefCount_1 ( XMPIteratorRef iterRef );
 
 extern void
-WXMPIterator_Next_1 ( XMPIteratorRef   iterRef,
+XMP_PUBLIC WXMPIterator_Next_1 ( XMPIteratorRef   iterRef,
                       void *           schemaNS,
                       void *           propPath,
                       void *           propValue,
@@ -61,7 +61,7 @@ WXMPIterator_Next_1 ( XMPIteratorRef   iterRef,
                       WXMP_Result *    wResult );
 
 extern void
-WXMPIterator_Skip_1 ( XMPIteratorRef iterRef,
+XMP_PUBLIC WXMPIterator_Skip_1 ( XMPIteratorRef iterRef,
                       XMP_OptionBits options,
                       WXMP_Result *  wResult );
 

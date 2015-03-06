@@ -17,6 +17,7 @@
 #include "public/include/XMP_Version.h"
 #include "source/UnicodeInlines.incl_cpp"
 #include "source/UnicodeConversions.hpp"
+#include "third-party/zuid/interfaces/MD5.h"
 
 #if XMP_DebugBuild
 	#include <iostream>
@@ -1058,7 +1059,6 @@ SerializeCompactRDFSchemas ( const XMP_Node & xmpTree,
 
 }	// SerializeCompactRDFSchemas
 
-
 // -------------------------------------------------------------------------------------------------
 // SerializeAsRDF
 // --------------
@@ -1100,7 +1100,7 @@ SerializeAsRDF ( const XMPMeta & xmpObj,
 	// *** Need to include estimate for alias comments.
 	
 	size_t outputLen = 2 * (strlen(kPacketHeader) + strlen(kRDF_XMPMetaStart) + strlen(kRDF_RDFStart) + 3*baseIndent*indentLen);
-	
+
 	for ( size_t schemaNum = 0, schemaLim = xmpObj.tree.children.size(); schemaNum < schemaLim; ++schemaNum ) {
 		const XMP_Node * currSchema = xmpObj.tree.children[schemaNum];
 		outputLen += 2*(baseIndent+2)*indentLen + strlen(kRDF_SchemaStart) + treeNameLen + strlen(kRDF_SchemaEnd) + 2;
@@ -1113,9 +1113,25 @@ SerializeAsRDF ( const XMPMeta & xmpObj,
 	
 	XMP_Index level;
 	
+	std::string rdfstring;
 	headStr.erase();
-	headStr.reserve ( outputLen );
+	rdfstring.reserve ( outputLen );
+
+	// Write the rdf:RDF start tag.
+	rdfstring += kRDF_RDFStart;
+	rdfstring += newline;
 	
+	// Write all of the properties.
+	if ( options & kXMP_UseCompactFormat ) {
+		SerializeCompactRDFSchemas ( xmpObj.tree, rdfstring, newline, indentStr, baseIndent );
+	} else {
+		bool useCanonicalRDF = XMP_OptionIsSet ( options, kXMP_UseCanonicalFormat );
+		SerializeCanonicalRDFSchemas ( xmpObj.tree, rdfstring, newline, indentStr, baseIndent, useCanonicalRDF );
+	}
+
+	// Write the rdf:RDF end tag.
+	for ( level = baseIndent+1; level > 0; --level ) rdfstring += indentStr;
+	rdfstring += kRDF_RDFEnd;
 	// Write the packet header PI.
 	if ( ! (options & kXMP_OmitPacketWrapper) ) {
 		for ( level = baseIndent; level > 0; --level ) headStr += indentStr;
@@ -1127,26 +1143,34 @@ SerializeAsRDF ( const XMPMeta & xmpObj,
 	if ( ! (options & kXMP_OmitXMPMetaElement) ) {
 		for ( level = baseIndent; level > 0; --level ) headStr += indentStr;
 		headStr += kRDF_XMPMetaStart;
-		headStr += kXMPCore_VersionMessage "\">";
+		headStr += kXMPCore_VersionMessage  "\"";
+		std::string digestStr;
+		unsigned char digestBin [16];
+		if (options & kXMP_IncludeRDFHash)
+		{
+			std::string hashrdf;	
+			MD5_CTX    context;
+			MD5Init ( &context );
+			MD5Update ( &context, (XMP_Uns8*)rdfstring.c_str(), (unsigned int)rdfstring.size() );
+			MD5Final ( digestBin, &context );
+			char buffer [40];
+			for ( int in = 0, out = 0; in < 16; in += 1, out += 2 ) {
+				XMP_Uns8 byte = digestBin[in];
+				buffer[out]   = kHexDigits [ byte >> 4 ];
+				buffer[out+1] = kHexDigits [ byte & 0xF ];
+			}
+			buffer[32] = 0;
+			digestStr.append ( buffer );
+			headStr += " rdfhash=\"";
+			headStr += digestStr + "\"";
+			headStr += " merged=\"0\"";
+		}
+		headStr += ">";
 		headStr += newline;
 	}
 
-	// Write the rdf:RDF start tag.
 	for ( level = baseIndent+1; level > 0; --level ) headStr += indentStr;
-	headStr += kRDF_RDFStart;
-	headStr += newline;
-	
-	// Write all of the properties.
-	if ( options & kXMP_UseCompactFormat ) {
-		SerializeCompactRDFSchemas ( xmpObj.tree, headStr, newline, indentStr, baseIndent );
-	} else {
-		bool useCanonicalRDF = XMP_OptionIsSet ( options, kXMP_UseCanonicalFormat );
-		SerializeCanonicalRDFSchemas ( xmpObj.tree, headStr, newline, indentStr, baseIndent, useCanonicalRDF );
-	}
-
-	// Write the rdf:RDF end tag.
-	for ( level = baseIndent+1; level > 0; --level ) headStr += indentStr;
-	headStr += kRDF_RDFEnd;
+	headStr+= rdfstring ;
 	headStr += newline;
 
 	// Write the xmpmeta end tag.
@@ -1227,6 +1251,11 @@ XMPMeta::SerializeToBuffer ( XMP_VarString * rdfString,
 	} else if ( options & kXMP_OmitPacketWrapper ) {
 		if ( options & kXMP_IncludeThumbnailPad ) {
 			XMP_Throw ( "Inconsistent options for non-packet serialize", kXMPErr_BadOptions );
+		}
+		padding = 0;
+	} else if ( options & kXMP_OmitXMPMetaElement ) {
+		if ( options & kXMP_IncludeRDFHash ) {
+			XMP_Throw ( "Inconsistent options for x:xmpmeta serialize", kXMPErr_BadOptions );
 		}
 		padding = 0;
 	} else {

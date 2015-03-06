@@ -13,9 +13,9 @@
 #include "public/include/XMP_Environment.h"	// ! This must be the first include.
 #include "public/include/XMP_Const.h"
 
-#if SUNOS_SPARC || SUNOS
+#if SUNOS_SPARC || SUNOS || XMP_IOS_ARM
 #include "string.h"
-#endif //SUNOS_SPARC
+#endif //SUNOS_SPARC || SUNOS || XMP_IOS_ARM
 
 // *** These should be in a more common location. The Unicode conversions of XMPCore have similar utils. 
 // *** May want to improve with PowerPC swapping load/store, or SSE instructions.
@@ -62,7 +62,7 @@ typedef void (*PutDouble_Proc) ( double value, void* addr );
 
 // =================================================================================================
 
-#if SUNOS_SPARC || SUNOS
+#if SUNOS_SPARC || SUNOS || XMP_IOS_ARM
 	#define DefineAndGetValue(type,addr)	type value = 0; memcpy ( &value, addr, sizeof(type) )
 	#define DefineAndSetValue(type,addr)	memcpy(addr, &value, sizeof(type))
 	#define DefineFlipAndSet(type,x,addr)	type temp; memcpy(&temp, addr, sizeof(type)); temp = Flip##x(temp); memcpy(addr, &temp, sizeof(type))
@@ -70,7 +70,7 @@ typedef void (*PutDouble_Proc) ( double value, void* addr );
 	#define DefineAndGetValue(type,addr)	type value = *((type*)addr)
 	#define DefineAndSetValue(type,addr)	*((type*)addr) = value
 	#define DefineFlipAndSet(type,x,addr)	type* uPtr = (type*) addr; *uPtr = Flip##x ( *uPtr )
-#endif //#if SUNOS_SPARC
+#endif //#if SUNOS_SPARC || SUNOS || XMP_IOS_ARM
 
 // -------------------------------------------------------------------------------------------------
 

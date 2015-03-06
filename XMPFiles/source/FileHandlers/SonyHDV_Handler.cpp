@@ -713,7 +713,7 @@ bool SonyHDV_MetaHandler::GetFileModDate ( XMP_DateTime * modDate )
 	ok = this->MakeIndexFilePath ( fullPath, this->rootPath, this->clipName );
 	if ( ok ) ok = Host_IO::GetModifyDate ( fullPath.c_str(), &oneDate );
 	if ( ok ) {
-		if ( (! haveDate) || (*modDate < oneDate) ) *modDate = oneDate;
+		if ( *modDate < oneDate ) *modDate = oneDate;
 		haveDate = true;
 	}
 

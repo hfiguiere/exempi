@@ -149,7 +149,7 @@ public:
 	 * @param id	Identifier of value
 	 */
 	virtual bool valueChanged( XMP_Uns32 id ) const;
-
+	
 protected:
 	/**
 	 * Is the value of the passed ValueObject that belongs to the given id "empty"?
@@ -164,6 +164,20 @@ protected:
 	 */
 	virtual	bool isEmptyValue( XMP_Uns32 id, ValueObject& valueObj ) = 0;
 
+	/**
+	 * Validates the value for the passed identifier
+	 * @param id	Identifier of value
+	 * @param value	pointer to value object
+	 */
+	virtual bool valueValid( XMP_Uns32 id, ValueObject * value );
+
+	/**
+	 * Modify the value for the passed identifier
+	 * @param id	Identifier of value
+	 * @param value	pointer to value object
+	 */
+	virtual void valueModify( XMP_Uns32 id, ValueObject * value );
+	
 private:
 	// Operators hidden on purpose
 	IMetadata( const IMetadata& ) {};
@@ -191,9 +205,13 @@ template<class T> void IMetadata::setValue( XMP_Uns32 id, const T& value )
 		//
 		valueObj = dynamic_cast<TValueObject<T>*>( iterator->second );
 
-		if( valueObj != NULL )
+		if( valueObj != NULL ) 
 		{
-			valueObj->setValue( value );
+			TValueObject< T > newValueObj( value );
+			if ( valueValid( id, &newValueObj ) ) {
+				valueModify( id, &newValueObj );
+				valueObj->setValue( newValueObj.getValue() );
+			}
 		}
 		else
 		{
@@ -206,10 +224,14 @@ template<class T> void IMetadata::setValue( XMP_Uns32 id, const T& value )
 		// value doesn't exists yet and is not "empty"
 		// so add a new value to the map
 		//
-		valueObj = new TValueObject<T>( value );
-		mValues[id] = valueObj;
-
-		mDirty = true;	// the new created value isn't dirty, but the container becomes dirty
+		TValueObject< T > newValueObj( value );
+		if ( this->valueValid( id, &newValueObj ) )
+		{
+			this->valueModify( id, &newValueObj );
+			valueObj = new TValueObject<T>( newValueObj.getValue() );
+			mValues[id] = valueObj;
+			mDirty = true;	// the new created value isn't dirty, but the container becomes dirty
+		}
 	}
 
 	//

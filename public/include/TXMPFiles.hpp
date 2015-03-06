@@ -492,6 +492,8 @@ public:
     ///   might be no difference.
     ///   \li \c #kXMPFiles_OpenUseSmartHandler - Require the use of a smart handler.
     ///   \li \c #kXMPFiles_OpenUsePacketScanning - Force packet scanning, do not use a smart handler.
+	///   \li \c #kXMPFiles_OptimizeFileLayout - When updating a file, spend the effort necessary 
+	///    to optimize file layout.
     ///
     /// @return True if the file is succesfully opened and attached to a file handler. False for
     /// anticipated problems, such as passing \c #kXMPFiles_OpenUseSmartHandler but not having an

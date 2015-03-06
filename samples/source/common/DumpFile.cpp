@@ -291,9 +291,17 @@ static XMP_Uns64 GetUns64LE ( const void * addr );
 // =================================================================================================
 
 // ahead declarations
+struct JpegMarker {
+	XMP_Uns8 * jpegMarkerPtr;
+	XMP_Uns16 jpegMarkerLen;
+};
+typedef std::vector<JpegMarker> JpegMarkers;
+
 static void DumpTIFF ( XMP_Uns8 * tiffContent, XMP_Uns32 tiffLen, XMP_Uns32 fileOffset, const char * label, std::string path );
+static void DumpTIFF ( const JpegMarkers& psirMarkers, XMP_Uns8 * dataStart, const char * label, std::string path );
 static void DumpIPTC ( XMP_Uns8 * iptcOrigin, XMP_Uns32 iptcLen, XMP_Uns32 fileOffset, const char * label );
 static void DumpImageResources ( XMP_Uns8 * psirOrigin, XMP_Uns32 psirLen, XMP_Uns32 fileOffset, const char * label );
+static void DumpImageResources ( const JpegMarkers& psirMarkers, XMP_Uns8 * dataStart, const char * label );
 static void DumpIFDChain ( XMP_Uns8 * startPtr, XMP_Uns8 * endPtr, XMP_Uns8 * tiffContent, XMP_Uns32 fileOffset, const char * label, std::string path  );
 
 // =================================================================================================
@@ -1208,6 +1216,136 @@ DumpIPTC (XMP_Uns8 * iptcOrigin, XMP_Uns32 iptcLen, XMP_Uns32 fileOffset, const 
 }	// DumpIPTC
 
 // =================================================================================================
+
+static void
+DumpImageResources ( const JpegMarkers& psirMarkers, XMP_Uns8 * dataStart, const char * label )
+{
+	
+	XMP_Uns32 i = 0, size = psirMarkers.size();
+	std::string combinedPSIRData;
+	for ( i = 0; i < size; i++ ) {
+		combinedPSIRData.append( (const char *) psirMarkers[i].jpegMarkerPtr, psirMarkers[i].jpegMarkerLen );
+	}
+
+
+	XMP_Uns8 * psirPtr = (XMP_Uns8 *) combinedPSIRData.data();
+	XMP_Uns8 * psirEnd = psirPtr + combinedPSIRData.size();
+	
+	XMP_Uns8 * irPtr;
+	XMP_Uns32  irLen, irOffset; //irType replaced by irTypeStr below
+
+	XMP_Uns8 * iptcPtr = 0;
+	XMP_Uns8 * xmpPtr = 0;
+	XMP_Uns8 * exif1Ptr = 0;
+	XMP_Uns8 * exif3Ptr = 0;
+	XMP_Uns32  iptcLen, xmpLen, exif1Len, exif3Len;
+	XMP_Int32 lastIndexUsed = -1;
+	while (psirPtr < psirEnd) {
+		// calculate fileOffset and psirOrigin
+		size_t currentOffset = (const char *) psirPtr - combinedPSIRData.data();
+		XMP_Uns32 length = 0;
+		for (i = 0; i < size; i++ ) {
+			length += psirMarkers[i].jpegMarkerLen;
+			if ( currentOffset <= length )
+				break;
+		}
+		if ( lastIndexUsed != i ) {
+			if ( lastIndexUsed != -1 )
+				tree->popNode();
+			// time to push a new node
+			tree->pushNode("Photoshop Image Resources %d", i + 1 );
+			XMP_Uns32 fileOffset = psirMarkers[i].jpegMarkerPtr - dataStart;
+			tree->addComment("from %s, offset %d (0x%X), size %d",
+				label, fileOffset, fileOffset, psirMarkers[i].jpegMarkerLen);
+			lastIndexUsed = i;
+		}
+		XMP_Uns32 fileOffset = psirMarkers[i].jpegMarkerPtr - dataStart;
+		XMP_Uns8 * psirOrigin =  psirMarkers[i].jpegMarkerPtr;
+
+		std::string irTypeStr = convert8Bit(psirPtr,false,4); //get in an endian neutral way
+		XMP_Uns16 irID = GetUns16BE ( psirPtr+4 );	// The image resource ID.
+
+		const char* irName = (XMP_StringPtr)psirPtr+6;	// A Pascal string.
+		irOffset = 6 + ((*irName + 2) & 0xFFFFFFFE);	// Offset to the image resource data length.
+		irLen = GetUns32BE (psirPtr+irOffset);
+		irPtr = psirPtr + irOffset + 4;
+
+		irOffset = fileOffset + ((psirPtr - (XMP_Uns8 *) combinedPSIRData.data()) - ( length - psirMarkers[i].jpegMarkerLen ) );
+
+		if ( irTypeStr != "8BIM" ) {
+			tree->setKeyValue( fromArgs("PSIR:%s:#%u",irTypeStr.c_str(),irID),"" );
+			tree->comment("(non-8BIM encountered and tolerated, see bug 1454756)");
+		} else if ( irID == kPSIR_IPTC ) {			//****************
+			tree->setKeyValue("PSIR:IPTC","");
+			iptcPtr = irPtr;
+			iptcLen = irLen;
+			if (iptcPtr != 0)  {
+				XMP_Uns32 offset = fileOffset + ((iptcPtr - (XMP_Uns8 *) combinedPSIRData.data()) - ( length - psirMarkers[i].jpegMarkerLen ) );
+				DumpIPTC (iptcPtr, iptcLen, offset, "PSIR #1028");
+			}
+		} else if (irID == kPSIR_XMP) {				//****************
+			tree->setKeyValue("PSIR:XMP","");
+			xmpPtr = irPtr;
+			xmpLen = irLen;
+			if (xmpPtr != 0) {
+				XMP_Uns32 offset = fileOffset + ((xmpPtr - (XMP_Uns8 *) combinedPSIRData.data()) - ( length - psirMarkers[i].jpegMarkerLen ) );
+				DumpXMP (xmpPtr, xmpLen, offset, "PSIR #1060");
+			}
+		} else if (irID == kPSIR_Exif_1) {			//****************
+			tree->setKeyValue("PSIR:Exif-1","");
+			exif1Ptr = irPtr;
+			exif1Len = irLen;
+			XMP_Uns32 offset = fileOffset + ((exif1Ptr - (XMP_Uns8 *) combinedPSIRData.data()) - ( length - psirMarkers[i].jpegMarkerLen ) );
+			DumpTIFF (exif1Ptr, exif1Len, offset, "PSIR #1058 (Exif 1)", "PSIR:Exif-1");
+		} else if (irID == kPSIR_Exif_3) {			//****************
+			tree->setKeyValue("PSIR:Exif-3","");
+			exif3Ptr = irPtr;
+			exif3Len = irLen;
+			XMP_Uns32 offset = fileOffset + ((exif3Ptr - (XMP_Uns8 *) combinedPSIRData.data()) - ( length - psirMarkers[i].jpegMarkerLen ) );
+			if (exif3Ptr != 0) DumpTIFF (exif3Ptr, exif3Len, offset, "PSIR #1059 (Exif 3)", "PSIR:Exif-3");
+		} else if (irID == kPSIR_IPTC_Digest) {
+			tree->setKeyValue("PSIR:IPTC digest",
+				fromArgs("%.8X-%.8X-%.8X-%.8X",
+				GetUns32BE(irPtr), 
+				GetUns32BE(irPtr+4), 
+				GetUns32BE(irPtr+8), 
+				GetUns32BE(irPtr+12) )
+				);
+		} else if (irID == kPSIR_CopyrightFlag) {
+			bool copyrighted = (*irPtr != 0);
+			tree->setKeyValue("PSIR:copyrighted",(copyrighted ? "yes" : "no"));
+		} else if (irID == kPSIR_CopyrightURL) {
+			tree->setKeyValue("PSIR:copyright URL",convert8Bit(irPtr,true,irLen));
+		} else if (irID == kPSIR_OldCaption) {
+			tree->setKeyValue("PSIR:old caption",convert8Bit(irPtr,true,irLen));
+		} else if (irID == kPSIR_PrintCaption) {
+			tree->comment("** obsolete print caption **");
+		} else {
+			tree->setKeyValue(
+				fromArgs("PSIR:%s:#%d",irTypeStr.c_str(),irID),
+				""
+				);	
+		}
+		if ( irOffset + irLen > (psirMarkers[i].jpegMarkerPtr - dataStart) + psirMarkers[i].jpegMarkerLen ) {
+			//merged from two markers
+			tree->addComment("offset %d (0x%X), size %d - split in multiple markers", irOffset, irOffset, irLen);	
+		} else {
+			tree->addComment("offset %d (0x%X), size %d", irOffset, irOffset, irLen);	
+		}
+		if (*irName != 0) tree->addComment("\"%.*s\"", (int)(*irName), (irName+1));
+		psirPtr = irPtr + ((irLen + 1) & 0xFFFFFFFE);	// Round the length to be even.
+	} //while-loop
+
+	if (psirPtr != psirEnd) {
+		tree->addComment("** Unexpected end of image resources, delta %d", (long)(psirPtr - psirEnd));
+	}
+
+	//NB: dump routines moved up into if-else's	
+	tree->popNode();
+}	// DumpImageResources
+
+// =================================================================================================
+
 static void
 DumpImageResources (XMP_Uns8 * psirOrigin, XMP_Uns32 psirLen, XMP_Uns32 fileOffset, const char * label)
 {
@@ -1621,6 +1759,7 @@ DumpIFDChain (XMP_Uns8 * startPtr, XMP_Uns8 * endPtr,
 static void
 DumpTIFF (XMP_Uns8 * tiffContent, XMP_Uns32 tiffLen, XMP_Uns32 fileOffset, const char * label, std::string path)
 {
+	tree->pushNode("TIFF content from %s", label);
 	// ! TIFF can be nested because of the Photoshop 6 weiredness. Save and restore the procs.
 	GetUns16_Proc save_GetUns16 = TIFF_GetUns16;
 	GetUns32_Proc save_GetUns32 = TIFF_GetUns32;
@@ -1652,6 +1791,28 @@ DumpTIFF (XMP_Uns8 * tiffContent, XMP_Uns32 tiffLen, XMP_Uns32 fileOffset, const
 	TIFF_GetUns32 = save_GetUns32;
 	TIFF_GetUns64 = save_GetUns64;
 
+	tree->popNode();
+}	// DumpTIFF
+
+
+// =================================================================================================
+
+static void DumpTIFF ( const JpegMarkers& exifMarkers, XMP_Uns8 * dataStart, const char * label, std::string path )
+{
+	XMP_Uns32 i = 0, size = exifMarkers.size();
+	std::string combinedExifData;
+	tree->pushNode( "Combined EXIF Markers from %s", path.c_str() );
+	for ( i = 0; i < size; i++ ) {
+		tree->pushNode( "EXIF Marker %d", i + 1 );
+		tree->addComment("offset %d (0x%X), size %d", exifMarkers[i].jpegMarkerPtr - dataStart,
+			exifMarkers[i].jpegMarkerPtr - dataStart, exifMarkers[i].jpegMarkerLen );
+		combinedExifData.append( (const char *) exifMarkers[i].jpegMarkerPtr, exifMarkers[i].jpegMarkerLen );
+		tree->popNode();
+	}
+
+	DumpTIFF( (XMP_Uns8 *) combinedExifData.data(), combinedExifData.length(), exifMarkers[0].jpegMarkerPtr - dataStart, label, path );
+
+	tree->popNode();
 }	// DumpTIFF
 
 // =================================================================================================
@@ -1680,11 +1841,9 @@ DumpJPEG (XMP_Uns8 * jpegContent, XMP_Uns32 jpegLen)
 	XMP_Uns32  segOffset;
 
 	XMP_Uns8 * xmpPtr = 0;
-	XMP_Uns8 * psirPtr = 0;
-	XMP_Uns8 * exifPtr = 0;
 	XMP_Uns16 xmpLen = 0;
-	XMP_Uns16 psirLen = 0;
-	XMP_Uns16 exifLen = 0;
+
+	JpegMarkers psirMarkers, exifMarkers;
 
 	while (segPtr < endPtr) { // ----------------------------------------------------------------
 
@@ -1740,13 +1899,17 @@ DumpJPEG (XMP_Uns8 * jpegContent, XMP_Uns32 jpegLen)
 				((memcmp(segName,"Exif\0\0",6) == 0) || (memcmp(segName,"Exif\0\xFF",6) == 0))) {
 					tree->addComment("EXIF");
 					tree->changeValue("EXIF");
-					exifPtr = segPtr + 4 + 6;
-					exifLen = segLen - 2 - 6;
+					JpegMarker exifMarker;
+					exifMarker.jpegMarkerPtr = segPtr + 4 + 6;
+					exifMarker.jpegMarkerLen = segLen - 2 - 6;
+					exifMarkers.push_back(exifMarker);
 			} else if ((minorKind == 13) && (strcmp(segName,"Photoshop 3.0") == 0)) {
 				tree->addComment("PSIR");
 				tree->changeValue("PSIR");
-				psirPtr = segPtr + 4 + strlen(segName) + 1;
-				psirLen = (XMP_Uns16)(segLen - 2 - strlen(segName) - 1);
+				JpegMarker psirMarker;
+				psirMarker.jpegMarkerPtr = segPtr + 4 + strlen(segName) + 1;
+				psirMarker.jpegMarkerLen = (XMP_Uns16)(segLen - 2 - strlen(segName) - 1);
+				psirMarkers.push_back(psirMarker);
 			} else if ((minorKind == 1) && (strcmp(segName,"http://ns.adobe.com/xap/1.0/") == 0)) {
 				tree->addComment("XMP");
 				tree->changeValue("XMP");
@@ -1834,16 +1997,20 @@ DumpJPEG (XMP_Uns8 * jpegContent, XMP_Uns32 jpegLen)
 			));
 	}
 
-	if (exifPtr != 0) DumpTIFF (exifPtr, exifLen, (exifPtr - jpegContent), "JPEG Exif APP1", "JPEG:APP1");
-	if (psirPtr != 0) DumpImageResources (psirPtr, psirLen, (psirPtr - jpegContent), "JPEG Photoshop APP13");
+	if (exifMarkers.size() > 0) DumpTIFF (exifMarkers, jpegContent, "JPEG Exif APP1", "JPEG:APP1");
+	if (psirMarkers.size() > 0) DumpImageResources (psirMarkers, jpegContent, "JPEG Photoshop APP13");
 	if (xmpPtr != 0) DumpXMP (xmpPtr, xmpLen, (xmpPtr - jpegContent), "JPEG XMP APP1");
 
 }	// DumpJPEG
 
 // =================================================================================================
-
+//#if !IOS_ENV
 static const XMP_Uns8 kUUID_XMP[16]  =
 { 0xBE, 0x7A, 0xCF, 0xCB, 0x97, 0xA9, 0x42, 0xE8, 0x9C, 0x71, 0x99, 0x94, 0x91, 0xE3, 0xAF, 0xAC };
+/*#else
+static const XMP_Uns8 kUUID_XMP[16]  =
+{ 0xFFFFFFBE, 0x0000007A, 0xFFFFFFCF, 0xFFFFFFCB, 0xFFFFFF97, 0xFFFFFFA9, 0x00000042, 0xFFFFFFE8, 0xFFFFFF9C, 0x00000071, 0xFFFFFF99, 0xFFFFFF94, 0xFFFFFF91, 0xFFFFFFE3, 0xFFFFFFAF, 0xFFFFFFAC };
+#endif */
 static const XMP_Uns8 kUUID_Exif[16] =
 { 0x05, 0x37, 0xCD, 0xAB, 0x9D, 0x0C, 0x44, 0x31, 0xA7, 0x2A, 0xFA, 0x56, 0x1F, 0x2A, 0x11, 0x3E };
 static const XMP_Uns8 kUUID_IPTC[16] =
@@ -1877,13 +2044,8 @@ digestInternationalTextSequence ( LFA_FileRef file, std::string isoPath, XMP_Int
 	tree->digest16u(file,isoPath+"language code",true,true);
 	(*remainingSize) -= 4;
 	if ( (*remainingSize) != miniBoxStringSize )
-	{
 		tree->addComment("WARNING: boxSize and miniBoxSize differ!");
-	}
-	else
-	{
-		tree->digestString( file, isoPath+"value", miniBoxStringSize, false );
-	}
+	tree->digestString( file, isoPath+"value", miniBoxStringSize, false );
 }
 
 /**
@@ -1948,13 +2110,17 @@ DumpISOBoxes ( LFA_FileRef file, XMP_Uns32 maxBoxLen, std::string _isoPath )
                 std::string boxString( fromArgs( "%.4s" , &tempBoxType) );
 
 		// substitute mac-copyright signs with an easier-to-handle "(c)"
-		if ( boxString.at(0) == 0xA9 )
-			boxString = std::string("(c)") + boxString.substr(1);
+#if !IOS_ENV
+		if ( boxString.at(0) == 0xa9 )
+#else
+        if ( boxString.at(0) == 0xffffffa9 )
+#endif
+            boxString = std::string("(c)") + boxString.substr(1);
 		isoPath = origIsoPath + boxString + "/";
 
 		// TEMP
 		// Log::info("pushing %s, endOfThisLevel: 0x%X", isoPath.c_str(), endOfThisLevel );
-
+       // printf ("%s \n", isoPath.c_str());
 		tree->pushNode(	isoPath );
 		tree->addComment("offset 0x%I64X, size 0x%I64X", boxPos , boxSize);
 
@@ -2255,23 +2421,7 @@ DumpISOBoxes ( LFA_FileRef file, XMP_Uns32 maxBoxLen, std::string _isoPath )
 
 			// (c)-style quicktime boxes and boxes of no interest:
 			default:
-				    if ( 0 == isoPath.compare( 0 , 20, "moov/udta/meta/ilst/"))
-					{ // => iTunes metadata (hunt for data childs)
-						// a container box, hunt for 'data' atom by recursion:
-						bool ok;
-						XMP_Int64 keep = LFA_Tell( file );
-						DumpISOBoxes( file, remainingSize, isoPath );
-						LFA_Seek( file, keep, SEEK_SET, &ok );
-						assertMsg( "seek failed", ok );	
-					}
-					else if ( 0 == isoPath.compare( 0 , 10, "moov/udta/" ))
-					{ // => Quicktime metadata "international text sequence" ( size, language code, value )
-							digestInternationalTextSequence( file, isoPath, &remainingSize );
-					} else
-					{
-						tree->addComment("WARNING: unknown flavor of (c)*** boxes, neither QT nor iTunes");
-					}			
-					break;
+				break;
 		}
 
 		bool ok;
@@ -3223,6 +3373,10 @@ DumpRIFFChunk ( LFA_FileRef file, XMP_Int64 parentEnd, std::string origChunkPath
 						( ( origChunkPath == "RIFF:WAVE" || origChunkPath == "RIFF:AVI ")
 							&& idString == "bext" );
 
+					bool isIXMLChunk = 
+						( ( origChunkPath == "RIFF:WAVE" )
+						&& idString == "iXML" );
+
 					bool isXMPchunk = false; //assume beforehand
 					if ( idString == "_PMX" ) 
 					{	// detour first, to detect xmp in wrong places
@@ -3333,6 +3487,25 @@ DumpRIFFChunk ( LFA_FileRef file, XMP_Int64 parentEnd, std::string origChunkPath
 
 						tree->addComment("packet end: 0x%llX", LFA_Tell( file ) );				
 						tree->popNode();
+					} else if ( isIXMLChunk ) {
+						tree->pushNode("iXML packet");
+
+						tree->addOffset( file );
+						tree->addComment("packet size: 0x%llX", chunkSize - 8 );
+						//Skip( file, chunkSize - 8 );
+
+						size_t sizeofIXMLValue = chunkSize-8;
+						char* descriptionBuffer = new char[ sizeofIXMLValue + 2 ];
+						LFA_Read( file, descriptionBuffer, sizeofIXMLValue, true );
+						descriptionBuffer[sizeofIXMLValue]='\0'; // tack on, in case not contained
+						// parse till first \0
+						std::string description( descriptionBuffer );
+
+						delete[] descriptionBuffer;
+						tree->addComment("packet end: 0x%llX", LFA_Tell( file ) );
+
+						tree->popNode();
+						
 					}
 					else
 					{

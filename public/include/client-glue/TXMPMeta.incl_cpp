@@ -17,6 +17,15 @@
 
 #include "client-glue/WXMPMeta.hpp"
 
+#if INCLUDE_XMP_NEW_DOM_MODEL
+	#include "XMPCore/XMPCore_Defines.h"
+
+	#if ENABLE_NEW_DOM_MODEL
+		#include "XMPCore/XMPCore_Defines.h"
+		#include "XMPCore/Interfaces/IXMPDOMFactory.h"
+	#endif
+#endif
+
 // =================================================================================================
 // Implementation Guidelines
 // =========================
@@ -116,6 +125,11 @@ Initialize()
 	#endif
 
 	WrapCheckBool ( ok, zXMPMeta_Initialize_1() );
+
+	#if ENABLE_NEW_DOM_MODEL
+		NS_XMPCOMMON::IXMPDOMFactory_latest::CreateInstance();
+	#endif
+
 	return ok;
 
 }
@@ -125,7 +139,7 @@ XMP_MethodIntro(TXMPMeta,void)::
 Terminate()
 {
 	WrapNoCheckVoid ( zXMPMeta_Terminate_1() );
-	
+
 	#if XMP_TraceClientCallsToFile
 		if ( xmpClientLog != stderr ) fclose ( xmpClientLog );
 		xmpClientLog = stderr;

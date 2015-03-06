@@ -1979,7 +1979,7 @@ bool AVCHD_MetaHandler::GetFileModDate ( XMP_DateTime * modDate )
 	ok = this->MakeClipInfoPath ( &fullPath, ".clpi", true /* checkFile */ );
 	if ( ok ) ok = Host_IO::GetModifyDate ( fullPath.c_str(), &oneDate );
 	if ( ok ) {
-		if ( (! haveDate) || (*modDate < oneDate) ) *modDate = oneDate;
+		if ( *modDate < oneDate ) *modDate = oneDate;
 		haveDate = true;
 	}
 
@@ -2270,7 +2270,7 @@ void AVCHD_MetaHandler::ProcessXMP()
 					if ( has2_2pulldown )
 						xmpValue = "29.97p";
 					else
-						xmpValue = has3_2pulldown ? "23.98p" : "59.94i";
+						xmpValue = "59.94i";
 
 					break;
 				default: break;

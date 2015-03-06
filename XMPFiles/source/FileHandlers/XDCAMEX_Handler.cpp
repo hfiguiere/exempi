@@ -388,7 +388,7 @@ bool XDCAMEX_MetaHandler::GetFileModDate ( XMP_DateTime * modDate )
 	ok = this->MakeMediaproPath ( &fullPath, true /* checkFile */ );
 	if ( ok ) ok = Host_IO::GetModifyDate ( fullPath.c_str(), &oneDate );
 	if ( ok ) {
-		if ( (! haveDate) || (*modDate < oneDate) ) *modDate = oneDate;
+		if ( *modDate < oneDate ) *modDate = oneDate;
 		haveDate = true;
 	}
 

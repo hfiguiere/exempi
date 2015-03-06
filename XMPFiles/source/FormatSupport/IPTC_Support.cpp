@@ -337,14 +337,14 @@ size_t IPTC_Manager::GetDataSet_UTF8 ( XMP_Uns8 dsNum, std::string * utf8Str, si
 
 void IPTC_Manager::DisposeLooseValue ( DataSetInfo & dsInfo )
 {
-	if ( dsInfo.dataLen == 0 ) return;
+	if ( dsInfo.dataLen == 0 || dsInfo.dataPtr == NULL ) return;
 	
 	XMP_Uns8* dataBegin = this->iptcContent;
 	XMP_Uns8* dataEnd   = dataBegin + this->iptcLength;
 	
 	if ( ((XMP_Uns8*)dsInfo.dataPtr < dataBegin) || ((XMP_Uns8*)dsInfo.dataPtr >= dataEnd) ) {
 		free ( (void*) dsInfo.dataPtr );
-		dsInfo.dataPtr = 0;
+		dsInfo.dataPtr = NULL;
 	}
 	
 }	// IPTC_Manager::DisposeLooseValue

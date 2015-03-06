@@ -11,6 +11,49 @@
 # define minimum cmake version
 cmake_minimum_required(VERSION 2.8.6)
 
+# ==============================================================================
+# Function: architecture related settings
+# ==============================================================================
+function(SetupTargetArchitecture)
+	if(APPLE_IOS)
+		set(${COMPONENT}_CPU_FOLDERNAME	"$(ARCHS_STANDARD_32_BIT)" PARENT_SCOPE)
+	else()
+		if(CMAKE_CL_64)
+			set(${COMPONENT}_BITDEPTH		"64" PARENT_SCOPE)
+			set(${COMPONENT}_CPU_FOLDERNAME	"intel_64" PARENT_SCOPE)
+		else()
+			set(${COMPONENT}_BITDEPTH		"32" PARENT_SCOPE)
+			set(${COMPONENT}_CPU_FOLDERNAME	"intel" PARENT_SCOPE)
+		endif()
+	endif()
+endfunction(SetupTargetArchitecture)
+
+# ==============================================================================
+# Function: Set internal build target directory. See ${COMPONENT}_PLATFORM_FOLDER for 
+# further construction and when CMAKE_CFG_INTDIR/CMAKE_BUILD_TYPE are set 
+# (generator dependent).
+# ==============================================================================
+function(SetupInternalBuildDirectory)
+	if(CMAKE_CFG_INTDIR STREQUAL ".")
+		# CMAKE_BUILD_TYPE only available for makefile builds
+		set(${COMPONENT}_IS_MAKEFILE_BUILD	"ON" PARENT_SCOPE)
+		if((${CMAKE_BUILD_TYPE} MATCHES "Debug") OR (${CMAKE_BUILD_TYPE} MATCHES "debug") )
+			set(${COMPONENT}_BUILDMODE_DIR "debug" PARENT_SCOPE)
+		else()
+			set(${COMPONENT}_BUILDMODE_DIR "release" PARENT_SCOPE)
+		endif()
+	else()
+		# Visual/XCode have dedicated Debug/Release target modes. CMAKE_CFG_INTDIR is set.
+		if(APPLE_IOS)
+# TODO: fixme
+#			set(${COMPONENT}_BUILDMODE_DIR "$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)" PARENT_SCOPE)
+			set(${COMPONENT}_BUILDMODE_DIR "$(CONFIGURATION)" PARENT_SCOPE)
+		else()
+			set(${COMPONENT}_BUILDMODE_DIR ${CMAKE_CFG_INTDIR} PARENT_SCOPE)
+		endif()
+		set(${COMPONENT}_IS_MAKEFILE_BUILD	"OFF" PARENT_SCOPE)
+	endif()
+endfunction(SetupInternalBuildDirectory)
 
 
 # ==============================================================================
@@ -46,6 +89,34 @@ function(SetupCompilerFlags)
 endfunction(SetupCompilerFlags)
 
 
+# ==============================================================================
+# Function: Setup general and specific folder structures
+# ==============================================================================
+function(SetupGeneralDirectories)
+	set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR} PARENT_SCOPE)
+	set(PROJECT_ROOT ${PROJECT_SOURCE_DIR} PARENT_SCOPE)
+	set(SOURCE_ROOT ${PROJECT_SOURCE_DIR}/../source PARENT_SCOPE)
+	set(RESOURCE_ROOT ${PROJECT_SOURCE_DIR}/../resource PARENT_SCOPE)
+	
+	# ==============================================================================
+	# ${COMPONENT} specific defines
+	# ==============================================================================
+	
+	# Construct output directory
+	# The CMAKE_CFG_INTDIR gets automatically set for generators which differenciate different build targets (eg. VS, XCode), but is emtpy for Linux !
+	# In this case Debug/Release is added to the OUTPUT_DIR when used for LIBRARY_OUTPUT_PATH.
+	
+	string(TOLOWER ${${COMPONENT}_BUILDMODE_DIR} LOWERCASE_${COMPONENT}_BUILDMODE_DIR)
+	set(OUTPUT_DIR ${PROJECT_SOURCE_DIR}/${${COMPONENT}_THIS_PROJECT_RELATIVEPATH}/public/libraries/${${COMPONENT}_PLATFORM_FOLDER}/${LOWERCASE_${COMPONENT}_BUILDMODE_DIR} PARENT_SCOPE)
+
+	# ${COMPONENT} lib locations constructed with ${${COMPONENT}_PLATFORM_FOLDER}/${${COMPONENT}_BUILDMODE_DIR}, since the target folder (Debug/Release) isn't added automatically
+	set(${COMPONENT}ROOT_DIR ${PROJECT_SOURCE_DIR}/${${COMPONENT}_THIS_PROJECT_RELATIVEPATH}/ PARENT_SCOPE)
+	set(${COMPONENT}LIBRARIES_DIR ${PROJECT_SOURCE_DIR}/${${COMPONENT}_THIS_PROJECT_RELATIVEPATH}/public/libraries/${${COMPONENT}_PLATFORM_FOLDER}/${LOWERCASE_${COMPONENT}_BUILDMODE_DIR} PARENT_SCOPE)
+	set(${COMPONENT}PLUGIN_DIR ${PROJECT_SOURCE_DIR}/${${COMPONENT}_THIS_PROJECT_RELATIVEPATH}/${COMPONENT}Plugin PARENT_SCOPE)
+	set(${COMPONENT}PLUGIN_OUTPUT_DIR ${PROJECT_SOURCE_DIR}/${${COMPONENT}_THIS_PROJECT_RELATIVEPATH}/${COMPONENT}FilesPlugins/public/${${COMPONENT}_PLATFORM_FOLDER}/${${COMPONENT}_BUILDMODE_DIR} PARENT_SCOPE)
+
+	# each plugin project should implement function named SetupProjectSpecifiedDirectories to specify the directories used by project itself
+endfunction(SetupGeneralDirectories)
 
 # ==============================================================================
 # Function: Converts a semicolon separated list into whitespace separated string
