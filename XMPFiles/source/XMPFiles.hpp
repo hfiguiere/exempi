@@ -17,7 +17,7 @@
 #include "public/include/XMP.hpp"
 
 #include "public/include/XMP_IO.hpp"
-
+#include "source/SafeStringAPIs.h"
 #include "source/XMP_ProgressTracker.hpp"
 
 class XMPFileHandler;

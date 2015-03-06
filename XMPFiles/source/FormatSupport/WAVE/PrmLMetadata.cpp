@@ -76,8 +76,6 @@ void PrmLMetadata::parse( const XMP_Uns8* chunkData, XMP_Uns64 size )
 {
 	if( size >= kPrmlSizeFix )
 	{
-		const LittleEndian& LE = LittleEndian::getInstance();
-
 		PrmlBoxContent prml;
 		memset( &prml, 0, kPrmlSizeFix );
 

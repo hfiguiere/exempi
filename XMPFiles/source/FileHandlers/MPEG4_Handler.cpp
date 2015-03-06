@@ -24,6 +24,7 @@
 #include "source/XMP_ProgressTracker.hpp"
 #include "source/UnicodeConversions.hpp"
 #include "third-party/zuid/interfaces/MD5.h"
+#include <math.h>
 
 #if XMP_WinBuild
 	#pragma warning ( disable : 4996 )	// '...' was declared deprecated
@@ -142,6 +143,31 @@ static inline XMP_StringPtr Lookup3LetterLang ( XMP_StringPtr lang2 )
 	return "";
 }
 
+
+#define IsTolerableBoxChar(ch)	( ((0x20 <= (ch)) && ((ch) <= 0x7E)) || ((ch) == 0xA9) )
+
+static inline bool IsTolerableBox ( XMP_Uns32 boxType )
+{
+	// Make sure the box type is 4 ASCII characters or 0xA9 (MacRoman copyright).
+	XMP_Uns8 b1 = (XMP_Uns8) (boxType >> 24);
+	XMP_Uns8 b2 = (XMP_Uns8) ((boxType >> 16) & 0xFF);
+	XMP_Uns8 b3 = (XMP_Uns8) ((boxType >> 8) & 0xFF);
+	XMP_Uns8 b4 = (XMP_Uns8) (boxType & 0xFF);
+	bool ok = IsTolerableBoxChar(b1) && IsTolerableBoxChar(b2) &&
+		IsTolerableBoxChar(b3) && IsTolerableBoxChar(b4);
+	return ok;
+}
+
+static inline bool IsXMPUUID ( XMP_IO * fileRef,XMP_Uns64 contentSize, bool unmovedFilePtr=false )
+{
+	if ( contentSize < 16 ) return false;
+	XMP_Uns8 uuid [16];
+	fileRef->ReadAll ( uuid, 16 );
+	if (unmovedFilePtr) fileRef->Seek ( -16, kXMP_SeekFromCurrent );
+	if ( memcmp ( uuid, ISOMedia::k_xmpUUID, 16 ) != 0 ) return false;	// Check for the XMP GUID.
+	return true;
+}
+
 // =================================================================================================
 // MPEG4_CheckFormat
 // =================
@@ -183,8 +209,6 @@ bool MPEG4_CheckFormat ( XMP_FileFormat format,
 	XMP_Uns32 ioCount, brandCount, brandOffset;
 	XMP_Uns64 fileSize, nextOffset;
 	ISOMedia::BoxInfo currBox;
-
-	#define IsTolerableBoxChar(ch)	( ((0x20 <= (ch)) && ((ch) <= 0x7E)) || ((ch) == 0xA9) )
 
 	XMP_AbortProc abortProc  = parent->abortProc;
 	void *        abortArg   = parent->abortArg;
@@ -256,14 +280,7 @@ bool MPEG4_CheckFormat ( XMP_FileFormat format,
 		while ( currBox.boxType != ISOMedia::k_moov ) {
 
 			if ( ! IsClassicQuickTimeBox ( currBox.boxType ) ) {
-				// Make sure the box type is 4 ASCII characters or 0xA9 (MacRoman copyright).
-				XMP_Uns8 b1 = (XMP_Uns8) (currBox.boxType >> 24);
-				XMP_Uns8 b2 = (XMP_Uns8) ((currBox.boxType >> 16) & 0xFF);
-				XMP_Uns8 b3 = (XMP_Uns8) ((currBox.boxType >> 8) & 0xFF);
-				XMP_Uns8 b4 = (XMP_Uns8) (currBox.boxType & 0xFF);
-				bool ok = IsTolerableBoxChar(b1) && IsTolerableBoxChar(b2) &&
-						  IsTolerableBoxChar(b3) && IsTolerableBoxChar(b4);
-				if ( ! ok ) return false;
+				if ( ! IsTolerableBox(currBox.boxType) ) return false;
 			}
 			if ( nextOffset >= fileSize ) return false;
 			if ( checkAbort && abortProc(abortArg) ) {
@@ -1721,7 +1738,6 @@ static QTErrorMode CheckAtomList ( XMP_IO* qtFile, XMP_Int64 spanSize, int nesti
 	if ( spanSize != 0 ) {
 		qtFile->Seek ( spanSize, kXMP_SeekFromCurrent );	// ! Skip the trailing garbage of this span.
 		status = kBadQT_SmallInner;
-		if ( spanSize >= 8 ) status = kBadQT_LargeInner;
 		if ( nesting == 0 ) status += 2;	// Convert to "outer".
 	}
 
@@ -1733,16 +1749,28 @@ static QTErrorMode CheckAtomList ( XMP_IO* qtFile, XMP_Int64 spanSize, int nesti
 // AttemptFileRepair
 // =================
 
-static void AttemptFileRepair ( XMP_IO* qtFile, XMP_Int64 fileSpace, QTErrorMode status )
+static void AttemptFileRepair ( XMP_IO* qtFile, XMP_Int64 fileSpace, QTErrorMode status, GenericErrorCallback * ec )
 {
 
 	switch ( status ) {
 		case kBadQT_NoError    : return;	// Sanity check.
 		case kBadQT_SmallInner : return;	// Fixed in normal update code for the 'udta' box.
-		case kBadQT_LargeInner : XMP_Throw ( "Can't repair QuickTime file", kXMPErr_BadFileFormat );
-		case kBadQT_SmallOuter : break;		// Truncate file below.
-		case kBadQT_LargeOuter : break;		// Truncate file below.
-		default                : XMP_Throw ( "Invalid QuickTime error mode", kXMPErr_InternalFailure );
+		case kBadQT_LargeInner : 
+			{
+				XMP_Error error ( kXMPErr_BadFileFormat,"Can't repair QuickTime file" );
+				XMPFileHandler::NotifyClient(ec, kXMPErrSev_FileFatal, error);
+				break;// will never be here
+			}
+		case kBadQT_SmallOuter :	// Truncate file below.
+		case kBadQT_LargeOuter : 	// Truncate file below.
+			{
+				break;
+			}
+		default                : 
+			{
+				XMP_Error error ( kXMPErr_InternalFailure, "Invalid QuickTime error mode" );
+				XMPFileHandler::NotifyClient(ec, kXMPErrSev_FileFatal, error);
+			}
 	}
 
 	AtomInfo info;
@@ -1760,19 +1788,37 @@ static void AttemptFileRepair ( XMP_IO* qtFile, XMP_Int64 fileSpace, QTErrorMode
 		if ( info.hasLargeSize ) headerSize = 16;
 
 		if ( atomStatus != kBadQT_NoError ) break;
-		if ( (info.atomSize < headerSize) || (info.atomSize > fileSpace) ) break;
+		// If the atom size is less than header -case of kBadQT_SmallOuter
+		// If the atom size is more than left filespace -case of kBadQT_LargeOuter
+		if ( (info.atomSize < headerSize) || (info.atomSize > fileSpace ) ) break; 
 
 		XMP_Int64 dataSize = info.atomSize - headerSize;
 		qtFile->Seek ( dataSize, kXMP_SeekFromCurrent );
 
 	}
+	// Truncate only if the last box type was XMP boxes
+	// Refrain from truncating a known box as it 
+	// might have some useful data which is incomplete
+	if ( fileSpace < 8 ||
+		 ! ISOMedia::IsKnownBoxType ( info.atomType ) || 
+		 ((info.atomType == ISOMedia::k_uuid) && IsXMPUUID(qtFile,info.atomSize-headerSize,true)) ||
+		  (info.atomType == ISOMedia::k_XMP_)
+		 ){
+		
+		XMP_Error error ( kXMPErr_BadFileFormat,"Truncate outer EOF Garbage" );
+		XMPFileHandler::NotifyClient(ec, kXMPErrSev_Recoverable, error);
+		// Truncate the file. If fileSpace >= 8 then the loop exited early due to a bad atom, seek back
+		// to the atom's start. Otherwise, the loop exited because no more atoms are possible, no seek.
 
-	// Truncate the file. If fileSpace >= 8 then the loop exited early due to a bad atom, seek back
-	// to the atom's start. Otherwise, the loop exited because no more atoms are possible, no seek.
+		if ( fileSpace >= 8 ) qtFile->Seek ( -headerSize, kXMP_SeekFromCurrent );
+		XMP_Int64 currPos = qtFile->Offset();
+		qtFile->Truncate ( currPos );
+	}
+	else{
 
-	if ( fileSpace >= 8 ) qtFile->Seek ( -headerSize, kXMP_SeekFromCurrent );
-	XMP_Int64 currPos = qtFile->Offset();
-	qtFile->Truncate ( currPos );
+		XMP_Error error ( kXMPErr_BadFileFormat,"Missing box Data at EOF" );
+		XMPFileHandler::NotifyClient(ec, kXMPErrSev_FileFatal, error);
+	}
 
 }	// AttemptFileRepair
 
@@ -1780,7 +1826,7 @@ static void AttemptFileRepair ( XMP_IO* qtFile, XMP_Int64 fileSpace, QTErrorMode
 // CheckQTFileStructure
 // ====================
 
-static void CheckQTFileStructure ( XMPFileHandler * thiz, bool doRepair )
+static void CheckQTFileStructure ( XMPFileHandler * thiz,bool doRepair, GenericErrorCallback * ec )
 {
 	XMPFiles * parent = thiz->parent;
 	XMP_IO* fileRef  = parent->ioRef;
@@ -1793,13 +1839,13 @@ static void CheckQTFileStructure ( XMPFileHandler * thiz, bool doRepair )
 
 	if ( status != kBadQT_NoError ) {
 		if ( doRepair || (status == kBadQT_SmallInner) || (status == kBadQT_SmallOuter) ) {
-			AttemptFileRepair ( fileRef, fileSize, status );	// Will throw if the attempt fails.
+			AttemptFileRepair ( fileRef, fileSize, status,ec );	// Will throw if the attempt fails.
 		} else if ( status != kBadQT_SmallInner ) {
-			XMP_Throw ( "Ill-formed QuickTime file", kXMPErr_BadFileFormat );
-		} else {
-			return;	// ! Ignore these, QT seems to be able to handle them.
-			// *** Might want to throw for check-only, ignore when repairing.
-		}
+			//don't truncate Large Outer EOF garbage unless the client wants it to
+			// Clients can pass their intent by setting the flag kXMPFiles_OpenRepairFile
+			XMP_Error error ( kXMPErr_BadFileFormat,"Ill-formed QuickTime file" );
+			XMPFileHandler::NotifyClient(ec, kXMPErrSev_FileFatal, error);
+		} 
 	}
 
 }	// CheckQTFileStructure;
@@ -1946,7 +1992,7 @@ typedef std::vector<SpaceInfo> FreeSpaceList;
 static void CreateFreeSpaceList ( XMP_IO* fileRef, XMP_Uns64 fileSize,
 								  XMP_Uns64 oldOffset, XMP_Uns32 oldSize, FreeSpaceList * spaceList )
 {
-	XMP_Uns64 boxPos, boxNext, adjacentFree;
+	XMP_Uns64 boxPos=0, boxNext=0, adjacentFree=0;
 	ISOMedia::BoxInfo currBox;
 
 	fileRef->Rewind();
@@ -2002,8 +2048,8 @@ void MPEG4_MetaHandler::CacheFileData()
 	const bool isUpdate = XMP_OptionIsSet ( openFlags, kXMPFiles_OpenForUpdate );
 	const bool doRepair = XMP_OptionIsSet ( openFlags, kXMPFiles_OpenRepairFile );
 
-	if ( isUpdate && (parent->format == kXMP_MOVFile) ) {
-		CheckQTFileStructure ( this, doRepair );	// Will throw for failure.
+	if ( isUpdate ) {
+		CheckQTFileStructure ( this, doRepair, &parent->errorCallback );	// Will throw for failure.
 	}
 
 	// Cache the top level 'moov' and 'uuid'/XMP boxes.
@@ -2045,13 +2091,7 @@ void MPEG4_MetaHandler::CacheFileData()
 			moovFound = true;
 			if ( uuidFound ) break;	// Exit the loop when both are found.
 
-		} else if ( (! uuidFound) && (currBox.boxType == ISOMedia::k_uuid) ) {
-
-			if ( currBox.contentSize < 16 ) continue;
-
-			XMP_Uns8 uuid [16];
-			fileRef->ReadAll ( uuid, 16 );
-			if ( memcmp ( uuid, ISOMedia::k_xmpUUID, 16 ) != 0 ) continue;	// Check for the XMP GUID.
+		} else if ( (! uuidFound) && (currBox.boxType == ISOMedia::k_uuid) && IsXMPUUID(fileRef,currBox.contentSize) ) {
 
 			XMP_Uns64 fullUuidSize = currBox.headerSize + currBox.contentSize;
 			if ( fullUuidSize > moovBoxSizeLimit ) {	// From here on we know 32-bit offsets are safe.
@@ -2073,7 +2113,10 @@ void MPEG4_MetaHandler::CacheFileData()
 
 	}
 
-	if ( (! moovFound) && (! moovIgnored) ) XMP_Throw ( "No 'moov' box", kXMPErr_BadFileFormat );
+	if ( (! moovFound) && (! moovIgnored) ){
+		XMP_Error error ( kXMPErr_BadFileFormat,"No 'moov' box" );
+		XMPFileHandler::NotifyClient(&parent->errorCallback, kXMPErrSev_FileFatal, error);
+	}
 
 }	// MPEG4_MetaHandler::CacheFileData
 
@@ -2110,7 +2153,10 @@ void MPEG4_MetaHandler::ProcessXMP()
 
 	// Parse the cached 'moov' subtree, parse the preferred XMP.
 
-	if ( this->moovMgr.fullSubtree.empty() ) XMP_Throw ( "No 'moov' box", kXMPErr_BadFileFormat );
+	if ( this->moovMgr.fullSubtree.empty() ) {
+		XMP_Error error ( kXMPErr_BadFileFormat,"No 'moov' box" );
+		XMPFileHandler::NotifyClient(&parent->errorCallback, kXMPErrSev_FileFatal, error);
+	}
 	this->moovMgr.ParseMemoryTree ( this->fileMode );
 
 	if ( (this->xmpBoxPos == 0) || (! haveISOFile) ) {
@@ -2168,6 +2214,7 @@ void MPEG4_MetaHandler::ProcessXMP()
 
 		if ( mvhdFound )   this->containsXMP |= ImportMVHDItems ( mvhdInfo, &this->xmpObj );
 		if ( cprtFound )   this->containsXMP |= ImportISOCopyrights ( cprtBoxes, &this->xmpObj );
+		if ( tmcdFound )   this->containsXMP |= ImportTimecodeItems ( this->tmcdInfo, this->tradQTMgr, &this->xmpObj );
 	} else {	// This is a QuickTime file, either traditional or modern.
 
 		if ( mvhdFound )   this->containsXMP |= ImportMVHDItems ( mvhdInfo, &this->xmpObj );
@@ -2251,11 +2298,16 @@ bool MPEG4_MetaHandler::ParseTimecodeTrack()
 	XMP_Uns32 stsdEntryFormat = GetUns32BE ( &stsdRawEntry->format );
 	if ( stsdEntryFormat != ISOMedia::k_tmcd ) return false;
 
+	// If frame duration is zero it means tmcd sample is invalid
+	if(GetUns32BE(&stsdRawEntry->frameDuration)==0)
+		return false;
+
 	this->tmcdInfo.timeScale = GetUns32BE ( &stsdRawEntry->timeScale );
 	this->tmcdInfo.frameDuration = GetUns32BE ( &stsdRawEntry->frameDuration );
 
 	double floatCount = (double)this->tmcdInfo.timeScale / (double)this->tmcdInfo.frameDuration;
 	XMP_Uns8 expectedCount = (XMP_Uns8) (floatCount + 0.5);
+	if( expectedCount == 0 )	return false;
 	if ( expectedCount != stsdRawEntry->frameCount ) {
 		double countRatio = (double)stsdRawEntry->frameCount / (double)expectedCount;
 		this->tmcdInfo.timeScale = (XMP_Uns32) (((double)this->tmcdInfo.timeScale * countRatio) + 0.5);
@@ -2541,6 +2593,305 @@ void MPEG4_MetaHandler::UpdateTopLevelBox ( XMP_Uns64 oldOffset, XMP_Uns32 oldSi
 }	// MPEG4_MetaHandler::UpdateTopLevelBox
 
 // =================================================================================================
+// AdjustOffset
+// ============
+//
+// A utility for OptimizeFileLayout, adjusts a 'stco' or 'co64' table entry for the new layout. The
+// map is keyed by the original box's last content offset, so that map.lower_bound does what we want.
+
+struct LayoutInfo {
+	XMP_Uns32 boxType;
+	XMP_Uns64 boxSize;	// The full size, including the header.
+	XMP_Uns64 oldOffset, newOffset;
+	LayoutInfo() : boxType(0), boxSize(0), oldOffset(0), newOffset(0) {};
+	LayoutInfo ( XMP_Uns32 type, XMP_Uns64 size, XMP_Uns64 offset )
+		: boxType(type), boxSize(size), oldOffset(offset), newOffset(0) {};
+};
+
+typedef std::vector < LayoutInfo > LayoutVector;
+typedef std::map < XMP_Uns64, LayoutInfo* > LayoutMap;
+
+static XMP_Uns64 AdjustOffset ( XMP_Uns64 oldOffset, const LayoutMap & newMap , GenericErrorCallback * ec)
+{
+
+	LayoutMap::const_iterator mapEntry = newMap.lower_bound ( oldOffset );
+	if ( (mapEntry == newMap.end()) || (oldOffset < mapEntry->second->oldOffset) ) {
+		XMP_Error error ( kXMPErr_BadFileFormat,"Offset from 'stco' or 'co64' is not into kept box" );
+		XMPFileHandler::NotifyClient(ec, kXMPErrSev_FileFatal, error);
+	}
+
+	XMP_Assert ( (mapEntry->second->oldOffset <= oldOffset) &&
+				 (oldOffset <= (mapEntry->second->oldOffset + mapEntry->second->boxSize)) );
+
+	return mapEntry->second->newOffset + (oldOffset - mapEntry->second->oldOffset);
+
+}	// AdjustOffset
+
+// =================================================================================================
+// MPEG4_MetaHandler::OptimizeFileLayout
+// =====================================
+//
+// Make sure the file is acceptable for streaming use: the 'moov' and XMP 'uuid' boxes must be
+// before any 'mdat' box, other top level boxes after 'mdat' are accepted. If the file needs
+// optimization, it is fully rewritten in this order: 'ftyp' (if ISO), 'moov', XMP 'uuid', other
+// non-'mdat', all 'mdat' boxes. Top level 'free' and 'skip' boxes will be removed. Offsets in the
+// 'stco' and 'co64' boxes will be adjusted.
+
+void MPEG4_MetaHandler::OptimizeFileLayout()
+{
+	XMP_IO* originalFile = this->parent->ioRef;
+	XMP_Uns64 originalSize = originalFile->Length();
+
+	XMP_AbortProc abortProc  = parent->abortProc;
+	void *        abortArg   = parent->abortArg;
+	const bool    checkAbort = (abortProc != 0);
+
+	XMP_Uns64 currPos, nextPos;
+	ISOMedia::BoxInfo currBox;
+
+	size_t boxCount = 0;
+	size_t moovIndex = 0, xmpIndex = 0;
+
+	// Go through the top level boxes to see if the file layout needs to be optimized. Look until
+	// we find both the 'moov' and XMP 'uuid' boxes, saving their relative index in the file.
+
+	bool needsOptimization = false;
+	bool moovFound = false, xmpFound = false, mdatFound = false;
+
+	for ( currPos = 0; currPos < originalSize; currPos = nextPos ) {
+
+		nextPos = ISOMedia::GetBoxInfo ( originalFile, currPos, originalSize, &currBox );
+		if ( (currBox.boxType == ISOMedia::k_free) ||
+			 (currBox.boxType == ISOMedia::k_skip) ||
+			 (currBox.boxType == ISOMedia::k_wide) ) continue;
+
+		++boxCount;	// ! Must be counted for all, continue statements below skip an end of loop increment.
+
+		if ( currBox.boxType == ISOMedia::k_mdat ) {
+
+			mdatFound = true;
+			XMP_Assert ( (! moovFound) | (! xmpFound) );	// The other cases should be exiting.
+
+		} else if ( currBox.boxType == ISOMedia::k_moov ) {
+
+			moovFound = true;
+			moovIndex = boxCount-1;	// Need later for optimization.
+			needsOptimization = mdatFound;
+			if ( xmpFound ) break;	// Don't need to look further.
+
+		} else if ( currBox.boxType == ISOMedia::k_uuid && IsXMPUUID(originalFile,currBox.contentSize) ) {
+
+			xmpFound = true;
+			xmpIndex = boxCount-1;	// Need later for optimization.
+			needsOptimization = mdatFound;
+			if ( moovFound ) break;	// Don't need to look further.
+
+		}
+
+	}
+
+	if ( ! needsOptimization ) return;
+
+	// The file needs to be optimized. Make sure that a file over 4 GB has 'co64', not 'stco' boxes.
+	// These are needed to hold 64-bit offsets. We don't go to the effort of changing from 'stco'
+	// to 'co64', the file needs to be OK from the start. (Yes, this eliminates a marginal case of
+	// a file growing beyond 4 GB due to metadata growth.)
+
+	if ( originalSize >= 0xFFFFFFFF ) {
+
+		MOOV_Manager::BoxRef  moovRef, trakRef, tempRef, stcoRef;
+		MOOV_Manager::BoxInfo boxInfo;
+
+		moovRef = this->moovMgr.GetBox ( "moov", &boxInfo );
+		XMP_Enforce ( moovRef != 0 );
+
+		for ( size_t i = 0, limit = boxInfo.childCount; i < limit; ++i ) {
+
+			trakRef = this->moovMgr.GetNthChild ( moovRef, i, &boxInfo );
+			if ( boxInfo.boxType != ISOMedia::k_trak ) continue;
+
+			tempRef = this->moovMgr.GetTypeChild ( trakRef, ISOMedia::k_mdia, 0 );
+			if ( tempRef == 0 ) continue;
+			tempRef = this->moovMgr.GetTypeChild ( tempRef, ISOMedia::k_minf, 0 );
+			if ( tempRef == 0 ) continue;
+			tempRef = this->moovMgr.GetTypeChild ( tempRef, ISOMedia::k_stbl, 0 );
+			if ( tempRef == 0 ) continue;
+
+			stcoRef = this->moovMgr.GetTypeChild ( tempRef, ISOMedia::k_stco, 0 );
+			if ( stcoRef != 0 ) {
+				XMP_Error error ( kXMPErr_BadFileFormat,"Large MPEG-4 file must use 'co64' boxes" );
+				XMPFileHandler::NotifyClient(&parent->errorCallback, kXMPErrSev_FileFatal, error);
+			}
+
+		}
+
+	}
+
+	// Build a vector of info for the top level boxes, ignoring 'free', 'skip', and 'wide' boxes.
+	// Then determine the new offsets and create a map keyed by the new offset.
+	
+	// ! The box indices saved in the prior loop must match those in the vector built here!
+
+	LayoutVector fileBoxes;
+	LayoutMap optLayout;
+
+	for ( currPos = 0; currPos < originalSize; currPos = nextPos ) {
+		nextPos = ISOMedia::GetBoxInfo ( originalFile, currPos, originalSize, &currBox );
+		if ( (currBox.boxType == ISOMedia::k_free) ||
+			 (currBox.boxType == ISOMedia::k_skip) ||
+			 (currBox.boxType == ISOMedia::k_wide) ) continue;
+		--boxCount;	// For sanity check below.
+		fileBoxes.push_back ( LayoutInfo ( currBox.boxType, (currBox.headerSize + currBox.contentSize), currPos ) );
+	}
+
+	XMP_Assert ( boxCount == 0 );	// Must get the same count in both loops.
+	XMP_Assert ( fileBoxes.size() >= 2 );	// At least 'mdat', and 'moov' or XMP 'uuid'.
+	XMP_Assert ( (!moovFound) || (fileBoxes[moovIndex].boxType == ISOMedia::k_moov) );
+	XMP_Assert ( (!xmpFound) || (fileBoxes[xmpIndex].boxType == ISOMedia::k_uuid) );
+
+	size_t currIndex = 0, limit = fileBoxes.size();
+	XMP_Uns64 newSize = 0;
+
+	if ( fileBoxes[0].boxType == ISOMedia::k_ftyp ) {
+		optLayout.insert ( optLayout.end(), LayoutMap::value_type ( 0, &fileBoxes[0] ) );
+		newSize = fileBoxes[0].boxSize;
+		currIndex = 1;	// Keep the 'ftyp' box in front.
+	}
+
+	if ( moovFound ) {
+		optLayout.insert ( optLayout.end(), LayoutMap::value_type ( newSize, &fileBoxes[moovIndex] ) );
+		fileBoxes[moovIndex].newOffset = newSize;
+		newSize += fileBoxes[moovIndex].boxSize;
+	}
+
+	if ( xmpFound ) {
+		optLayout.insert ( optLayout.end(), LayoutMap::value_type ( newSize, &fileBoxes[xmpIndex] ) );
+		fileBoxes[xmpIndex].newOffset = newSize;
+		newSize += fileBoxes[xmpIndex].boxSize;
+	}
+
+	for ( ; currIndex < limit; ++currIndex ) {	// Add all of the other non-'mdat' boxes to the map.
+		if ( moovFound && (currIndex == moovIndex) ) continue;
+		if ( xmpFound && (currIndex == xmpIndex) ) continue;
+		if ( fileBoxes[currIndex].boxType == ISOMedia::k_mdat ) continue;
+		optLayout.insert ( optLayout.end(), LayoutMap::value_type ( newSize, &fileBoxes[currIndex] ) );
+		fileBoxes[currIndex].newOffset = newSize;
+		newSize += fileBoxes[currIndex].boxSize;
+	}
+
+	for ( currIndex = 0; currIndex < limit; ++currIndex ) {	// Add all of the 'mdat' boxes to the map.
+		if ( fileBoxes[currIndex].boxType != ISOMedia::k_mdat ) continue;
+		optLayout.insert ( optLayout.end(), LayoutMap::value_type ( newSize, &fileBoxes[currIndex] ) );
+		fileBoxes[currIndex].newOffset = newSize;
+		newSize += fileBoxes[currIndex].boxSize;
+	}
+	
+	// Adjust the progress tracking if necessary.
+	
+	XMP_ProgressTracker * progressTracker = this->parent->progressTracker;
+	if ( progressTracker != 0 ) {
+		XMP_Assert ( progressTracker->WorkInProgress() );
+		progressTracker->AddTotalWork ( (float) newSize );
+	}
+
+	// Create a temp file for the optimized layout, write it, update the offset tables.
+
+	XMP_IO* tempFile = originalFile->DeriveTemp();
+	XMP_Enforce ( tempFile != 0 );
+
+	// Iterate the map and write the new layout.
+
+	LayoutMap::iterator layoutPos = optLayout.begin();
+	LayoutMap::iterator layoutEnd = optLayout.end();
+
+	for ( ; layoutPos != layoutEnd; ++layoutPos ) {
+		LayoutInfo * currBox = layoutPos->second;
+		XMP_Assert ( (XMP_Int64)currBox->newOffset == tempFile->Length() );
+		originalFile->Seek ( currBox->oldOffset, kXMP_SeekFromStart );
+		XIO::Copy ( originalFile, tempFile, currBox->boxSize, abortProc, abortArg );
+	}
+
+	// Update the offset tables in the temp file. Create a layout map ordered by the last actual
+	// offset of the old box's content to enable fast lookup within AdjustOffset.
+
+	LayoutMap oldEndMap;
+	for ( size_t i = 0, limit = fileBoxes.size(); i < limit; ++i ) {
+		XMP_Uns64 oldEnd = fileBoxes[i].oldOffset + fileBoxes[i].boxSize - 1;	// ! Want the last actual offset!
+		oldEndMap.insert ( oldEndMap.end(), LayoutMap::value_type ( oldEnd, &fileBoxes[i] ) );
+	}
+
+	MOOV_Manager::BoxRef moovRef, trakRef, tempRef, stcoRef, co64Ref;
+	MOOV_Manager::BoxInfo boxInfo;
+
+	moovRef = this->moovMgr.GetBox ( "moov", &boxInfo );
+	XMP_Enforce ( moovRef != 0 );
+
+	for ( size_t i = 0, limit = boxInfo.childCount; i < limit; ++i ) {
+
+		trakRef = this->moovMgr.GetNthChild ( moovRef, i, &boxInfo );
+		if ( boxInfo.boxType != ISOMedia::k_trak ) continue;
+
+		tempRef = this->moovMgr.GetTypeChild ( trakRef, ISOMedia::k_mdia, 0 );
+		if ( tempRef == 0 ) continue;
+		tempRef = this->moovMgr.GetTypeChild ( tempRef, ISOMedia::k_minf, 0 );
+		if ( tempRef == 0 ) continue;
+		tempRef = this->moovMgr.GetTypeChild ( tempRef, ISOMedia::k_stbl, 0 );
+		if ( tempRef == 0 ) continue;
+
+		co64Ref = 0;
+		XMP_Uns32 entrySize = 4;
+		stcoRef = this->moovMgr.GetTypeChild ( tempRef, ISOMedia::k_stco, &boxInfo );
+		if ( stcoRef == 0 ) {
+			co64Ref = this->moovMgr.GetTypeChild ( tempRef, ISOMedia::k_co64, &boxInfo );
+			if ( co64Ref == 0 ) continue;
+			entrySize = 8;
+		}
+
+		XMP_Uns32 offsetCount = GetUns32BE ( boxInfo.content + 4 );
+		if ( boxInfo.contentSize < (4+4 + entrySize*offsetCount) ) {
+			XMP_Error error ( kXMPErr_BadFileFormat, "Bad 'stco' size or count" );
+			XMPFileHandler::NotifyClient(&parent->errorCallback, kXMPErrSev_FileFatal, error);
+		}
+
+		if ( stcoRef != 0 ) {
+
+			XMP_Uns64 stcoTableOffset = fileBoxes[moovIndex].newOffset +
+										(XMP_Uns64) this->moovMgr.GetParsedOffset ( stcoRef ) +
+										(XMP_Uns64) this->moovMgr.GetHeaderSize ( stcoRef ) + 4+4;
+			tempFile->Seek ( stcoTableOffset, kXMP_SeekFromStart );
+
+			XMP_Uns32 * rawOldU32 = (XMP_Uns32*) (boxInfo.content + 4+4);
+			for ( XMP_Uns32 i = 0; i < offsetCount; ++i, ++rawOldU32 ) {
+				XMP_Uns64 newOffset = AdjustOffset ( (XMP_Uns64)GetUns32BE(rawOldU32), oldEndMap,&parent->errorCallback );
+				XMP_Uns32 u32 = MakeUns32BE ( (XMP_Uns32)newOffset );
+				tempFile->Write ( &u32, 4 );
+			}
+
+		} else {
+
+			XMP_Uns64 co64TableOffset = fileBoxes[moovIndex].newOffset +
+										(XMP_Uns64) this->moovMgr.GetParsedOffset ( co64Ref ) +
+										(XMP_Uns64) this->moovMgr.GetHeaderSize ( co64Ref ) + 4+4;
+			tempFile->Seek ( co64TableOffset, kXMP_SeekFromStart );
+
+			XMP_Uns64 * rawOldU64 = (XMP_Uns64*) (boxInfo.content + 4+4);
+			for ( XMP_Uns32 i = 0; i < offsetCount; ++i, ++rawOldU64 ) {
+				XMP_Uns64 newOffset = AdjustOffset ( GetUns64BE(rawOldU64), oldEndMap,&parent->errorCallback );
+				XMP_Uns64 u64 = MakeUns64BE ( newOffset );
+				tempFile->Write ( &u64, 8 );
+			}
+
+		}
+
+	}
+
+	// Swap the temp and original files.
+
+	originalFile->AbsorbTemp();
+
+}	// MPEG4_MetaHandler::OptimizeFileLayout
+
+// =================================================================================================
 // MPEG4_MetaHandler::UpdateFile
 // =============================
 //
@@ -2553,7 +2904,15 @@ void MPEG4_MetaHandler::UpdateTopLevelBox ( XMP_Uns64 oldOffset, XMP_Uns32 oldSi
 
 void MPEG4_MetaHandler::UpdateFile ( bool doSafeUpdate )
 {
+
+	bool optimizeFileLayout = false;
+	if ( this->parent) 
+	{
+		optimizeFileLayout = XMP_OptionIsSet ( this->parent->openFlags, kXMPFiles_OptimizeFileLayout );
+	}
+
 	if ( ! this->needsUpdate ) {	// If needsUpdate is set then at least the XMP changed.
+		if ( optimizeFileLayout ) this->OptimizeFileLayout();
 		return;
 	}
 
@@ -2659,6 +3018,9 @@ void MPEG4_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		this->UpdateTopLevelBox ( this->xmpBoxPos, this->xmpBoxSize, &uuidBox[0], uuidSize );
 
 	}
+
+	// Finally, optimize the file layout if asked.
+	if ( optimizeFileLayout ) this->OptimizeFileLayout();
 
 	if ( localProgressTracking ) progressTracker->WorkComplete();
 

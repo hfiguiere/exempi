@@ -25,11 +25,11 @@
 
 #include "source/Endian.h"
 
-#if SUNOS_SPARC
+#if SUNOS_SPARC || XMP_IOS_ARM
         static const IEndian &IE = BigEndian::getInstance();
 #else
         static const IEndian &IE = LittleEndian::getInstance();
-#endif //#if SUNOS_SPARC
+#endif //#if SUNOS_SPARC || XMP_IOS_ARM
 
 // =================================================================================================
 /// \file TIFF_Support.hpp

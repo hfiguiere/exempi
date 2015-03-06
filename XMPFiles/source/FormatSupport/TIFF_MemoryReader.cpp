@@ -93,7 +93,7 @@ void TIFF_MemoryReader::SortIFD ( TweakedIFDInfo* thisIFD )
 			} else {
 
 				// Move the out of order entry to position j+1, move the middle of the array down.
-				#if ! SUNOS_SPARC
+				#if ! (SUNOS_SPARC || XMP_IOS_ARM)
 					TweakedIFDEntry temp = ifdEntries[i];
 					++j;	// ! So the insertion index becomes j.
 					memcpy ( &ifdEntries[j+1], &ifdEntries[j], 12*(i-j) );	// AUDIT: Safe, moving less than i entries to a location before i.
@@ -655,7 +655,7 @@ XMP_Uns32 TIFF_MemoryReader::ProcessOneIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd )
 
 		if ( (GetUns16AsIs(&thisEntry->type) < kTIFF_ByteType) || (GetUns16AsIs(&thisEntry->type) > kTIFF_LastType) ) continue;	// Bad type, skip this tag.
 
-		#if ! SUNOS_SPARC
+		#if ! (SUNOS_SPARC || XMP_IOS_ARM)
 	
 			thisEntry->bytes *= (XMP_Uns32)kTIFF_TypeSizes[thisEntry->type];
 			if ( thisEntry->bytes > 4 ) {

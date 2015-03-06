@@ -725,13 +725,13 @@ XMPMeta::Initialize()
 	#endif
 
 	if ( ! Initialize_LibUtils() ) return false;
-
 	xdefaultName = new XMP_VarString ( "x-default" );
 
 	sRegisteredNamespaces = new XMP_NamespaceTable;
 	sRegisteredAliasMap   = new XMP_AliasMap;
 
 	InitializeUnicodeConversions();
+
 
 	// Register standard namespaces and aliases.
 
@@ -892,10 +892,15 @@ XMPMeta::Terminate() RELEASE_NO_THROW
 
 	XMPIterator::Terminate();
 	XMPUtils::Terminate();
+#if ENABLE_NEW_DOM_MODEL
+	NS_XMPCOMMON::ITSingleton< NS_INT_XMPCORE::IXMPCoreObjectFactory >::DestroyInstance();
+	NS_INT_XMPCOMMON::TerminateXMPCommonFramework();
+#endif
+
 	EliminateGlobal ( sRegisteredNamespaces );
 	EliminateGlobal ( sRegisteredAliasMap );
 
-    EliminateGlobal ( xdefaultName );
+	EliminateGlobal ( xdefaultName );
 
 	Terminate_LibUtils();
 
@@ -908,6 +913,8 @@ XMPMeta::Terminate() RELEASE_NO_THROW
 		xmpCoreLog = stderr;
 	#endif
 
+	// reset static variables
+	sDefaultErrorCallback.Clear();
 }	// Terminate
 
 

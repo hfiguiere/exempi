@@ -302,6 +302,8 @@ public:
 	virtual void UpdateFile ( bool doSafeUpdate ) = 0;
 	virtual void WriteTempFile ( XMP_IO* tempRef ) = 0;
 
+	static void NotifyClient(GenericErrorCallback * errCBptr, XMP_ErrorSeverity severity, XMP_Error & error);
+
 	// ! Leave the data members public so common code can see them.
 
 	XMPFiles *     parent;			// Let's the handler see the file info.

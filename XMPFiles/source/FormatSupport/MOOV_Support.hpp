@@ -166,9 +166,9 @@ public:
 
 	#pragma pack( pop )
 
-#if SUNOS_SPARC
+#if SUNOS_SPARC || XMP_IOS_ARM
 	#pragma pack( )
-#endif //#if SUNOS_SPARC
+#endif //#if SUNOS_SPARC || XMP_IOS_ARM
 
 	// ---------------------------------------------------------------------------------------------
 

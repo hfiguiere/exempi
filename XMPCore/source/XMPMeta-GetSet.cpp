@@ -916,13 +916,13 @@ XMPMeta::SetLocalizedText ( XMP_StringPtr  schemaNS,
 		
 			if ( ! specificXDefault ) {
 				// Update the specific item, update x-default if it matches the old value.
-				if ( haveXDefault && (xdItem != itemNode) && (xdItem->value == itemNode->value) ) {
+				if ( xdItem != NULL && haveXDefault && (xdItem != itemNode) && (xdItem->value == itemNode->value) ) {
 					SetNodeValue ( xdItem, itemValue );
 				}
 				SetNodeValue ( itemNode, itemValue );	// ! Do this after the x-default check!
 			} else {
 				// Update all items whose values match the old x-default value.
-				XMP_Assert ( haveXDefault && (xdItem == itemNode) );
+				XMP_Assert ( xdItem != NULL && haveXDefault && (xdItem == itemNode) );
 				for ( itemNum = 0, itemLim = arrayNode->children.size(); itemNum < itemLim; ++itemNum ) {
 					XMP_Node * currItem = arrayNode->children[itemNum];
 					if ( (currItem == xdItem) || (currItem->value != xdItem->value) ) continue;
@@ -935,7 +935,7 @@ XMPMeta::SetLocalizedText ( XMP_StringPtr  schemaNS,
 		case kXMP_CLT_SingleGeneric :
 		
 			// Update the generic item, update x-default if it matches the old value.
-			if ( haveXDefault && (xdItem != itemNode) && (xdItem->value == itemNode->value) ) {
+			if (  xdItem != NULL && haveXDefault && (xdItem != itemNode) && (xdItem->value == itemNode->value) ) {
 				SetNodeValue ( xdItem, itemValue );
 			}
 			SetNodeValue ( itemNode, itemValue );	// ! Do this after the x-default check!
@@ -1112,19 +1112,18 @@ XMPMeta::GetProperty_Int ( XMP_StringPtr	schemaNS,
 						   XMP_Int32 *		propValue,
 						   XMP_OptionBits *	options ) const
 {
-	XMP_Assert ( (schemaNS != 0) && (propName != 0) );	// Enforced by wrapper.
-	XMP_Assert ( (propValue != 0) && (options != 0) );	// Enforced by wrapper.
-
-	XMP_StringPtr	valueStr;
-	XMP_StringLen	valueLen;
-	
-	bool found = GetProperty ( schemaNS, propName, &valueStr, &valueLen, options );
-	if ( found ) {
-		if ( ! XMP_PropIsSimple ( *options ) ) XMP_Throw ( "Property must be simple", kXMPErr_BadXPath );
-		*propValue = XMPUtils::ConvertToInt ( valueStr );
+	XMP_Int64 tempValue64 = 0;
+	if ( GetProperty_Int64( schemaNS, propName, &tempValue64, options ) ) {
+		if ( tempValue64 < (XMP_Int64) Min_XMP_Int32 || tempValue64 > (XMP_Int64) Max_XMP_Int32 ) {
+			// overflow condition
+			XMP_Throw ( "Overflow condition", kXMPErr_BadValue );
+		} else {
+			*propValue = (XMP_Int32) tempValue64;
+			return true;
+		}
 	}
-	return found;
-	
+	return false;
+
 }	// GetProperty_Int
 
 
@@ -1147,7 +1146,10 @@ XMPMeta::GetProperty_Int64 ( XMP_StringPtr	  schemaNS,
 	bool found = GetProperty ( schemaNS, propName, &valueStr, &valueLen, options );
 	if ( found ) {
 		if ( ! XMP_PropIsSimple ( *options ) ) XMP_Throw ( "Property must be simple", kXMPErr_BadXPath );
-		*propValue = XMPUtils::ConvertToInt64 ( valueStr );
+		std::string propValueStr;
+		propValueStr.append( valueStr, valueLen );
+		XMPUtils::Trim( propValueStr );
+		*propValue = XMPUtils::ConvertToInt64 ( propValueStr.c_str() );
 	}
 	return found;
 	
@@ -1173,7 +1175,10 @@ XMPMeta::GetProperty_Float ( XMP_StringPtr	  schemaNS,
 	bool found = GetProperty ( schemaNS, propName, &valueStr, &valueLen, options );
 	if ( found ) {
 		if ( ! XMP_PropIsSimple ( *options ) ) XMP_Throw ( "Property must be simple", kXMPErr_BadXPath );
-		*propValue = XMPUtils::ConvertToFloat ( valueStr );
+		std::string propValueStr;
+		propValueStr.append( valueStr, valueLen );
+		XMPUtils::Trim( propValueStr );
+		*propValue = XMPUtils::ConvertToFloat ( propValueStr.c_str() );
 	}
 	return found;
 	

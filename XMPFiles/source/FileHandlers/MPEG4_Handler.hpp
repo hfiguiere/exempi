@@ -78,6 +78,8 @@ private:
 
 	void UpdateTopLevelBox ( XMP_Uns64 oldOffset, XMP_Uns32 oldSize, const XMP_Uns8 * newBox, XMP_Uns32 newSize );
 
+	void OptimizeFileLayout();
+
 	XMP_Uns8 fileMode;
 	bool havePreferredXMP;
 	XMP_Uns64 xmpBoxPos;	// The file offset of the XMP box (the size field, not the content).

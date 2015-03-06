@@ -764,7 +764,7 @@ AppendSubtree ( const XMP_Node * sourceNode, XMP_Node * destParent,
 		// To merge a struct process the fields recursively. E.g. add simple missing fields. The
 		// recursive call to AppendSubtree will handle deletion for fields with empty values.
 
-		for ( size_t sourceNum = 0, sourceLim = sourceNode->children.size(); sourceNum != sourceLim; ++sourceNum ) {
+		for ( size_t sourceNum = 0, sourceLim = sourceNode->children.size(); sourceNum != sourceLim && destNode!= NULL; ++sourceNum ) {
 			const XMP_Node * sourceField = sourceNode->children[sourceNum];
 			AppendSubtree ( sourceField, destNode, mergeCompound, replaceOld, deleteEmpty );
 			if ( deleteEmpty && destNode->children.empty() ) {
@@ -781,7 +781,7 @@ AppendSubtree ( const XMP_Node * sourceNode, XMP_Node * destParent,
 	
 		XMP_Assert ( mergeCompound );
 
-		for ( size_t sourceNum = 0, sourceLim = sourceNode->children.size(); sourceNum != sourceLim; ++sourceNum ) {
+		for ( size_t sourceNum = 0, sourceLim = sourceNode->children.size(); sourceNum != sourceLim && destNode!= NULL; ++sourceNum ) {
 
 			const XMP_Node * sourceItem = sourceNode->children[sourceNum];
 			if ( sourceItem->qualifiers.empty() || (sourceItem->qualifiers[0]->name != "xml:lang") ) continue;
@@ -1437,6 +1437,7 @@ XMPUtils::DuplicateSubtree ( const XMPMeta & source,
 			const XMP_Node * currField = sourceNode->children[fieldNum];
 
 			size_t colonPos = currField->name.find ( ':' );
+			if (  colonPos == std::string::npos ) continue;
 			nsPrefix.assign ( currField->name.c_str(), colonPos );
 			bool nsOK = XMPMeta::GetNamespaceURI ( nsPrefix.c_str(), &nsURI, &nsLen );
 			if ( ! nsOK ) XMP_Throw ( "Source field namespace is not global", kXMPErr_BadSchema );

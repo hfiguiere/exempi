@@ -17,6 +17,8 @@
 #if XMP_WinBuild
 #elif XMP_MacBuild
 	#include <CoreServices/CoreServices.h>
+#elif XMP_iOSBuild
+    #include <CoreFoundation/CoreFoundation.h>
 #endif
 
 // =================================================================================================
@@ -201,6 +203,13 @@ void ReconcileUtils::UTF8ToLocal ( const void * _utf8Ptr, size_t utf8Len, std::s
 	#elif XMP_UNIXBuild
 	
 		XMP_Throw ( "Generic UNIX does not have conversions between local and Unicode", kXMPErr_Unavailable );
+    
+    #elif XMP_iOSBuild
+    
+        IOSConvertEncoding(kCFStringEncodingUTF8, CFStringGetSystemEncoding(), utf8Ptr, utf8Len, local);
+
+    
+    
 	
 	#endif
 
@@ -371,6 +380,11 @@ void ReconcileUtils::LocalToUTF8 ( const void * _localPtr, size_t localLen, std:
 	#elif XMP_UNIXBuild
 	
 		XMP_Throw ( "Generic UNIX does not have conversions between local and Unicode", kXMPErr_Unavailable );
+    
+    #elif XMP_iOSBuild
+    
+        IOSConvertEncoding(CFStringGetSystemEncoding(), kCFStringEncodingUTF8, localPtr, localLen, utf8);
+    
 	
 	#endif
 
@@ -429,3 +443,29 @@ void ReconcileUtils::NativeToUTF8( const std::string & input, std::string & outp
 		output = input;
 	}
 }	// ReconcileUtils::NativeToUTF8
+
+
+#if XMP_iOSBuild
+    void ReconcileUtils::IOSConvertEncoding(XMP_Uns32 srcEncoding, XMP_Uns32 destEncoding, const XMP_Uns8 * inputPtr, size_t inputLen, std::string * output)
+    {
+        if(srcEncoding == kCFStringEncodingInvalidId || destEncoding == kCFStringEncodingInvalidId ||
+                !CFStringIsEncodingAvailable(srcEncoding) || !CFStringIsEncodingAvailable(destEncoding))
+            return;
+        CFStringRef cStrRef = CFStringCreateWithBytesNoCopy(NULL, inputPtr, inputLen, srcEncoding, false, kCFAllocatorNull);
+        if(cStrRef == NULL)
+            return;
+        CFRange inputRange = CFRangeMake(0, CFStringGetLength(cStrRef));
+        const size_t kBufferLen = 1000;
+        while(inputRange.length > 0)
+        {
+            XMP_Uns8 buffer[kBufferLen];
+            CFIndex charsWritten;
+            CFIndex charsProcessed = CFStringGetBytes(cStrRef, inputRange, destEncoding, 0, FALSE, buffer, kBufferLen, &charsWritten);
+            if (charsProcessed == 0) break;
+            output->append(reinterpret_cast<const char*>(&buffer[0]), charsWritten);
+            inputRange.location += charsProcessed;
+            inputRange.length -= charsProcessed;
+        }
+        CFRelease(cStrRef);
+    }
+#endif

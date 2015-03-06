@@ -532,7 +532,7 @@ static const char * kTenSpaces = "          ";
 							  buffer[sizeof(buffer) -1] = 0; /* AUDIT warning C6053: Make sure buffer is terminated */							\
 							  XMP_Status _status = (*outProc) ( refCon, buffer, (XMP_StringLen)strlen(buffer) );  if ( _status != 0 ) return; }
 
-#define OutProcHexByte(num)	{ snprintf ( buffer, sizeof(buffer), "%.2X", (num) ); /* AUDIT: Using sizeof for snprintf length is safe */	\
+#define OutProcHexByte(num)	{ snprintf ( buffer, sizeof(buffer), "%.2X", (unsigned char)(num) ); /* AUDIT: Using sizeof for snprintf length is safe */	\
 							  XMP_Status _status = (*outProc) ( refCon, buffer, (XMP_StringLen)strlen(buffer) );  if ( _status != 0 ) return; }
 
 static const char * kIndent = "   ";

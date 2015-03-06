@@ -31,7 +31,7 @@ namespace XIO {
 	// =================================================================================
 
 	void SplitLeafName ( std::string * path, std::string * leafName );
-	void SplitFileExtension ( std::string * path, std::string * fileExt );
+	void SplitFileExtension ( std::string * path, std::string * fileExt , bool lowercase=true);
 	
 	void ReplaceTextFile ( XMP_IO* textFile, const std::string & newContent, bool doSafeUpdate );
 

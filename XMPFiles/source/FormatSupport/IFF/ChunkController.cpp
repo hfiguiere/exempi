@@ -50,6 +50,8 @@ ChunkController::ChunkController( IChunkBehavior* chunkBehavior, XMP_Bool bigEnd
 
 ChunkController::~ChunkController()
 {
+	XMP_Validate( mRoot != NULL, "ERROR inserting Chunk. mRoot is NULL.", kXMPErr_InternalFailure );
+	XMP_Assert(dynamic_cast<Chunk*>(mRoot) == static_cast<Chunk*>(mRoot));
 	delete dynamic_cast<Chunk*>(mRoot);
 }
 
@@ -104,7 +106,9 @@ void ChunkController::parseChunks( XMP_IO* stream, ChunkPath& currentPath, XMP_O
 	XMP_Bool isRoot			= (parent == mRoot);
 	XMP_Uns64 parseLimit	= mFileSize;
 	XMP_Uns32 chunkCnt		= 0; 
-	
+
+	XMP_Validate( mRoot != NULL, "ERROR inserting Chunk. mRoot is NULL.", kXMPErr_InternalFailure );
+	XMP_Assert(dynamic_cast<Chunk*>(mRoot) == static_cast<Chunk*>(mRoot));
 	parent = ( parent == NULL ? dynamic_cast<Chunk*>(mRoot) : parent );
 
 	//
@@ -592,6 +596,8 @@ void ChunkController::findChunks( const ChunkPath& path, ChunkPath& currentPath,
 
 void ChunkController::cleanupTree()
 {
+	XMP_Validate( mRoot != NULL, "ERROR inserting Chunk. mRoot is NULL.", kXMPErr_InternalFailure );
+	XMP_Assert(dynamic_cast<Chunk*>(mRoot) == static_cast<Chunk*>(mRoot));
 	delete dynamic_cast<Chunk*>(mRoot);
 	mRoot = Chunk::createChunk(*mEndian);
 }
@@ -659,6 +665,8 @@ IChunkData* ChunkController::createChunk( XMP_Uns32 id, XMP_Uns32 type /*= kType
 void ChunkController::insertChunk( IChunkData* chunk )
 {
 	XMP_Validate( chunk != NULL, "ERROR inserting Chunk. Chunk is NULL.", kXMPErr_InternalFailure );
+	XMP_Assert(dynamic_cast<Chunk*>(chunk) == static_cast<Chunk*>(chunk));
+
 	Chunk* ch = dynamic_cast<Chunk*>(chunk);
 	mChunkBehavior->insertChunk( *mRoot, *ch );
 	// sets OriginalSize = Size / OriginalOffset = Offset

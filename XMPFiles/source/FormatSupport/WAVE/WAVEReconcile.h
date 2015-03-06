@@ -59,6 +59,12 @@ private:
 	* convert a 4 character string to XPM_Uns32 (FOURCC)
 	*/
 	static bool stringToFOURCC ( std::string input, XMP_Uns32 &output );
+
+	// export all the properties requiring special conversion from inXMP into iXMLMetadata.
+	static void exportSpecialXMPToiXML( SXMPMeta & inXMP, IMetadata & outNativeMeta, PropertyList & propertiesToBeDeleted );
+
+	// export all the properties requiring special conversion from iXMLMetadata into inXMP.
+	static bool exportSpecialiXMLToXMP( IMetadata & inNativeMeta, SXMPMeta & outXMP );
 };
 
 }

@@ -17,6 +17,7 @@
 #include "source/ExpatAdapter.hpp"
 
 #include "third-party/zuid/interfaces/MD5.h"
+#include "XMPFiles/source/FormatSupport/P2_Support.hpp"
 
 // =================================================================================================
 /// \file P2_Handler.hpp
@@ -52,8 +53,6 @@ class P2_MetaHandler : public XMPFileHandler
 {
 public:
 
-	bool GetFileModDate ( XMP_DateTime * modDate );
-	void FillMetadataFiles ( std::vector<std::string> * metadataFiles );
 	void FillAssociatedResources ( std::vector<std::string> * resourceList );
 	bool IsMetadataWritable ( );
 
@@ -71,11 +70,10 @@ public:
 
 private:
 
-	P2_MetaHandler() : expat(0), clipMetadata(0), clipContent(0) {};	// Hidden on purpose.
+	P2_MetaHandler() {};	// Hidden on purpose.
 
 	bool MakeClipFilePath ( std::string * path, XMP_StringPtr suffix, bool checkFile = false );
 	void MakeLegacyDigest ( std::string * digestStr );
-	void CleanupLegacyXML();
 
 	void DigestLegacyItem ( MD5_CTX & md5Context, XML_NodePtr legacyContext, XMP_StringPtr legacyPropName );
 	void DigestLegacyRelations ( MD5_CTX & md5Context );
@@ -86,6 +84,11 @@ private:
 									   XMP_StringPtr propName,
 									   XMP_StringPtr legacyPropName,
 									   bool isLocalized );
+	void SetXMPPropertyFromLegacyXML ( bool digestFound,
+										XMP_VarString* refContext,
+										XMP_StringPtr schemaNS,
+										XMP_StringPtr propName,
+										bool isLocalized );
 
 	void SetRelationsFromLegacyXML ( bool digestFound );
 	void SetAudioInfoFromLegacyXML ( bool digestFound );
@@ -99,11 +102,9 @@ private:
 
 	XML_Node * ForceChildElement ( XML_Node * parent, XMP_StringPtr localName, XMP_Int32 indent, XMP_Bool insertAtFront );
 
-	std::string rootPath, clipName, p2NS;
+	std::string rootPath , clipName;
 
-	ExpatAdapter * expat;
-	XML_Node * clipMetadata;	// ! Don't delete, points into the Expat tree.
-	XML_Node * clipContent;		// ! Don't delete, points into the Expat tree.
+	P2_Manager p2ClipManager;
 
 };	// P2_MetaHandler
 

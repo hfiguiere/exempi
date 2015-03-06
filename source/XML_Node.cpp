@@ -123,6 +123,18 @@ XMP_StringPtr XML_Node::GetLeafContentValue() const
 }	// XML_Node::GetLeafContentValue
 
 // =================================================================================================
+// XML_Node::GetLeafContentValue
+//==============================
+
+std::string* XML_Node::GetLeafContentPtr() const
+{
+	if ( (! this->IsLeafContentNode()) || this->content.empty() ) return 0;
+
+	return &this->content[0]->value;
+
+}	// XML_Node::GetLeafContentValue
+
+// =================================================================================================
 // XML_Node::SetLeafContentValue
 //==============================
 

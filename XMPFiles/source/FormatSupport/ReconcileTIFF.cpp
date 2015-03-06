@@ -469,12 +469,12 @@ ImportSingleTIFF_SRational ( const TIFF_Manager::TagInfo & tagInfo, const bool n
 {
 	try {	// Don't let errors with one stop the others.
 
-#if SUNOS_SPARC
+#if SUNOS_SPARC || XMP_IOS_ARM
         XMP_Uns32  binPtr[2];
         memcpy(&binPtr, tagInfo.dataPtr, sizeof(XMP_Uns32)*2);
 #else
 	XMP_Uns32 * binPtr = (XMP_Uns32*)tagInfo.dataPtr;
-#endif //#if SUNOS_SPARC
+#endif //#if SUNOS_SPARC || XMP_IOS_ARM
 		XMP_Int32 binNum   = GetUns32AsIs ( &binPtr[0] );
 		XMP_Int32 binDenom = GetUns32AsIs ( &binPtr[1] );
 		if ( ! nativeEndian ) {
@@ -1289,7 +1289,7 @@ static void
 ImportTIFF_Date ( const TIFF_Manager & tiff, const TIFF_Manager::TagInfo & dateInfo,
 				  SXMPMeta * xmp, const char * xmpNS, const char * xmpProp )
 {
-	XMP_Uns16 secID;
+	XMP_Uns16 secID = 0;
 	switch ( dateInfo.id ) {
 		case kTIFF_DateTime          : secID = kTIFF_SubSecTime;			break;
 		case kTIFF_DateTimeOriginal  : secID = kTIFF_SubSecTimeOriginal;	break;
@@ -2584,7 +2584,8 @@ ExportArrayTIFF ( TIFF_Manager * tiff, XMP_Uns8 ifd, const TIFF_MappingToXMP & m
 		XMP_Uns32 num, denom;
 		for ( size_t i = 1; i <= arraySize; ++i, rationalPtr += 2 ) {
 			SXMPUtils::ComposeArrayItemPath ( xmpNS, xmpArray, (XMP_Index)i, &itemPath );
-			xmp.GetProperty ( xmpNS, itemPath.c_str(), &xmpValue, 0 );
+			bool isPropoerty = xmp.GetProperty ( xmpNS, itemPath.c_str(), &xmpValue, 0 );
+			if ( ! isPropoerty ) return;
 			bool ok = DecodeRational ( xmpValue.c_str(), &num, &denom );
 			if ( ! ok ) return;
 			if ( ! nativeEndian ) { num = Flip4 ( num ); denom = Flip4 ( denom ); }
@@ -2680,7 +2681,7 @@ static void
 ExportTIFF_Date ( const SXMPMeta & xmp, const char * xmpNS, const char * xmpProp, TIFF_Manager * tiff, XMP_Uns16 mainID )
 {
 	XMP_Uns8 mainIFD = kTIFF_ExifIFD;
-	XMP_Uns16 fracID;
+	XMP_Uns16 fracID=0;
 	switch ( mainID ) {
 		case kTIFF_DateTime : mainIFD = kTIFF_PrimaryIFD; fracID = kTIFF_SubSecTime;	break;
 		case kTIFF_DateTimeOriginal  : fracID = kTIFF_SubSecTimeOriginal;	break;
@@ -3086,7 +3087,7 @@ static void ExportTIFF_PhotographicSensitivity ( SXMPMeta * xmp, TIFF_Manager * 
 		TIFF_Manager::TagInfo tagInfo;
 		std::string xmpValue;
 		XMP_OptionBits flags;
-		XMP_Int32 binValue;
+		XMP_Int32 binValue = 0;
 	
 		bool haveOldExif = true;	// Default to old Exif if no version tag.
 	

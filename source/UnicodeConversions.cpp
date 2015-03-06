@@ -13,7 +13,7 @@
 
 #include "source/UnicodeConversions.hpp"
 
-#if SUNOS_SPARC
+#if SUNOS_SPARC || XMP_IOS_ARM
 	#include "string.h"
 #endif
 
@@ -218,7 +218,7 @@ void InitializeUnicodeConversions()
 
 // =================================================================================================
 
-#if SUNOS_SPARC
+#if SUNOS_SPARC || XMP_IOS_ARM
 	#define DefineAndGetValue(type,inPtr) type inUnit; memcpy ( &inUnit, inPtr, sizeof(type) ); 
 #else
 	#define DefineAndGetValue(type,inPtr) type inUnit = *((type *)inPtr); 
@@ -485,8 +485,7 @@ void CodePoint_to_UTF8 ( const UTF32Unit cpIn, UTF8Unit * utf8Out, const size_t 
 	UC_Assert ( (utf8Out != 0) && (utf8Written != 0) );
 	if ( utf8Len == 0 ) goto Done;
 	if ( cpIn > 0x7F ) goto MultiByte;	// ! Force linear execution path for ASCII.
-	
-	if ( utf8Len == 0 ) goto Done;
+
 	unitCount = 1;
 	*utf8Out = UTF8Unit(cpIn);
 

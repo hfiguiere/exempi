@@ -12,6 +12,9 @@
 
 #if XMP_MacBuild
 	#include <CoreServices/CoreServices.h>
+#elif XMP_iOSBuild
+    #include <CoreFoundation/CoreFoundation.h>
+    #include "XMPFiles/source/FormatSupport/MacScriptExtracts.h"
 #else
 	#include "XMPFiles/source/FormatSupport/MacScriptExtracts.h"
 #endif
@@ -354,7 +357,7 @@ static const char * kMacToXMPLang_128_151 [24] = {
 
 #if XMP_WinBuild
 
-static UINT kMacScriptToWinCP[34] = {
+static UINT kMacScriptToWinCP[33] = {
 	/* smRoman (0) */				10000,	// There don't seem to be symbolic constants.
 	/* smJapanese (1) */			10001,	// From http://msdn.microsoft.com/en-us/library/dd317756(VS.85).aspx
 	/* smTradChinese (2) */			10002,
@@ -383,8 +386,7 @@ static UINT kMacScriptToWinCP[34] = {
 	/* smSimpChinese (25) */		10008,
 	/* smTibetan (26) */			0,
 	/* smMongolian (27) */			0,
-	/* smEthiopic (28) */			0,
-	/* smGeez (28) */				0,
+	/* smEthiopic/smGeez (28) */	0,
 	/* smCentralEuroRoman (29) */	10029,
 	/* smVietnamese (30) */			0,
 	/* smExtArabic (31) */			0,
@@ -502,6 +504,156 @@ static UINT kMacToWinCP_0_94 [95] = {
 
 #endif
 
+
+#if XMP_iOSBuild
+
+static XMP_Uns32 kMacScriptToIOSEncodingCF[33] = {
+	/* smRoman (0) */				kCFStringEncodingMacRoman,
+	/* smJapanese (1) */			kCFStringEncodingMacJapanese,
+	/* smTradChinese (2) */			kCFStringEncodingMacChineseTrad,
+	/* smKorean (3) */				kCFStringEncodingMacKorean,
+	/* smArabic (4) */				kCFStringEncodingMacArabic,
+	/* smHebrew (5) */				kCFStringEncodingMacHebrew,
+	/* smGreek (6) */				kCFStringEncodingMacGreek,
+	/* smCyrillic (7) */			kCFStringEncodingMacCyrillic,
+	/* smRSymbol (8) */				kCFStringEncodingMacSymbol,
+	/* smDevanagari (9) */			kCFStringEncodingMacDevanagari,
+	/* smGurmukhi (10) */			kCFStringEncodingMacGurmukhi,
+	/* smGujarati (11) */			kCFStringEncodingMacGujarati,
+	/* smOriya (12) */				kCFStringEncodingMacOriya,
+	/* smBengali (13) */			kCFStringEncodingMacBengali,
+	/* smTamil (14) */				kCFStringEncodingMacTamil,
+	/* smTelugu (15) */				kCFStringEncodingMacTelugu,
+	/* smKannada (16) */			kCFStringEncodingMacKannada,
+	/* smMalayalam (17) */			kCFStringEncodingMacMalayalam,
+	/* smSinhalese (18) */			kCFStringEncodingMacSinhalese,
+	/* smBurmese (19) */			kCFStringEncodingMacBurmese,
+	/* smKhmer (20) */				kCFStringEncodingMacKhmer,
+	/* smThai (21) */				kCFStringEncodingMacThai,
+	/* smLao (22) */				kCFStringEncodingMacLaotian,
+	/* smGeorgian (23) */			kCFStringEncodingMacGeorgian,
+	/* smArmenian (24) */			kCFStringEncodingMacArmenian,
+	/* smSimpChinese (25) */		kCFStringEncodingMacChineseSimp,
+	/* smTibetan (26) */			kCFStringEncodingMacTibetan,
+	/* smMongolian (27) */			kCFStringEncodingMacMongolian,
+	/* smEthiopic/smGeez (28) */	kCFStringEncodingMacEthiopic,
+	/* smCentralEuroRoman (29) */	kCFStringEncodingMacCentralEurRoman,
+	/* smVietnamese (30) */			kCFStringEncodingMacVietnamese,
+	/* smExtArabic (31) */			kCFStringEncodingMacExtArabic,
+	/* smUninterp (32) */           kCFStringEncodingMacVT100
+};	// kMacScriptToIOSEncodingCF
+
+static XMP_Uns32 kMacToIOSEncodingCF_0_94 [95] = {
+    
+	/* langEnglish (0) */		kCFStringEncodingMacRoman,
+	/* langFrench (1) */		kCFStringEncodingMacRoman,
+	/* langGerman (2) */		kCFStringEncodingMacRoman,
+	/* langItalian (3) */		kCFStringEncodingMacRoman,
+	/* langDutch (4) */			kCFStringEncodingMacRoman,
+	/* langSwedish (5) */		kCFStringEncodingMacRoman,
+	/* langSpanish (6) */		kCFStringEncodingMacRoman,
+	/* langDanish (7) */		kCFStringEncodingMacRoman,
+	/* langPortuguese (8) */	kCFStringEncodingMacRoman,
+	/* langNorwegian (9) */		kCFStringEncodingMacRoman,
+    
+	/* langHebrew (10) */		kCFStringEncodingMacHebrew,
+	/* langJapanese (11) */		kCFStringEncodingMacJapanese,
+	/* langArabic (12) */		kCFStringEncodingMacArabic,
+	/* langFinnish (13) */		kCFStringEncodingMacRoman,
+	/* langGreek (14) */		kCFStringEncodingMacGreek,
+	/* langIcelandic (15) */	kCFStringEncodingMacIcelandic,
+	/* langMaltese (16) */		kCFStringEncodingMacRoman,
+	/* langTurkish (17) */		kCFStringEncodingMacTurkish,
+	/* langCroatian (18) */		kCFStringEncodingMacCroatian,
+	/* langTradChinese (19) */	kCFStringEncodingMacChineseTrad,
+    
+	/* langUrdu (20) */			kCFStringEncodingMacArabic,
+	/* langHindi (21) */		kCFStringEncodingMacDevanagari,
+	/* langThai (22) */			kCFStringEncodingMacThai,
+	/* langKorean (23) */		kCFStringEncodingMacKorean,
+	/* langLithuanian (24) */	kCFStringEncodingMacCentralEurRoman,
+	/* langPolish (25) */		kCFStringEncodingMacCentralEurRoman,
+	/* langHungarian (26) */	kCFStringEncodingMacCentralEurRoman,
+	/* langEstonian (27) */		kCFStringEncodingMacCentralEurRoman,
+	/* langLatvian (28) */		kCFStringEncodingMacCentralEurRoman,
+	/* langSami (29) */			kCFStringEncodingInvalidId,
+    
+	/* langFaroese (30) */		kCFStringEncodingMacRoman,
+	/* langFarsi (31) */		kCFStringEncodingMacFarsi,
+	/* langRussian (32) */		kCFStringEncodingMacCyrillic,
+	/* langSimpChinese (33) */	kCFStringEncodingMacChineseSimp,
+	/* langFlemish (34) */		kCFStringEncodingMacRoman,
+	/* langIrishGaelic (35) */	kCFStringEncodingMacRoman,
+	/* langAlbanian (36) */		kCFStringEncodingMacRoman,
+	/* langRomanian (37) */		kCFStringEncodingMacRomanian,
+	/* langCzech (38) */		kCFStringEncodingMacCentralEurRoman,
+	/* langSlovak (39) */		kCFStringEncodingMacCentralEurRoman,
+    
+	/* langSlovenian (40) */	kCFStringEncodingMacRoman,
+	/* langYiddish (41) */		kCFStringEncodingMacHebrew,
+	/* langSerbian (42) */		kCFStringEncodingMacCyrillic,
+	/* langMacedonian (43) */	kCFStringEncodingMacCyrillic,
+	/* langBulgarian (44) */	kCFStringEncodingMacCyrillic,
+	/* langUkrainian (45) */	kCFStringEncodingMacUkrainian,
+	/* langBelorussian (46) */	kCFStringEncodingMacCyrillic,
+	/* langUzbek (47) */		kCFStringEncodingMacCyrillic,
+	/* langKazakh (48) */		kCFStringEncodingMacCyrillic,
+	/* langAzerbaijani (49) */	kCFStringEncodingMacCyrillic,
+    
+	/* langAzerbaijanAr (50) */	kCFStringEncodingMacArabic,
+	/* langArmenian (51) */		kCFStringEncodingMacArmenian,
+	/* langGeorgian (52) */		kCFStringEncodingMacGeorgian,
+	/* langMoldavian (53) */	kCFStringEncodingMacCyrillic,
+	/* langKirghiz (54) */		kCFStringEncodingMacCyrillic,
+	/* langTajiki (55) */		kCFStringEncodingMacCyrillic,
+	/* langTurkmen (56) */		kCFStringEncodingMacCyrillic,
+	/* langMongolian (57) */	kCFStringEncodingMacMongolian,
+	/* langMongolianCyr (58) */	kCFStringEncodingMacCyrillic,
+	/* langPashto (59) */		kCFStringEncodingMacArabic,
+    
+	/* langKurdish (60) */		kCFStringEncodingMacArabic,
+	/* langKashmiri (61) */		kCFStringEncodingMacArabic,
+	/* langSindhi (62) */		kCFStringEncodingMacArabic,
+	/* langTibetan (63) */		kCFStringEncodingMacTibetan,
+	/* langNepali (64) */		kCFStringEncodingMacDevanagari,
+	/* langSanskrit (65) */		kCFStringEncodingMacDevanagari,
+	/* langMarathi (66) */		kCFStringEncodingMacDevanagari,
+	/* langBengali (67) */		kCFStringEncodingMacBengali,
+	/* langAssamese (68) */		kCFStringEncodingMacBengali,
+	/* langGujarati (69) */		kCFStringEncodingMacGujarati,
+    
+	/* langPunjabi (70) */		kCFStringEncodingMacGurmukhi,
+	/* langOriya (71) */		kCFStringEncodingMacOriya,
+	/* langMalayalam (72) */	kCFStringEncodingMacMalayalam,
+	/* langKannada (73) */		kCFStringEncodingMacKannada,
+	/* langTamil (74) */		kCFStringEncodingMacTamil,
+	/* langTelugu (75) */		kCFStringEncodingMacTelugu,
+	/* langSinhalese (76) */	kCFStringEncodingMacSinhalese,
+	/* langBurmese (77) */		kCFStringEncodingMacBurmese,
+	/* langKhmer (78) */		kCFStringEncodingMacKhmer,
+	/* langLao (79) */			kCFStringEncodingMacLaotian,
+    
+	/* langVietnamese (80) */	kCFStringEncodingMacVietnamese,
+	/* langIndonesian (81) */	kCFStringEncodingMacRoman,
+	/* langTagalog (82) */		kCFStringEncodingMacRoman,
+	/* langMalayRoman (83) */	kCFStringEncodingMacRoman,
+	/* langMalayArabic (84) */	kCFStringEncodingMacArabic,
+	/* langAmharic (85) */		kCFStringEncodingMacEthiopic,
+	/* langTigrinya (86) */		kCFStringEncodingMacEthiopic,
+	/* langOromo (87) */		kCFStringEncodingMacEthiopic,
+	/* langSomali (88) */		kCFStringEncodingMacRoman,
+	/* langSwahili (89) */		kCFStringEncodingMacRoman,
+    
+	/* langKinyarwanda (90) */	kCFStringEncodingMacRoman,
+	/* langRundi (91) */		kCFStringEncodingMacRoman,
+	/* langNyanja (92) */		kCFStringEncodingMacRoman,
+	/* langMalagasy (93) */		kCFStringEncodingMacRoman,
+	/* langEsperanto (94) */	kCFStringEncodingMacRoman
+    
+};	// kMacToIOSEncodingCF_0_94
+
+#endif
+
 // =================================================================================================
 // GetMacScript
 // ============
@@ -513,12 +665,34 @@ static XMP_Uns16 GetMacScript ( XMP_Uns16 macLang )
 	if ( macLang <= 94 ) {
 		macScript = kMacLangToScript_0_94[macLang];
 	} else if ( (128 <= macLang) && (macLang <= 151) ) {
-		macScript = kMacLangToScript_0_94[macLang-128];
+		macScript = kMacLangToScript_128_151[macLang-128];
 	}
 	
 	return macScript;
 	
 }	// GetMacScript
+
+
+#if XMP_iOSBuild
+// =================================================================================================
+// GetIOSEncodingCF
+// ========
+
+static XMP_Uns32 GetIOSEncodingCF ( XMP_Uns16 macLang )
+{
+	XMP_Uns32 encCF = kCFStringEncodingInvalidId;
+	
+	if ( macLang <= 94 ) encCF = kMacToIOSEncodingCF_0_94[macLang];
+	
+	if ( encCF == kCFStringEncodingInvalidId || !CFStringIsEncodingAvailable(encCF)) {
+		XMP_Uns16 macScript = GetMacScript ( macLang );
+		if ( macScript != kNoMacScript ) encCF = kMacScriptToIOSEncodingCF[macScript];
+	}
+	
+	return encCF;
+	
+}	// GetIOSEncodingCF
+#endif
 
 // =================================================================================================
 // GetWinCP
@@ -669,7 +843,10 @@ bool ConvertToMacLang ( const std::string & utf8Value, XMP_Uns16 macLang, std::s
 	#elif XMP_WinBuild
 		UINT winCP = GetWinCP ( macLang );
 		ReconcileUtils::UTF8ToWinEncoding ( winCP, (XMP_Uns8*)utf8Value.c_str(), utf8Value.size(), macValue );
-	#endif
+    #elif XMP_iOSBuild
+        XMP_Uns32 iosEncCF = GetIOSEncodingCF(macLang);
+        ReconcileUtils::IOSConvertEncoding(kCFStringEncodingUTF8, iosEncCF, (XMP_Uns8*)utf8Value.c_str(), utf8Value.size(), macValue);
+    #endif
 	
 	return true;
 
@@ -692,7 +869,10 @@ bool ConvertFromMacLang ( const std::string & macValue, XMP_Uns16 macLang, std::
 	#elif XMP_WinBuild
 		UINT winCP = GetWinCP ( macLang );
 		ReconcileUtils::WinEncodingToUTF8 ( winCP, (XMP_Uns8*)macValue.c_str(), macValue.size(), utf8Value );
-	#endif
+    #elif XMP_iOSBuild
+        XMP_Uns32 iosEncCF = GetIOSEncodingCF(macLang);
+        ReconcileUtils::IOSConvertEncoding(iosEncCF, kCFStringEncodingUTF8, (XMP_Uns8*)macValue.c_str(), macValue.size(), utf8Value);
+#endif
 	
 	return true;
 
@@ -988,7 +1168,7 @@ void TradQT_Manager::ExportLangAltXMP ( XMP_Uns32 id, const SXMPMeta & xmp, XMP_
 	for ( XMP_Index xmpIndex = 1; xmpIndex <= xmpCount; ++xmpIndex ) {	// ! XMP index starts at 1!
 
 		SXMPUtils::ComposeArrayItemPath ( ns, langArray, xmpIndex, &xmpPath );
-		xmp.GetProperty ( ns, xmpPath.c_str(), &xmpValue, 0 );
+		if ( !xmp.GetProperty ( ns, xmpPath.c_str(), &xmpValue, 0 ) ) continue;
 		xmp.GetQualifier ( ns, xmpPath.c_str(), kXMP_NS_XML, "lang", &xmpLang, 0 );
 		if ( xmpLang == "x-default" ) continue;
 		

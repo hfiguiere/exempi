@@ -118,6 +118,8 @@ const ChunkIdentifier WAVE_MetaHandler::kRIFFCart[2] = { { kChunk_RIFF, kType_WA
 // cr8r is not yet required for WAVE
 // RIFF:WAVE/Cr8r
 // const ChunkIdentifier WAVE_MetaHandler::kWAVECr8r[2] = { { kChunk_RIFF, kType_WAVE }, { kChunk_Cr8r, kType_NONE } };
+// RIFF:WAVE/iXML
+const ChunkIdentifier WAVE_MetaHandler::kRIFFiXML[2] = { { kChunk_RIFF, kType_WAVE }, { kChunk_iXML, kType_NONE } };
 // RF64:WAVE/PMX_
 const ChunkIdentifier WAVE_MetaHandler::kRF64XMP[2] = { { kChunk_RF64, kType_WAVE }, { kChunk_XMP, kType_NONE} };
 // RF64:WAVE/LIST:INFO
@@ -131,6 +133,7 @@ const ChunkIdentifier WAVE_MetaHandler::kRF64Cart[2] = { { kChunk_RF64, kType_WA
 // cr8r is not yet required for WAVE
 // RF64:WAVE/Cr8r
 // const ChunkIdentifier WAVE_MetaHandler::kRF64Cr8r[2] = { { kChunk_RF64, kType_WAVE }, { kChunk_Cr8r, kType_NONE } };
+const ChunkIdentifier WAVE_MetaHandler::kRF64iXML[2] = { { kChunk_RF64, kType_WAVE }, { kChunk_iXML, kType_NONE } };
 
 // =================================================================================================
 // WAVE_MetaHandler::WAVE_MetaHandler
@@ -138,9 +141,9 @@ const ChunkIdentifier WAVE_MetaHandler::kRF64Cart[2] = { { kChunk_RF64, kType_WA
 
 WAVE_MetaHandler::WAVE_MetaHandler ( XMPFiles * _parent )
 	: mChunkBehavior(NULL), mChunkController(NULL),
-	mINFOMeta(), mBEXTMeta(), mCartMeta(), mDISPMeta(),
+	mINFOMeta(), mBEXTMeta(), mCartMeta(), mDISPMeta(), miXMLMeta(),
 	mXMPChunk(NULL), mINFOChunk(NULL),
-	mBEXTChunk(NULL), mCartChunk(NULL), mDISPChunk(NULL)
+	mBEXTChunk(NULL), mCartChunk(NULL), mDISPChunk(NULL), miXMLChunk(NULL)
 {
 	this->parent = _parent;
 	this->handlerFlags = kWAVE_HandlerFlags;
@@ -148,6 +151,7 @@ WAVE_MetaHandler::WAVE_MetaHandler ( XMPFiles * _parent )
 
 	this->mChunkBehavior = new WAVEBehavior();
 	this->mChunkController = new ChunkController( mChunkBehavior, false );
+	miXMLMeta.SetErrorCallback( &parent->errorCallback );
 
 }	// WAVE_MetaHandler::WAVE_MetaHandler
 
@@ -197,6 +201,7 @@ void WAVE_MetaHandler::CacheFileData()
 		mWAVEXMPChunkPath.append( kRIFFXMP, SizeOfCIArray(kRIFFXMP) );
 		mWAVEInfoChunkPath.append( kRIFFInfo, SizeOfCIArray(kRIFFInfo) );
 		mWAVEDispChunkPath.append( kRIFFDisp, SizeOfCIArray(kRIFFDisp) );
+		mWAVEiXMLChunkPath.append( kRIFFiXML, SizeOfCIArray(kRIFFiXML) );
 		mWAVEBextChunkPath.append( kRIFFBext, SizeOfCIArray(kRIFFBext) );
 		mWAVECartChunkPath.append( kRIFFCart, SizeOfCIArray(kRIFFCart) );
 		// cr8r is not yet required for WAVE
@@ -207,6 +212,7 @@ void WAVE_MetaHandler::CacheFileData()
 		mWAVEXMPChunkPath.append( kRF64XMP, SizeOfCIArray(kRF64XMP) );
 		mWAVEInfoChunkPath.append( kRF64Info, SizeOfCIArray(kRF64Info) );
 		mWAVEDispChunkPath.append( kRF64Disp, SizeOfCIArray(kRF64Disp) );
+		mWAVEiXMLChunkPath.append( kRF64iXML, SizeOfCIArray(kRF64iXML) );
 		mWAVEBextChunkPath.append( kRF64Bext, SizeOfCIArray(kRF64Bext) );
 		mWAVECartChunkPath.append( kRF64Cart, SizeOfCIArray(kRF64Cart) );
 		// cr8r is not yet required for WAVE
@@ -216,6 +222,7 @@ void WAVE_MetaHandler::CacheFileData()
 	mChunkController->addChunkPath( mWAVEXMPChunkPath );
 	mChunkController->addChunkPath( mWAVEInfoChunkPath );
 	mChunkController->addChunkPath( mWAVEDispChunkPath );
+	mChunkController->addChunkPath( mWAVEiXMLChunkPath );
 	mChunkController->addChunkPath( mWAVEBextChunkPath );
 	mChunkController->addChunkPath( mWAVECartChunkPath );
 	// cr8r is not yet required for WAVE
@@ -341,8 +348,17 @@ void WAVE_MetaHandler::ProcessXMP()
 	//	mCr8rMeta.parse( buffer, size );
 	//}
 	
+	// Parse iXML legacy chunk
+	miXMLChunk = mChunkController->getChunk( mWAVEiXMLChunkPath, true );
+	if( miXMLChunk != NULL )
+	{	
+		size = miXMLChunk->getData( &buffer );
+		miXMLMeta.parse( buffer, size );
+	}
+
 	// app legacy to the metadata list
 	metaSet.append( &mINFOMeta );
+	metaSet.append( &miXMLMeta );
 	metaSet.append( &mBEXTMeta );
 	metaSet.append( &mCartMeta );
 	metaSet.append( &mDISPMeta );
@@ -380,6 +396,7 @@ void WAVE_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	WAVEReconcile recon;
 	
 	metaSet.append( &mINFOMeta );
+	metaSet.append( &miXMLMeta );
 	metaSet.append( &mBEXTMeta );
 	metaSet.append( &mCartMeta );
 	metaSet.append( &mDISPMeta );
@@ -415,6 +432,11 @@ void WAVE_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		//{
 		//	updateLegacyChunk( &mCr8rChunk, kChunk_Cr8r, kType_NONE, mCr8rMeta );
 		//}
+
+		if ( miXMLMeta.hasChanged( ))
+		{
+			updateLegacyChunk( &miXMLChunk, kChunk_iXML, kType_NONE, miXMLMeta );
+		}
 	}
 
 	//update/create XMP chunk

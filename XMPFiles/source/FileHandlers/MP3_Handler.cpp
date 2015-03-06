@@ -119,6 +119,20 @@ bool MP3_CheckFormat ( XMP_FileFormat format,
 
 MP3_MetaHandler::MP3_MetaHandler ( XMPFiles * _parent )
 {
+	this->oldTagSize = 0;
+	this->oldPadding = 0;
+	this->oldFramesSize = 0;
+	this->newTagSize = 0;
+	this->newPadding = 0;
+	this->newFramesSize = 0;
+	this->tagIsDirty = false;
+	this->mustShift = false;
+	this->majorVersion = 2.3;
+	this->minorVersion = 2.3;
+	this->hasID3Tag = false;
+	this->hasFooter = false;
+	this->extHeaderSize = 0;
+	this->hasExtHeader = false;
 	this->parent = _parent;
 	this->handlerFlags = kMP3_HandlerFlags;
 	this->stdCharForm  = kXMP_Char8Bit;
@@ -423,23 +437,26 @@ void MP3_MetaHandler::ProcessXMP()
 		}//for reconProps
 
 		// import DateTime
-		XMP_DateTime oldDateTime;
-		xmpObj.GetProperty_Date ( kXMP_NS_XMP, "CreateDate", &oldDateTime, 0 );
+        XMP_DateTime oldDateTime;
+        bool haveNewDateTime  = newDateTime.year != 0 ;
+        if ( xmpObj.GetProperty_Date ( kXMP_NS_XMP, "CreateDate", &oldDateTime, 0 ) )
+        {
 
-		// NOTE: no further validation nessesary the function "SetProperty_Date" will care about validating date and time
-		// any exception will be caught and block import
-		try {
-			bool haveNewDateTime = (newDateTime.year != 0) && 
-								   ( (newDateTime.year != oldDateTime.year) ||
-								     ( (newDateTime.month != 0 ) && ( (newDateTime.day != oldDateTime.day) || (newDateTime.month != oldDateTime.month) ) ) ||
-									 ( newDateTime.hasTime && ( (newDateTime.hour != oldDateTime.minute) || (newDateTime.hour != oldDateTime.minute) ) ) );
-			if ( haveNewDateTime ) {
-				this->xmpObj.SetProperty_Date ( kXMP_NS_XMP, "CreateDate", newDateTime );
-			}
-		} catch ( ... ) {
-			// Dont import invalid dates from ID3
-		}
-	
+            haveNewDateTime = haveNewDateTime && 
+                                                        ( (newDateTime.year != oldDateTime.year) ||
+                                                            ( (newDateTime.month != 0 ) && ( (newDateTime.day != oldDateTime.day) || (newDateTime.month != oldDateTime.month) ) ) ||
+                                                            ( newDateTime.hasTime && ( (newDateTime.hour != oldDateTime.hour) || (newDateTime.minute != oldDateTime.minute) ) ) );
+        }
+            // NOTE: no further validation nessesary the function "SetProperty_Date" will care about validating date and time
+            // any exception will be caught and block import
+        try {
+            if ( haveNewDateTime ) {
+                    this->xmpObj.SetProperty_Date ( kXMP_NS_XMP, "CreateDate", newDateTime );
+            }
+        } catch ( ... ) {
+            // Dont import invalid dates from ID3
+        }
+
 	}
 
 	// very important to avoid multiple runs! (in which case I'd need to clean certain

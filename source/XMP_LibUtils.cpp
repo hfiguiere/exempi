@@ -638,15 +638,41 @@ static XMP_Bool matchdigit ( XMP_StringPtr text ) {
 	return false;
 }
 
+static XMP_Bool matchUpperCase ( XMP_StringPtr text ) {
+	if ( *text >= 'A' && *text <= 'Z' )
+		return true;
+	return false;
+}
+
+static XMP_Bool matchLowerCase ( XMP_StringPtr text ) {
+	if ( *text >= 'a' && *text <= 'z' )
+		return true;
+	return false;
+}
+
 /* matchhere: search for regexp at beginning of text */
 static XMP_Bool matchhere ( XMP_StringPtr regexp, XMP_StringPtr text ) {
 	if ( regexp[0] == '\0' )
 		return true;
-	if ( regexp[0] == '\\' && regexp[1] == 'd' ) {
-		if ( matchdigit(text) )
-			return matchhere ( regexp+2, text+1 );
-		else
-			return false;
+	if ( regexp[0] == '\\' ) {
+		if ( regexp[1] == 'd' ) {
+			if ( matchdigit(text) )
+				return matchhere ( regexp+2, text+1 );
+			else
+				return false;
+		}	
+		else if ( regexp[1] == 'W' ) {
+			if ( matchUpperCase(text) )
+				return matchhere ( regexp+2, text+1 );
+			else
+				return false;
+		}
+		else if ( regexp[1] == 'w' ) {
+			if ( matchLowerCase(text) )
+				return matchhere ( regexp+2, text+1 );
+			else
+				return false;
+		}
 	}
 
 	if ( regexp[0] == '$' && regexp[1] == '\0' )

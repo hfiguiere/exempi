@@ -22,6 +22,25 @@
 
 namespace ISOMedia {
 
+typedef  std::set<XMP_Uns32> KnownBoxList;
+static KnownBoxList boxList;
+#define ISOboxType(x,y) boxList.insert(y)
+#define SEPARATOR ;
+	bool IsKnownBoxType(XMP_Uns32 boxType) {
+		if (boxList.empty()){
+			ISOBoxList ISOBoxPrivateList ;
+		}
+		if (boxList.find(boxType)!=boxList.end()){
+			return true;
+		}
+		return false;
+	}
+	void TerminateGlobals()
+	{
+		boxList.clear();
+	}
+#undef ISOboxType
+#undef SEPARATOR
 static BoxInfo voidInfo;
 
 // =================================================================================================

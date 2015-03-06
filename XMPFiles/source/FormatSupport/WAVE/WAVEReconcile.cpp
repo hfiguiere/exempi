@@ -15,6 +15,9 @@
 #include "XMPFiles/source/FormatSupport/WAVE/INFOMetadata.h"
 #include "XMPFiles/source/FormatSupport/WAVE/BEXTMetadata.h"
 #include "XMPFiles/source/FormatSupport/WAVE/CartMetadata.h"
+#include "XMPFiles/source/FormatSupport/WAVE/iXMLMetadata.h"
+
+#include "XMPFiles/source/FormatSupport/TimeConversionUtils.hpp"
 
 // cr8r is not yet required for WAVE
 //#include "Cr8rMetadata.h"
@@ -27,19 +30,69 @@ using namespace IFF_RIFF;
 
 // ************** legacy Mappings ***************** //
 
+static const char * kBWF_description = "description";
+static const char * kBWF_originator = "originator";
+static const char * kBWF_originatorReference = "originatorReference";
+static const char * kBWF_originationDate = "originationDate";
+static const char * kBWF_originationTime = "originationTime";
+static const char * kBWF_timeReference = "timeReference";
+static const char * kBWF_version = "version";
+static const char * kBWF_umid = "umid";
+static const char * kBWF_codingHistory = "codingHistory";
+static const char * kBWF_timeStampSampleRate = "timeSampleRate";		// its transient should be deleted at the end.
+
 static const MetadataPropertyInfo kBextProperties[] =
 {
-//	  XMP NS		XMP Property Name		Native Metadata Identifier			Native Datatype				XMP	Datatype		Delete	Priority	ExportPolicy
-	{ kXMP_NS_BWF,	"description",			BEXTMetadata::kDescription,			kNativeType_StrLocal,		kXMPType_Simple,	true,	false,		kExport_Always },	// bext:description <-> BEXT:Description
-	{ kXMP_NS_BWF,	"originator",			BEXTMetadata::kOriginator,			kNativeType_StrLocal,		kXMPType_Simple,	true,	false,		kExport_Always },	// bext:originator <-> BEXT:originator
-	{ kXMP_NS_BWF,	"originatorReference",	BEXTMetadata::kOriginatorReference,	kNativeType_StrLocal,		kXMPType_Simple,	true,	false,		kExport_Always },	// bext:OriginatorReference <-> BEXT:OriginatorReference
-	{ kXMP_NS_BWF,	"originationDate",		BEXTMetadata::kOriginationDate,		kNativeType_StrLocal,		kXMPType_Simple,	true,	false,		kExport_Always },	// bext:originationDate <-> BEXT:originationDate
-	{ kXMP_NS_BWF,	"originationTime",		BEXTMetadata::kOriginationTime,		kNativeType_StrLocal,		kXMPType_Simple,	true,	false,		kExport_Always },	// bext:originationTime <-> BEXT:originationTime
-	{ kXMP_NS_BWF,	"timeReference",		BEXTMetadata::kTimeReference,		kNativeType_Uns64,			kXMPType_Simple,	true,	false,		kExport_Always },	// bext:timeReference <-> BEXT:TimeReferenceLow + BEXT:TimeReferenceHigh
+//	  XMP NS		XMP Property Name			Native Metadata Identifier			Native Datatype				XMP	Datatype		Delete	Priority	ExportPolicy
+	{ kXMP_NS_BWF,	kBWF_description,			BEXTMetadata::kDescription,			kNativeType_StrLocal,		kXMPType_Simple,	false,	false,		kExport_Always },	// bext:description <-> BEXT:Description
+	{ kXMP_NS_BWF,	kBWF_originator,			BEXTMetadata::kOriginator,			kNativeType_StrLocal,		kXMPType_Simple,	false,	false,		kExport_Always },	// bext:originator <-> BEXT:originator
+	{ kXMP_NS_BWF,	kBWF_originatorReference,	BEXTMetadata::kOriginatorReference,	kNativeType_StrLocal,		kXMPType_Simple,	false,	false,		kExport_Always },	// bext:OriginatorReference <-> BEXT:OriginatorReference
+	{ kXMP_NS_BWF,	kBWF_originationDate,		BEXTMetadata::kOriginationDate,		kNativeType_StrLocal,		kXMPType_Simple,	false,	false,		kExport_Always },	// bext:originationDate <-> BEXT:originationDate
+	{ kXMP_NS_BWF,	kBWF_originationTime,		BEXTMetadata::kOriginationTime,		kNativeType_StrLocal,		kXMPType_Simple,	false,	false,		kExport_Always },	// bext:originationTime <-> BEXT:originationTime
+	{ kXMP_NS_BWF,	kBWF_timeReference,			BEXTMetadata::kTimeReference,		kNativeType_Uns64,			kXMPType_Simple,	false,	false,		kExport_Always },	// bext:timeReference <-> BEXT:TimeReferenceLow + BEXT:TimeReferenceHigh
 	// Special case: On export BEXT:version is always written as 1
-	{ kXMP_NS_BWF,	"version",				BEXTMetadata::kVersion,				kNativeType_Uns16,			kXMPType_Simple,	true,	false,		kExport_Never },	// bext:version <-> BEXT:version
+	{ kXMP_NS_BWF,	kBWF_version,				BEXTMetadata::kVersion,				kNativeType_Uns16,			kXMPType_Simple,	false,	false,		kExport_Never },	// bext:version <-> BEXT:version
 	// special case: bext:umid <-> BEXT:UMID
-	{ kXMP_NS_BWF,	"codingHistory",		BEXTMetadata::kCodingHistory,		kNativeType_StrLocal,		kXMPType_Simple,	true,	false,		kExport_Always },	// bext:codingHistory <-> BEXT:codingHistory
+	{ kXMP_NS_BWF,	kBWF_codingHistory,			BEXTMetadata::kCodingHistory,		kNativeType_StrLocal,		kXMPType_Simple,	false,	false,		kExport_Always },	// bext:codingHistory <-> BEXT:codingHistory
+	{ NULL }
+};
+
+static const char * kDM_takeNumber = "takeNumber";
+static const char * kDM_audioSampleType = "audioSampleType";
+static const char * kDM_scene = "scene";
+static const char * kDM_tapeName = "tapeName";
+static const char * kDM_logComment = "logComment";
+static const char * kDM_projectName = "projectName";
+static const char * kDM_audioSampleRate = "audioSampleRate";
+static const char * kDM_startTimecode = "startTimecode";
+static const char * kDM_timeFormat = "timeFormat";
+static const char * kDM_timeValue = "timeValue";
+static const char * kDM_good = "good";
+
+static const MetadataPropertyInfo kiXMLProperties[] =
+{
+//	  XMP NS		XMP Property Name			Native Metadata Identifier				Native Datatype				XMP	Datatype		Delete	Priority	ExportPolicy
+	{ kXMP_NS_DM,	kDM_tapeName,				iXMLMetadata::kTape,					kNativeType_StrUTF8,		kXMPType_Simple,	false,	false,		kExport_Always },	//xmpDM:tapeName <-> iXML:TAPE
+	{ kXMP_NS_DM,	kDM_takeNumber,				iXMLMetadata::kTake,					kNativeType_Uns64,			kXMPType_Simple,	false,	false,		kExport_Always },	//xmpDM:tapeName <-> iXML:TAPE
+	{ kXMP_NS_DM,	kDM_scene,					iXMLMetadata::kScene,					kNativeType_StrUTF8,		kXMPType_Simple,	false,	false,		kExport_Always },	//xmpDM:scene <-> iXML:SCENE
+	{ kXMP_NS_DM,	kDM_logComment,				iXMLMetadata::kNote,					kNativeType_StrUTF8,		kXMPType_Simple,	false,	false,		kExport_Always },	//xmpDM:logComment <-> iXML:NOTE
+	{ kXMP_NS_DM,	kDM_projectName,			iXMLMetadata::kProject,					kNativeType_StrUTF8,		kXMPType_Simple,	false,	false,		kExport_Always },	//xmpDM:project <-> iXML:PROJECT
+	{ kXMP_NS_DM,	kDM_good,					iXMLMetadata::kCircled,					kNativeType_Bool,			kXMPType_Simple,	false,	false,		kExport_Always },	//xmpDM:good <-> iXML:CIRCLED
+	{ kXMP_NS_DM,	kDM_audioSampleRate,		iXMLMetadata::kFileSampleRate,			kNativeType_Uns64,			kXMPType_Simple,	false,	false,		kExport_Always },	// xmpDM:audioSampleRate <-> iXML:FILE_SAMPLE_RATE
+	// special case for AudioBitDepth // xmpDM:audioSampleType <-> iXML:AUDIO_BIT_DEPTH
+	{ kXMP_NS_BWF,	kBWF_description,			iXMLMetadata::kBWFDescription,			kNativeType_StrUTF8,		kXMPType_Simple,	true,	false,		kExport_Always },	// bext:description <-> iXML:BWF_DESCRIPTION
+	{ kXMP_NS_BWF,	kBWF_originator,			iXMLMetadata::kBWFOriginator,			kNativeType_StrUTF8,		kXMPType_Simple,	true,	false,		kExport_Always },	// bext:originator <-> iXML:BWF_ORIGINATOR
+	{ kXMP_NS_BWF,	kBWF_originatorReference,	iXMLMetadata::kBWFOriginatorReference,	kNativeType_StrUTF8,		kXMPType_Simple,	true,	false,		kExport_Always },	// bext:OriginatorReference <-> iXML:BWF_ORIGINATOR_REFERENCE
+	{ kXMP_NS_BWF,	kBWF_originationDate,		iXMLMetadata::kBWFOriginationDate,		kNativeType_StrUTF8,		kXMPType_Simple,	true,	false,		kExport_Always },	// bext:originationDate <-> iXML:BWF_ORIGINATION_DATE
+	{ kXMP_NS_BWF,	kBWF_originationTime,		iXMLMetadata::kBWFOriginationTime,		kNativeType_StrUTF8,		kXMPType_Simple,	true,	false,		kExport_Always },	// bext:originationTime <-> iXML:BWF_ORIGINATION_TIME
+	// special case for timeReference // bext:timeReference <-> iXML:BWF_TIME_REFERENCE_LOW and iXML:BWF_TIME_REFERENCE_HIGH
+	// Special case: On export BEXT:version is always written as 1
+	{ kXMP_NS_BWF,	kBWF_version,				iXMLMetadata::kBWFVersion,				kNativeType_Uns64,			kXMPType_Simple,	true,	false,		kExport_Never },	// bext:version <-> iXML:BWF_VERSION
+	{ kXMP_NS_BWF,	kBWF_codingHistory,			iXMLMetadata::kBWFHistory,				kNativeType_StrUTF8,		kXMPType_Simple,	true,	false,		kExport_Always },	// bext:codingHistory <-> iXML:BWF_CODING_HISTORY
+	{ kXMP_NS_BWF,	kBWF_umid,					iXMLMetadata::kBWFUMID,					kNativeType_StrASCII,		kXMPType_Simple,	true,	false,		kExport_Always },	// bext:codingHistory <-> iXML:BWF_CODING_HISTORY
+	// special case for timeReference // bext:timeReference <-> iXML:TIMESTAMP_SAMPLES_SINCE_MIDNIGHT_HO and iXML:TIMESTAMP_SAMPLES_SINCE_MIDNIGHT_HI
+	// special case for startTimeCode // xmpDM:startTimecode <-> iXML:TIMECODE_RATE, iXML:TIMECODE_FLAG and bext:timeReference.
+	{ kXMP_NS_BWF,	kBWF_timeStampSampleRate,	iXMLMetadata::kTimeStampSampleRate,		kNativeType_Uns64,			kXMPType_Simple,	false,	false,		kExport_NoDelete },	// bext::timeStampSampleRate <-> iXML
 	{ NULL }
 };
 
@@ -140,6 +193,14 @@ XMP_Bool WAVEReconcile::importToXMP( SXMPMeta& outXMP, const MetadataSet& inMeta
 
 	if ( ! ignoreLocalText ) 
 	{
+		//
+		// Import iXML
+		//
+		iXMLMetadata * iXMLMeta = inMetaData.get<iXMLMetadata>();
+		if ( iXMLMeta != NULL ) {
+			changed |= IReconcile::importNativeToXMP( outXMP, *iXMLMeta, kiXMLProperties, false );
+			changed |= exportSpecialiXMLToXMP( *iXMLMeta, outXMP );
+		}
 
 		//
 		// Import BEXT
@@ -291,6 +352,45 @@ XMP_Bool WAVEReconcile::importToXMP( SXMPMeta& outXMP, const MetadataSet& inMeta
 		}
 	}
 
+	// do timecode calculations
+	if ( outXMP.DoesPropertyExist( kXMP_NS_BWF, kBWF_timeReference ) &&
+		 outXMP.DoesPropertyExist( kXMP_NS_BWF, kDM_timeFormat ) &&
+		 outXMP.DoesPropertyExist( kXMP_NS_BWF, kBWF_timeStampSampleRate ) )
+	{
+		std::string xmpValue;
+		XMP_Int64 sampleRate = 0;
+		XMP_Uns64 nSamples = 0;
+		std::string timeFormat;
+		bool ok = outXMP.GetProperty( kXMP_NS_BWF, kBWF_timeReference, &xmpValue, 0 );
+
+		if ( ok )
+		{
+			int count;
+			char nextCh;
+			const char * strValue = xmpValue.c_str();
+			count = sscanf ( strValue, "%llu%c", &nSamples, &nextCh );
+		
+			if ( count != 1 ) ok = false;
+		}
+		if ( ok )
+			ok = outXMP.GetProperty_Int64( kXMP_NS_BWF, kBWF_timeStampSampleRate, &sampleRate, 0 );
+		if ( ok )
+			ok = outXMP.GetProperty( kXMP_NS_BWF, kDM_timeFormat, &timeFormat, 0 );
+
+		if ( ok && sampleRate != 0 && timeFormat.size() > 0 ) {
+			// compute time code from all the information we have
+			std::string timecode;
+			if ( TimeConversionUtils::ConvertSamplesToSMPTETimecode( timecode, nSamples, sampleRate, timeFormat ) ) {
+				outXMP.SetStructField( kXMP_NS_DM, kDM_startTimecode, kXMP_NS_DM, kDM_timeValue, timecode, 0 );
+				outXMP.SetStructField( kXMP_NS_DM, kDM_startTimecode, kXMP_NS_DM, kDM_timeFormat, timeFormat, 0 );
+			}
+		}
+	}
+
+	// delete transient properties
+	outXMP.DeleteProperty( kXMP_NS_BWF, kBWF_timeStampSampleRate );
+	outXMP.DeleteProperty( kXMP_NS_BWF, kDM_timeFormat );
+
 	return changed;
 }	// importToXMP
 
@@ -310,9 +410,55 @@ XMP_Bool WAVEReconcile::exportFromXMP( MetadataSet& outMetaData, SXMPMeta& inXMP
 		changed |= IReconcile::exportXMPToNative( *dispMeta, inXMP, kDISPProperties );
 	}
 
-	
+	PropertyList propertiesToBeRemovedFromXMPMeta;
 	if ( ! ignoreLocalText ) 
 	{
+		bool removeAllPropertiesinBextNameSpace = false;
+		//
+		// Export iXML
+		//
+		iXMLMetadata *iXMLMeta = outMetaData.get<iXMLMetadata>();
+		if (iXMLMeta != NULL)
+		{
+			IReconcile::exportXMPToNative( *iXMLMeta, inXMP, kiXMLProperties, &propertiesToBeRemovedFromXMPMeta );
+			exportSpecialXMPToiXML( inXMP, *iXMLMeta, propertiesToBeRemovedFromXMPMeta );
+			changed |= iXMLMeta->hasChanged();
+			removeAllPropertiesinBextNameSpace = true;
+			// for maintaing backward compatibility we don't want to remove properties from xmp packet.
+			propertiesToBeRemovedFromXMPMeta.clear();
+
+			// update time code value
+			if ( iXMLMeta->valueExists( iXMLMetadata::kTimeStampSampleRate ) && 
+				 iXMLMeta->valueExists( iXMLMetadata::kTimeStampSampleSinceMidnightHigh ) &&
+				 iXMLMeta->valueExists( iXMLMetadata::kTimeStampSampleSinceMidnightLow ) &&
+				 iXMLMeta->valueExists( iXMLMetadata::kTimeCodeRate ) )
+			{
+				if ( iXMLMeta->valueChanged( iXMLMetadata::kTimeStampSampleRate ) ||
+					 iXMLMeta->valueChanged( iXMLMetadata::kTimeStampSampleSinceMidnightHigh ) ||
+					 iXMLMeta->valueChanged( iXMLMetadata::kTimeStampSampleSinceMidnightLow ) ||
+					 iXMLMeta->valueChanged( iXMLMetadata::kTimeCodeRate ) ||
+					 ( iXMLMeta->valueExists( iXMLMetadata::kTimeCodeFlag ) && iXMLMeta->valueChanged( iXMLMetadata::kTimeCodeFlag ) ) )
+				{
+					// update the time code value
+					XMP_Int64 sampleRate = iXMLMeta->getValue<XMP_Uns64>( iXMLMetadata::kTimeStampSampleRate );
+					XMP_Int64 nSamples = 0;
+					std::string timeFormat;
+					bool ok = inXMP.GetProperty_Int64( kXMP_NS_BWF, kBWF_timeReference, &nSamples, 0 );
+					if ( ok )
+						ok = inXMP.GetStructField( kXMP_NS_DM, kDM_startTimecode, kXMP_NS_DM, kDM_timeFormat, &timeFormat, 0 );
+
+					if ( ok && sampleRate != 0 && timeFormat.size() > 0 ) {
+						// compute time code from all the information we have
+						std::string timecode;
+						if ( TimeConversionUtils::ConvertSamplesToSMPTETimecode( timecode, nSamples, sampleRate, timeFormat ) ) {
+							inXMP.SetStructField( kXMP_NS_DM, kDM_startTimecode, kXMP_NS_DM, kDM_timeValue, timecode, 0 );
+						}
+					}
+					
+				}
+			}
+		}
+
 		//
 		// Export BEXT
 		//
@@ -355,12 +501,13 @@ XMP_Bool WAVEReconcile::exportFromXMP( MetadataSet& outMetaData, SXMPMeta& inXMP
 				bextMeta->deleteValue(BEXTMetadata::kVersion);
 			}
 
-			// Remove BWF properties from the XMP
-			SXMPUtils::RemoveProperties(&inXMP, kXMP_NS_BWF, NULL, kXMPUtil_DoAllProperties );
+			removeAllPropertiesinBextNameSpace = true;
 
 			changed |= bextMeta->hasChanged();
 		}
 
+		if ( removeAllPropertiesinBextNameSpace )
+			SXMPUtils::RemoveProperties(&inXMP, kXMP_NS_BWF, NULL, kXMPUtil_DoAllProperties );
 
 		//
 		// Export cart
@@ -486,6 +633,11 @@ XMP_Bool WAVEReconcile::exportFromXMP( MetadataSet& outMetaData, SXMPMeta& inXMP
 	//
 	inXMP.DeleteProperty( kXMP_NS_WAV, "NativeDigest" );
 
+	for ( PropertyList::iterator it = propertiesToBeRemovedFromXMPMeta.begin(), last = propertiesToBeRemovedFromXMPMeta.end(); it != last; it++ )
+	{
+		inXMP.DeleteProperty( it->first, it->second );
+	}
+
 	return changed;
 }	// exportFromXMP
 
@@ -573,4 +725,343 @@ bool WAVEReconcile::stringToFOURCC ( std::string input, XMP_Uns32 &output )
 	}
 	
 	return result;
+}
+
+struct iXMLAudioSampleTypeMapping
+{
+	const char *			xmpStringValue;
+	XMP_Uns64				ixmlIntValue;
+};
+
+iXMLAudioSampleTypeMapping ixmlAudioSampleTypeMappings[] = {
+	{ "8Int",		8 },
+	{ "16Int",		16 },
+	{ "24Int",		24 },
+	{ "32Float",	32 },
+};
+
+struct iXMLTimeCodeRateAndFlagMapping 
+{
+	const char *			xmpStringValue;
+	const char *			ixmlTimeCodeRateValue;
+	const char *			ixmlTimeCodeFlagValue;
+};
+
+iXMLTimeCodeRateAndFlagMapping ixmlTimeCodeRateAndFlagMappings[] = {
+	{ "24Timecode",				"24/1",			"NDF" },
+	{ "25Timecode",				"25/1",			"NDF" },
+	{ "2997DropTimecode",		"30000/1001",	"DF" },
+	{ "2997NonDropTimecode",	"30000/1001",	"NDF" },
+	{ "30Timecode",				"30/1",			"NDF" },
+	{ "50Timecode",				"50/1",			"NDF" },
+	{ "5994DropTimecode",		"60000/1001",	"DF" },
+	{ "5994NonDropTimecode",	"60000/1001",	"NDF" },
+	{ "60Timecode",				"60/1",			"NDF" },
+	{ "23976Timecode",			"24000/1001",	"NDF" },
+};
+
+void IFF_RIFF::WAVEReconcile::exportSpecialXMPToiXML( SXMPMeta & inXMP, IMetadata & outNativeMeta, PropertyList & propertiesToBeDeleted )
+{
+	std::string sXmpValue;
+	XMP_Int64 iXMPValue;
+
+	// special case for NoGood and Circled // xmpDM:good ,-> iXML:NO_GOOD and iXML:CIRCLED
+
+	// special case for AudioBitDepth // xmpDM:audioSampleType <-> iXML:AUDIO_BIT_DEPTH
+	bool deleteNativeEntry = false;
+	try
+	{
+		if ( inXMP.GetProperty( kXMP_NS_DM, kDM_audioSampleType, &sXmpValue, 0 ) )
+		{
+			bool matchingValueFound = false;
+			XMP_Uns64 ixmlValue = 0;
+			for ( size_t i = 0, total = sizeof(ixmlAudioSampleTypeMappings )/sizeof( iXMLAudioSampleTypeMapping); i < total; i++ )
+			{
+				if ( sXmpValue.compare( ixmlAudioSampleTypeMappings[i].xmpStringValue ) == 0 )
+				{
+					ixmlValue = ixmlAudioSampleTypeMappings[i].ixmlIntValue;
+					matchingValueFound = true;
+					break;
+				}
+			}
+
+			if ( matchingValueFound )
+			{
+				outNativeMeta.setValue< XMP_Uns64 >( iXMLMetadata::kAudioBitDepth, ixmlValue );
+				propertiesToBeDeleted.push_back( std::make_pair( kXMP_NS_DM, kDM_audioSampleType ) );
+				deleteNativeEntry = false;
+			}
+			else
+			{
+				deleteNativeEntry = true;
+			}
+		}
+		else
+		{
+			deleteNativeEntry = true;
+		}
+
+		if ( deleteNativeEntry )
+		{
+			if ( outNativeMeta.valueExists( iXMLMetadata::kAudioBitDepth ) )
+			{
+				XMP_Uns64 ixmlValue = outNativeMeta.getValue< XMP_Uns64 >( iXMLMetadata::kAudioBitDepth );
+				bool validValue = false;
+				for ( size_t i = 0, total = sizeof(ixmlAudioSampleTypeMappings )/sizeof( iXMLAudioSampleTypeMapping); i < total; i++ )
+				{
+					if ( ixmlValue == ixmlAudioSampleTypeMappings[i].ixmlIntValue )
+					{
+						validValue = true;
+						break;
+					}
+				}
+				if ( validValue )
+					outNativeMeta.deleteValue( iXMLMetadata::kAudioBitDepth );
+			}
+		}
+	}
+	catch ( ... )
+	{
+		// do nothing
+	}
+
+	// Special case: On export BEXT:version is always written as 1
+	try
+	{
+		if ( inXMP.GetProperty( kXMP_NS_BWF, "version", NULL, 0 ) )
+		{
+			outNativeMeta.setValue< XMP_Uns64 >( iXMLMetadata::kBWFVersion, 1 );
+		}
+		else
+		{
+			outNativeMeta.deleteValue( iXMLMetadata::kBWFVersion );
+		}
+	}
+	catch( ... )
+	{
+		// do nothing
+	}
+
+	// special case for xmpDM:startTimecode\xmpDM:timeFormat
+	try
+	{
+		if ( inXMP.GetStructField( kXMP_NS_DM, kDM_startTimecode, kXMP_NS_DM, kDM_timeFormat, &sXmpValue, 0 ) )
+		{
+			bool matchingValueFound = false;
+			const char * ixmlValueForTimeCodeRate = NULL;
+			const char * ixmlValueForTimeCodeFlag = NULL;
+			for ( size_t i = 0, total = sizeof(ixmlTimeCodeRateAndFlagMappings)/sizeof(iXMLTimeCodeRateAndFlagMapping); i < total; i++ )
+			{
+				if ( sXmpValue.compare( ixmlTimeCodeRateAndFlagMappings[i].xmpStringValue ) == 0 )
+				{
+					ixmlValueForTimeCodeRate = ixmlTimeCodeRateAndFlagMappings[i].ixmlTimeCodeRateValue;
+					ixmlValueForTimeCodeFlag = ixmlTimeCodeRateAndFlagMappings[i].ixmlTimeCodeFlagValue;
+					matchingValueFound = true;
+					deleteNativeEntry = false;
+					break;
+				}
+			}
+
+			if ( matchingValueFound )
+			{
+				outNativeMeta.setValue< std::string >( iXMLMetadata::kTimeCodeRate, ixmlValueForTimeCodeRate );
+				outNativeMeta.setValue< std::string >( iXMLMetadata::kTimeCodeFlag, ixmlValueForTimeCodeFlag );
+			}
+			else
+			{
+				deleteNativeEntry = true;
+			}
+		}
+		else
+		{
+			deleteNativeEntry = true;
+		}
+
+		if ( deleteNativeEntry )
+		{
+			if ( outNativeMeta.valueExists( iXMLMetadata::kTimeCodeRate ) )
+			{
+				std::string ixmlValueForTimecodeRate = outNativeMeta.getValue< std::string >( iXMLMetadata::kTimeCodeRate );
+				bool validValue = false;
+				for ( size_t i = 0, total = sizeof(ixmlTimeCodeRateAndFlagMappings)/sizeof(iXMLTimeCodeRateAndFlagMapping); i < total; i++ )
+				{
+					if ( ixmlValueForTimecodeRate.compare( ixmlTimeCodeRateAndFlagMappings[i].ixmlTimeCodeRateValue ) == 0 )
+					{
+						validValue = true;
+						break;
+					}
+				}
+				if ( validValue )
+				{
+					outNativeMeta.deleteValue( iXMLMetadata::kTimeCodeRate );
+					outNativeMeta.deleteValue( iXMLMetadata::kTimeCodeFlag );
+				}
+			}
+		}
+	}
+	catch( ... )
+	{
+		// do nothing
+	}
+
+	// special case for timeReference // bext:timeReference <-> iXML:BWF_TIME_REFERENCE_LOW and iXML:BWF_TIME_REFERENCE_HIGH
+	bool bextTimeReferenceDataAvailable = false;
+	XMP_Uns32 bextLowValue = 0;
+	XMP_Uns32 bextHighValue = 0;
+	bool timeCodeDataAvailable = false;
+	XMP_Uns32 tcLowValue = 0;
+	XMP_Uns32 tcHighValue = 0;
+
+	try
+	{
+		if ( inXMP.GetProperty_Int64( kXMP_NS_BWF, "timeReference", &iXMPValue, 0 ) )
+		{
+			bextTimeReferenceDataAvailable = true;
+			XMP_Uns64 uXmpValue = ( XMP_Uns64 )( iXMPValue );
+			bextLowValue = ( XMP_Uns32 ) uXmpValue;
+			bextHighValue = ( XMP_Uns32 ) ( uXmpValue >> 32 );
+		}
+	}
+	catch ( ... )
+	{
+		// do nothing
+	}
+
+#if 0 // reverse calculation from timecode to samples can result in different number of samples. So ignoring for time being
+	if ( outNativeMeta.valueExists( iXMLMetadata::kTimeStampSampleRate ) )
+	{
+		try
+		{
+			std::string timeFormat, timeValue;
+			if ( inXMP.GetStructField( kXMP_NS_DM, kDM_startTimecode, kXMP_NS_DM, kDM_timeValue, &timeValue, 0 ) &&
+				inXMP.GetStructField( kXMP_NS_DM, kDM_startTimecode, kXMP_NS_DM, kDM_timeFormat, &timeFormat, 0) )
+			{
+				XMP_Int64 nSamples;
+				if ( TimeConversionUtils::ConvertSMPTETimecodeToSamples( nSamples, timeValue,
+					outNativeMeta.getValue< XMP_Uns64 >( iXMLMetadata::kTimeStampSampleRate ), timeFormat ) )
+				{
+					timeCodeDataAvailable = true;
+					XMP_Uns64 uXmpValue = ( XMP_Uns64 )( nSamples );
+					tcLowValue = ( XMP_Uns32 ) uXmpValue;
+					tcHighValue = ( XMP_Uns32 ) ( uXmpValue >> 32 );
+				}
+				
+			}
+		}
+		catch ( ... )
+		{
+			// do nothing
+		}
+	}
+
+	if ( bextTimeReferenceDataAvailable && timeCodeDataAvailable )
+	{
+		// pick the one which is different, if both different pick the bext one
+		XMP_Uns64 
+	}
+	else if ( bextTimeReferenceDataAvailable )
+	{
+	}
+	else if ( timeCodeDataAvailable )
+	{
+	}
+	else  // none of the bextTimeReference and timeCode data is available
+	{
+		outNativeMeta.deleteValue( iXMLMetadata::kTimeStampSampleSinceMidnightHigh );
+		outNativeMeta.deleteValue( iXMLMetadata::kTimeStampSampleSinceMidnightLow );
+		outNativeMeta.deleteValue( iXMLMetadata::kBWFTimeReferenceHigh );
+		outNativeMeta.deleteValue( iXMLMetadata::kBWFTimeReferenceLow );
+	}
+#endif
+
+	if ( bextTimeReferenceDataAvailable ) {
+		outNativeMeta.setValue< XMP_Uns64 >( iXMLMetadata::kBWFTimeReferenceHigh, bextHighValue );
+		outNativeMeta.setValue< XMP_Uns64 >( iXMLMetadata::kBWFTimeReferenceLow, bextLowValue );
+		outNativeMeta.setValue< XMP_Uns64 >( iXMLMetadata::kTimeStampSampleSinceMidnightHigh, bextHighValue );
+		outNativeMeta.setValue< XMP_Uns64 >( iXMLMetadata::kTimeStampSampleSinceMidnightLow, bextLowValue );
+	} else {
+		outNativeMeta.deleteValue( iXMLMetadata::kTimeStampSampleSinceMidnightHigh );
+		outNativeMeta.deleteValue( iXMLMetadata::kTimeStampSampleSinceMidnightLow );
+		outNativeMeta.deleteValue( iXMLMetadata::kBWFTimeReferenceHigh );
+		outNativeMeta.deleteValue( iXMLMetadata::kBWFTimeReferenceLow );
+	}
+}
+
+bool IFF_RIFF::WAVEReconcile::exportSpecialiXMLToXMP( IMetadata & inNativeMeta, SXMPMeta & outXMP )
+{
+	bool changed = false;
+	// special case for AudioBitDepth // xmpDM:audioSampleType <-> iXML:AUDIO_BIT_DEPTH
+	if ( inNativeMeta.valueExists( iXMLMetadata::kAudioBitDepth ) ) {
+		XMP_Uns64 ixmlValue = inNativeMeta.getValue< XMP_Uns64 >( iXMLMetadata::kAudioBitDepth);
+		const char * xmpValue = NULL;
+		bool matchingValueFound = false;
+
+		for ( size_t i = 0, total = sizeof(ixmlAudioSampleTypeMappings)/sizeof(iXMLAudioSampleTypeMapping); i < total; i++ )
+		{
+			if ( ixmlAudioSampleTypeMappings[i].ixmlIntValue == ixmlValue )
+			{
+				xmpValue = ixmlAudioSampleTypeMappings[i].xmpStringValue;
+				matchingValueFound = true;
+				break;
+			}
+		}
+		if ( matchingValueFound )
+		{
+			outXMP.SetProperty( kXMP_NS_DM, kDM_audioSampleType, xmpValue );
+			changed = true;
+		}
+	}
+
+	// special case for timeReference // bext:timeReference <-> iXML:TIME_SAMPLES_SINCE_MIDNIGHT_LO and iXML:TIME_SAMPLES_SINCE_MIDNIGHT_HI
+	if ( inNativeMeta.valueExists( iXMLMetadata::kTimeStampSampleSinceMidnightHigh ) && inNativeMeta.valueExists( iXMLMetadata::kTimeStampSampleSinceMidnightLow ) ) {
+		XMP_Uns64 combinedValue = inNativeMeta.getValue< XMP_Uns64 >( iXMLMetadata::kTimeStampSampleSinceMidnightHigh );
+		combinedValue = combinedValue << 32;
+		combinedValue += inNativeMeta.getValue< XMP_Uns64 >( iXMLMetadata::kTimeStampSampleSinceMidnightLow );
+		std::string strValue;
+		SXMPUtils::ConvertFromInt64( combinedValue, "%llu", &strValue );
+		outXMP.SetProperty( kXMP_NS_BWF, "timeReference", strValue );
+		changed = true;
+	}
+
+	// special case for timeReference // bext:timeReference <-> iXML:BWF_TIME_REFERENCE_LOW and iXML:BWF_TIME_REFERENCE_HIGH
+	if ( inNativeMeta.valueExists( iXMLMetadata::kBWFTimeReferenceHigh ) && inNativeMeta.valueExists( iXMLMetadata::kBWFTimeReferenceLow ) ) {
+		XMP_Uns64 combinedValue = inNativeMeta.getValue< XMP_Uns64 >( iXMLMetadata::kBWFTimeReferenceHigh );
+		combinedValue = combinedValue << 32;
+		combinedValue += inNativeMeta.getValue< XMP_Uns64 >( iXMLMetadata::kBWFTimeReferenceLow );
+		std::string strValue;
+		SXMPUtils::ConvertFromInt64( combinedValue, "%llu", &strValue );
+		outXMP.SetProperty( kXMP_NS_BWF, "timeReference", strValue );
+		changed = true;
+	}
+
+	// special case for xmpDM:startTimecode\xmpDM:timeFormat
+	if ( inNativeMeta.valueExists( iXMLMetadata::kTimeCodeRate ) )
+	{
+		std::string ixmlTimecodeRateValue = inNativeMeta.getValue<std::string>( iXMLMetadata::kTimeCodeRate );
+		std::string ixmlTimecodeFlagValue = "NDF";
+		const char * xmpValue = NULL;
+		bool matchingValueFound = false;
+		if ( inNativeMeta.valueExists( iXMLMetadata::kTimeCodeFlag ) )
+		{
+			ixmlTimecodeFlagValue = inNativeMeta.getValue<std::string>( iXMLMetadata::kTimeCodeFlag );
+		}
+
+		for ( size_t i = 0, total = sizeof(ixmlTimeCodeRateAndFlagMappings)/sizeof(iXMLTimeCodeRateAndFlagMapping); i < total; i++ )
+		{
+			if ( ( ixmlTimecodeRateValue.compare(ixmlTimeCodeRateAndFlagMappings[i].ixmlTimeCodeRateValue) == 0 ) &&
+				 ( ixmlTimecodeFlagValue.compare(ixmlTimeCodeRateAndFlagMappings[i].ixmlTimeCodeFlagValue) == 0 ) )
+			{
+				xmpValue = ixmlTimeCodeRateAndFlagMappings[i].xmpStringValue;
+				matchingValueFound = true;
+				break;
+			}
+		}
+		if ( matchingValueFound )
+		{
+			outXMP.SetProperty( kXMP_NS_BWF, kDM_timeFormat, xmpValue );
+			changed = true;
+		}
+	}
+
+	return changed;
 }

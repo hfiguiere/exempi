@@ -79,7 +79,7 @@ void XIO::SplitLeafName ( std::string * path, std::string * leafName )
 //
 // ! Must only be called after using SplitLeafName!
 
-void XIO::SplitFileExtension ( std::string * leafName, std::string * fileExt )
+void XIO::SplitFileExtension ( std::string * leafName, std::string * fileExt , bool lowercase )
 {
 
 	fileExt->erase();
@@ -91,7 +91,7 @@ void XIO::SplitFileExtension ( std::string * leafName, std::string * fileExt )
 
 	if ( (*leafName)[extPos] == '.' ) {
 		fileExt->assign ( &((*leafName)[extPos+1]) );
-		MakeLowerCase ( fileExt );
+		if (lowercase) MakeLowerCase ( fileExt );
 		leafName->erase ( extPos );
 	}
 
