@@ -67,14 +67,17 @@ libformatsupport_la_SOURCES = \
 	QuickTime_Support.cpp \
 	ASF_Support.hpp ASF_Support.cpp \
 	MacScriptExtracts.h \
-AIFF/AIFFBehavior.cpp  AIFF/AIFFBehavior.h \
-AIFF/AIFFMetadata.cpp  AIFF/AIFFMetadata.h \
-AIFF/AIFFReconcile.cpp  AIFF/AIFFReconcile.h \
-IFF/ChunkController.cpp  IFF/Chunk.cpp  IFF/ChunkPath.cpp  IFF/IChunkBehavior.cpp  IFF/IChunkContainer.h \
-IFF/ChunkController.h    IFF/Chunk.h    IFF/ChunkPath.h    IFF/IChunkBehavior.h    IFF/IChunkData.h \
-WAVE/BEXTMetadata.cpp  WAVE/CartMetadata.h    WAVE/DISPMetadata.cpp  WAVE/INFOMetadata.h    WAVE/WAVEBehavior.cpp   WAVE/WAVEReconcile.h \
-WAVE/BEXTMetadata.h    WAVE/Cr8rMetadata.cpp  WAVE/DISPMetadata.h    WAVE/PrmLMetadata.cpp  WAVE/WAVEBehavior.h \
-WAVE/CartMetadata.cpp  WAVE/Cr8rMetadata.h    WAVE/INFOMetadata.cpp  WAVE/PrmLMetadata.h    WAVE/WAVEReconcile.cpp \
+	TimeConversionUtils.h TimeConversionUtils.cpp \
+	AIFF/AIFFBehavior.cpp  AIFF/AIFFBehavior.h \
+	AIFF/AIFFMetadata.cpp  AIFF/AIFFMetadata.h \
+	AIFF/AIFFReconcile.cpp  AIFF/AIFFReconcile.h \
+	IFF/ChunkController.cpp  IFF/Chunk.cpp  IFF/ChunkPath.cpp  IFF/IChunkBehavior.cpp  IFF/IChunkContainer.h \
+	IFF/ChunkController.h    IFF/Chunk.h    IFF/ChunkPath.h    IFF/IChunkBehavior.h    IFF/IChunkData.h \
+	WAVE/BEXTMetadata.cpp  WAVE/CartMetadata.h    WAVE/DISPMetadata.cpp  WAVE/INFOMetadata.h    WAVE/WAVEBehavior.cpp   WAVE/WAVEReconcile.h \
+	WAVE/BEXTMetadata.h    WAVE/Cr8rMetadata.cpp  WAVE/DISPMetadata.h    WAVE/PrmLMetadata.cpp  WAVE/WAVEBehavior.h \
+	WAVE/CartMetadata.cpp  WAVE/Cr8rMetadata.h    WAVE/INFOMetadata.cpp  WAVE/PrmLMetadata.h    WAVE/WAVEReconcile.cpp \
+	WAVE/iXMLMetadata.h WAVE/iXMLMetadata.cpp \
+	P2_Support.hpp P2_Support.cpp \
 	$(NULL)
 
 
