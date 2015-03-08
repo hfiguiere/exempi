@@ -1,7 +1,7 @@
 /*
  * exempi - xmp.h
  *
- * Copyright (C) 2007-2008,2012 Hubert Figuiere
+ * Copyright (C) 2007-2015 Hubert Figuiere
  * Copyright 2002-2007 Adobe Systems Incorporated
  * All rights reserved.
  *
@@ -73,6 +73,9 @@ typedef enum {
 					       * to need scanning. */
 	XMP_OPEN_REPAIR_FILE    = 0x00000100, /**< Attempt to repair a file opened for update,
 					       * default is to not open (throw an exception). */
+	XMP_OPEN_OPTIMIZEFILELAYOUT
+                                = 0x00000200, /**< Optimize MPEG4 to support stream when updating
+                                               * This can take some time */
 	XMP_OPEN_INBACKGROUND   = 0x10000000  /**< Set if calling from background
 					       * thread. */
 } XmpOpenFileOptions;
