@@ -141,6 +141,12 @@ bool IReconcile::importNativeToXMP( SXMPMeta& outXMP, const IMetadata& nativeMet
 						}
 						break;
 
+						case kNativeType_Bool:
+						{
+							SXMPUtils::ConvertFromBool( nativeMeta.getValue<bool>( propertyInfo[index].mMetadataID ), &xmpValue );
+						}
+						break;
+
 						default:
 						{
 							XMP_Throw( "Unknown native data type", kXMPErr_InternalFailure );
@@ -217,7 +223,7 @@ bool IReconcile::importNativeToXMP( SXMPMeta& outXMP, const IMetadata& nativeMet
 // 
 //-----------------------------------------------------------------------------
 
-bool IReconcile::exportXMPToNative( IMetadata& outNativeMeta, SXMPMeta& inXMP, const MetadataPropertyInfo* propertyInfo )
+bool IReconcile::exportXMPToNative( IMetadata& outNativeMeta, SXMPMeta& inXMP, const MetadataPropertyInfo* propertyInfo, PropertyList * propertiesExportedSuccessfully /*= NULL*/ )
 {
 	std::string xmpValue;
 	XMP_Uns32 index = 0;
@@ -275,6 +281,8 @@ bool IReconcile::exportXMPToNative( IMetadata& outNativeMeta, SXMPMeta& inXMP, c
 						std::string ascii;
 						convertToASCII( xmpValue, ascii );
 						outNativeMeta.setValue<std::string>( propertyInfo[index].mMetadataID, ascii );
+						if ( propertiesExportedSuccessfully )
+							propertiesExportedSuccessfully->push_back( std::make_pair( propertyInfo[index].mXMPSchemaNS, propertyInfo[index].mXMPPropName ) );
 					}
 					break;
 
@@ -282,6 +290,8 @@ bool IReconcile::exportXMPToNative( IMetadata& outNativeMeta, SXMPMeta& inXMP, c
 					case kNativeType_StrUTF8:
 					{
 						outNativeMeta.setValue<std::string>( propertyInfo[index].mMetadataID, xmpValue );
+						if ( propertiesExportedSuccessfully )
+							propertiesExportedSuccessfully->push_back( std::make_pair( propertyInfo[index].mXMPSchemaNS, propertyInfo[index].mXMPPropName ) );
 					}
 					break;
 
@@ -293,6 +303,8 @@ bool IReconcile::exportXMPToNative( IMetadata& outNativeMeta, SXMPMeta& inXMP, c
 						{
 							ReconcileUtils::UTF8ToLocal( xmpValue.c_str(), xmpValue.size(), &value );
 							outNativeMeta.setValue<std::string>( propertyInfo[index].mMetadataID, value );
+							if ( propertiesExportedSuccessfully )
+								propertiesExportedSuccessfully->push_back( std::make_pair( propertyInfo[index].mXMPSchemaNS, propertyInfo[index].mXMPPropName ) );
 						}
 						catch( XMP_Error& e )
 						{
@@ -330,6 +342,8 @@ bool IReconcile::exportXMPToNative( IMetadata& outNativeMeta, SXMPMeta& inXMP, c
 						if( ! error && value >= 0 )
 						{
 							outNativeMeta.setValue<XMP_Uns64>( propertyInfo[index].mMetadataID, static_cast<XMP_Uns64>(value) );
+							if ( propertiesExportedSuccessfully )
+								propertiesExportedSuccessfully->push_back( std::make_pair( propertyInfo[index].mXMPSchemaNS, propertyInfo[index].mXMPPropName ) );
 						}
 					}
 					break;
@@ -358,6 +372,8 @@ bool IReconcile::exportXMPToNative( IMetadata& outNativeMeta, SXMPMeta& inXMP, c
 						if( ! error && value >= 0 )
 						{
 							outNativeMeta.setValue<XMP_Uns32>( propertyInfo[index].mMetadataID, static_cast<XMP_Uns32>(value) );
+							if ( propertiesExportedSuccessfully )
+								propertiesExportedSuccessfully->push_back( std::make_pair( propertyInfo[index].mXMPSchemaNS, propertyInfo[index].mXMPPropName ) );
 						}
 					}
 					break;
@@ -386,6 +402,8 @@ bool IReconcile::exportXMPToNative( IMetadata& outNativeMeta, SXMPMeta& inXMP, c
 						if( ! error )
 						{
 							outNativeMeta.setValue<XMP_Int32>( propertyInfo[index].mMetadataID, static_cast<XMP_Int32>(value) );
+							if ( propertiesExportedSuccessfully )
+								propertiesExportedSuccessfully->push_back( std::make_pair( propertyInfo[index].mXMPSchemaNS, propertyInfo[index].mXMPPropName ) );
 						}
 					}
 					break;
@@ -414,6 +432,38 @@ bool IReconcile::exportXMPToNative( IMetadata& outNativeMeta, SXMPMeta& inXMP, c
 						if( ! error && value >= 0 )
 						{
 							outNativeMeta.setValue<XMP_Uns16>( propertyInfo[index].mMetadataID, static_cast<XMP_Uns16>(value) );
+							if ( propertiesExportedSuccessfully )
+								propertiesExportedSuccessfully->push_back( std::make_pair( propertyInfo[index].mXMPSchemaNS, propertyInfo[index].mXMPPropName ) );
+						}
+					}
+					break;
+
+					case kNativeType_Bool:
+					{
+						bool value;
+						bool error = false;
+
+						try
+						{
+							value = SXMPUtils::ConvertToBool( xmpValue );
+						}
+						catch( XMP_Error& e )
+						{
+							if ( e.GetID() != kXMPErr_BadParam )
+							{
+								// rethrow exception if it wasn't caused by an
+								// invalid parameter for the conversion
+								throw e;
+							}
+							error = true;
+						}
+
+						// Only write the value if it could be converted to a number and has a positive value
+						if( ! error )
+						{
+							outNativeMeta.setValue<bool>( propertyInfo[index].mMetadataID, value );
+							if ( propertiesExportedSuccessfully )
+								propertiesExportedSuccessfully->push_back( std::make_pair( propertyInfo[index].mXMPSchemaNS, propertyInfo[index].mXMPPropName ) );
 						}
 					}
 					break;

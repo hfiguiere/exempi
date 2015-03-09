@@ -385,7 +385,6 @@ void PluginManager::initialize( const std::string& pluginDir, const std::string&
 {
 	try 
 	{
-		HandlerRegistry & hdlrReg = HandlerRegistry::getInstance();
 		if( msPluginManager == 0 ) msPluginManager = new PluginManager( pluginDir, plugins );
 		msPluginManager->initializeHostAPI();
 
@@ -817,10 +816,7 @@ void PluginManager::initializeHostAPI()
 			break;
 		}
 
-		if( hostAPI != NULL )
-		{
-			msPluginManager->mHostAPIs[ hostAPI->mVersion ] = hostAPI;
-		}
+		msPluginManager->mHostAPIs[ hostAPI->mVersion ] = hostAPI;
 	}
 }
 

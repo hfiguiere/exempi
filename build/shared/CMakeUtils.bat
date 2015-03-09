@@ -8,7 +8,7 @@
 
 REM Available Arguments:
 REM [64|32] Bit Architecture (optional, 64 is default)
-REM [2008|2010|2012] VS Version(optional, 2010 is default)
+REM [2008|2011|2011] VS Version(optional, 2011 is default)
 REM [Dynamic | Static] optional, Dynamic by default
 REM [WarningAsError] optional
 REM [Clean] optional
@@ -22,7 +22,7 @@ set CleanCMake=OFF
 set XMPROOT=%buildSharedLoc%/../..
 
 :: Default Generator
-set GeneratorVersion=Visual Studio 10
+set GeneratorVersion=Visual Studio 11
 set GeneratorArchitecture=Win64
 set CMake_Arch64Bit=ON
 set CMake_ARCH=x64
@@ -59,9 +59,9 @@ set CMake_LibTypeFolderName=dynamic
 	)
 
 	:: Visual Studio Version
-	if /I "%1"=="2010" (
-	echo "Generator VS 2010 specified"
-	set GeneratorVersion=Visual Studio 10
+	if /I "%1"=="2011" (
+	echo "Generator VS 2011 specified"
+	set GeneratorVersion=Visual Studio 11
 	set CMakeGenVersion_FolderSuffix=
 	)
 
@@ -94,7 +94,7 @@ set CMake64_Folder_Suffix=
 )
 
 :: CMake Folder specified:
-set CMakeFolder="vc10/%CMake_LibTypeFolderName%/windows%CMake64_Folder_Suffix%"
+set CMakeFolder="vc11/%CMake_LibTypeFolderName%/windows%CMake64_Folder_Suffix%"
 echo CMakeFolder: %CMakeFolder%
 
 :: Create generator type from VS version and architecture

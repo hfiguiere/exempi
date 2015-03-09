@@ -107,7 +107,7 @@ extern "C" {
 // =================================================================================================
 
 extern void
-WXMPUtils_ComposeArrayItemPath_1 ( XMP_StringPtr   schemaNS,
+XMP_PUBLIC WXMPUtils_ComposeArrayItemPath_1 ( XMP_StringPtr   schemaNS,
                                    XMP_StringPtr   arrayName,
                                    XMP_Index       itemIndex,
                                    void *          itemPath,
@@ -115,7 +115,7 @@ WXMPUtils_ComposeArrayItemPath_1 ( XMP_StringPtr   schemaNS,
                                    WXMP_Result *   wResult );
 
 extern void
-WXMPUtils_ComposeStructFieldPath_1 ( XMP_StringPtr   schemaNS,
+XMP_PUBLIC WXMPUtils_ComposeStructFieldPath_1 ( XMP_StringPtr   schemaNS,
                                      XMP_StringPtr   structName,
                                      XMP_StringPtr   fieldNS,
                                      XMP_StringPtr   fieldName,
@@ -124,7 +124,7 @@ WXMPUtils_ComposeStructFieldPath_1 ( XMP_StringPtr   schemaNS,
                                      WXMP_Result *   wResult );
 
 extern void
-WXMPUtils_ComposeQualifierPath_1 ( XMP_StringPtr   schemaNS,
+XMP_PUBLIC WXMPUtils_ComposeQualifierPath_1 ( XMP_StringPtr   schemaNS,
                                    XMP_StringPtr   propName,
                                    XMP_StringPtr   qualNS,
                                    XMP_StringPtr   qualName,
@@ -133,7 +133,7 @@ WXMPUtils_ComposeQualifierPath_1 ( XMP_StringPtr   schemaNS,
                                    WXMP_Result *   wResult );
 
 extern void
-WXMPUtils_ComposeLangSelector_1 ( XMP_StringPtr   schemaNS,
+XMP_PUBLIC WXMPUtils_ComposeLangSelector_1 ( XMP_StringPtr   schemaNS,
                                   XMP_StringPtr   arrayName,
                                   XMP_StringPtr   langName,
                                   void *          selPath,
@@ -141,7 +141,7 @@ WXMPUtils_ComposeLangSelector_1 ( XMP_StringPtr   schemaNS,
                                   WXMP_Result *   wResult );
 
 extern void
-WXMPUtils_ComposeFieldSelector_1 ( XMP_StringPtr   schemaNS,
+XMP_PUBLIC WXMPUtils_ComposeFieldSelector_1 ( XMP_StringPtr   schemaNS,
                                    XMP_StringPtr   arrayName,
                                    XMP_StringPtr   fieldNS,
                                    XMP_StringPtr   fieldName,
@@ -153,34 +153,34 @@ WXMPUtils_ComposeFieldSelector_1 ( XMP_StringPtr   schemaNS,
 // -------------------------------------------------------------------------------------------------
 
 extern void
-WXMPUtils_ConvertFromBool_1 ( XMP_Bool      binValue,
+XMP_PUBLIC WXMPUtils_ConvertFromBool_1 ( XMP_Bool      binValue,
                               void *        strValue,
                               SetClientStringProc SetClientString,
                               WXMP_Result * wResult );
 
 extern void
-WXMPUtils_ConvertFromInt_1 ( XMP_Int32     binValue,
+XMP_PUBLIC WXMPUtils_ConvertFromInt_1 ( XMP_Int32     binValue,
                              XMP_StringPtr format,
                              void *        strValue,
                              SetClientStringProc SetClientString,
                              WXMP_Result * wResult );
 
 extern void
-WXMPUtils_ConvertFromInt64_1 ( XMP_Int64     binValue,
+XMP_PUBLIC WXMPUtils_ConvertFromInt64_1 ( XMP_Int64     binValue,
                                XMP_StringPtr format,
                                void *        strValue,
                                SetClientStringProc SetClientString,
                                WXMP_Result * wResult );
 
 extern void
-WXMPUtils_ConvertFromFloat_1 ( double        binValue,
+XMP_PUBLIC WXMPUtils_ConvertFromFloat_1 ( double        binValue,
                                XMP_StringPtr format,
                                void *        strValue,
                                SetClientStringProc SetClientString,
                                WXMP_Result * wResult );
 
 extern void
-WXMPUtils_ConvertFromDate_1 ( const XMP_DateTime & binValue,
+XMP_PUBLIC WXMPUtils_ConvertFromDate_1 ( const XMP_DateTime & binValue,
                               void *               strValue,
                               SetClientStringProc SetClientString,
                               WXMP_Result *        wResult );
@@ -188,60 +188,60 @@ WXMPUtils_ConvertFromDate_1 ( const XMP_DateTime & binValue,
 // -------------------------------------------------------------------------------------------------
 
 extern void
-WXMPUtils_ConvertToBool_1 ( XMP_StringPtr strValue,
+XMP_PUBLIC WXMPUtils_ConvertToBool_1 ( XMP_StringPtr strValue,
                             WXMP_Result * wResult );
 
 extern void
-WXMPUtils_ConvertToInt_1 ( XMP_StringPtr strValue,
+XMP_PUBLIC WXMPUtils_ConvertToInt_1 ( XMP_StringPtr strValue,
                            WXMP_Result * wResult );
 
 extern void
-WXMPUtils_ConvertToInt64_1 ( XMP_StringPtr strValue,
+XMP_PUBLIC WXMPUtils_ConvertToInt64_1 ( XMP_StringPtr strValue,
                              WXMP_Result * wResult );
 
 extern void
-WXMPUtils_ConvertToFloat_1 ( XMP_StringPtr strValue,
+XMP_PUBLIC WXMPUtils_ConvertToFloat_1 ( XMP_StringPtr strValue,
                              WXMP_Result * wResult );
 
 extern void
-WXMPUtils_ConvertToDate_1 ( XMP_StringPtr  strValue,
+XMP_PUBLIC WXMPUtils_ConvertToDate_1 ( XMP_StringPtr  strValue,
                             XMP_DateTime * binValue,
                             WXMP_Result *  wResult );
 
 // -------------------------------------------------------------------------------------------------
 
 extern void
-WXMPUtils_CurrentDateTime_1 ( XMP_DateTime * time,
+XMP_PUBLIC WXMPUtils_CurrentDateTime_1 ( XMP_DateTime * time,
                               WXMP_Result *  wResult );
 
 extern void
-WXMPUtils_SetTimeZone_1 ( XMP_DateTime * time,
+XMP_PUBLIC WXMPUtils_SetTimeZone_1 ( XMP_DateTime * time,
                           WXMP_Result *  wResult );
 
 extern void
-WXMPUtils_ConvertToUTCTime_1 ( XMP_DateTime * time,
+XMP_PUBLIC WXMPUtils_ConvertToUTCTime_1 ( XMP_DateTime * time,
                                WXMP_Result *  wResult );
 
 extern void
-WXMPUtils_ConvertToLocalTime_1 ( XMP_DateTime * time,
+XMP_PUBLIC WXMPUtils_ConvertToLocalTime_1 ( XMP_DateTime * time,
                                  WXMP_Result *  wResult );
 
 extern void
-WXMPUtils_CompareDateTime_1 ( const XMP_DateTime & left,
+XMP_PUBLIC WXMPUtils_CompareDateTime_1 ( const XMP_DateTime & left,
                               const XMP_DateTime & right,
                               WXMP_Result *        wResult );
 
 // -------------------------------------------------------------------------------------------------
 
 extern void
-WXMPUtils_EncodeToBase64_1 ( XMP_StringPtr rawStr,
+XMP_PUBLIC WXMPUtils_EncodeToBase64_1 ( XMP_StringPtr rawStr,
                              XMP_StringLen rawLen,
                              void *        encodedStr,
                              SetClientStringProc SetClientString,
                              WXMP_Result * wResult );
 
 extern void
-WXMPUtils_DecodeFromBase64_1 ( XMP_StringPtr encodedStr,
+XMP_PUBLIC WXMPUtils_DecodeFromBase64_1 ( XMP_StringPtr encodedStr,
                                XMP_StringLen encodedLen,
                                void *        rawStr,
                                SetClientStringProc SetClientString,
@@ -250,7 +250,7 @@ WXMPUtils_DecodeFromBase64_1 ( XMP_StringPtr encodedStr,
 // -------------------------------------------------------------------------------------------------
 
 extern void
-WXMPUtils_PackageForJPEG_1 ( XMPMetaRef    xmpObj,
+XMP_PUBLIC WXMPUtils_PackageForJPEG_1 ( XMPMetaRef    xmpObj,
                              void *        stdStr,
                              void *        extStr,
                              void *        digestStr,
@@ -258,14 +258,14 @@ WXMPUtils_PackageForJPEG_1 ( XMPMetaRef    xmpObj,
                              WXMP_Result * wResult );
 
 extern void
-WXMPUtils_MergeFromJPEG_1 ( XMPMetaRef    fullXMP,
+XMP_PUBLIC WXMPUtils_MergeFromJPEG_1 ( XMPMetaRef    fullXMP,
                             XMPMetaRef    extendedXMP,
                             WXMP_Result * wResult );
 
 // -------------------------------------------------------------------------------------------------
 
 extern void
-WXMPUtils_CatenateArrayItems_1 ( XMPMetaRef     xmpObj,
+XMP_PUBLIC WXMPUtils_CatenateArrayItems_1 ( XMPMetaRef     xmpObj,
                                  XMP_StringPtr  schemaNS,
                                  XMP_StringPtr  arrayName,
                                  XMP_StringPtr  separator,
@@ -276,7 +276,7 @@ WXMPUtils_CatenateArrayItems_1 ( XMPMetaRef     xmpObj,
                                  WXMP_Result *  wResult );
 
 extern void
-WXMPUtils_SeparateArrayItems_1 ( XMPMetaRef     xmpObj,
+XMP_PUBLIC WXMPUtils_SeparateArrayItems_1 ( XMPMetaRef     xmpObj,
                                  XMP_StringPtr  schemaNS,
                                  XMP_StringPtr  arrayName,
                                  XMP_OptionBits options,
@@ -284,20 +284,20 @@ WXMPUtils_SeparateArrayItems_1 ( XMPMetaRef     xmpObj,
                                  WXMP_Result *  wResult );
 
 extern void
-WXMPUtils_ApplyTemplate_1 ( XMPMetaRef     workingXMP,
+XMP_PUBLIC WXMPUtils_ApplyTemplate_1 ( XMPMetaRef     workingXMP,
 							XMPMetaRef     templateXMP,
 							XMP_OptionBits options,
 							WXMP_Result *  wResult );
 
 extern void
-WXMPUtils_RemoveProperties_1 ( XMPMetaRef     xmpObj,
+XMP_PUBLIC WXMPUtils_RemoveProperties_1 ( XMPMetaRef     xmpObj,
                                XMP_StringPtr  schemaNS,
                                XMP_StringPtr  propName,
                                XMP_OptionBits options,
                                WXMP_Result *  wResult );
 
 extern void
-WXMPUtils_DuplicateSubtree_1 ( XMPMetaRef     source,
+XMP_PUBLIC WXMPUtils_DuplicateSubtree_1 ( XMPMetaRef     source,
                                XMPMetaRef     dest,
                                XMP_StringPtr  sourceNS,
                                XMP_StringPtr  sourceRoot,

@@ -185,6 +185,12 @@ public:
 					   XMP_StringPtr   destRoot,
 					   XMP_OptionBits  options );
 
+	// ---------------------------------------------------------------------------------------------
+
+	static std::string& Trim(std::string& string);
+
+	static std::string * WhiteSpaceStrPtr;
+
 };	// XMPUtils
 
 // =================================================================================================

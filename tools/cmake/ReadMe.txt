@@ -6,10 +6,10 @@ To use CMake:
 http://www.cmake.org/cmake/resources/software.html
 The minimum version of CMake required for this release is 2.8.6
 
-Download the latest CMake ditribution zipped package from the above link corresponding to the current platform. For example, for the CMake version 2.8.11.1 the distribution names for different platforms are:
-Windows	----	cmake-2.8.11.1-win32-x86.zip 
-Mac OSX ----	cmake-2.8.11.1-Darwin64-universal.tar.gz
-Linux   ----    cmake-2.8.11.1-Linux-i386.tar.gz
+Download the latest CMake ditribution zipped package from the above link corresponding to the current platform. For example, for the CMake version 2.8.12.2 the distribution names for different platforms are:
+Windows	----	cmake-2.8.12.2-win32-x86.zip 
+Mac OSX ----	cmake-2.8.12.2-Darwin64-universal.tar.gz
+Linux   ----    cmake-2.8.12.2-Linux-i386.tar.gz
 
 2. For Windows and Linux copy the folders /bin and /share into <xmpsdk>/tools/cmake/
    For Mac:

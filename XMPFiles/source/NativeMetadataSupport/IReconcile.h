@@ -42,7 +42,8 @@ enum MetadataPropertyType
 	kNativeType_Uns64,
 	kNativeType_Uns32,
 	kNativeType_Int32,
-	kNativeType_Uns16
+	kNativeType_Uns16,
+	kNativeType_Bool
 };
 
 /** Types that describe how an XMP property is exported to native Metadata */
@@ -71,6 +72,8 @@ struct MetadataPropertyInfo
 class IReconcile
 {
 public:
+	typedef std::vector< std::pair< XMP_StringPtr, XMP_StringPtr > > PropertyList;
+
 	virtual ~IReconcile() {};
 	/**
 	 * Reconciles metadata from legacy formats into XMP.
@@ -128,7 +131,7 @@ protected:
 
 		@return		true if any native metadata value were changed
 	*/
-	static bool exportXMPToNative( IMetadata& outNativeMeta, SXMPMeta& inXMP, const MetadataPropertyInfo* propertyInfo );
+	static bool exportXMPToNative( IMetadata& outNativeMeta, SXMPMeta& inXMP, const MetadataPropertyInfo* propertyInfo, PropertyList * propertiesExportedSuccessfully = NULL );
 
 	// Converts input string to an ascii output string
 	// - terminates at first 0

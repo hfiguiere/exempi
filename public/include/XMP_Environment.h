@@ -133,15 +133,56 @@
 // =================================================================================================
 // Macintosh Specific Settings
 // ===========================
+#if (XMP_MacBuild)
+	#define XMP_HELPER_DLL_IMPORT __attribute__((visibility("default")))
+	#define XMP_HELPER_DLL_EXPORT __attribute__((visibility("default")))
+	#define XMP_HELPER_DLL_PRIVATE __attribute__((visibility("hidden")))
+#endif
 
 // =================================================================================================
 // Windows Specific Settings
 // =========================
+#if (XMP_WinBuild)
+	#define XMP_HELPER_DLL_IMPORT
+	#define XMP_HELPER_DLL_EXPORT
+	#define XMP_HELPER_DLL_PRIVATE
+#endif
 
 // =================================================================================================
 // UNIX Specific Settings
 // ======================
+#if (XMP_UNIXBuild)
+	#define XMP_HELPER_DLL_IMPORT
+	#define XMP_HELPER_DLL_EXPORT
+	#define XMP_HELPER_DLL_PRIVATE
+#endif
 
 // =================================================================================================
+// IOS Specific Settings
+// ===========================
+#if (XMP_iOSBuild)
+	#include <TargetConditionals.h>
+	#if (TARGET_CPU_ARM)
+		#define XMP_IOS_ARM 1
+	#else
+		#define XMP_IOS_ARM 0
+	#endif
+	#define XMP_HELPER_DLL_IMPORT __attribute__((visibility("default")))
+	#define XMP_HELPER_DLL_EXPORT __attribute__((visibility("default")))
+	#define XMP_HELPER_DLL_PRIVATE __attribute__((visibility("hidden")))
+#endif
+
+// =================================================================================================
+
+#if (XMP_DynamicBuild)
+	#define XMP_PUBLIC XMP_HELPER_DLL_EXPORT
+	#define XMP_PRIVATE XMP_HELPER_DLL_PRIVATE
+#elif (XMP_StaticBuild)
+	#define XMP_PUBLIC
+	#define XMP_PRIVATE
+#else
+	#define XMP_PUBLIC XMP_HELPER_DLL_IMPORT
+	#define XMP_PRIVATE XMP_HELPER_DLL_PRIVATE
+#endif
 
 #endif  // __XMP_Environment_h__

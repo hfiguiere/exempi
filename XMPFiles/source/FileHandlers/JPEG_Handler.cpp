@@ -276,6 +276,9 @@ void JPEG_MetaHandler::CacheFileData()
 	static const size_t kBufferSize = 64*1024;	// Enough for maximum segment contents.
 	XMP_Uns8 buffer [kBufferSize];
 
+	psirContents.clear();
+	exifContents.clear();
+
 	XMP_AbortProc abortProc  = this->parent->abortProc;
 	void *        abortArg   = this->parent->abortArg;
 	const bool    checkAbort = (abortProc != 0);
@@ -333,7 +336,7 @@ void JPEG_MetaHandler::CacheFileData()
 				size_t psirLen = contentLen - kPSIRSignatureLength;
 				fileRef->Seek ( (contentOrigin + kPSIRSignatureLength), kXMP_SeekFromStart );
 				fileRef->ReadAll ( buffer, psirLen );
-				this->psirContents.assign ( (char*)buffer, psirLen );
+				this->psirContents.append( (char *) buffer, psirLen );
 				continue;	// Move on to the next marker.
 
 			}
@@ -354,7 +357,7 @@ void JPEG_MetaHandler::CacheFileData()
 				size_t exifLen = contentLen - kExifSignatureLength;
 				fileRef->Seek ( (contentOrigin + kExifSignatureLength), kXMP_SeekFromStart );
 				fileRef->ReadAll ( buffer, exifLen );
-				this->exifContents.assign ( (char*)buffer, exifLen );
+				this->exifContents.append ( (char*)buffer, exifLen );
 				continue;	// Move on to the next marker.
 
 			}
@@ -535,8 +538,10 @@ void JPEG_MetaHandler::ProcessXMP()
 
 	XMP_Assert ( (this->psirMgr == 0) && (this->iptcMgr == 0) );	// ProcessTNail might create the exifMgr.
 
-	bool readOnly = ((this->parent->openFlags & kXMPFiles_OpenForUpdate) == 0);
-
+	bool readOnly = false;
+	if ( this->parent ){
+		readOnly = ((this->parent->openFlags & kXMPFiles_OpenForUpdate) == 0);
+	}
 	if ( readOnly ) {
 		if ( this->exifMgr == 0 ) this->exifMgr = new TIFF_MemoryReader();
 		this->psirMgr = new PSIR_MemoryReader();
@@ -826,19 +831,16 @@ void JPEG_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 		void* exifPtr;
 		XMP_Uns32 exifLen = this->exifMgr->UpdateMemoryStream ( &exifPtr );
 		if ( exifLen > kExifMaxDataLength ) exifLen = this->exifMgr->UpdateMemoryStream ( &exifPtr, true /* compact */ );
-		if ( exifLen > kExifMaxDataLength ) {
-			// XMP_Throw ( "Overflow of Exif APP1 data", kXMPErr_BadJPEG );		** Used to throw, now rewrite original Exif.
-			exifPtr = (void*)this->exifContents.c_str();
-			exifLen = this->exifContents.size();
-		}
 
-		if ( exifLen > 0 ) {
-			first4 = MakeUns32BE ( 0xFFE10000 + 2 + kExifSignatureLength + exifLen );
+		while ( exifLen > 0 ) {
+			XMP_Uns32 count = std::min ( exifLen, (XMP_Uns32) kExifMaxDataLength );
+			first4 = MakeUns32BE ( 0xFFE10000 + 2 + kExifSignatureLength + count );
 			tempRef->Write ( &first4, 4 );
 			tempRef->Write ( kExifSignatureString, kExifSignatureLength );
-			tempRef->Write ( exifPtr, exifLen );
+			tempRef->Write ( exifPtr, count );
+			exifPtr = (XMP_Uns8 *) exifPtr + count;
+			exifLen -= count;
 		}
-
 	}
 
 	// Write the new XMP APP1 marker segment, with possible extension marker segments.
@@ -878,25 +880,23 @@ void JPEG_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 
 	}
 
-	// Write the new PSIR APP13 marker segment.
-
+	// Write the new PSIR APP13 marker segments.
 	if ( this->psirMgr != 0 ) {
 
 		void* psirPtr;
 		XMP_Uns32 psirLen = this->psirMgr->UpdateMemoryResources ( &psirPtr );
-		if ( psirLen > kPSIRMaxDataLength ) XMP_Throw ( "Overflow of PSIR APP13 data", kXMPErr_BadJPEG );
-
-		if ( psirLen > 0 ) {
-			first4 = MakeUns32BE ( 0xFFED0000 + 2 + kPSIRSignatureLength + psirLen );
+		while ( psirLen > 0 ) {
+			XMP_Uns32 count = std::min ( psirLen, (XMP_Uns32) kPSIRMaxDataLength );
+			first4 = MakeUns32BE ( 0xFFED0000 + 2 + kPSIRSignatureLength + count );
 			tempRef->Write ( &first4, 4 );
 			tempRef->Write ( kPSIRSignatureString, kPSIRSignatureLength );
-			tempRef->Write ( psirPtr, psirLen );
+			tempRef->Write ( psirPtr, count );
+			psirPtr = (XMP_Uns8 *) psirPtr + count;
+			psirLen -= count;
 		}
-
 	}
 
 	// Copy remaining marker segments, skipping old metadata, to the first SOS marker or to EOI.
-
 	origRef->Seek ( -2, kXMP_SeekFromCurrent );	// Back up to the marker from the end of the APP0 copy loop.
 	
 	while ( true ) {

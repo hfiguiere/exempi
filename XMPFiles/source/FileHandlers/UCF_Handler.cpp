@@ -155,6 +155,32 @@ bool UCF_CheckFormat (  XMP_FileFormat format,
 
 UCF_MetaHandler::UCF_MetaHandler ( XMPFiles * _parent )
 {
+	this->cdx2 = 0 ;
+	this->z = 0;
+	this->z2 = 0;
+	this->h = 0;
+	this->h2 = 0;
+	this->al = 0;
+	this->bl = 0;
+	this->xl = 0;
+	this->x2l = 0;
+	this->cdl = 0;
+	this->cd2l = 0;
+	this->cdxl = 0;
+	this->cdx2l = 0;
+	this->z2l = 0;
+	this->hl = 0;
+	this->fl = 0;
+	this->f2l = 0;
+	this->numCF = 0;
+	this->numCF2 = 0;
+	this->wasCompressed = false;
+	this->compressXMP = false;
+	this->inPlacePossible = false;
+	this->uncomprPacketLen = 0;
+	this->uncomprPacketStr = NULL;
+	this->finalPacketStr = NULL;
+	this->finalPacketLen = 0;
 	this->parent = _parent;
 	this->handlerFlags = kUCF_HandlerFlags;
 	this->stdCharForm  = kXMP_Char8Bit;
@@ -479,10 +505,6 @@ void UCF_MetaHandler::CacheFileData()
 			wasCompressed = false;
 			XMP_Enforce( file->ReadAll ( (char*)packetStr, sizeUncompressed ) );
 			break;
-		}
-	default:
-		{
-			XMP_Throw("illegal zip compression method (not none, not flate)",kXMPErr_BadFileFormat);
 		}
 	}
 	this->containsXMP = true; // do this last, after all possible failure/execptions

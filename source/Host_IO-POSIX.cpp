@@ -17,13 +17,13 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#if (SUNOS_SPARC || SUNOS_X86)
+#if (SUNOS_SPARC || SUNOS_X86 || XMP_IOS_ARM)
 	#include <limits.h>
-	#include <stdlib.h>
 #endif
 
 // =================================================================================================
@@ -491,7 +491,7 @@ void Host_IO::CloseFolder ( Host_IO::FolderRef folder )
 // Host_IO::GetNextChild
 // =====================
 
-#if (SUNOS_SPARC || SUNOS_X86)
+#if (SUNOS_SPARC || SUNOS_X86 || XMP_IOS_ARM)
 	class SafeMalloc {
 	public:
 		void* pointer;
@@ -509,13 +509,13 @@ bool Host_IO::GetNextChild ( Host_IO::FolderRef folder, std::string* childName )
 
 	if ( folder == Host_IO::noFolderRef ) return false;
 	
-	#if ! (SUNOS_SPARC || SUNOS_X86)
+	#if ! (SUNOS_SPARC || SUNOS_X86 || XMP_IOS_ARM)
 		struct dirent _childInfo;
 		struct dirent* childInfo = &_childInfo;
 	#else
 		SafeMalloc sm ( offsetof ( struct dirent, d_name ) + PATH_MAX + 1 );
 		struct dirent* childInfo = (struct dirent *) sm.GetPointer();
-		if ( childInfo == 0 ) XMP_Throw ( "Can't allocate SunOS childInfo", kXMPErr_NoMemory );
+		if ( childInfo == 0 ) XMP_Throw ( "Can't allocate SunOS OR IOS childInfo", kXMPErr_NoMemory );
 	#endif
 
 	while ( true ) {
@@ -542,4 +542,19 @@ static bool HaveWriteAccess( const std::string & path )
 	return ( access(path.c_str(), W_OK) == 0 );
 }
 
+std::string Host_IO::GetCasePreservedName(const std::string& inputPath)
+{
+    char* systemPath=NULL;
+	if ( Host_IO::Exists ( inputPath.c_str() ) )
+    {
+        systemPath=realpath( inputPath.c_str() , NULL );
+        if ( systemPath != NULL )
+        {
+            std::string fullPath(systemPath);
+            free(systemPath);
+            return fullPath;
+        }
+    }
+	return std::string("");
+}
 // =================================================================================================

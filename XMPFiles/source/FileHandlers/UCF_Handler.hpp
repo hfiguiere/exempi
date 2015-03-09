@@ -548,7 +548,7 @@ private:
 				//// WRITE BACK REAL 64 BIT VALUES, CREATE EXTRA FIELD ///////////////
 				//may only wipe extra field after obtaining all Info from it
 				if (extraField)	delete [] extraField;
-					extraFieldLen=0;
+				extraFieldLen=0;
 
 				if ( ( sizeUncompressed  > 0xffffffff ) ||
 					 ( sizeCompressed    > 0xffffffff ) ||
@@ -593,7 +593,7 @@ private:
 				file ->Write ( fields , FIXED_SIZE  );
 				if (filenameLen)	file->Write ( filename   , filenameLen    );
 				if (extraFieldLen)	file->Write ( extraField , extraFieldLen  );
-				if (commentLen)		file->Write ( extraField , extraFieldLen  );
+				if (commentLen)		file->Write ( comment , commentLen  );
 			}
 
 			void setXMPFilename()

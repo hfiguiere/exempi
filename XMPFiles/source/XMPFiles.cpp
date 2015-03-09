@@ -26,9 +26,14 @@
 #endif
 
 #include "XMPFiles/source/FormatSupport/ID3_Support.hpp"
+#include "XMPFiles/source/FormatSupport/ISOBaseMedia_Support.hpp"
 
 #if EnablePacketScanning
 	#include "XMPFiles/source/FileHandlers/Scanner_Handler.hpp"
+#endif
+
+#if EnableGenericHandling
+	#include "XMPFiles/source/FileHandlers/Generic_Handler.hpp"
 #endif
 
 // =================================================================================================
@@ -93,6 +98,10 @@ const char * kXMPFiles_EmbeddedCopyright = kXMPFilesName " " kXMP_CopyrightStr;
 													(CheckFileFormatProc)0, Scanner_MetaHandlerCTor );
 #endif
 
+#if EnableGenericHandling
+	static XMPFileHandlerInfo kGenericHandlerInfo ( kXMP_UnknownFile, kGeneric_HandlerFlags,
+		(CheckFileFormatProc)0, Generic_MetaHandlerCTor );
+#endif
 // =================================================================================================
 
 /* class-static */
@@ -291,6 +300,7 @@ XMPFiles::Terminate()
 	SXMPMeta::Terminate();	// Just in case the client does not.
 
 	ID3_Support::TerminateGlobals();
+	ISOMedia::TerminateGlobals();
 	Terminate_LibUtils();
 
 	#if UseGlobalLibraryLock & (! XMP_StaticBuild )
@@ -302,6 +312,9 @@ XMPFiles::Terminate()
 		xmpFilesLog = stderr;
 	#endif
 
+	// reset static variables
+	sDefaultErrorCallback.Clear();
+	sProgressDefault.Clear();
 	XMP_FILES_STATIC_END1 ( kXMPErrSev_ProcessFatal )
 }	// XMPFiles::Terminate
 
@@ -380,9 +393,9 @@ XMPFiles::GetFormatInfo ( XMP_FileFormat   format,
                           XMP_OptionBits * flags /* = 0 */ )
 {
 	XMP_FILES_STATIC_START
-	return HandlerRegistry::getInstance().getFormatInfo ( format, flags );
+		return HandlerRegistry::getInstance().getFormatInfo ( format, flags );
 	XMP_FILES_STATIC_END1 ( kXMPErrSev_OperationFatal )
-	return false;
+		return false;
 
 }	// XMPFiles::GetFormatInfo
 
@@ -487,11 +500,12 @@ static XMPFileHandlerInfo* CreateFileHandlerInfo (
 	XMPFiles* dummyParent,
 	XMP_FileFormat * format,
 	XMP_OptionBits   options,
+	XMP_Bool&  excluded,
 	const XMPFiles::ErrorCallbackInfo * _errorCallbackInfoPtr = NULL )
 {
 	Host_IO::FileMode clientMode;
 	std::string fileExt;	// Used to check for excluded files.
-	bool excluded = FileIsExcluded ( dummyParent->GetFilePath().c_str(), &fileExt, &clientMode, &sDefaultErrorCallback );	// ! Fills in fileExt and clientMode.
+	excluded = FileIsExcluded ( dummyParent->GetFilePath().c_str(), &fileExt, &clientMode, &sDefaultErrorCallback );	// ! Fills in fileExt and clientMode.
 	if ( excluded ) return 0;
 
 	XMPFileHandlerInfo * handlerInfo  = 0;
@@ -533,7 +547,26 @@ XMPFiles::GetFileModDate ( XMP_StringPtr    clientPath,
 	
 	
 	XMPFileHandlerInfo * handlerInfo  = 0;
-	handlerInfo = CreateFileHandlerInfo ( &dummyParent, format, options, &sDefaultErrorCallback );
+	XMP_Bool excluded=false;
+	handlerInfo = CreateFileHandlerInfo ( &dummyParent, format, options, excluded, &sDefaultErrorCallback );
+#if EnableGenericHandling
+#if GenericHandlingAlwaysOn
+	XMP_OptionBits oldOptions = options;
+	options |= kXMPFiles_OpenUseGenericHandler;
+#endif
+	if (handlerInfo == 0 && !excluded
+		&& (options & kXMPFiles_OpenUseGenericHandler)  )
+	{
+		Host_IO::FileMode fileMode = Host_IO::GetFileMode( clientPath );
+		if ( fileMode == Host_IO::kFMode_DoesNotExist )
+			return false;
+
+		handlerInfo = &kGenericHandlerInfo;
+	}
+#if GenericHandlingAlwaysOn
+	options = oldOptions;
+#endif
+#endif
 	if ( handlerInfo == 0 ) return false;
 	
 	// -------------------------------------------------------------------------
@@ -556,7 +589,7 @@ XMPFiles::GetFileModDate ( XMP_StringPtr    clientPath,
 		for ( size_t index = 0; index < countRes ; ++index ){
 			XMP_StringPtr curFilePath = resourceList[index].c_str();
 			if( Host_IO::GetFileMode ( curFilePath ) != Host_IO::kFMode_IsFile ) continue;// only interested in files
-			Host_IO::GetModifyDate ( curFilePath, &lastModDate );
+			if (!Host_IO::GetModifyDate ( curFilePath, &lastModDate ) ) continue;
 			if ( ! ok || ( SXMPUtils::CompareDateTime ( *modDate , lastModDate ) < 0 ) ) 
 			{
 				*modDate = lastModDate;
@@ -602,7 +635,26 @@ XMPFiles::GetAssociatedResources (
 	dummyParent.SetFilePath ( filePath );
 
 	XMPFileHandlerInfo * handlerInfo  = 0;
-	handlerInfo = CreateFileHandlerInfo ( &dummyParent, &format, options, &sDefaultErrorCallback );
+	XMP_Bool excluded=false;
+	handlerInfo = CreateFileHandlerInfo ( &dummyParent, &format, options, excluded, &sDefaultErrorCallback );
+#if EnableGenericHandling
+#if GenericHandlingAlwaysOn
+	XMP_OptionBits oldOptions = options;
+	options |= kXMPFiles_OpenUseGenericHandler;
+#endif	
+	if (handlerInfo == 0 && !excluded
+		&& (options & kXMPFiles_OpenUseGenericHandler)  )
+	{
+		Host_IO::FileMode fileMode = Host_IO::GetFileMode( filePath );
+		if ( fileMode == Host_IO::kFMode_DoesNotExist )
+			return false;
+
+		handlerInfo = &kGenericHandlerInfo;
+	}
+#if GenericHandlingAlwaysOn
+	options = oldOptions;
+#endif
+#endif
 	if ( handlerInfo == 0 ) return false;
 
 	// -------------------------------------------------------------------------
@@ -650,7 +702,26 @@ XMPFiles::IsMetadataWritable (
 	dummyParent.SetFilePath ( filePath );
 
 	XMPFileHandlerInfo * handlerInfo  = 0;
-	handlerInfo = CreateFileHandlerInfo ( &dummyParent, &format, options, &sDefaultErrorCallback );
+	XMP_Bool excluded=false;
+	handlerInfo = CreateFileHandlerInfo ( &dummyParent, &format, options, excluded, &sDefaultErrorCallback );
+#if EnableGenericHandling
+#if GenericHandlingAlwaysOn
+	XMP_OptionBits oldOptions = options;
+	options |= kXMPFiles_OpenUseGenericHandler;
+#endif
+	if (handlerInfo == 0 && !excluded
+		&& (options & kXMPFiles_OpenUseGenericHandler))	
+	{
+		Host_IO::FileMode fileMode = Host_IO::GetFileMode( filePath );
+		if ( fileMode == Host_IO::kFMode_DoesNotExist )
+			return false;
+
+		handlerInfo = &kGenericHandlerInfo;
+	}
+#if GenericHandlingAlwaysOn
+	options = oldOptions;
+#endif
+#endif
 	if ( handlerInfo == 0 ) return false;
 
 	if ( writable == 0 ) {
@@ -670,8 +741,9 @@ XMPFiles::IsMetadataWritable (
 	
 	try {
 		*writable = ConvertBoolToXMP_Bool( dummyParent.handler->IsMetadataWritable() );
-	}
-     catch ( XMP_Error& error ) {	
+	} catch ( XMP_Error& error ) {
+		delete dummyParent.handler;
+		dummyParent.handler = 0;
 		if ( error.GetID() == kXMPErr_Unimplemented ) {
 			XMP_FILES_STATIC_NOTIFY_ERROR ( &sDefaultErrorCallback, filePath, kXMPErrSev_Recoverable, error );
 			return false;
@@ -679,8 +751,10 @@ XMPFiles::IsMetadataWritable (
 			throw;
 		}
 	}
-	delete dummyParent.handler;
-	dummyParent.handler = 0;
+	if ( dummyParent.handler ) {
+		delete dummyParent.handler;
+		dummyParent.handler = 0;
+	}
 	XMP_FILES_STATIC_END2 ( filePath, kXMPErrSev_OperationFatal )
 	return true;
 } // XMPFiles::IsMetadataWritable 
@@ -698,6 +772,10 @@ DoOpenFile ( XMPFiles *     thiz,
 	XMP_Assert ( (clientIO == 0) ? (clientPath[0] != 0) : (clientPath[0] == 0) );
 	
 	openFlags &= ~kXMPFiles_ForceGivenHandler;	// Don't allow this flag for OpenFile.
+
+	if ( (openFlags & kXMPFiles_OptimizeFileLayout) && (! (openFlags & kXMPFiles_OpenForUpdate)) ) {
+			XMP_Throw ( "OptimizeFileLayout requires OpenForUpdate", kXMPErr_BadParam );
+	}
 
 	if ( thiz->handler != 0 ) XMP_Throw ( "File already open", kXMPErr_BadParam );
 	CloseLocalFile ( thiz );	// Sanity checks if prior call failed.
@@ -728,6 +806,24 @@ DoOpenFile ( XMPFiles *     thiz,
 
 	if ( ! (openFlags & kXMPFiles_OpenUsePacketScanning) ) {
 		handlerInfo = HandlerRegistry::getInstance().selectSmartHandler( thiz, clientPath, format, openFlags );
+#if EnableGenericHandling
+#if GenericHandlingAlwaysOn
+		XMP_OptionBits oldOpenFlags = openFlags;
+		openFlags |= kXMPFiles_OpenUseGenericHandler;
+#endif
+	if (handlerInfo==0 
+		&& !(openFlags & kXMPFiles_OpenStrictly) 
+		&& (openFlags & kXMPFiles_OpenUseGenericHandler)) 
+		{
+			if ( clientMode == Host_IO::kFMode_DoesNotExist )
+				return false;
+
+			handlerInfo = &kGenericHandlerInfo;
+		}
+#if GenericHandlingAlwaysOn
+		openFlags = oldOpenFlags;
+#endif
+#endif
 	}
 
 	#if ! EnablePacketScanning
@@ -754,10 +850,20 @@ DoOpenFile ( XMPFiles *     thiz,
 			}
 
 			if ( openFlags & kXMPFiles_OpenUseSmartHandler ) {
+				CloseLocalFile ( thiz );
 				XMP_Error error ( kXMPErr_NoFileHandler, "XMPFiles: No smart file handler available to handle file" );
 				XMP_FILES_STATIC_NOTIFY_ERROR ( &thiz->errorCallback, clientPath, kXMPErrSev_Recoverable, error );
 				return false;
 			}
+
+#if EnableGenericHandling
+			if ( openFlags & kXMPFiles_OpenUseGenericHandler ) {
+				CloseLocalFile ( thiz );
+				XMP_Error error ( kXMPErr_NoFileHandler, "XMPFiles: Generic handler not available to handle file" );
+				XMP_FILES_STATIC_NOTIFY_ERROR ( &thiz->errorCallback, clientPath, kXMPErrSev_Recoverable, error );
+				return false;
+			}
+#endif
 
 			if ( openFlags & kXMPFiles_OpenLimitedScanning ) {
 				bool scanningOK = false;
@@ -793,6 +899,12 @@ DoOpenFile ( XMPFiles *     thiz,
 	thiz->handler = handler;
 
 	try {
+		if ( !readOnly && handlerFlags & kXMPFiles_FolderBasedFormat ) {
+			bool isMetadataWritable = handler->IsMetadataWritable();
+			if ( !isMetadataWritable ) {
+				XMP_Throw ( "Open, file permission error", kXMPErr_FilePermission );
+			}
+		}
 		handler->CacheFileData();
 	} catch ( ... ) {
 		delete thiz->handler;
@@ -824,6 +936,9 @@ static bool DoOpenFile( XMPFiles* thiz,
 	
 	openFlags &= ~kXMPFiles_ForceGivenHandler;	// Don't allow this flag for OpenFile.
 
+	if ( (openFlags & kXMPFiles_OptimizeFileLayout) && (! (openFlags & kXMPFiles_OpenForUpdate)) ) {
+			XMP_Throw ( "OptimizeFileLayout requires OpenForUpdate", kXMPErr_BadParam );
+	}
 
 	if ( thiz->handler != 0 ) XMP_Throw ( "File already open", kXMPErr_BadParam );
 
@@ -950,6 +1065,8 @@ XMPFiles::CloseFile ( XMP_OptionBits closeFlags /* = 0 */ )
 	if ( this->handler == 0 ) return;	// Return if there is no open file (not an error).
 
 	bool needsUpdate = this->handler->needsUpdate;
+	bool optimizeFileLayout = XMP_OptionIsSet ( this->openFlags, kXMPFiles_OptimizeFileLayout );
+
 	XMP_OptionBits handlerFlags = this->handler->handlerFlags;
 
 	// Decide if we're doing a safe update. If so, make sure the handler supports it. All handlers
@@ -981,6 +1098,8 @@ XMPFiles::CloseFile ( XMP_OptionBits closeFlags /* = 0 */ )
 		if ( (! doSafeUpdate) || (handlerFlags & kXMPFiles_HandlerOwnsFile) ) {	// ! Includes no update case.
 
 			// Close the file without doing common crash-safe writing. The handler might do it.
+
+			needsUpdate |= optimizeFileLayout;
 
 			if ( needsUpdate ) {
 				#if GatherPerformanceData
@@ -1057,7 +1176,10 @@ XMPFiles::CloseFile ( XMP_OptionBits closeFlags /* = 0 */ )
 		// *** Don't delete the temp or copy files, not sure which is best.
 
 		try {
-			if ( this->handler != 0 ) delete this->handler;
+			if ( this->handler != 0 ) {
+				delete this->handler;
+				this->handler = 0;
+			}
 		} catch ( ... ) { /* Do nothing, throw the outer exception later. */ }
 
 		if ( this->ioRef ) this->ioRef->DeleteTemp();

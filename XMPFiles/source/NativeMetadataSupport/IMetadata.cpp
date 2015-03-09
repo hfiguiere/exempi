@@ -204,3 +204,28 @@ bool IMetadata::valueChanged( XMP_Uns32 id ) const
 
 	return false;
 }
+
+//-----------------------------------------------------------------------------
+//
+// IMetadata::valueValid(...)
+//
+// Purpose: Return true if the value for the passed identifier is valid
+//
+//-----------------------------------------------------------------------------
+
+bool IMetadata::valueValid( XMP_Uns32 id, ValueObject *value )
+{
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+//
+// IMetadata::valueValid(...)
+//
+// Purpose: Return true if the value for the passed identifier is valid
+//
+//-----------------------------------------------------------------------------
+void IMetadata::valueModify(XMP_Uns32 id, ValueObject *value)
+{
+	return;
+}

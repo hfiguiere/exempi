@@ -137,6 +137,7 @@ Chunk* getChunk ( ContainerChunk* parent, RIFF_MetaHandler* handler )
 // ad hoc creation
 Chunk::Chunk( ContainerChunk* parent, ChunkType c, XMP_Uns32 id )
 {
+	this->hasChange = false;
 	this->chunkType = c; // base class assumption
 	this->parent = parent;
 	this->id = id;

@@ -84,32 +84,31 @@ ExpatAdapter::ExpatAdapter ( bool useGlobalNamespaces ) : parser(0), registeredN
 	if ( this->parser == 0 ) {
 		XMP_Error error(kXMPErr_NoMemory, "Failure creating Expat parser" );
 		this->NotifyClient ( kXMPErrSev_ProcessFatal, error );
+	}else{
+		if ( useGlobalNamespaces ) {
+			this->registeredNamespaces = sRegisteredNamespaces;
+		} else {
+			this->registeredNamespaces = new XMP_NamespaceTable ( *sRegisteredNamespaces );
+		}
+	
+		XML_SetUserData ( this->parser, this );
+	
+		XML_SetNamespaceDeclHandler ( this->parser, StartNamespaceDeclHandler, EndNamespaceDeclHandler );
+		XML_SetElementHandler ( this->parser, StartElementHandler, EndElementHandler );
+
+		XML_SetCharacterDataHandler ( this->parser, CharacterDataHandler );
+		XML_SetCdataSectionHandler ( this->parser, StartCdataSectionHandler, EndCdataSectionHandler );
+
+		XML_SetProcessingInstructionHandler ( this->parser, ProcessingInstructionHandler );
+		XML_SetCommentHandler ( this->parser, CommentHandler );
+
+		#if BanAllEntityUsage
+			XML_SetStartDoctypeDeclHandler ( this->parser, StartDoctypeDeclHandler );
+			isAborted = false;
+		#endif
+
+		this->parseStack.push_back ( &this->tree );	// Push the XML root node.
 	}
-	
-	if ( useGlobalNamespaces ) {
-		this->registeredNamespaces = sRegisteredNamespaces;
-	} else {
-		this->registeredNamespaces = new XMP_NamespaceTable ( *sRegisteredNamespaces );
-	}
-	
-	XML_SetUserData ( this->parser, this );
-	
-	XML_SetNamespaceDeclHandler ( this->parser, StartNamespaceDeclHandler, EndNamespaceDeclHandler );
-	XML_SetElementHandler ( this->parser, StartElementHandler, EndElementHandler );
-
-	XML_SetCharacterDataHandler ( this->parser, CharacterDataHandler );
-	XML_SetCdataSectionHandler ( this->parser, StartCdataSectionHandler, EndCdataSectionHandler );
-
-	XML_SetProcessingInstructionHandler ( this->parser, ProcessingInstructionHandler );
-	XML_SetCommentHandler ( this->parser, CommentHandler );
-
-	#if BanAllEntityUsage
-		XML_SetStartDoctypeDeclHandler ( this->parser, StartDoctypeDeclHandler );
-		isAborted = false;
-	#endif
-
-	this->parseStack.push_back ( &this->tree );	// Push the XML root node.
-
 }	// ExpatAdapter::ExpatAdapter
 
 // =================================================================================================

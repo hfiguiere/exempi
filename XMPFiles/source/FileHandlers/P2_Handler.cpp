@@ -18,10 +18,11 @@
 #include "source/IOUtils.hpp"
 
 #include "XMPFiles/source/FileHandlers/P2_Handler.hpp"
+#include "XMPFiles/source/FormatSupport/P2_Support.hpp"
 #include "XMPFiles/source/FormatSupport/PackageFormat_Support.hpp"
-#include "third-party/zuid/interfaces/MD5.h"
 
 #include <cmath>
+#include <sstream>
 
 using namespace std;
 
@@ -263,7 +264,7 @@ XMPFileHandler * P2_MetaHandlerCTor ( XMPFiles * parent )
 // P2_MetaHandler::P2_MetaHandler
 // ==============================
 
-P2_MetaHandler::P2_MetaHandler ( XMPFiles * _parent ) : expat(0), clipMetadata(0), clipContent(0)
+P2_MetaHandler::P2_MetaHandler ( XMPFiles * _parent )
 {
 
 	this->parent = _parent;	// Inherited, can't set in the prefix.
@@ -283,6 +284,30 @@ P2_MetaHandler::P2_MetaHandler ( XMPFiles * _parent ) : expat(0), clipMetadata(0
 
 	XIO::SplitLeafName ( &this->rootPath, &this->clipName );
 
+	std::string xmlPath;
+	if ( this->MakeClipFilePath ( &xmlPath, ".XML", true ) )
+	{
+		try 
+		{
+
+			p2ClipManager.ProcessClip(xmlPath);
+			std::string* clipnm = p2ClipManager.GetManagedClip()->GetClipName();
+			if ( clipnm !=0 )
+			{	
+				std::string newpath,leafname;
+				newpath = p2ClipManager.GetManagedClip()->GetXMPFilePath();
+				XIO::SplitLeafName(&newpath,&leafname);
+				if ( leafname == std::string(*clipnm+ ".XMP") )
+				{
+					this->clipName=*clipnm;
+				}
+			}
+		}
+		catch(...)
+		{
+		}
+	}
+
 }	// P2_MetaHandler::P2_MetaHandler
 
 // =================================================================================================
@@ -292,7 +317,6 @@ P2_MetaHandler::P2_MetaHandler ( XMPFiles * _parent ) : expat(0), clipMetadata(0
 P2_MetaHandler::~P2_MetaHandler()
 {
 
-	this->CleanupLegacyXML();
 	if ( this->parent->tempPtr != 0 ) {
 		free ( this->parent->tempPtr );
 		this->parent->tempPtr = 0;
@@ -314,79 +338,36 @@ bool P2_MetaHandler::MakeClipFilePath ( std::string * path, XMP_StringPtr suffix
 
 }	// P2_MetaHandler::MakeClipFilePath
 
-// =================================================================================================
-// P2_MetaHandler::CleanupLegacyXML
-// ================================
 
-void P2_MetaHandler::CleanupLegacyXML()
-{
-
-	if ( this->expat != 0 ) { delete ( this->expat ); this->expat = 0; }
-
-	clipMetadata = 0;	// ! Was a pointer into the expat tree.
-	clipContent = 0;	// ! Was a pointer into the expat tree.
-
-}	// P2_MetaHandler::CleanupLegacyXML
-
-// =================================================================================================
-// P2_MetaHandler::DigestLegacyItem
-// ================================
-
-void P2_MetaHandler::DigestLegacyItem ( MD5_CTX & md5Context, XML_NodePtr legacyContext, XMP_StringPtr legacyPropName )
-{
-	XML_NodePtr legacyProp = legacyContext->GetNamedElement ( this->p2NS.c_str(), legacyPropName );
-
-	if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() && (! legacyProp->content.empty()) ) {
-		const XML_Node * xmlValue = legacyProp->content[0];
-		MD5Update ( &md5Context, (XMP_Uns8*)xmlValue->value.c_str(), (unsigned int)xmlValue->value.size() );
-	}
-
-}	// P2_MetaHandler::DigestLegacyItem
-
-// =================================================================================================
-// P2_MetaHandler::DigestLegacyRelations
-// =====================================
-
-void P2_MetaHandler::DigestLegacyRelations ( MD5_CTX & md5Context )
-{
-	XMP_StringPtr p2NS = this->p2NS.c_str();
-	XML_Node * legacyContext = this->clipContent->GetNamedElement ( p2NS, "Relation" );
-
-	if ( legacyContext != 0 ) {
-
-		this->DigestLegacyItem ( md5Context, legacyContext, "GlobalShotID" );
-		XML_Node * legacyConnectionContext = legacyContext = this->clipContent->GetNamedElement ( p2NS, "Connection" );
-
-		if ( legacyConnectionContext != 0 ) {
-
-			legacyContext = legacyConnectionContext->GetNamedElement ( p2NS, "Top" );
-
-			if ( legacyContext != 0 ) {
-				this->DigestLegacyItem ( md5Context, legacyContext, "GlobalClipID" );
-			}
-
-			legacyContext = legacyConnectionContext->GetNamedElement ( p2NS, "Previous" );
-
-			if ( legacyContext != 0 ) {
-				this->DigestLegacyItem ( md5Context, legacyContext, "GlobalClipID" );
-			}
-
-			legacyContext = legacyConnectionContext->GetNamedElement ( p2NS, "Next" );
-
-			if ( legacyContext != 0 ) {
-				this->DigestLegacyItem ( md5Context, legacyContext, "GlobalClipID" );
-			}
-
-		}
-
-	}
-
-}	// P2_MetaHandler::DigestLegacyRelations
 
 // =================================================================================================
 // P2_MetaHandler::SetXMPPropertyFromLegacyXML
 // ===========================================
 
+void P2_MetaHandler::SetXMPPropertyFromLegacyXML ( bool digestFound,
+												   XMP_VarString* refContext,
+												   XMP_StringPtr schemaNS,
+												   XMP_StringPtr propName,
+												   bool isLocalized )
+{
+
+	if ( digestFound || (! this->xmpObj.DoesPropertyExist ( schemaNS, propName )) ) {
+
+		if ( refContext !=0 )
+		{
+			if ( isLocalized ) {
+				this->xmpObj.SetLocalizedText ( schemaNS, propName, "", "x-default", refContext->c_str(), kXMP_DeleteExisting );
+			} else {
+				this->xmpObj.SetProperty ( schemaNS, propName, refContext->c_str(), kXMP_DeleteExisting );
+			}
+			this->containsXMP = true;
+		}
+	}
+}	// P2_MetaHandler::SetXMPPropertyFromLegacyXML
+
+// =================================================================================================
+// P2_MetaHandler::SetXMPPropertyFromLegacyXML
+// ===========================================
 void P2_MetaHandler::SetXMPPropertyFromLegacyXML ( bool digestFound,
 												   XML_NodePtr legacyContext,
 												   XMP_StringPtr schemaNS,
@@ -394,89 +375,58 @@ void P2_MetaHandler::SetXMPPropertyFromLegacyXML ( bool digestFound,
 												   XMP_StringPtr legacyPropName,
 												   bool isLocalized )
 {
+	XMP_StringPtr p2NS = this->p2ClipManager.GetManagedClip()->GetP2RootNode()->ns.c_str();
+	XML_NodePtr legacyProp = legacyContext->GetNamedElement ( p2NS, legacyPropName );
 
-	if ( digestFound || (! this->xmpObj.DoesPropertyExist ( schemaNS, propName )) ) {
+	if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() ) {
+		XMP_StringPtr legacyValue = legacyProp->GetLeafContentValue();
 
-		XMP_StringPtr p2NS = this->p2NS.c_str();
-		XML_NodePtr legacyProp = legacyContext->GetNamedElement ( p2NS, legacyPropName );
-
-		if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() ) {
+		if ( ( legacyValue != 0 ) &&
+			 ( ( *legacyValue != 0 ) || (! this->xmpObj.DoesPropertyExist ( schemaNS, propName )) )) {
 			if ( isLocalized ) {
-				this->xmpObj.SetLocalizedText ( schemaNS, propName, "", "x-default", legacyProp->GetLeafContentValue(), kXMP_DeleteExisting );
+				this->xmpObj.SetLocalizedText ( schemaNS, propName, "", "x-default", legacyValue, kXMP_DeleteExisting );
 			} else {
-				this->xmpObj.SetProperty ( schemaNS, propName, legacyProp->GetLeafContentValue(), kXMP_DeleteExisting );
+				this->xmpObj.SetProperty ( schemaNS, propName, legacyValue, kXMP_DeleteExisting );
 			}
 			this->containsXMP = true;
 		}
-
 	}
 
-}	// P2_MetaHandler::SetXMPPropertyFromLegacyXML
-
+}
 // =================================================================================================
 // P2_MetaHandler::SetRelationsFromLegacyXML
 // =========================================
 
 void P2_MetaHandler::SetRelationsFromLegacyXML ( bool digestFound )
 {
-	XMP_StringPtr p2NS = this->p2NS.c_str();
-	XML_NodePtr legacyRelationContext = this->clipContent->GetNamedElement ( p2NS, "Relation" );
 
-	// P2 Relation blocks are optional -- they're only present when a clip is part of a multi-clip shot.
+	P2_Clip* p2Clip=this->p2ClipManager.GetManagedClip();
 
-	if ( legacyRelationContext != 0 ) {
+	if ( digestFound || (! this->xmpObj.DoesPropertyExist ( kXMP_NS_DC, "relation" )) ) {
+		
+		XMP_VarString* globalShotId = p2Clip->GetShotId() ;
+		std::string relationString ;
+		if ( ( globalShotId != 0 ) ) {
 
-		if ( digestFound || (! this->xmpObj.DoesPropertyExist ( kXMP_NS_DC, "relation" )) ) {
-
-			XML_NodePtr legacyProp = legacyRelationContext->GetNamedElement ( p2NS, "GlobalShotID" );
-			std::string relationString;
-
-			if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() ) {
-
-				this->xmpObj.DeleteProperty ( kXMP_NS_DC, "relation" );
-				relationString = std::string("globalShotID:") + legacyProp->GetLeafContentValue();
+			this->xmpObj.DeleteProperty ( kXMP_NS_DC, "relation" );
+			relationString = std::string("globalShotID:") + *globalShotId ;
+			this->xmpObj.AppendArrayItem ( kXMP_NS_DC, "relation", kXMP_PropArrayIsUnordered, relationString );
+			this->containsXMP = true;
+	
+			XMP_VarString* topId = p2Clip->GetTopClipId() ;
+			if ( topId != 0 ) {
+				relationString = std::string("topGlobalClipID:") + *topId ;
 				this->xmpObj.AppendArrayItem ( kXMP_NS_DC, "relation", kXMP_PropArrayIsUnordered, relationString );
-				this->containsXMP = true;
-
-				XML_NodePtr legacyConnectionContext = legacyRelationContext->GetNamedElement ( p2NS, "Connection" );
-
-				if ( legacyConnectionContext != 0 ) {
-
-					XML_NodePtr legacyContext = legacyConnectionContext->GetNamedElement ( p2NS, "Top" );
-
-					if ( legacyContext != 0 ) {
-						legacyProp = legacyContext->GetNamedElement ( p2NS, "GlobalClipID" );
-
-						if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() ) {
-							relationString = std::string("topGlobalClipID:") + legacyProp->GetLeafContentValue();
-							this->xmpObj.AppendArrayItem ( kXMP_NS_DC, "relation", kXMP_PropArrayIsUnordered, relationString );
-						}
-					}
-
-					legacyContext = legacyConnectionContext->GetNamedElement ( p2NS, "Previous" );
-
-					if ( legacyContext != 0 ) {
-						legacyProp = legacyContext->GetNamedElement ( p2NS, "GlobalClipID" );
-
-						if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() ) {
-							relationString = std::string("previousGlobalClipID:") + legacyProp->GetLeafContentValue();
-							this->xmpObj.AppendArrayItem ( kXMP_NS_DC, "relation", kXMP_PropArrayIsUnordered, relationString );
-						}
-					}
-
-					legacyContext = legacyConnectionContext->GetNamedElement ( p2NS, "Next" );
-
-					if ( legacyContext != 0 ) {
-						legacyProp = legacyContext->GetNamedElement ( p2NS, "GlobalClipID" );
-
-						if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() ) {
-							relationString = std::string("nextGlobalClipID:") + legacyProp->GetLeafContentValue();
-							this->xmpObj.AppendArrayItem ( kXMP_NS_DC, "relation", kXMP_PropArrayIsUnordered, relationString );
-						}
-					}
-
-				}
-
+			}
+			XMP_VarString* prevId = p2Clip->GetPreviousClipId() ;
+			if ( prevId != 0 ) {
+				relationString = std::string("previousGlobalClipID:") + *prevId ;
+				this->xmpObj.AppendArrayItem ( kXMP_NS_DC, "relation", kXMP_PropArrayIsUnordered, relationString );
+			}
+			XMP_VarString* nextId = p2Clip->GetNextClipId() ;
+			if ( nextId != 0 ) {
+				relationString = std::string("nextGlobalClipID:") + *nextId ;
+				this->xmpObj.AppendArrayItem ( kXMP_NS_DC, "relation", kXMP_PropArrayIsUnordered, relationString );
 			}
 
 		}
@@ -491,8 +441,9 @@ void P2_MetaHandler::SetRelationsFromLegacyXML ( bool digestFound )
 
 void P2_MetaHandler::SetAudioInfoFromLegacyXML ( bool digestFound )
 {
-	XMP_StringPtr p2NS = this->p2NS.c_str();
-	XML_NodePtr legacyAudioContext = this->clipContent->GetNamedElement ( p2NS, "EssenceList" );
+	P2_Clip* p2Clip = this->p2ClipManager.GetManagedClip() ;
+	XMP_StringPtr p2NS = p2Clip->GetP2RootNode()->ns.c_str();
+	XML_NodePtr legacyAudioContext = p2Clip->GetEssenceListNode();
 
 	if ( legacyAudioContext != 0 ) {
 
@@ -537,8 +488,9 @@ void P2_MetaHandler::SetAudioInfoFromLegacyXML ( bool digestFound )
 
 void P2_MetaHandler::SetVideoInfoFromLegacyXML ( bool digestFound )
 {
-	XMP_StringPtr p2NS = this->p2NS.c_str();
-	XML_NodePtr legacyVideoContext = this->clipContent->GetNamedElement ( p2NS, "EssenceList" );
+	P2_Clip* p2Clip = this->p2ClipManager.GetManagedClip() ;
+	XMP_StringPtr p2NS = p2Clip->GetP2RootNode()->ns.c_str();
+	XML_NodePtr legacyVideoContext = p2Clip->GetEssenceListNode();
 
 	if ( legacyVideoContext != 0 ) {
 
@@ -562,20 +514,21 @@ void P2_MetaHandler::SetDurationFromLegacyXML ( bool digestFound )
 {
 
 	if ( digestFound || (! this->xmpObj.DoesPropertyExist ( kXMP_NS_DM, "duration" )) ) {
+		
+		P2_SpannedClip* p2Clip=this->p2ClipManager.GetSpannedClip();
+		XMP_Uns32 dur = p2Clip->GetDuration();
+		XMP_VarString* editunit= p2Clip->GetEditUnit();
 
-		XMP_StringPtr p2NS = this->p2NS.c_str();
-		XML_NodePtr legacyDurationProp = this->clipContent->GetNamedElement ( p2NS, "Duration" );
-		XML_NodePtr legacyEditUnitProp = this->clipContent->GetNamedElement ( p2NS, "EditUnit" );
+		if ( ( dur != 0) && ( editunit != 0 ) ) {
 
-		if ( (legacyDurationProp != 0) && ( legacyEditUnitProp != 0 ) &&
-			 legacyDurationProp->IsLeafContentNode() && legacyEditUnitProp->IsLeafContentNode() ) {
-
+			ostringstream duration;
+			duration<<dur;
 			this->xmpObj.DeleteProperty ( kXMP_NS_DM, "duration" );
 			this->xmpObj.SetStructField ( kXMP_NS_DM, "duration",
-										  kXMP_NS_DM, "value", legacyDurationProp->GetLeafContentValue() );
+										  kXMP_NS_DM, "value", duration.str().c_str() );
 
 			this->xmpObj.SetStructField ( kXMP_NS_DM, "duration",
-										  kXMP_NS_DM, "scale", legacyEditUnitProp->GetLeafContentValue() );
+										  kXMP_NS_DM, "scale", editunit->c_str() );
 			this->containsXMP = true;
 
 		}
@@ -593,8 +546,9 @@ void P2_MetaHandler::SetVideoFrameInfoFromLegacyXML ( XML_NodePtr legacyVideoCon
 
 	//	Map the P2 Codec field to various dynamic media schema fields.
 	if ( digestFound || (! this->xmpObj.DoesPropertyExist ( kXMP_NS_DM, "videoFrameSize" )) ) {
-
-		XMP_StringPtr p2NS = this->p2NS.c_str();
+		
+		P2_Clip* p2Clip = this->p2ClipManager.GetManagedClip() ;
+		XMP_StringPtr p2NS = p2Clip->GetP2RootNode()->ns.c_str();
 		XML_NodePtr legacyProp = legacyVideoContext->GetNamedElement ( p2NS, "Codec" );
 
 		if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() ) {
@@ -631,7 +585,8 @@ void P2_MetaHandler::SetVideoFrameInfoFromLegacyXML ( XML_NodePtr legacyVideoCon
 
 				// This is AVC-Intra footage. The framerate and PAR depend on the "class" attribute in the P2 XML.
 				const XMP_StringPtr codecClass = legacyProp->GetAttrValue( "Class" );
-
+				if ( codecClass != 0 )
+					dmVideoCompressor = "AVC-Intra"; // initializing with default value
 				if ( XMP_LitMatch ( codecClass, "100" ) ) {
 
 						dmVideoCompressor = "AVC-Intra 100";
@@ -735,7 +690,8 @@ void P2_MetaHandler::SetStartTimecodeFromLegacyXML ( XML_NodePtr legacyVideoCont
 	//	Translate start timecode to the format specified by the dynamic media schema.
 	if ( digestFound || (! this->xmpObj.DoesPropertyExist ( kXMP_NS_DM, "startTimecode" )) ) {
 
-		XMP_StringPtr p2NS = this->p2NS.c_str();
+		P2_Clip* p2Clip = this->p2ClipManager.GetManagedClip() ;
+		XMP_StringPtr p2NS = p2Clip->GetP2RootNode()->ns.c_str();
 		XML_NodePtr legacyProp = legacyVideoContext->GetNamedElement ( p2NS, "StartTimecode" );
 
 		if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() ) {
@@ -821,7 +777,8 @@ void P2_MetaHandler::SetGPSPropertyFromLegacyXML  ( XML_NodePtr legacyLocationCo
 
 	if ( digestFound || (! this->xmpObj.DoesPropertyExist ( kXMP_NS_EXIF, propName )) ) {
 
-		XMP_StringPtr p2NS = this->p2NS.c_str();
+		P2_Clip* p2Clip = this->p2ClipManager.GetManagedClip() ;
+		XMP_StringPtr p2NS = p2Clip->GetP2RootNode()->ns.c_str();
 		XML_NodePtr legacyGPSProp = legacyLocationContext->GetNamedElement ( p2NS, legacyPropName );
 
 		if ( ( legacyGPSProp != 0 ) && legacyGPSProp->IsLeafContentNode() ) {
@@ -866,7 +823,8 @@ void P2_MetaHandler::SetAltitudeFromLegacyXML  ( XML_NodePtr legacyLocationConte
 
 	if ( digestFound || (! this->xmpObj.DoesPropertyExist ( kXMP_NS_EXIF, "GPSAltitude" )) ) {
 
-		XMP_StringPtr p2NS = this->p2NS.c_str();
+		P2_Clip* p2Clip = this->p2ClipManager.GetManagedClip() ;
+		XMP_StringPtr p2NS = p2Clip->GetP2RootNode()->ns.c_str();
 		XML_NodePtr legacyAltitudeProp = legacyLocationContext->GetNamedElement ( p2NS, "Altitude" );
 
 		if ( ( legacyAltitudeProp != 0 ) && legacyAltitudeProp->IsLeafContentNode() ) {
@@ -913,22 +871,32 @@ void P2_MetaHandler::SetAltitudeFromLegacyXML  ( XML_NodePtr legacyLocationConte
 XML_Node * P2_MetaHandler::ForceChildElement ( XML_Node * parent, XMP_StringPtr localName, XMP_Int32 indent , XMP_Bool insertAtFront  )
 {
 	XML_Node * wsNodeBefore, * wsNodeAfter;
-	XML_Node * childNode = parent->GetNamedElement ( this->p2NS.c_str(), localName );
+	P2_Clip* p2Clip = this->p2ClipManager.GetManagedClip() ;
+	XMP_StringPtr p2NS = p2Clip->GetP2RootNode()->ns.c_str();
+	XML_Node * childNode = parent->GetNamedElement ( p2NS, localName );
 	//
 
 	if ( childNode == 0 ) {
 
 		// The indenting is a hack, assuming existing 2 spaces per level.
+		try {
+			wsNodeBefore = new XML_Node ( parent, "", kCDataNode );
+			wsNodeBefore->value = "  ";	// Add 2 spaces to the existing WS before the parent's close tag.
 
-		wsNodeBefore = new XML_Node ( parent, "", kCDataNode );
-		wsNodeBefore->value = "  ";	// Add 2 spaces to the existing WS before the parent's close tag.
+			childNode = new XML_Node ( parent, localName, kElemNode );
+			childNode->ns = parent->ns;
+			childNode->nsPrefixLen = parent->nsPrefixLen;
+			childNode->name.insert ( 0, parent->name, 0, parent->nsPrefixLen );
 
-		childNode = new XML_Node ( parent, localName, kElemNode );
-		childNode->ns = parent->ns;
-		childNode->nsPrefixLen = parent->nsPrefixLen;
-		childNode->name.insert ( 0, parent->name, 0, parent->nsPrefixLen );
+			wsNodeAfter = new XML_Node ( parent, "", kCDataNode );
+		} catch (...) {
+			if (wsNodeBefore) 
+				delete wsNodeBefore;
+			if (childNode)
+				delete childNode;
 
-		wsNodeAfter = new XML_Node ( parent, "", kCDataNode );
+			throw;
+		}
 		wsNodeAfter->value = '\n';
 		for ( ; indent > 1; --indent ) wsNodeAfter->value += "  ";	// Indent less 1, to "outdent" the parent's close.
 
@@ -959,183 +927,21 @@ XML_Node * P2_MetaHandler::ForceChildElement ( XML_Node * parent, XMP_StringPtr 
 }	// P2_MetaHandler::ForceChildElement
 
 // =================================================================================================
-// P2_MetaHandler::MakeLegacyDigest
-// =================================
-
-// *** Early hack version.
-
-#define kHexDigits "0123456789ABCDEF"
-
-void P2_MetaHandler::MakeLegacyDigest ( std::string * digestStr )
-{
-	digestStr->erase();
-	if ( this->clipMetadata == 0 ) return;	// Bail if we don't have any legacy XML.
-	XMP_Assert ( this->expat != 0 );
-
-	XMP_StringPtr p2NS = this->p2NS.c_str();
-	XML_NodePtr legacyContext;
-	MD5_CTX    md5Context;
-	unsigned char digestBin [16];
-	MD5Init ( &md5Context );
-
-	legacyContext = this->clipContent;
-	this->DigestLegacyItem ( md5Context, legacyContext, "ClipName" );
-	this->DigestLegacyItem ( md5Context, legacyContext, "GlobalClipID" );
-	this->DigestLegacyItem ( md5Context, legacyContext, "Duration" );
-	this->DigestLegacyItem ( md5Context, legacyContext, "EditUnit" );
-	this->DigestLegacyRelations ( md5Context );
-
-	legacyContext = this->clipContent->GetNamedElement ( p2NS, "EssenceList" );
-
-	if ( legacyContext != 0 ) {
-
-		XML_NodePtr videoContext = legacyContext->GetNamedElement ( p2NS, "Video" );
-
-		if ( videoContext != 0 ) {
-			this->DigestLegacyItem ( md5Context, videoContext, "AspectRatio" );
-			this->DigestLegacyItem ( md5Context, videoContext, "Codec" );
-			this->DigestLegacyItem ( md5Context, videoContext, "FrameRate" );
-			this->DigestLegacyItem ( md5Context, videoContext, "StartTimecode" );
-		}
-
-		XML_NodePtr audioContext = legacyContext->GetNamedElement ( p2NS, "Audio" );
-
-		if ( audioContext != 0 ) {
-			this->DigestLegacyItem ( md5Context, audioContext, "SamplingRate" );
-			this->DigestLegacyItem ( md5Context, audioContext, "BitsPerSample" );
-		}
-
-	}
-
-	legacyContext = this->clipMetadata;
-	this->DigestLegacyItem ( md5Context, legacyContext, "UserClipName" );
-	this->DigestLegacyItem ( md5Context, legacyContext, "ShotMark" );
-
-	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Access" );
-	/* Rather return than create the digest because the "Access" element is listed as "required" in the P2 spec.
-	So a P2 file without an "Access" element does not follow the spec and might be corrupt.*/
-	if ( legacyContext == 0 ) return;
-
-	this->DigestLegacyItem ( md5Context, legacyContext, "Creator" );
-	this->DigestLegacyItem ( md5Context, legacyContext, "CreationDate" );
-	this->DigestLegacyItem ( md5Context, legacyContext, "LastUpdateDate" );
-
-	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Shoot" );
-
-	if ( legacyContext != 0 ) {
-		this->DigestLegacyItem ( md5Context, legacyContext, "Shooter" );
-
-		legacyContext = legacyContext->GetNamedElement ( p2NS, "Location" );
-
-		if ( legacyContext != 0 ) {
-			this->DigestLegacyItem ( md5Context, legacyContext, "PlaceName" );
-			this->DigestLegacyItem ( md5Context, legacyContext, "Longitude" );
-			this->DigestLegacyItem ( md5Context, legacyContext, "Latitude" );
-			this->DigestLegacyItem ( md5Context, legacyContext, "Altitude" );
-		}
-	}
-
-	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Scenario" );
-
-	if ( legacyContext != 0 ) {
-		this->DigestLegacyItem ( md5Context, legacyContext, "SceneNo." );
-		this->DigestLegacyItem ( md5Context, legacyContext, "TakeNo." );
-	}
-
-	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Device" );
-
-	if ( legacyContext != 0 ) {
-		this->DigestLegacyItem ( md5Context, legacyContext, "Manufacturer" );
-		this->DigestLegacyItem ( md5Context, legacyContext, "SerialNo." );
-		this->DigestLegacyItem ( md5Context, legacyContext, "ModelName" );
-	}
-
-	MD5Final ( digestBin, &md5Context );
-
-	char buffer [40];
-	for ( int in = 0, out = 0; in < 16; in += 1, out += 2 ) {
-		XMP_Uns8 byte = digestBin[in];
-		buffer[out]   = kHexDigits [ byte >> 4 ];
-		buffer[out+1] = kHexDigits [ byte & 0xF ];
-	}
-	buffer[32] = 0;
-	digestStr->append ( buffer );
-
-}	// P2_MetaHandler::MakeLegacyDigest
-
-// =================================================================================================
-// P2_MetaHandler::GetFileModDate
-// ==============================
-
-static inline bool operator< ( const XMP_DateTime & left, const XMP_DateTime & right ) {
-	int compare = SXMPUtils::CompareDateTime ( left, right );
-	return (compare < 0);
-}
-
-bool P2_MetaHandler::GetFileModDate ( XMP_DateTime * modDate )
-{
-
-	// The P2 locations of metadata:
-	//	CONTENTS/
-	// 		CLIP/
-	// 			0001AB.XML
-	// 			0001AB.XMP
-
-	bool ok, haveDate = false;
-	std::string fullPath;
-	XMP_DateTime oneDate, junkDate;
-	if ( modDate == 0 ) modDate = &junkDate;
-
-	ok = this->MakeClipFilePath ( &fullPath, ".XML", true /* checkFile */ );
-	if ( ok ) ok = Host_IO::GetModifyDate ( fullPath.c_str(), &oneDate );
-	if ( ok ) {
-		if ( (! haveDate) || (*modDate < oneDate) ) *modDate = oneDate;
-		haveDate = true;
-	}
-
-	ok = this->MakeClipFilePath ( &fullPath, ".XMP", true /* checkFile */ );
-	if ( ok ) ok = Host_IO::GetModifyDate ( fullPath.c_str(), &oneDate );
-	if ( ok ) {
-		if ( (! haveDate) || (*modDate < oneDate) ) *modDate = oneDate;
-		haveDate = true;
-	}
-
-	return haveDate;
-
-}	// P2_MetaHandler::GetFileModDate
-
-// =================================================================================================
-// P2_MetaHandler::FillMetadataFiles
-// =================================
-void P2_MetaHandler::FillMetadataFiles ( std::vector<std::string>* metadataFiles )
-{
-	std::string noExtPath, filePath;
-
-	noExtPath = rootPath + kDirChar + "CONTENTS" + kDirChar + "CLIP" + kDirChar + clipName;
-
-	filePath = noExtPath + ".XMP";
-	metadataFiles->push_back ( filePath );
-	filePath = noExtPath + ".XML";
-	metadataFiles->push_back ( filePath );
-
-}	// 	FillMetadataFiles_P2
-
-// =================================================================================================
 // P2_MetaHandler::IsMetadataWritable
 // =======================================
 
 bool P2_MetaHandler::IsMetadataWritable ( )
 {
-	std::vector<std::string> metadataFiles;
-	FillMetadataFiles(&metadataFiles);
-	std::vector<std::string>::iterator itr = metadataFiles.begin();
+	std::string noExtPath, filePath;
+	noExtPath = rootPath + kDirChar + "CONTENTS" + kDirChar + "CLIP" + kDirChar + this->clipName ;
+	filePath = noExtPath + ".XMP";
 	// Check whether sidecar is writable, if not then check if it can be created.
-	bool xmpWritable = Host_IO::Writable( itr->c_str(), true );
+	bool writable = Host_IO::Writable( filePath.c_str(), true );
+	 filePath = noExtPath + ".XML";
 	// Check if legacy XML is writable.
-	bool xmlWritable = Host_IO::Writable( (++itr)->c_str(), false );
-	return (xmlWritable && xmpWritable);
+	writable &= Host_IO::Writable( filePath.c_str(), false );
+	return writable;
 }// P2_MetaHandler::IsMetadataWritable
-
 
 // =================================================================================================
 // P2_MetaHandler::FillAssociatedResources
@@ -1158,47 +964,54 @@ void P2_MetaHandler::FillAssociatedResources ( std::vector<std::string> * resour
 	//		PROXY/
 	//			XXXXXX.MP4
 	//			XXXXXX.BIN
-
 	XMP_VarString contentsPath = this->rootPath + kDirChar + "CONTENTS" + kDirChar;
 	XMP_VarString path;
 	
 	//Add RootPath
 	path = this->rootPath + kDirChar;
 	PackageFormat_Support::AddResourceIfExists(resourceList, path);
+	P2_SpannedClip* p2SpanClip=p2ClipManager.GetSpannedClip();
+	if ( ! p2SpanClip ) return ;
+	std::vector<std::string>  clipNameList;
+	p2SpanClip->GetAllClipNames ( clipNameList );
+	std::vector<std::string>::iterator iter = clipNameList.begin();
+	for(; iter!=clipNameList.end(); iter++)
+	{
 
-	std::string clipPathNoExt = contentsPath + "CLIP" + kDirChar + this->clipName;
-	// Get the files present inside CLIP folder.
-	path = clipPathNoExt + ".XML";
-	PackageFormat_Support::AddResourceIfExists(resourceList, path);
-	path = clipPathNoExt + ".XMP";
-	PackageFormat_Support::AddResourceIfExists(resourceList, path);
+		std::string clipPathNoExt = contentsPath + "CLIP" + kDirChar + *iter;
+		// Get the files present inside CLIP folder.
+		path = clipPathNoExt + ".XML";
+		PackageFormat_Support::AddResourceIfExists(resourceList, path);
+		path = clipPathNoExt + ".XMP";
+		PackageFormat_Support::AddResourceIfExists(resourceList, path);
 
-	// Get the files present inside VIDEO folder.
-	path = contentsPath + "VIDEO" + kDirChar + this->clipName + ".MXF";
-	PackageFormat_Support::AddResourceIfExists(resourceList, path);
+		// Get the files present inside VIDEO folder.
+		path = contentsPath + "VIDEO" + kDirChar + *iter + ".MXF";
+		PackageFormat_Support::AddResourceIfExists(resourceList, path);
 
-	// Get the files present inside AUDIO folder.
-	path = contentsPath + "AUDIO" + kDirChar;
-	XMP_VarString regExp;
-	regExp = "^" + this->clipName + "\\d\\d.MXF$";
-	IOUtils::GetMatchingChildren ( *resourceList, path, regExp, false, true, true );
+		// Get the files present inside AUDIO folder.
+		path = contentsPath + "AUDIO" + kDirChar;
+		XMP_VarString regExp;
+		regExp = "^" + *iter + "\\d\\d.MXF$";
+		IOUtils::GetMatchingChildren ( *resourceList, path, regExp, false, true, true );
 
-	// Get the files present inside ICON folder.
-	path = contentsPath + "ICON" + kDirChar + this->clipName + ".BMP";
-	PackageFormat_Support::AddResourceIfExists(resourceList, path);
+		// Get the files present inside ICON folder.
+		path = contentsPath + "ICON" + kDirChar + *iter + ".BMP";
+		PackageFormat_Support::AddResourceIfExists(resourceList, path);
 
-	// Get the files present inside VOICE folder.
-	path = contentsPath + "VOICE" + kDirChar;
-	regExp = "^" + clipName + "\\d\\d.WAV$";
-	IOUtils::GetMatchingChildren ( *resourceList, path, regExp, false, true, true );
+		// Get the files present inside VOICE folder.
+		path = contentsPath + "VOICE" + kDirChar;
+		regExp = "^" + *iter + "\\d\\d.WAV$";
+		IOUtils::GetMatchingChildren ( *resourceList, path, regExp, false, true, true );
 
-	// Get the files present inside PROXY folder.
-	std::string proxyPathNoExt = contentsPath + "PROXY" + kDirChar + this->clipName;
+		// Get the files present inside PROXY folder.
+		std::string proxyPathNoExt = contentsPath + "PROXY" + kDirChar + *iter;
 
-	path = proxyPathNoExt + ".MP4";
-	PackageFormat_Support::AddResourceIfExists(resourceList, path);
-	path = proxyPathNoExt + ".BIN";
-	PackageFormat_Support::AddResourceIfExists(resourceList, path);
+		path = proxyPathNoExt + ".MP4";
+		PackageFormat_Support::AddResourceIfExists(resourceList, path);
+		path = proxyPathNoExt + ".BIN";
+		PackageFormat_Support::AddResourceIfExists(resourceList, path);
+	}
 }	// P2_MetaHandler::FillAssociatedResources
 
 // =================================================================================================
@@ -1216,6 +1029,7 @@ void P2_MetaHandler::CacheFileData()
 	// Make sure the clip's .XMP file exists.
 
 	std::string xmpPath;
+		
 	this->MakeClipFilePath ( &xmpPath, ".XMP" );
 	if ( ! Host_IO::Exists ( xmpPath.c_str() ) ) return;	// No XMP.
 
@@ -1253,96 +1067,42 @@ void P2_MetaHandler::CacheFileData()
 
 void P2_MetaHandler::ProcessXMP()
 {
-
-	// Some versions of gcc can't tolerate goto's across declarations.
-	// *** Better yet, avoid this cruft with self-cleaning objects.
-	#define CleanupAndExit	\
-		{																								\
-			bool openForUpdate = XMP_OptionIsSet ( this->parent->openFlags, kXMPFiles_OpenForUpdate );	\
-			if ( ! openForUpdate ) this->CleanupLegacyXML();											\
-			return;																						\
-		}
-
 	if ( this->processedXMP ) return;
 	this->processedXMP = true;	// Make sure only called once.
 
 	if ( this->containsXMP ) {
 		this->xmpObj.ParseFromBuffer ( this->xmpPacket.c_str(), (XMP_StringLen)this->xmpPacket.size() );
 	}
-
-	std::string xmlPath;
-	this->MakeClipFilePath ( &xmlPath, ".XML" );
-
-	Host_IO::FileRef hostRef = Host_IO::Open ( xmlPath.c_str(), Host_IO::openReadOnly );
-	if ( hostRef == Host_IO::noFileRef ) return;	// The open failed.
-	XMPFiles_IO xmlFile ( hostRef, xmlPath.c_str(), Host_IO::openReadOnly );
-
-	this->expat = XMP_NewExpatAdapter ( ExpatAdapter::kUseLocalNamespaces );
-	if ( this->expat == 0 ) XMP_Throw ( "P2_MetaHandler: Can't create Expat adapter", kXMPErr_NoMemory );
-
-	XMP_Uns8 buffer [64*1024];
-	while ( true ) {
-		XMP_Int32 ioCount = xmlFile.Read ( buffer, sizeof(buffer) );
-		if ( ioCount == 0 ) break;
-		this->expat->ParseBuffer ( buffer, ioCount, false /* not the end */ );
-	}
-	this->expat->ParseBuffer ( 0, 0, true );	// End the parse.
-
-	xmlFile.Close();
-
-	// The root element should be P2Main in some namespace. At least 2 different namespaces are in
-	// use (ending in "v3.0" and "v3.1"). Take whatever this file uses.
-
-	XML_Node & xmlTree = this->expat->tree;
-	XML_NodePtr rootElem = 0;
-
-	for ( size_t i = 0, limit = xmlTree.content.size(); i < limit; ++i ) {
-		if ( xmlTree.content[i]->kind == kElemNode ) {
-			rootElem = xmlTree.content[i];
-		}
-	}
-
-	if ( rootElem == 0 ) CleanupAndExit
-	XMP_StringPtr rootLocalName = rootElem->name.c_str() + rootElem->nsPrefixLen;
-	if ( ! XMP_LitMatch ( rootLocalName, "P2Main" ) ) CleanupAndExit
-
-	this->p2NS = rootElem->ns;
-
-	// Now find ClipMetadata element and check the legacy digest.
-
-	XMP_StringPtr p2NS = this->p2NS.c_str();
-	XML_NodePtr legacyContext, legacyProp;
-
-	legacyContext = rootElem->GetNamedElement ( p2NS, "ClipContent" );
-	if ( legacyContext == 0 ) CleanupAndExit
-
-	this->clipContent = legacyContext;	// ! Save the ClipContext pointer for other use.
-
-	legacyContext = legacyContext->GetNamedElement ( p2NS, "ClipMetadata" );
-	if ( legacyContext == 0 ) CleanupAndExit
-
-	this->clipMetadata = legacyContext;	// ! Save the ClipMetadata pointer for other use.
-
+	
+	XML_NodePtr legacyContext, clipMetadata, legacyProp;
+	if ( ! this->p2ClipManager.IsValidP2() ) return;
+	P2_Clip* p2Clip=this->p2ClipManager.GetManagedClip();
+	XMP_StringPtr p2NS = p2Clip->GetP2RootNode()->ns.c_str();
 	std::string oldDigest, newDigest;
 	bool digestFound = this->xmpObj.GetStructField ( kXMP_NS_XMP, "NativeDigests", kXMP_NS_XMP, "P2", &oldDigest, 0 );
 	if ( digestFound ) {
-		this->MakeLegacyDigest ( &newDigest );
-		if ( oldDigest == newDigest ) CleanupAndExit
+		p2Clip->CreateDigest ( &newDigest );
+		if ( oldDigest == newDigest ) return;
 	}
 
 	// If we get here we need find and import the actual legacy elements using the current namespace.
 	// Either there is no old digest in the XMP, or the digests differ. In the former case keep any
 	// existing XMP, in the latter case take new legacy values.
-	this->SetXMPPropertyFromLegacyXML ( digestFound, this->clipContent, kXMP_NS_DC, "title", "ClipName", true );
-	this->SetXMPPropertyFromLegacyXML ( digestFound, this->clipContent, kXMP_NS_DC, "identifier", "GlobalClipID", false );
+	std::string clipTitle= p2Clip->GetClipTitle();// needed for successful Mac Builds
+	this->SetXMPPropertyFromLegacyXML ( digestFound, &clipTitle , kXMP_NS_DC, "title", true );
+	if ( p2Clip->IsValidClip() ) 
+		this->SetXMPPropertyFromLegacyXML ( digestFound, p2Clip->GetClipId(), kXMP_NS_DC, "identifier", false );
 	this->SetDurationFromLegacyXML (digestFound );
 	this->SetRelationsFromLegacyXML ( digestFound );
-	this->SetXMPPropertyFromLegacyXML ( digestFound, this->clipMetadata, kXMP_NS_DM, "shotName", "UserClipName", false );
+	clipMetadata = p2Clip->GetClipMetadataNode();
+	if ( clipMetadata == 0 ) return;
+	this->SetXMPPropertyFromLegacyXML ( digestFound,p2Clip->GetClipMetadataNode(), kXMP_NS_DM, "shotName", "UserClipName", false );
 	this->SetAudioInfoFromLegacyXML ( digestFound );
 	this->SetVideoInfoFromLegacyXML ( digestFound );
 
-	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Access" );
-	if ( legacyContext == 0 ) CleanupAndExit
+
+	legacyContext = clipMetadata->GetNamedElement ( p2NS, "Access" );
+	if ( legacyContext == 0 ) return;
 
 	if ( digestFound || (! this->xmpObj.DoesPropertyExist ( kXMP_NS_DC, "creator" )) ) {
 		legacyProp = legacyContext->GetNamedElement ( p2NS, "Creator" );
@@ -1358,7 +1118,7 @@ void P2_MetaHandler::ProcessXMP()
 	this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_XMP, "ModifyDate", "LastUpdateDate", false );
 
 	if ( digestFound || (! this->xmpObj.DoesPropertyExist ( kXMP_NS_DM, "good" )) ) {
-		legacyProp = this->clipMetadata->GetNamedElement ( p2NS, "ShotMark" );
+		legacyProp = clipMetadata->GetNamedElement ( p2NS, "ShotMark" );
 		if ( (legacyProp == 0) || (! legacyProp->IsLeafContentNode()) ) {
 			this->xmpObj.DeleteProperty ( kXMP_NS_DM, "good" );
 		} else {
@@ -1375,7 +1135,7 @@ void P2_MetaHandler::ProcessXMP()
 		}
 	}
 
-	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Shoot" );
+	legacyContext = clipMetadata->GetNamedElement ( p2NS, "Shoot" );
 	if ( legacyContext != 0 ) {
 		this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_TIFF, "Artist", "Shooter", false );
 		legacyContext = legacyContext->GetNamedElement ( p2NS, "Location" );
@@ -1388,21 +1148,20 @@ void P2_MetaHandler::ProcessXMP()
 		this->SetAltitudeFromLegacyXML ( legacyContext, digestFound );
 	}
 
-	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Device" );
+	legacyContext = clipMetadata->GetNamedElement ( p2NS, "Device" );
 	if ( legacyContext != 0 ) {
 		this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_TIFF, "Make", "Manufacturer", false );
 		this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_EXIF_Aux, "SerialNumber", "SerialNo.", false );
 		this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_TIFF, "Model", "ModelName", false );
 	}
 
-	legacyContext = this->clipMetadata->GetNamedElement ( p2NS, "Scenario" );
+	legacyContext = clipMetadata->GetNamedElement ( p2NS, "Scenario" );
 	if ( legacyContext != 0 ) {
 		this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_DM, "scene", "SceneNo.", false );
 		this->SetXMPPropertyFromLegacyXML ( digestFound, legacyContext, kXMP_NS_DM, "takeNumber", "TakeNo.", false );
 	}
 
-	CleanupAndExit
-	#undef CleanupAndExit
+	return;
 
 }	// P2_MetaHandler::ProcessXMP
 
@@ -1439,46 +1198,50 @@ void P2_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	// Update the internal legacy XML tree if we have one, and set the digest in the XMP.
 
 	bool updateLegacyXML = false;
+	P2_Clip* p2Clip = 0;
+	XML_NodePtr clipMetadata = 0;
+	if ( this->p2ClipManager.IsValidP2() )
+	{
+		p2Clip=this->p2ClipManager.GetManagedClip();
+		clipMetadata = p2Clip->GetClipMetadataNode();
+		if ( clipMetadata != 0 ) {
 
-	if ( this->clipMetadata != 0 ) {
+			bool xmpFound;
+			std::string xmpValue;
+			XML_Node * xmlNode;
 
-		XMP_Assert ( this->expat != 0 );
+			xmpFound = this->xmpObj.GetLocalizedText ( kXMP_NS_DC, "title", "", "x-default", 0, &xmpValue, 0 );
 
-		bool xmpFound;
-		std::string xmpValue;
-		XML_Node * xmlNode;
+			if ( xmpFound && p2Clip->GetClipContentNode()) {
 
-		xmpFound = this->xmpObj.GetLocalizedText ( kXMP_NS_DC, "title", "", "x-default", 0, &xmpValue, 0 );
+				xmlNode = this->ForceChildElement ( p2Clip->GetClipContentNode(), "ClipName", 3, false );
 
-		if ( xmpFound ) {
+				if ( xmpValue != xmlNode->GetLeafContentValue() ) {
+					xmlNode->SetLeafContentValue ( xmpValue.c_str() );
+					updateLegacyXML = true;
+				}
 
-			xmlNode = this->ForceChildElement ( this->clipContent, "ClipName", 3, false );
+			}
 
-			if ( xmpValue != xmlNode->GetLeafContentValue() ) {
-				xmlNode->SetLeafContentValue ( xmpValue.c_str() );
-				updateLegacyXML = true;
+			xmpFound = this->xmpObj.GetArrayItem ( kXMP_NS_DC, "creator", 1, &xmpValue, 0 );
+
+			if ( xmpFound ) {
+				xmlNode = this->ForceChildElement ( clipMetadata , "Access", 3, false );
+
+				// "Creator" must be first child of "Access" node else Panasonic P2 Viewer gives an error.
+				xmlNode = this->ForceChildElement ( xmlNode, "Creator", 4 , true);
+				if ( xmpValue != xmlNode->GetLeafContentValue() ) {
+					xmlNode->SetLeafContentValue ( xmpValue.c_str() );
+					updateLegacyXML = true;
+				}
 			}
 
 		}
 
-		xmpFound = this->xmpObj.GetArrayItem ( kXMP_NS_DC, "creator", 1, &xmpValue, 0 );
-
-		if ( xmpFound ) {
-			xmlNode = this->ForceChildElement ( this->clipMetadata, "Access", 3, false );
-
-			// "Creator" must be first child of "Access" node else Panasonic P2 Viewer gives an error.
-			xmlNode = this->ForceChildElement ( xmlNode, "Creator", 4 , true);
-			if ( xmpValue != xmlNode->GetLeafContentValue() ) {
-				xmlNode->SetLeafContentValue ( xmpValue.c_str() );
-				updateLegacyXML = true;
-			}
-		}
-
+		std::string newDigest;
+		this->p2ClipManager.GetManagedClip()->CreateDigest ( &newDigest );
+		this->xmpObj.SetStructField ( kXMP_NS_XMP, "NativeDigests", kXMP_NS_XMP, "P2", newDigest.c_str(), kXMP_DeleteExisting );
 	}
-
-	std::string newDigest;
-	this->MakeLegacyDigest ( &newDigest );
-	this->xmpObj.SetStructField ( kXMP_NS_XMP, "NativeDigests", kXMP_NS_XMP, "P2", newDigest.c_str(), kXMP_DeleteExisting );
 
 	this->xmpObj.SerializeToBuffer ( &this->xmpPacket, this->GetSerializeOptions() );
 
@@ -1512,8 +1275,8 @@ void P2_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		dummy attribute with this namespace to clipContent/clipMetadata (whichever is non-null) before
 		serializing the XML tree. We are also undoing it below after serialization.*/
 
-		XML_Node *parentNode = AddXSINamespace(this->clipContent, this->clipMetadata);
-		this->expat->tree.Serialize ( &legacyXML );
+		XML_Node *parentNode = AddXSINamespace(p2Clip->GetClipContentNode(), clipMetadata);
+		p2Clip->SerializeP2ClipContent ( legacyXML );
 		if(parentNode){
 			// Remove the dummy attribute added to clipContent/clipMetadata.
 			delete parentNode->attrs[parentNode->attrs.size()-1];
