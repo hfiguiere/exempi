@@ -1,11 +1,18 @@
 2.4.0
 
-- Upgrade XMPCore to Adobe XMP CC 2013.06.
-  - Pluggable file handlers (not exposed)
-  - Support for Exif 2.3 properties
-  - New RIFF file handler
-  - Better Postscript support.
-  - Lot of bug fixes.
+- Bug #89449: Upgrade XMPCore to Adobe XMP CC 2014.12.
+  - New flag to optimize layout on MPEG4 files.
+  - GoPro MPEG4 video files support.
+  - Improved JPEG support.
+  - iXML support in WAVE files.
+  - Several bugs and memory leaks fixes.
+  - Changes from Adobe XMP CC 2013.06.
+    - Pluggable file handlers (not exposed yet in Exempi)
+    - Support for Exif 2.3 properties
+    - New RIFF file handler
+    - Better Postscript support.
+    - Lot of bug fixes.
+- New API: added XMP_OPEN_OPTIMIZEFILELAYOUT for new SDK.
 
 2.3.0
 
