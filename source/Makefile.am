@@ -59,6 +59,7 @@ libxmpcommon_la_SOURCES = UnicodeInlines.incl_cpp UnicodeConversions.cpp\
 	XMP_ProgressTracker.hpp XMP_ProgressTracker.cpp \
 	PerfUtils.hpp PerfUtils.cpp \
 	IOUtils.hpp IOUtils.cpp \
+	SafeStringAPIs.h SuppressSAL.h SafeTypes.h \
 	$(NULL)
 
 

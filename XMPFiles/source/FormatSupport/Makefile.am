@@ -67,7 +67,7 @@ libformatsupport_la_SOURCES = \
 	QuickTime_Support.cpp \
 	ASF_Support.hpp ASF_Support.cpp \
 	MacScriptExtracts.h \
-	TimeConversionUtils.h TimeConversionUtils.cpp \
+	TimeConversionUtils.cpp TimeConversionUtils.hpp \
 	AIFF/AIFFBehavior.cpp  AIFF/AIFFBehavior.h \
 	AIFF/AIFFMetadata.cpp  AIFF/AIFFMetadata.h \
 	AIFF/AIFFReconcile.cpp  AIFF/AIFFReconcile.h \
