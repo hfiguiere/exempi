@@ -41,7 +41,7 @@
 
 #include <stdlib.h>
 /* stdbool choke on Sun (bug #14612) */
-#if !defined(__sun)
+#if ! (defined(__sun) && defined(__cplusplus))
 #include <stdbool.h>
 #endif
 #include <stdint.h>
