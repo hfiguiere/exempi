@@ -25,8 +25,11 @@ shave-libtool
 *.la
 .libs
 .deps
+.git
+compile
 libtool
 test-driver
+*.plist/
 exempi/exempi-2.0.pc
 exempi/exempi
 exempi/tests/test.jpg
