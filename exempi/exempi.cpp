@@ -1,7 +1,7 @@
 /*
  * exempi - exempi.cpp
  *
- * Copyright (C) 2007-2013 Hubert Figuiere
+ * Copyright (C) 2007-2015 Hubert Figuiere
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,6 +44,7 @@
 
 #include <string>
 #include <iostream>
+#include <memory>
 
 #define XMP_INCLUDE_XMPFILES 1
 #define TXMP_STRING_TYPE std::string
@@ -255,29 +256,35 @@ bool xmp_prefix_namespace_uri(const char *prefix, XmpStringPtr ns)
 XmpFilePtr xmp_files_new()
 {
 	RESET_ERROR;
-	SXMPFiles *txf = NULL;
+
 	try {
-		txf = new SXMPFiles();
+          auto txf = std::unique_ptr<SXMPFiles>(new SXMPFiles());
+
+          return reinterpret_cast<XmpFilePtr>(txf.release());
 	}
 	catch(const XMP_Error & e) {
 		set_error(e);
 	}
-	return (XmpFilePtr)txf;
+	return nullptr;
 }
 
 XmpFilePtr xmp_files_open_new(const char *path, XmpOpenFileOptions options)
 {
-	CHECK_PTR(path, NULL);
+	CHECK_PTR(path, nullptr);
 	RESET_ERROR;
-	SXMPFiles *txf = NULL;
+
 	try {
-		txf = new SXMPFiles(path, XMP_FT_UNKNOWN, options);
+          auto txf = std::unique_ptr<SXMPFiles>(new SXMPFiles);
+
+          txf->OpenFile(path, XMP_FT_UNKNOWN, options);
+
+          return reinterpret_cast<XmpFilePtr>(txf.release());
 	}
 	catch(const XMP_Error & e) {
 		set_error(e);
 	}
 
-	return (XmpFilePtr)txf;
+	return nullptr;
 }
 
 
@@ -314,23 +321,22 @@ bool xmp_files_close(XmpFilePtr xf, XmpCloseFileOptions options)
 
 XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf)
 {
-	CHECK_PTR(xf, NULL);
+	CHECK_PTR(xf, nullptr);
 	RESET_ERROR;
-	SXMPMeta *xmp = new SXMPMeta();
 	SXMPFiles *txf = (SXMPFiles*)xf;
 
 	bool result = false;
 	try {
-		result = txf->GetXMP(xmp);
-		if(!result) {
-			delete xmp;
-			return NULL;
-		}
+          auto xmp = std::unique_ptr<SXMPMeta>(new SXMPMeta);
+          result = txf->GetXMP(xmp.get());
+          if(result) {
+            return reinterpret_cast<XmpPtr>(xmp.release());
+          }
 	}
 	catch(const XMP_Error & e) {
 		set_error(e);
 	}
-	return (XmpPtr)xmp;
+	return nullptr;
 }
 
 
@@ -342,9 +348,9 @@ bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp)
 	bool result = false;
 	try {
 		SXMPFiles *txf = (SXMPFiles*)xf;
-		
+
 		result = txf->GetXMP((SXMPMeta*)xmp);
-	} 
+	}
 	catch(const XMP_Error & e) {
 		set_error(e);
 	}
@@ -376,7 +382,7 @@ bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp)
 	CHECK_PTR(xmp, false);
 	RESET_ERROR;
 	SXMPFiles *txf = (SXMPFiles*)xf;
-	
+
 	try {
 		txf->PutXMP(*(SXMPMeta*)xmp);
 	}
@@ -392,18 +398,18 @@ bool xmp_files_get_file_info(XmpFilePtr xf, XmpStringPtr filePath, XmpOpenFileOp
 {
 	CHECK_PTR(xf, false);
 	RESET_ERROR;
-	
-	bool result = false;	
+
+	bool result = false;
 	SXMPFiles *txf = (SXMPFiles*)xf;
 	try {
-		result = txf->GetFileInfo(STRING(filePath), (XMP_OptionBits *)options, 
+		result = txf->GetFileInfo(STRING(filePath), (XMP_OptionBits *)options,
 			(XMP_FileFormat *)file_format, (XMP_OptionBits *)handler_flags);
 	}
 	catch(const XMP_Error & e) {
 		set_error(e);
 		return false;
 	}
-	
+
 	return result;
 }
 
@@ -428,13 +434,13 @@ bool xmp_files_get_format_info(XmpFileType format, XmpFileFormatOptions * option
 
 	bool result = false;
 	try {
-		result = SXMPFiles::GetFormatInfo(format, (XMP_OptionBits*)options);	
+		result = SXMPFiles::GetFormatInfo(format, (XMP_OptionBits*)options);
 	}
 	catch(const XMP_Error & e) {
 		set_error(e);
 		return false;
 	}
-	return result;	
+	return result;
 }
 
 XmpFileType xmp_files_check_file_format(const char *filePath)
@@ -463,28 +469,34 @@ XmpPtr xmp_new_empty()
 
 XmpPtr xmp_new(const char *buffer, size_t len)
 {
-	CHECK_PTR(buffer, NULL);
+	CHECK_PTR(buffer, nullptr);
 	RESET_ERROR;
 
-	SXMPMeta *txmp;
 	try {
-		txmp = new SXMPMeta(buffer, len);
+          auto txmp = std::unique_ptr<SXMPMeta>(new SXMPMeta(buffer, len));
+          return reinterpret_cast<XmpPtr>(txmp.release());
 	}
 	catch(const XMP_Error & e) {
 		set_error(e);
-		txmp = 0;
 	}
-	return (XmpPtr)txmp;
+	return nullptr;
 }
 
 
 XmpPtr xmp_copy(XmpPtr xmp)
 {
-	CHECK_PTR(xmp, NULL);
+	CHECK_PTR(xmp, nullptr);
 	RESET_ERROR;
 
-	SXMPMeta *txmp = new SXMPMeta(*(SXMPMeta*)xmp);
-	return (XmpPtr)txmp;
+	try {
+	  auto txmp =
+	    std::unique_ptr<SXMPMeta>(new SXMPMeta(*(SXMPMeta*)xmp));
+	  return reinterpret_cast<XmpPtr>(txmp.release());
+	}
+	catch(const XMP_Error & e) {
+		set_error(e);
+	}
+	return nullptr;
 }
 
 bool xmp_parse(XmpPtr xmp, const char *buffer, size_t len)
@@ -1028,9 +1040,20 @@ const char * xmp_string_cstr(XmpStringPtr s)
 XmpIteratorPtr xmp_iterator_new(XmpPtr xmp, const char * schema,
 								const char * propName, XmpIterOptions options)
 {
-	CHECK_PTR(xmp, NULL);
+	CHECK_PTR(xmp, nullptr);
 	RESET_ERROR;
-	return (XmpIteratorPtr)new SXMPIterator(*(SXMPMeta*)xmp, schema, propName, options);
+
+	try {
+	  auto xiter = std::unique_ptr<SXMPIterator>(
+	    new SXMPIterator(*(SXMPMeta*)xmp, schema, propName, options));
+
+	  return reinterpret_cast<XmpIteratorPtr>(xiter.release());
+	}
+	catch(const XMP_Error & e) {
+	  set_error(e);
+	}
+
+	return nullptr;
 }
 
 
