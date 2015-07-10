@@ -37,13 +37,16 @@
 
 INCLUDES = -I$(srcdir)/.. -I$(top_srcdir)/public/include -I$(top_srcdir)
 if WITH_UNIT_TEST
+AUTOMAKE_OPTIONS = parallel-tests
 check_PROGRAMS = testexempicore testserialise testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
 	test3 testinit testfdo18635 testfdo83313 testcpp
 TESTS = testcore.sh testinit testexempicore testserialise testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
 	test3 testfdo18635 testfdo83313 testcpp
-TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) BOOST_TEST_CATCH_SYSTEM_ERRORS=no VALGRIND="$(VALGRIND)" @VALGRIND@
+TEST_EXTENSIONS = .sh
+TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) BOOST_TEST_CATCH_SYSTEM_ERRORS=no VALGRIND="$(VALGRIND)"
+LOG_COMPILER = $(VALGRIND)
 endif
 check_SCRIPTS = testcore.sh
 
