@@ -13,6 +13,7 @@
     - Better Postscript support.
     - Lot of bug fixes.
 - New API: added XMP_OPEN_OPTIMIZEFILELAYOUT for new SDK.
+- Now require C++11.
 
 2.3.0
 
