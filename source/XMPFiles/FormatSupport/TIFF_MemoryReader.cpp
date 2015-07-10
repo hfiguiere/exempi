@@ -203,6 +203,11 @@ bool TIFF_MemoryReader::GetTag ( XMP_Uns8 ifd, XMP_Uns16 id, TagInfo* info ) con
 	const TweakedIFDEntry* thisTag = this->FindTagInIFD ( ifd, id );
 	if ( thisTag == 0 ) return false;
 	if ( (thisTag->type < kTIFF_ByteType) || (thisTag->type > kTIFF_LastType) ) return false;	// Bad type, skip this tag.
+	if ( (thisTag->bytes > 4) && (thisTag->dataOrPos >= this->tiffLength) ) {
+		// BAD BAD BAD overflow.
+		// See https://bugs.freedesktop.org/show_bug.cgi?id=90379
+		return false;
+	}
 
 	if ( info != 0 ) {
 

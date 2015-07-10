@@ -1,7 +1,7 @@
 /*
  * exempi - xmp.h
  *
- * Copyright (C) 2007-2008,2012 Hubert Figuiere
+ * Copyright (C) 2007-2015 Hubert Figuiere
  * Copyright 2002-2007 Adobe Systems Incorporated
  * All rights reserved.
  *
@@ -41,7 +41,7 @@
 
 #include <stdlib.h>
 /* stdbool choke on Sun (bug #14612) */
-#if !defined(__sun)
+#if ! (defined(__sun) && defined(__cplusplus))
 #include <stdbool.h>
 #endif
 #include <stdint.h>
@@ -327,18 +327,18 @@ enum {
 };
 
 /** Init the library. Must be called before anything else */
-bool xmp_init();
-void xmp_terminate();
+bool xmp_init(void);
+void xmp_terminate(void);
 
 
 /** get the error code that last occurred.
  * @todo make this thread-safe. Getting the error code
  * from another thread than the on it occurred in is undefined.
  */
-int xmp_get_error();
+int xmp_get_error(void);
 
 
-XmpFilePtr xmp_files_new();
+XmpFilePtr xmp_files_new(void);
 XmpFilePtr xmp_files_open_new(const char *, XmpOpenFileOptions options);
 
 bool xmp_files_open(XmpFilePtr xf, const char *, XmpOpenFileOptions options);
@@ -435,7 +435,7 @@ bool xmp_prefix_namespace_uri(const char *prefix, XmpStringPtr ns);
 /** Create a new empty XMP packet
  * @return the packet pointer. Must be free with xmp_free()
  */
-XmpPtr xmp_new_empty();
+XmpPtr xmp_new_empty(void);
 
 /** Create a new XMP packet
  * @param buffer the buffer to load data from. UTF-8 encoded.
@@ -651,7 +651,7 @@ bool xmp_delete_localized_text(XmpPtr xmp, const char *schema,
  * @return the new instance. Must be freed with
  * xmp_string_free()
  */
-XmpStringPtr xmp_string_new();
+XmpStringPtr xmp_string_new(void);
 
 /** Free a XmpStringPtr
  * @param s the string to free
