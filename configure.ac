@@ -55,6 +55,7 @@ dnl 2.1.1 is the revision 5.2.1
 dnl 2.2.0 is the revision 5.2.2 -- no public API change
 dnl 2.2.1 is the revision 5.2.3 -- no public API change
 dnl 2.2.2 is the revision 5.2.4 -- no public API change
+dnl 2.2.3 is the revision 5.2.5 -- no public API change
 dnl 2.3.0 is the revision 6.3.0
 dnl 2.4.0 is the revision 7.4.0
 AC_SUBST([EXEMPI_REVISION], [0])
