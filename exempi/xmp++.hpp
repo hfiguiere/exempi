@@ -1,5 +1,5 @@
 /*
- * 
+ *
  * Copyright (C) 2011 Hubert Figuiere
  *
  *  Distributed under the Boost Software License, Version 1.0. (See
@@ -14,26 +14,22 @@
 
 namespace xmp {
 
-inline
-void release(XmpIteratorPtr ptr)
+inline void release(XmpIteratorPtr ptr)
 {
     xmp_iterator_free(ptr);
 }
 
-inline
-void release(XmpStringPtr ptr)
+inline void release(XmpStringPtr ptr)
 {
     xmp_string_free(ptr);
 }
 
-inline
-void release(XmpFilePtr ptr)
+inline void release(XmpFilePtr ptr)
 {
     xmp_files_free(ptr);
 }
 
-inline 
-void release(XmpPtr ptr)
+inline void release(XmpPtr ptr)
 {
     xmp_free(ptr);
 }
@@ -42,25 +38,24 @@ void release(XmpPtr ptr)
  * @brief a scoped pointer for Xmp opaque types
  */
 template <class T>
-class ScopedPtr 
-{
+class ScopedPtr {
 public:
-    ScopedPtr(T p)
-        : _p(p)
-        {}
+    ScopedPtr(T p) : _p(p) {}
     ~ScopedPtr()
-        { if (_p) release(_p); }
-    operator T() const
-        { return _p; }
+    {
+        if (_p)
+            release(_p);
+    }
+    operator T() const { return _p; }
+
 private:
     T _p;
-    
+
     // private copy constructor and assignment
     // to make the class non copiable
     ScopedPtr(const ScopedPtr<T> &);
-    ScopedPtr & operator=(const ScopedPtr<T> &);
+    ScopedPtr &operator=(const ScopedPtr<T> &);
 };
-
 }
 
 #endif

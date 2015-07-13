@@ -10,7 +10,7 @@
  *
  * 1 Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2 Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the
@@ -47,43 +47,40 @@
 #include "xmp.h"
 #include "xmpconsts.h"
 
-
 /**  See http://www.adobeforums.com/webx/.3bc42b73 for the orignal
  *   test case */
-//void test_tiff_leak()
+// void test_tiff_leak()
 int test_main(int argc, char *argv[])
 {
-	prepare_test(argc, argv, "../../samples/testfiles/BlueSquare.jpg");
+  prepare_test(argc, argv, "../../samples/testfiles/BlueSquare.jpg");
 
-	std::string orig_tiff_file = g_src_testdir 
-		+ "../../samples/testfiles/BlueSquare.tif";
-	BOOST_CHECK(copy_file(orig_tiff_file, "test.tif"));
-	BOOST_CHECK(chmod("test.tif", S_IRUSR|S_IWUSR) == 0);
-	BOOST_CHECK(xmp_init());
+  std::string orig_tiff_file =
+    g_src_testdir + "../../samples/testfiles/BlueSquare.tif";
+  BOOST_CHECK(copy_file(orig_tiff_file, "test.tif"));
+  BOOST_CHECK(chmod("test.tif", S_IRUSR | S_IWUSR) == 0);
+  BOOST_CHECK(xmp_init());
 
-	XmpFilePtr f = xmp_files_open_new("test.tif", XMP_OPEN_FORUPDATE);
+  XmpFilePtr f = xmp_files_open_new("test.tif", XMP_OPEN_FORUPDATE);
 
-	BOOST_CHECK(f != NULL);
-	if (f == NULL) {
-		return 1;
-	}
+  BOOST_CHECK(f != NULL);
+  if (f == NULL) {
+    return 1;
+  }
 
-	XmpPtr xmp;
-	
-	BOOST_CHECK(xmp = xmp_files_get_new_xmp(f));
-	BOOST_CHECK(xmp != NULL);
+  XmpPtr xmp;
 
-	xmp_set_localized_text(xmp, NS_DC, "description", "en", "en-US", "foo", 0);
-	BOOST_CHECK(xmp_files_put_xmp(f, xmp));
-	BOOST_CHECK(xmp_files_close(f, XMP_CLOSE_NOOPTION));
-	BOOST_CHECK(xmp_free(xmp));
-	BOOST_CHECK(xmp_files_free(f));
-	xmp_terminate();
+  BOOST_CHECK(xmp = xmp_files_get_new_xmp(f));
+  BOOST_CHECK(xmp != NULL);
 
-	BOOST_CHECK(unlink("test.tif") == 0);
-	BOOST_CHECK(!g_lt->check_leaks());
-	BOOST_CHECK(!g_lt->check_errors());	
-	return 0;
+  xmp_set_localized_text(xmp, NS_DC, "description", "en", "en-US", "foo", 0);
+  BOOST_CHECK(xmp_files_put_xmp(f, xmp));
+  BOOST_CHECK(xmp_files_close(f, XMP_CLOSE_NOOPTION));
+  BOOST_CHECK(xmp_free(xmp));
+  BOOST_CHECK(xmp_files_free(f));
+  xmp_terminate();
+
+  BOOST_CHECK(unlink("test.tif") == 0);
+  BOOST_CHECK(!g_lt->check_leaks());
+  BOOST_CHECK(!g_lt->check_errors());
+  return 0;
 }
-
-

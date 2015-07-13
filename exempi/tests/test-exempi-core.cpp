@@ -10,7 +10,7 @@
  *
  * 1 Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2 Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the
@@ -48,202 +48,181 @@
 
 using boost::unit_test::test_suite;
 
-
-//void test_exempi()
+// void test_exempi()
 int test_main(int argc, char *argv[])
 {
-	prepare_test(argc, argv, "test1.xmp");
+  prepare_test(argc, argv, "test1.xmp");
 
-	size_t len;
-	char * buffer;
-	
-	FILE * f = fopen(g_testfile.c_str(), "rb");
+  size_t len;
+  char *buffer;
 
-	BOOST_CHECK(f != NULL);
-	if (f == NULL) {
-		exit(128);
-	}
- 	fseek(f, 0, SEEK_END);
-	len = ftell(f);
- 	fseek(f, 0, SEEK_SET);
+  FILE *f = fopen(g_testfile.c_str(), "rb");
 
-	buffer = (char*)malloc(len + 1);
-	size_t rlen = fread(buffer, 1, len, f);
+  BOOST_CHECK(f != NULL);
+  if (f == NULL) {
+    exit(128);
+  }
+  fseek(f, 0, SEEK_END);
+  len = ftell(f);
+  fseek(f, 0, SEEK_SET);
 
-	BOOST_CHECK(rlen == len);
-	BOOST_CHECK(len != 0);
+  buffer = (char *)malloc(len + 1);
+  size_t rlen = fread(buffer, 1, len, f);
 
-	BOOST_CHECK(xmp_init());
+  BOOST_CHECK(rlen == len);
+  BOOST_CHECK(len != 0);
 
-	XmpPtr xmp = xmp_new_empty();
+  BOOST_CHECK(xmp_init());
 
-	BOOST_CHECK(xmp_parse(xmp, buffer, len));
+  XmpPtr xmp = xmp_new_empty();
 
-	BOOST_CHECK(xmp != NULL);
+  BOOST_CHECK(xmp_parse(xmp, buffer, len));
 
-	XmpStringPtr the_prop = xmp_string_new();
+  BOOST_CHECK(xmp != NULL);
 
-	BOOST_CHECK(xmp_has_property(xmp, NS_TIFF, "Make"));
-	BOOST_CHECK(!xmp_has_property(xmp, NS_TIFF, "Foo"));
+  XmpStringPtr the_prop = xmp_string_new();
 
-	BOOST_CHECK(xmp_get_property(xmp, NS_TIFF, "Make", the_prop, NULL));
-	BOOST_CHECK(strcmp("Canon", xmp_string_cstr(the_prop)) == 0); 
+  BOOST_CHECK(xmp_has_property(xmp, NS_TIFF, "Make"));
+  BOOST_CHECK(!xmp_has_property(xmp, NS_TIFF, "Foo"));
 
-	BOOST_CHECK(xmp_set_property(xmp, NS_TIFF, "Make", "Leica", 0));
-	BOOST_CHECK(xmp_get_property(xmp, NS_TIFF, "Make", the_prop, NULL));
-	BOOST_CHECK(strcmp("Leica", xmp_string_cstr(the_prop)) == 0); 
+  BOOST_CHECK(xmp_get_property(xmp, NS_TIFF, "Make", the_prop, NULL));
+  BOOST_CHECK(strcmp("Canon", xmp_string_cstr(the_prop)) == 0);
 
-	uint32_t bits;
-	BOOST_CHECK(xmp_get_property(xmp, NS_DC, "rights[1]/?xml:lang",
-								 the_prop, &bits));
-	BOOST_CHECK(bits == 0x20);
-	BOOST_CHECK(XMP_IS_PROP_QUALIFIER(bits));
+  BOOST_CHECK(xmp_set_property(xmp, NS_TIFF, "Make", "Leica", 0));
+  BOOST_CHECK(xmp_get_property(xmp, NS_TIFF, "Make", the_prop, NULL));
+  BOOST_CHECK(strcmp("Leica", xmp_string_cstr(the_prop)) == 0);
 
-	BOOST_CHECK(xmp_get_property(xmp, NS_DC, "rights[1]",
-								 the_prop, &bits));
-	BOOST_CHECK(bits == 0x50);
-	BOOST_CHECK(XMP_HAS_PROP_QUALIFIERS(bits));
+  uint32_t bits;
+  BOOST_CHECK(
+    xmp_get_property(xmp, NS_DC, "rights[1]/?xml:lang", the_prop, &bits));
+  BOOST_CHECK(bits == 0x20);
+  BOOST_CHECK(XMP_IS_PROP_QUALIFIER(bits));
 
-	XmpStringPtr the_lang = xmp_string_new();
-	BOOST_CHECK(xmp_get_localized_text(xmp, NS_DC, "rights",
-									   NULL, "x-default", 
-									   the_lang, the_prop, &bits));
-	BOOST_CHECK(strcmp("x-default", xmp_string_cstr(the_lang)) == 0); 
-	BOOST_CHECK(strcmp("2006, Hubert Figuiere", xmp_string_cstr(the_prop)) == 0);
+  BOOST_CHECK(xmp_get_property(xmp, NS_DC, "rights[1]", the_prop, &bits));
+  BOOST_CHECK(bits == 0x50);
+  BOOST_CHECK(XMP_HAS_PROP_QUALIFIERS(bits));
 
-	// This will modify the default property.
-	BOOST_CHECK(xmp_set_localized_text(xmp, NS_DC, "rights",
-									   "en", "en-CA", 
-									   "Foo Bar", 0));
-	// Ask for the en_US alternative.							
-	BOOST_CHECK(xmp_get_localized_text(xmp, NS_DC, "rights",
-									   "en", "en-US", 
-									   the_lang, the_prop, &bits));
-	// And we only got the "en-CA" as the only "en"
-	BOOST_CHECK(strcmp("en-US", xmp_string_cstr(the_lang)) != 0); 
-	BOOST_CHECK(strcmp("en-CA", xmp_string_cstr(the_lang)) == 0); 
-	// Check its value
-	BOOST_CHECK(strcmp("Foo Bar", xmp_string_cstr(the_prop)) == 0);
-	// The default property is supposed to have been changed too.
-	BOOST_CHECK(xmp_get_localized_text(xmp, NS_DC, "rights",
-									   NULL, "x-default", 
-									   the_lang, the_prop, &bits));
-	BOOST_CHECK(strcmp("Foo Bar", xmp_string_cstr(the_prop)) == 0);
+  XmpStringPtr the_lang = xmp_string_new();
+  BOOST_CHECK(xmp_get_localized_text(xmp, NS_DC, "rights", NULL, "x-default",
+                                     the_lang, the_prop, &bits));
+  BOOST_CHECK(strcmp("x-default", xmp_string_cstr(the_lang)) == 0);
+  BOOST_CHECK(strcmp("2006, Hubert Figuiere", xmp_string_cstr(the_prop)) == 0);
 
-	// This should also remove the property x-default. (SDK 5.2.2)
-	BOOST_CHECK(xmp_delete_localized_text(xmp, NS_DC, "rights",
-										  "en", "en-CA"));
+  // This will modify the default property.
+  BOOST_CHECK(
+    xmp_set_localized_text(xmp, NS_DC, "rights", "en", "en-CA", "Foo Bar", 0));
+  // Ask for the en_US alternative.
+  BOOST_CHECK(xmp_get_localized_text(xmp, NS_DC, "rights", "en", "en-US",
+                                     the_lang, the_prop, &bits));
+  // And we only got the "en-CA" as the only "en"
+  BOOST_CHECK(strcmp("en-US", xmp_string_cstr(the_lang)) != 0);
+  BOOST_CHECK(strcmp("en-CA", xmp_string_cstr(the_lang)) == 0);
+  // Check its value
+  BOOST_CHECK(strcmp("Foo Bar", xmp_string_cstr(the_prop)) == 0);
+  // The default property is supposed to have been changed too.
+  BOOST_CHECK(xmp_get_localized_text(xmp, NS_DC, "rights", NULL, "x-default",
+                                     the_lang, the_prop, &bits));
+  BOOST_CHECK(strcmp("Foo Bar", xmp_string_cstr(the_prop)) == 0);
 
-	BOOST_CHECK(!xmp_has_property(xmp, NS_DC, "rights[1]"));
-	BOOST_CHECK(!xmp_has_property(xmp, NS_DC, "rights[2]"));
+  // This should also remove the property x-default. (SDK 5.2.2)
+  BOOST_CHECK(xmp_delete_localized_text(xmp, NS_DC, "rights", "en", "en-CA"));
 
-	xmp_string_free(the_lang);
+  BOOST_CHECK(!xmp_has_property(xmp, NS_DC, "rights[1]"));
+  BOOST_CHECK(!xmp_has_property(xmp, NS_DC, "rights[2]"));
 
-	BOOST_CHECK(xmp_set_array_item(xmp, NS_DC, "creator", 2,
-								   "foo", 0));
-	BOOST_CHECK(xmp_get_array_item(xmp, NS_DC, "creator", 2,
-								   the_prop, &bits));
-	BOOST_CHECK(XMP_IS_PROP_SIMPLE(bits));
-	BOOST_CHECK(strcmp("foo", xmp_string_cstr(the_prop)) == 0); 
-	BOOST_CHECK(xmp_append_array_item(xmp, NS_DC, "creator", 0, "bar", 0));
-	
-	BOOST_CHECK(xmp_get_array_item(xmp, NS_DC, "creator", 3,
-								   the_prop, &bits));
-	BOOST_CHECK(XMP_IS_PROP_SIMPLE(bits));
-	BOOST_CHECK(strcmp("bar", xmp_string_cstr(the_prop)) == 0); 
-	
-	BOOST_CHECK(xmp_delete_property(xmp, NS_DC, "creator[3]"));
-	BOOST_CHECK(!xmp_has_property(xmp, NS_DC, "creator[3]"));
+  xmp_string_free(the_lang);
 
+  BOOST_CHECK(xmp_set_array_item(xmp, NS_DC, "creator", 2, "foo", 0));
+  BOOST_CHECK(xmp_get_array_item(xmp, NS_DC, "creator", 2, the_prop, &bits));
+  BOOST_CHECK(XMP_IS_PROP_SIMPLE(bits));
+  BOOST_CHECK(strcmp("foo", xmp_string_cstr(the_prop)) == 0);
+  BOOST_CHECK(xmp_append_array_item(xmp, NS_DC, "creator", 0, "bar", 0));
 
-	BOOST_CHECK(xmp_get_property(xmp, NS_EXIF, "DateTimeOriginal", 
-											the_prop, NULL));
-	BOOST_CHECK(strcmp("2006-12-07T23:20:43-05:00", 
-							 xmp_string_cstr(the_prop)) == 0); 
+  BOOST_CHECK(xmp_get_array_item(xmp, NS_DC, "creator", 3, the_prop, &bits));
+  BOOST_CHECK(XMP_IS_PROP_SIMPLE(bits));
+  BOOST_CHECK(strcmp("bar", xmp_string_cstr(the_prop)) == 0);
 
-	BOOST_CHECK(xmp_get_property(xmp, NS_XAP, "Rating",
-				the_prop, NULL));
-	BOOST_CHECK(strcmp("3", xmp_string_cstr(the_prop)) == 0);
+  BOOST_CHECK(xmp_delete_property(xmp, NS_DC, "creator[3]"));
+  BOOST_CHECK(!xmp_has_property(xmp, NS_DC, "creator[3]"));
 
-	xmp_string_free(the_prop);
+  BOOST_CHECK(
+    xmp_get_property(xmp, NS_EXIF, "DateTimeOriginal", the_prop, NULL));
+  BOOST_CHECK(strcmp("2006-12-07T23:20:43-05:00", xmp_string_cstr(the_prop)) ==
+              0);
 
-	// testing date time get
-	XmpDateTime the_dt;
-	bool ret;
-	BOOST_CHECK(ret = xmp_get_property_date(xmp, NS_EXIF,
-						"DateTimeOriginal",
-						&the_dt, NULL));
-	BOOST_CHECK(the_dt.year == 2006);
-	BOOST_CHECK(the_dt.minute == 20);
-	BOOST_CHECK(the_dt.tzSign == XMP_TZ_WEST);
+  BOOST_CHECK(xmp_get_property(xmp, NS_XAP, "Rating", the_prop, NULL));
+  BOOST_CHECK(strcmp("3", xmp_string_cstr(the_prop)) == 0);
 
-	// testing compare
-	XmpDateTime the_other_dt;
-	BOOST_CHECK(ret = xmp_get_property_date(xmp, NS_EXIF,
-						"DateTimeOriginal",
-						&the_other_dt, NULL));
-	BOOST_CHECK(xmp_datetime_compare(&the_dt, &the_other_dt) == 0);
-	the_other_dt.year++;
-	BOOST_CHECK(xmp_datetime_compare(&the_dt, &the_other_dt) < 0);
-	BOOST_CHECK(xmp_datetime_compare(&the_other_dt, &the_dt) > 0);
-	// NULL checks - this is Exempi API
-	BOOST_CHECK(xmp_datetime_compare(NULL, NULL) == 0);
-	BOOST_CHECK(xmp_datetime_compare(NULL, &the_other_dt) < 0);
-	BOOST_CHECK(xmp_datetime_compare(&the_other_dt, NULL) > 0);
+  xmp_string_free(the_prop);
 
-	// testing float get set
-	double float_value = 0.0;
-	BOOST_CHECK(xmp_get_property_float(xmp, NS_CAMERA_RAW_SETTINGS,
-					   "SharpenRadius", &float_value, NULL));
-	BOOST_CHECK(float_value == 1.0);
-	BOOST_CHECK(xmp_set_property_float(xmp, NS_CAMERA_RAW_SETTINGS,
-					   "SharpenRadius", 2.5, 0));
-	BOOST_CHECK(xmp_get_property_float(xmp, NS_CAMERA_RAW_SETTINGS,
-					   "SharpenRadius", &float_value, NULL));
-	BOOST_CHECK(float_value == 2.5);
+  // testing date time get
+  XmpDateTime the_dt;
+  bool ret;
+  BOOST_CHECK(ret = xmp_get_property_date(xmp, NS_EXIF, "DateTimeOriginal",
+                                          &the_dt, NULL));
+  BOOST_CHECK(the_dt.year == 2006);
+  BOOST_CHECK(the_dt.minute == 20);
+  BOOST_CHECK(the_dt.tzSign == XMP_TZ_WEST);
 
+  // testing compare
+  XmpDateTime the_other_dt;
+  BOOST_CHECK(ret = xmp_get_property_date(xmp, NS_EXIF, "DateTimeOriginal",
+                                          &the_other_dt, NULL));
+  BOOST_CHECK(xmp_datetime_compare(&the_dt, &the_other_dt) == 0);
+  the_other_dt.year++;
+  BOOST_CHECK(xmp_datetime_compare(&the_dt, &the_other_dt) < 0);
+  BOOST_CHECK(xmp_datetime_compare(&the_other_dt, &the_dt) > 0);
+  // NULL checks - this is Exempi API
+  BOOST_CHECK(xmp_datetime_compare(NULL, NULL) == 0);
+  BOOST_CHECK(xmp_datetime_compare(NULL, &the_other_dt) < 0);
+  BOOST_CHECK(xmp_datetime_compare(&the_other_dt, NULL) > 0);
 
-	// testing bool get set
-	bool bool_value = true;
-	BOOST_CHECK(xmp_get_property_bool(xmp, NS_CAMERA_RAW_SETTINGS,
-					  "AlreadyApplied", &bool_value, NULL));
-	BOOST_CHECK(!bool_value);
-	BOOST_CHECK(xmp_set_property_bool(xmp, NS_CAMERA_RAW_SETTINGS,
-					  "AlreadyApplied", true, 0));
-	BOOST_CHECK(xmp_get_property_bool(xmp, NS_CAMERA_RAW_SETTINGS,
-					  "AlreadyApplied", &bool_value, NULL));
-	BOOST_CHECK(bool_value);
+  // testing float get set
+  double float_value = 0.0;
+  BOOST_CHECK(xmp_get_property_float(xmp, NS_CAMERA_RAW_SETTINGS,
+                                     "SharpenRadius", &float_value, NULL));
+  BOOST_CHECK(float_value == 1.0);
+  BOOST_CHECK(xmp_set_property_float(xmp, NS_CAMERA_RAW_SETTINGS,
+                                     "SharpenRadius", 2.5, 0));
+  BOOST_CHECK(xmp_get_property_float(xmp, NS_CAMERA_RAW_SETTINGS,
+                                     "SharpenRadius", &float_value, NULL));
+  BOOST_CHECK(float_value == 2.5);
 
-	// testing int get set
-	int32_t value = 0;
-	BOOST_CHECK(xmp_get_property_int32(xmp, NS_EXIF, "MeteringMode",
-									   &value, NULL));
-	BOOST_CHECK(value == 5);
-	BOOST_CHECK(xmp_set_property_int32(xmp, NS_EXIF, "MeteringMode",
-									   10, 0));
-	int64_t valuelarge = 0;
-	BOOST_CHECK(xmp_get_property_int64(xmp, NS_EXIF, "MeteringMode",
-									   &valuelarge, NULL));
-	BOOST_CHECK(valuelarge == 10);
-	BOOST_CHECK(xmp_set_property_int64(xmp, NS_EXIF, "MeteringMode",
-									   32, 0));
+  // testing bool get set
+  bool bool_value = true;
+  BOOST_CHECK(xmp_get_property_bool(xmp, NS_CAMERA_RAW_SETTINGS,
+                                    "AlreadyApplied", &bool_value, NULL));
+  BOOST_CHECK(!bool_value);
+  BOOST_CHECK(xmp_set_property_bool(xmp, NS_CAMERA_RAW_SETTINGS,
+                                    "AlreadyApplied", true, 0));
+  BOOST_CHECK(xmp_get_property_bool(xmp, NS_CAMERA_RAW_SETTINGS,
+                                    "AlreadyApplied", &bool_value, NULL));
+  BOOST_CHECK(bool_value);
 
-	BOOST_CHECK(xmp_get_property_int32(xmp, NS_EXIF, "MeteringMode",
-									   &value, NULL));
-	BOOST_CHECK(value == 32);
+  // testing int get set
+  int32_t value = 0;
+  BOOST_CHECK(
+    xmp_get_property_int32(xmp, NS_EXIF, "MeteringMode", &value, NULL));
+  BOOST_CHECK(value == 5);
+  BOOST_CHECK(xmp_set_property_int32(xmp, NS_EXIF, "MeteringMode", 10, 0));
+  int64_t valuelarge = 0;
+  BOOST_CHECK(
+    xmp_get_property_int64(xmp, NS_EXIF, "MeteringMode", &valuelarge, NULL));
+  BOOST_CHECK(valuelarge == 10);
+  BOOST_CHECK(xmp_set_property_int64(xmp, NS_EXIF, "MeteringMode", 32, 0));
 
+  BOOST_CHECK(
+    xmp_get_property_int32(xmp, NS_EXIF, "MeteringMode", &value, NULL));
+  BOOST_CHECK(value == 32);
 
-	BOOST_CHECK(xmp_free(xmp));
+  BOOST_CHECK(xmp_free(xmp));
 
+  free(buffer);
+  fclose(f);
 
-	free(buffer);
-	fclose(f);
+  xmp_terminate();
 
-	xmp_terminate();
-
-	BOOST_CHECK(!g_lt->check_leaks());
-	BOOST_CHECK(!g_lt->check_errors());
-	return 0;
+  BOOST_CHECK(!g_lt->check_leaks());
+  BOOST_CHECK(!g_lt->check_errors());
+  return 0;
 }
-
-

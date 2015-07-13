@@ -1,7 +1,7 @@
 ---
 Language:        Cpp
 # BasedOnStyle:  Mozilla
-AccessModifierOffset: -2
+AccessModifierOffset: -4
 ConstructorInitializerIndentWidth: 2
 AlignEscapedNewlinesLeft: false
 AlignTrailingComments: true
@@ -38,7 +38,7 @@ PointerAlignment: Left
 SpacesBeforeTrailingComments: 1
 Cpp11BracedListStyle: false
 Standard:        Cpp11
-IndentWidth:     2
+IndentWidth:     4
 TabWidth:        8
 UseTab:          Never
 BreakBeforeBraces: Stroustrup
@@ -48,7 +48,7 @@ SpaceInEmptyParentheses: false
 SpacesInCStyleCastParentheses: false
 SpacesInContainerLiterals: true
 SpaceBeforeAssignmentOperators: true
-ContinuationIndentWidth: 2
+ContinuationIndentWidth: 4
 CommentPragmas:  '^ IWYU pragma:'
 ForEachMacros:   [ foreach, Q_FOREACH, BOOST_FOREACH ]
 SpaceBeforeParens: ControlStatements

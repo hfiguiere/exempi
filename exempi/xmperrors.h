@@ -11,7 +11,7 @@
  *
  * 1 Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2 Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the
@@ -35,55 +35,52 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-
 #ifndef __EXEMPI_XMPERROR_H_
 #define __EXEMPI_XMPERROR_H_
 
-
 enum {
-	/* More or less generic error codes. */
-	XMPErr_Unknown          =   0,
-	XMPErr_TBD              =   -1,
-	XMPErr_Unavailable      =   -2,
-	XMPErr_BadObject        =   -3,
-	XMPErr_BadParam         =   -4,
-	XMPErr_BadValue         =   -5,
-	XMPErr_AssertFailure    =   -6,
-	XMPErr_EnforceFailure   =   -7,
-	XMPErr_Unimplemented    =   -8,
-	XMPErr_InternalFailure  =   -9,
-	XMPErr_Deprecated       =  -10,
-	XMPErr_ExternalFailure  =  -11,
-	XMPErr_UserAbort        =  -12,
-	XMPErr_StdException     =  -13,
-	XMPErr_UnknownException =  -14,
-	XMPErr_NoMemory         =  -15,
-	
-	/* More specific parameter error codes.  */
-	XMPErr_BadSchema        = -101,
-	XMPErr_BadXPath         = -102,
-	XMPErr_BadOptions       = -103,
-	XMPErr_BadIndex         = -104,
-	XMPErr_BadIterPosition  = -105,
-	XMPErr_BadParse         = -106,
-	XMPErr_BadSerialize     = -107,
-	XMPErr_BadFileFormat    = -108,
-	XMPErr_NoFileHandler    = -109,
-	XMPErr_TooLargeForJPEG  = -110,
-	
-	/* File format and internal structure error codes. */
-	XMPErr_BadXML           = -201,
-	XMPErr_BadRDF           = -202,
-	XMPErr_BadXMP           = -203,
-	XMPErr_EmptyIterator    = -204,
-	XMPErr_BadUnicode       = -205,
-	XMPErr_BadTIFF          = -206,
-	XMPErr_BadJPEG          = -207,
-	XMPErr_BadPSD           = -208,
-	XMPErr_BadPSIR          = -209,
-	XMPErr_BadIPTC          = -210,
-	XMPErr_BadMPEG          = -211
+    /* More or less generic error codes. */
+    XMPErr_Unknown = 0,
+    XMPErr_TBD = -1,
+    XMPErr_Unavailable = -2,
+    XMPErr_BadObject = -3,
+    XMPErr_BadParam = -4,
+    XMPErr_BadValue = -5,
+    XMPErr_AssertFailure = -6,
+    XMPErr_EnforceFailure = -7,
+    XMPErr_Unimplemented = -8,
+    XMPErr_InternalFailure = -9,
+    XMPErr_Deprecated = -10,
+    XMPErr_ExternalFailure = -11,
+    XMPErr_UserAbort = -12,
+    XMPErr_StdException = -13,
+    XMPErr_UnknownException = -14,
+    XMPErr_NoMemory = -15,
+
+    /* More specific parameter error codes.  */
+    XMPErr_BadSchema = -101,
+    XMPErr_BadXPath = -102,
+    XMPErr_BadOptions = -103,
+    XMPErr_BadIndex = -104,
+    XMPErr_BadIterPosition = -105,
+    XMPErr_BadParse = -106,
+    XMPErr_BadSerialize = -107,
+    XMPErr_BadFileFormat = -108,
+    XMPErr_NoFileHandler = -109,
+    XMPErr_TooLargeForJPEG = -110,
+
+    /* File format and internal structure error codes. */
+    XMPErr_BadXML = -201,
+    XMPErr_BadRDF = -202,
+    XMPErr_BadXMP = -203,
+    XMPErr_EmptyIterator = -204,
+    XMPErr_BadUnicode = -205,
+    XMPErr_BadTIFF = -206,
+    XMPErr_BadJPEG = -207,
+    XMPErr_BadPSD = -208,
+    XMPErr_BadPSIR = -209,
+    XMPErr_BadIPTC = -210,
+    XMPErr_BadMPEG = -211
 };
 
 #endif

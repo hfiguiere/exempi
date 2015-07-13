@@ -10,7 +10,7 @@
  *
  * 1 Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2 Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the
@@ -48,60 +48,55 @@
 
 using boost::unit_test::test_suite;
 
-
-
-//void test_serialize()
+// void test_serialize()
 int test_main(int argc, char *argv[])
 {
-	prepare_test(argc, argv, "test1.xmp");
+  prepare_test(argc, argv, "test1.xmp");
 
-	size_t len;
-	char * buffer;
-	FILE * f = fopen(g_testfile.c_str(), "rb");
-	
- 	fseek(f, 0, SEEK_END);
-	len = ftell(f);
- 	fseek(f, 0, SEEK_SET);
+  size_t len;
+  char *buffer;
+  FILE *f = fopen(g_testfile.c_str(), "rb");
 
-	buffer = (char*)malloc(len + 1);
-	size_t rlen = fread(buffer, 1, len, f);
+  fseek(f, 0, SEEK_END);
+  len = ftell(f);
+  fseek(f, 0, SEEK_SET);
 
-	BOOST_CHECK(rlen == len);
-	BOOST_CHECK(len != 0);
-	buffer[rlen] = 0;
+  buffer = (char *)malloc(len + 1);
+  size_t rlen = fread(buffer, 1, len, f);
 
-	BOOST_CHECK(xmp_init());
-	BOOST_CHECK(xmp_get_error() == 0);
+  BOOST_CHECK(rlen == len);
+  BOOST_CHECK(len != 0);
+  buffer[rlen] = 0;
 
-	XmpPtr xmp = xmp_new_empty();
-	BOOST_CHECK(xmp_get_error() == 0);
+  BOOST_CHECK(xmp_init());
+  BOOST_CHECK(xmp_get_error() == 0);
 
-	BOOST_CHECK(xmp_parse(xmp, buffer, len));
-	BOOST_CHECK(xmp_get_error() == 0);
+  XmpPtr xmp = xmp_new_empty();
+  BOOST_CHECK(xmp_get_error() == 0);
 
-	std::string b1(buffer);
-	std::string b2;
-	XmpStringPtr output = xmp_string_new();
+  BOOST_CHECK(xmp_parse(xmp, buffer, len));
+  BOOST_CHECK(xmp_get_error() == 0);
 
-	BOOST_CHECK(xmp_serialize_and_format(xmp, output, 
-										 XMP_SERIAL_OMITPACKETWRAPPER, 
-										 0, "\n", " ", 0));
-	BOOST_CHECK(xmp_get_error() == 0);
-	b2 = xmp_string_cstr(output);
-	// find a way to compare that.
-//	BOOST_CHECK_EQUAL(b1, b2);
-	
-	xmp_string_free(output);
-	BOOST_CHECK(xmp_free(xmp));
+  std::string b1(buffer);
+  std::string b2;
+  XmpStringPtr output = xmp_string_new();
 
-	free(buffer);
-	fclose(f);
+  BOOST_CHECK(xmp_serialize_and_format(
+    xmp, output, XMP_SERIAL_OMITPACKETWRAPPER, 0, "\n", " ", 0));
+  BOOST_CHECK(xmp_get_error() == 0);
+  b2 = xmp_string_cstr(output);
+  // find a way to compare that.
+  //	BOOST_CHECK_EQUAL(b1, b2);
 
-	xmp_terminate();
+  xmp_string_free(output);
+  BOOST_CHECK(xmp_free(xmp));
 
-	BOOST_CHECK(!g_lt->check_leaks());
-	BOOST_CHECK(!g_lt->check_errors());
-	return 0;
+  free(buffer);
+  fclose(f);
+
+  xmp_terminate();
+
+  BOOST_CHECK(!g_lt->check_leaks());
+  BOOST_CHECK(!g_lt->check_errors());
+  return 0;
 }
-
-

@@ -10,7 +10,7 @@
  *
  * 1 Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2 Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the
@@ -36,95 +36,83 @@
 
 #include <cstdio>
 #include <cstdlib>
-     
+
 #include <boost/test/unit_test.hpp>
 
 #include "utils.h"
 
 std::string g_testfile;
 std::string g_src_testdir;
-boost::scoped_ptr<LeakTracker> g_lt(new LeakTracker) ;
+boost::scoped_ptr<LeakTracker> g_lt(new LeakTracker);
 
-void prepare_test(int argc, char * argv[], const char *filename)
+void prepare_test(int argc, char *argv[], const char *filename)
 {
-	if (argc == 1) {
-		// no argument, lets run like we are in "check"
-		const char * srcdir = getenv("TEST_DIR");
-		
-		BOOST_ASSERT(srcdir != NULL);
-		g_src_testdir = std::string(srcdir) + "/";
-		g_testfile = g_src_testdir + filename;
-	}
-	else {
-		g_src_testdir = "./";
-		g_testfile = argv[1];
-	}
+  if (argc == 1) {
+    // no argument, lets run like we are in "check"
+    const char *srcdir = getenv("TEST_DIR");
+
+    BOOST_ASSERT(srcdir != NULL);
+    g_src_testdir = std::string(srcdir) + "/";
+    g_testfile = g_src_testdir + filename;
+  } else {
+    g_src_testdir = "./";
+    g_testfile = argv[1];
+  }
 }
 
-
-bool copy_file(const std::string & source, const std::string & dest)
+bool copy_file(const std::string &source, const std::string &dest)
 {
-	std::string command = "cp ";
-	command += source + " " + dest;
-	return (system(command.c_str()) >= 0);
+  std::string command = "cp ";
+  command += source + " " + dest;
+  return (system(command.c_str()) >= 0);
 }
-
 
 #ifdef HAVE_VALGRIND_MEMCHECK_H
-# include <valgrind/memcheck.h>
-# include <valgrind/valgrind.h>
-# define CC_EXTENSION __extension__
+#include <valgrind/memcheck.h>
+#include <valgrind/valgrind.h>
+#define CC_EXTENSION __extension__
 #else
-# define VALGRIND_COUNT_ERRORS 0
-# define VALGRIND_DO_LEAK_CHECK
-# define VALGRIND_COUNT_LEAKS(a,b,c,d) (a=b=c=d=0)
-# define CC_EXTENSION
+#define VALGRIND_COUNT_ERRORS 0
+#define VALGRIND_DO_LEAK_CHECK
+#define VALGRIND_COUNT_LEAKS(a, b, c, d) (a = b = c = d = 0)
+#define CC_EXTENSION
 #endif
 
-
-
 LeakTracker::LeakTracker()
-	: m_leaks(0),
-	  m_dubious(0),
-	  m_reachable(0),
-	  m_suppressed(0),
-	  m_errors(0)
+  : m_leaks(0), m_dubious(0), m_reachable(0), m_suppressed(0), m_errors(0)
 {
-
 }
-
 
 LeakTracker::~LeakTracker()
 {
-	printf("LeakTracker: leaked = %d, errors = %d\n", m_leaks, m_errors);
+  printf("LeakTracker: leaked = %d, errors = %d\n", m_leaks, m_errors);
 }
-
 
 int LeakTracker::check_leaks()
 {
-    int leaked = 0;
-	int dubious = 0;
-	int reachable = 0;
-	int suppressed = 0;
+  int leaked = 0;
+  int dubious = 0;
+  int reachable = 0;
+  int suppressed = 0;
 
-    VALGRIND_DO_LEAK_CHECK;
-    VALGRIND_COUNT_LEAKS(leaked, dubious, reachable, suppressed);
-	printf("memleaks: sure:%d dubious:%d reachable:%d suppress:%d\n",
-		   leaked, dubious, reachable, suppressed);
-	bool has_leaks = (m_leaks != leaked);
+  VALGRIND_DO_LEAK_CHECK;
+  VALGRIND_COUNT_LEAKS(leaked, dubious, reachable, suppressed);
+  printf("memleaks: sure:%d dubious:%d reachable:%d suppress:%d\n", leaked,
+         dubious, reachable, suppressed);
+  bool has_leaks = (m_leaks != leaked);
 
-	m_leaks = leaked;
-	m_dubious = dubious;
-	m_reachable = reachable;
-	m_suppressed = suppressed;
+  m_leaks = leaked;
+  m_dubious = dubious;
+  m_reachable = reachable;
+  m_suppressed = suppressed;
 
-	return has_leaks;
+  return has_leaks;
 }
 
 int LeakTracker::check_errors()
 {
-	int errors = (int)(CC_EXTENSION VALGRIND_COUNT_ERRORS);
-	bool has_new_errors = (m_errors != errors);
-	m_errors = errors;
-    return has_new_errors;
+  int errors = (int)(CC_EXTENSION VALGRIND_COUNT_ERRORS);
+  bool has_new_errors = (m_errors != errors);
+  m_errors = errors;
+  return has_new_errors;
 }

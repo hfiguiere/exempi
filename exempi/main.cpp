@@ -1,4 +1,5 @@
-/* -*- tab-width:2; c-basic-offset:2; indent-tabs-mode:nil; c-file-style:"stroustrup" -*- */
+/* -*- tab-width:4; c-basic-offset:4; indent-tabs-mode:nil;
+ * c-file-style:"stroustrup" -*- */
 /*
  * exempi - exempi.cpp
  *
@@ -10,7 +11,7 @@
  *
  * 1 Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2 Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the
@@ -46,309 +47,311 @@
 #include <exempi/xmp.h>
 #include <exempi/xmp++.hpp>
 
+enum { ACTION_NONE = 0, ACTION_SET, ACTION_GET };
 
-enum {
-	ACTION_NONE = 0,
-	ACTION_SET,
-	ACTION_GET
-};
-
-static void process_file(const char * filename, bool no_reconcile,
-                         bool is_an_xmp,
-                         bool dump_xml, bool write_in_place,
-                         int action, const std::string & value_name,
-                         const std::string & prop_value, 
-                         const std::string & output);
-
+static void process_file(const char *filename, bool no_reconcile,
+                         bool is_an_xmp, bool dump_xml, bool write_in_place,
+                         int action, const std::string &value_name,
+                         const std::string &prop_value,
+                         const std::string &output);
 
 /** fatal error in argument. Display and quit. */
-static void fatal_error(const char * error)
+static void fatal_error(const char *error)
 {
-	fprintf(stderr, "ERROR: %s\n", error);
-	exit(128);
+    fprintf(stderr, "ERROR: %s\n", error);
+    exit(128);
 }
-
 
 /** Print the usage, and quit. Exit code is 255.
  */
 static void usage()
 {
-	fprintf(stderr, "Exempi version %s\n", VERSION);
-	fprintf(stderr, "exempi { -h | [ -R ] [ -x ] [ { -w | -o <file> } ] [ { -g <prop_name> | -s <prop_name> -v <value> }  ] } <files>\n");
-	fprintf(stderr, "\t-h: show this help\n");
-	fprintf(stderr, "\t-R: don't reconcile\n");
-	fprintf(stderr, "\t-x: dump XML packet.\n");
-	fprintf(stderr, "\t-X: file(s) is XMP\n");
-	fprintf(stderr, "\t-w: write in place. Only for -s. Not compatible with -o.\n");
-	fprintf(stderr, "\t-o <file>: file to write the output to.\n");
-	fprintf(stderr, "\t-n <uri> <prefix>: create a new namespace.\n");
-	fprintf(stderr, "\t-g <prop_name>: retrieve the value with prop_name.\n");
-	fprintf(stderr, "\t-s <prop_name> -v <value>: retrieve or get the value.\n");
-	fprintf(stderr, "\t<files> the files to read from.\n");
+    fprintf(stderr, "Exempi version %s\n", VERSION);
+    fprintf(stderr, "exempi { -h | [ -R ] [ -x ] [ { -w | -o <file> } ] [ { -g "
+                    "<prop_name> | -s <prop_name> -v <value> }  ] } <files>\n");
+    fprintf(stderr, "\t-h: show this help\n");
+    fprintf(stderr, "\t-R: don't reconcile\n");
+    fprintf(stderr, "\t-x: dump XML packet.\n");
+    fprintf(stderr, "\t-X: file(s) is XMP\n");
+    fprintf(stderr,
+            "\t-w: write in place. Only for -s. Not compatible with -o.\n");
+    fprintf(stderr, "\t-o <file>: file to write the output to.\n");
+    fprintf(stderr, "\t-n <uri> <prefix>: create a new namespace.\n");
+    fprintf(stderr, "\t-g <prop_name>: retrieve the value with prop_name.\n");
+    fprintf(stderr,
+            "\t-s <prop_name> -v <value>: retrieve or get the value.\n");
+    fprintf(stderr, "\t<files> the files to read from.\n");
 
-	exit(255);
+    exit(255);
 }
 
 int main(int argc, char **argv)
 {
-	int ch;
+    int ch;
 
-	int action = ACTION_NONE;
-	bool dont_reconcile = false;
-	bool write_in_place = false;
-	bool dump_xml = false;
-	bool is_an_xmp = false;
-	std::string output_file;
-	std::string value_name;
-	std::string prop_value;
-	std::vector<std::pair<std::string, std::string> > namespaces;
+    int action = ACTION_NONE;
+    bool dont_reconcile = false;
+    bool write_in_place = false;
+    bool dump_xml = false;
+    bool is_an_xmp = false;
+    std::string output_file;
+    std::string value_name;
+    std::string prop_value;
+    std::vector<std::pair<std::string, std::string>> namespaces;
 
-	while((ch = getopt(argc, argv, "hRo:wxXn:g:s:v:")) != -1) {
-		switch(ch) {
+    while ((ch = getopt(argc, argv, "hRo:wxXn:g:s:v:")) != -1) {
+        switch (ch) {
 
-		case 'R':
-			dont_reconcile = true;
-			break;
-		case 'o':
-			output_file = optarg;
-			break;
-		case 'w':
-			write_in_place = true;
-			break;
-		case 'x':
-			dump_xml = true;
-			break;
-		case 'X':
-			is_an_xmp = true;
-			break;
-		case 'g':
-			if(!value_name.empty()) {
-				usage();
-			}
-			action = ACTION_GET;
-			value_name = optarg;
-			break;
-		case 'n':
-		{
-			std::string ns = optarg;
-			std::string prefix = argv[optind];
-			if (prefix[0] && prefix[0] != '-') {
-				namespaces.push_back(make_pair(ns, prefix));
-				optind++;
-			}
-			break;
-		}
-		case 's':
-			if(!value_name.empty()) {
-				usage();
-			}
-			action = ACTION_SET;
-			value_name = optarg;
-			break;
-		case 'v':
-			if(action != ACTION_SET || value_name.empty()) {
-				fatal_error("-v needs to come after -s");
-			}
-			prop_value = optarg;
-			break;
-		case 'h':
-		case '?':
-			usage();
-			break;
-		}
-	}
+        case 'R':
+            dont_reconcile = true;
+            break;
+        case 'o':
+            output_file = optarg;
+            break;
+        case 'w':
+            write_in_place = true;
+            break;
+        case 'x':
+            dump_xml = true;
+            break;
+        case 'X':
+            is_an_xmp = true;
+            break;
+        case 'g':
+            if (!value_name.empty()) {
+                usage();
+            }
+            action = ACTION_GET;
+            value_name = optarg;
+            break;
+        case 'n': {
+            std::string ns = optarg;
+            std::string prefix = argv[optind];
+            if (prefix[0] && prefix[0] != '-') {
+                namespaces.push_back(make_pair(ns, prefix));
+                optind++;
+            }
+            break;
+        }
+        case 's':
+            if (!value_name.empty()) {
+                usage();
+            }
+            action = ACTION_SET;
+            value_name = optarg;
+            break;
+        case 'v':
+            if (action != ACTION_SET || value_name.empty()) {
+                fatal_error("-v needs to come after -s");
+            }
+            prop_value = optarg;
+            break;
+        case 'h':
+        case '?':
+            usage();
+            break;
+        }
+    }
 
-	argc -= optind;
-  argv += optind;
+    argc -= optind;
+    argv += optind;
 
-  if(optind == 1 || argc == 0) {
-    fatal_error("Missing input.");
-    return 1;
-  }
+    if (optind == 1 || argc == 0) {
+        fatal_error("Missing input.");
+        return 1;
+    }
 
-  if(write_in_place && (!output_file.empty() || action != ACTION_SET)) {
-    fatal_error("Need to write in place and output file are mutually exclusive.");
-    return 1;
-  }
+    if (write_in_place && (!output_file.empty() || action != ACTION_SET)) {
+        fatal_error(
+            "Need to write in place and output file are mutually exclusive.");
+        return 1;
+    }
 
-  if(action == ACTION_SET && (!write_in_place && argc > 1)) {
-    fatal_error("Need to write in place for more than one file.");
-    return 1;
-  }
+    if (action == ACTION_SET && (!write_in_place && argc > 1)) {
+        fatal_error("Need to write in place for more than one file.");
+        return 1;
+    }
 
-	xmp_init();
-	if(!namespaces.empty()) {
-    for (std::vector<std::pair<std::string, std::string> >::const_iterator iter
-           = namespaces.begin(); iter != namespaces.end();
-         ++iter) {
-			xmp_register_namespace(iter->first.c_str(),
-                             iter->second.c_str(), NULL);
-		}
-	}
-	while(argc) {
+    xmp_init();
+    if (!namespaces.empty()) {
+        for (std::vector<std::pair<std::string, std::string>>::const_iterator
+                 iter = namespaces.begin();
+             iter != namespaces.end(); ++iter) {
+            xmp_register_namespace(iter->first.c_str(), iter->second.c_str(),
+                                   NULL);
+        }
+    }
+    while (argc) {
 
-		process_file(*argv, dont_reconcile, is_an_xmp, write_in_place,
-                 dump_xml, action, value_name, prop_value, output_file);
-		argc--;
-		argv++;
-	}
+        process_file(*argv, dont_reconcile, is_an_xmp, write_in_place, dump_xml,
+                     action, value_name, prop_value, output_file);
+        argc--;
+        argv++;
+    }
 
-  xmp_terminate();
-  return 0;
+    xmp_terminate();
+    return 0;
 }
 
-static XmpPtr get_xmp_from_sidecar(const char * filename, bool is_an_xmp)
+static XmpPtr get_xmp_from_sidecar(const char *filename, bool is_an_xmp)
 {
-	struct stat s;
+    struct stat s;
 
-	if (stat(filename, &s) == -1) {
-		perror("exempi:");
-		return NULL;
-	}
+    if (stat(filename, &s) == -1) {
+        perror("exempi:");
+        return NULL;
+    }
 
-	off_t size = s.st_size;
-	FILE* file = fopen(filename, "r");
-	if (!file) {
-		perror("exempi:");
-		return NULL;
-	}
+    off_t size = s.st_size;
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        perror("exempi:");
+        return NULL;
+    }
 
-	char *buffer = (char*)malloc(size);
-	size_t len = fread(buffer, 1, size, file);
+    char *buffer = (char *)malloc(size);
+    size_t len = fread(buffer, 1, size, file);
 
-	XmpPtr xmp = xmp_new_empty();
-	if(!xmp_parse(xmp, buffer, len)) {
-		xmp_free(xmp);
-		xmp = NULL;
-	}
-	free(buffer);
-	fclose(file);
-	return xmp;
+    XmpPtr xmp = xmp_new_empty();
+    if (!xmp_parse(xmp, buffer, len)) {
+        xmp_free(xmp);
+        xmp = NULL;
+    }
+    free(buffer);
+    fclose(file);
+    return xmp;
 }
 
 /** Helper to get the XMP for the file */
-static XmpPtr get_xmp_from_file(const char * filename, bool no_reconcile, bool is_an_xmp)
+static XmpPtr get_xmp_from_file(const char *filename, bool no_reconcile,
+                                bool is_an_xmp)
 {
-	if (is_an_xmp) {
-		return get_xmp_from_sidecar(filename, is_an_xmp);
-	}
+    if (is_an_xmp) {
+        return get_xmp_from_sidecar(filename, is_an_xmp);
+    }
 
-	xmp::ScopedPtr<XmpFilePtr> f(xmp_files_open_new(filename,
-					(XmpOpenFileOptions)(XMP_OPEN_READ | (no_reconcile ? XMP_OPEN_ONLYXMP : 0))));
-	if(f) {
-		XmpPtr xmp = xmp_files_get_new_xmp(f);
-		xmp_files_close(f, XMP_CLOSE_NOOPTION);
-		return xmp;
-	}
-	return NULL;
+    xmp::ScopedPtr<XmpFilePtr> f(xmp_files_open_new(
+        filename, (XmpOpenFileOptions)(XMP_OPEN_READ |
+                                       (no_reconcile ? XMP_OPEN_ONLYXMP : 0))));
+    if (f) {
+        XmpPtr xmp = xmp_files_get_new_xmp(f);
+        xmp_files_close(f, XMP_CLOSE_NOOPTION);
+        return xmp;
+    }
+    return NULL;
 }
 
 /** dump the XMP xml to the output IO */
-static void dump_xmp(const char *filename, bool no_reconcile,
-		     bool is_an_xmp, FILE *outio)
+static void dump_xmp(const char *filename, bool no_reconcile, bool is_an_xmp,
+                     FILE *outio)
 {
-	printf("dump_xmp for file %s\n", filename);
-	xmp::ScopedPtr<XmpPtr> xmp(get_xmp_from_file(filename, no_reconcile, is_an_xmp));
+    printf("dump_xmp for file %s\n", filename);
+    xmp::ScopedPtr<XmpPtr> xmp(
+        get_xmp_from_file(filename, no_reconcile, is_an_xmp));
 
-	xmp::ScopedPtr<XmpStringPtr> output(xmp_string_new());
+    xmp::ScopedPtr<XmpStringPtr> output(xmp_string_new());
 
-	xmp_serialize_and_format(xmp, output,
-							 XMP_SERIAL_OMITPACKETWRAPPER,
-							 0, "\n", " ", 0);
+    xmp_serialize_and_format(xmp, output, XMP_SERIAL_OMITPACKETWRAPPER, 0, "\n",
+                             " ", 0);
 
-	fprintf(outio, "%s", xmp_string_cstr(output));
+    fprintf(outio, "%s", xmp_string_cstr(output));
 }
 
 /** get an xmp prop and dump it to the output IO */
-static void get_xmp_prop(const char * filename, const std::string & value_name,
+static void get_xmp_prop(const char *filename, const std::string &value_name,
                          bool no_reconcile, bool is_an_xmp, FILE *outio)
 {
-	xmp::ScopedPtr<XmpPtr> xmp(get_xmp_from_file(filename, no_reconcile, is_an_xmp));
+    xmp::ScopedPtr<XmpPtr> xmp(
+        get_xmp_from_file(filename, no_reconcile, is_an_xmp));
 
-	std::string prefix;
-	size_t idx = value_name.find(':');
-	if(idx != std::string::npos) {
-		prefix = std::string(value_name, 0, idx);
-	}
+    std::string prefix;
+    size_t idx = value_name.find(':');
+    if (idx != std::string::npos) {
+        prefix = std::string(value_name, 0, idx);
+    }
 
-	xmp::ScopedPtr<XmpStringPtr> property(xmp_string_new());
-	xmp::ScopedPtr<XmpStringPtr> ns(xmp_string_new());
-	xmp_prefix_namespace_uri(prefix.c_str(), ns);
-	xmp_get_property(xmp, xmp_string_cstr(ns), value_name.c_str(), property, NULL);
-	fprintf(outio, "%s\n", xmp_string_cstr(property));
+    xmp::ScopedPtr<XmpStringPtr> property(xmp_string_new());
+    xmp::ScopedPtr<XmpStringPtr> ns(xmp_string_new());
+    xmp_prefix_namespace_uri(prefix.c_str(), ns);
+    xmp_get_property(xmp, xmp_string_cstr(ns), value_name.c_str(), property,
+                     NULL);
+    fprintf(outio, "%s\n", xmp_string_cstr(property));
 }
 
-
-static void set_xmp_prop(const char * filename, const std::string & value_name, 
-			 const std::string & prop_value,
-			 bool no_reconcile, bool is_an_xmp, bool write_in_place, FILE *outio)
+static void set_xmp_prop(const char *filename, const std::string &value_name,
+                         const std::string &prop_value, bool no_reconcile,
+                         bool is_an_xmp, bool write_in_place, FILE *outio)
 {
-	xmp::ScopedPtr<XmpPtr> xmp(get_xmp_from_file(filename, no_reconcile, is_an_xmp));
+    xmp::ScopedPtr<XmpPtr> xmp(
+        get_xmp_from_file(filename, no_reconcile, is_an_xmp));
 
-	std::string prefix;
-	size_t idx = value_name.find(':');
-	if(idx != std::string::npos) {
-		prefix = std::string(value_name, 0, idx);
-	}
+    std::string prefix;
+    size_t idx = value_name.find(':');
+    if (idx != std::string::npos) {
+        prefix = std::string(value_name, 0, idx);
+    }
 
-	xmp::ScopedPtr<XmpStringPtr> ns(xmp_string_new());
-	xmp_prefix_namespace_uri(prefix.c_str(), ns);
-	if(!xmp_set_property(xmp, xmp_string_cstr(ns), value_name.c_str() + idx + 1, prop_value.c_str(), 0)) {
-		fprintf(stderr, "set error = %d\n", xmp_get_error());
-	}
+    xmp::ScopedPtr<XmpStringPtr> ns(xmp_string_new());
+    xmp_prefix_namespace_uri(prefix.c_str(), ns);
+    if (!xmp_set_property(xmp, xmp_string_cstr(ns),
+                          value_name.c_str() + idx + 1, prop_value.c_str(),
+                          0)) {
+        fprintf(stderr, "set error = %d\n", xmp_get_error());
+    }
 
-	if(write_in_place) {
-		xmp::ScopedPtr<XmpFilePtr> f(xmp_files_open_new(filename,
-						(XmpOpenFileOptions)(XMP_OPEN_FORUPDATE
-							| (no_reconcile ? XMP_OPEN_ONLYXMP : 0))));
+    if (write_in_place) {
+        xmp::ScopedPtr<XmpFilePtr> f(xmp_files_open_new(
+            filename,
+            (XmpOpenFileOptions)(XMP_OPEN_FORUPDATE |
+                                 (no_reconcile ? XMP_OPEN_ONLYXMP : 0))));
 
-		if(!xmp_files_can_put_xmp(f, xmp)) {
-			fprintf(stderr, "can put xmp error = %d\n", xmp_get_error());
-		}
-		if(!xmp_files_put_xmp(f, xmp)) {
-			fprintf(stderr, "put xmp error = %d\n", xmp_get_error());
-		}
-		if(!xmp_files_close(f, XMP_CLOSE_SAFEUPDATE)) {
-			fprintf(stderr, "close error = %d\n", xmp_get_error());
-		}
-	}
+        if (!xmp_files_can_put_xmp(f, xmp)) {
+            fprintf(stderr, "can put xmp error = %d\n", xmp_get_error());
+        }
+        if (!xmp_files_put_xmp(f, xmp)) {
+            fprintf(stderr, "put xmp error = %d\n", xmp_get_error());
+        }
+        if (!xmp_files_close(f, XMP_CLOSE_SAFEUPDATE)) {
+            fprintf(stderr, "close error = %d\n", xmp_get_error());
+        }
+    }
 }
-
 
 /** process a file with all the options */
-static void process_file(const char * filename, bool no_reconcile, bool is_an_xmp,
-			 bool write_in_place, bool dump_xml,
-			 int action, const std::string & value_name,
-			 const std::string & prop_value, const std::string & output)
+static void process_file(const char *filename, bool no_reconcile,
+                         bool is_an_xmp, bool write_in_place, bool dump_xml,
+                         int action, const std::string &value_name,
+                         const std::string &prop_value,
+                         const std::string &output)
 {
-	printf("processing file %s\n", filename);
+    printf("processing file %s\n", filename);
 
-	FILE *outio = stdout;
+    FILE *outio = stdout;
 
-	bool needclose = false;
-	if(!output.empty()) {
-		outio = fopen(output.c_str(), "a+");
-		needclose = true;
-	}
+    bool needclose = false;
+    if (!output.empty()) {
+        outio = fopen(output.c_str(), "a+");
+        needclose = true;
+    }
 
-	switch (action) {
-	case ACTION_NONE:
-		if(dump_xml) {
-			dump_xmp(filename, no_reconcile, is_an_xmp, outio);
-		}
-		break;
-	case ACTION_SET:
-		set_xmp_prop(filename, value_name, prop_value, no_reconcile, is_an_xmp,
-			     write_in_place, outio);
-		break;
-	case ACTION_GET:
-		get_xmp_prop(filename, value_name, no_reconcile, is_an_xmp, outio);
-		break;
-	default:
-		break;
-	}
+    switch (action) {
+    case ACTION_NONE:
+        if (dump_xml) {
+            dump_xmp(filename, no_reconcile, is_an_xmp, outio);
+        }
+        break;
+    case ACTION_SET:
+        set_xmp_prop(filename, value_name, prop_value, no_reconcile, is_an_xmp,
+                     write_in_place, outio);
+        break;
+    case ACTION_GET:
+        get_xmp_prop(filename, value_name, no_reconcile, is_an_xmp, outio);
+        break;
+    default:
+        break;
+    }
 
-	if(needclose) {
-		fclose(outio);
-	}
+    if (needclose) {
+        fclose(outio);
+    }
 }

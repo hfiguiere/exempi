@@ -10,7 +10,7 @@
  *
  * 1 Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2 Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the
@@ -49,74 +49,72 @@
 
 using boost::unit_test::test_suite;
 
-
-//void test_xmpfiles_write()
+// void test_xmpfiles_write()
 int test_main(int argc, char *argv[])
 {
-	prepare_test(argc, argv, "../../samples/testfiles/BlueSquare.jpg");
+  prepare_test(argc, argv, "../../samples/testfiles/BlueSquare.jpg");
 
-	BOOST_CHECK(xmp_init());
+  BOOST_CHECK(xmp_init());
 
+  BOOST_CHECK(xmp_files_check_file_format(g_testfile.c_str()) == XMP_FT_JPEG);
+  XmpFilePtr f = xmp_files_open_new(g_testfile.c_str(), XMP_OPEN_READ);
 
-	BOOST_CHECK(xmp_files_check_file_format(g_testfile.c_str()) == XMP_FT_JPEG);
-	XmpFilePtr f = xmp_files_open_new(g_testfile.c_str(), XMP_OPEN_READ);
+  BOOST_CHECK(f != NULL);
+  if (f == NULL) {
+    return 1;
+  }
 
-	BOOST_CHECK(f != NULL);
-	if (f == NULL) {
-		return 1;
-	}
+  XmpPtr xmp = xmp_files_get_new_xmp(f);
+  BOOST_CHECK(xmp != NULL);
 
-	XmpPtr xmp = xmp_files_get_new_xmp(f);
-	BOOST_CHECK(xmp != NULL);
+  BOOST_CHECK(xmp_files_free(f));
 
-	BOOST_CHECK(xmp_files_free(f));
+  BOOST_CHECK(copy_file(g_testfile, "test.jpg"));
+  BOOST_CHECK(chmod("test.jpg", S_IRUSR | S_IWUSR) == 0);
 
-	BOOST_CHECK(copy_file(g_testfile, "test.jpg"));
-	BOOST_CHECK(chmod("test.jpg", S_IRUSR|S_IWUSR) == 0);
+  BOOST_CHECK(xmp_files_check_file_format("test.jpg") == XMP_FT_JPEG);
 
-	BOOST_CHECK(xmp_files_check_file_format("test.jpg") == XMP_FT_JPEG);
-	
-	f = xmp_files_open_new("test.jpg", XMP_OPEN_FORUPDATE);
+  f = xmp_files_open_new("test.jpg", XMP_OPEN_FORUPDATE);
 
-	BOOST_CHECK(f != NULL);
-	if (f == NULL) {
-		return 2;
-	}
+  BOOST_CHECK(f != NULL);
+  if (f == NULL) {
+    return 2;
+  }
 
-	BOOST_CHECK(xmp_set_property(xmp, NS_PHOTOSHOP, "ICCProfile", "foo", 0));
+  BOOST_CHECK(xmp_set_property(xmp, NS_PHOTOSHOP, "ICCProfile", "foo", 0));
 
-	BOOST_CHECK(xmp_files_can_put_xmp(f, xmp));
-	BOOST_CHECK(xmp_files_put_xmp(f, xmp));
+  BOOST_CHECK(xmp_files_can_put_xmp(f, xmp));
+  BOOST_CHECK(xmp_files_put_xmp(f, xmp));
 
-	BOOST_CHECK(xmp_free(xmp));
-	BOOST_CHECK(xmp_files_close(f, XMP_CLOSE_SAFEUPDATE));
-	BOOST_CHECK(xmp_files_free(f));
+  BOOST_CHECK(xmp_free(xmp));
+  BOOST_CHECK(xmp_files_close(f, XMP_CLOSE_SAFEUPDATE));
+  BOOST_CHECK(xmp_files_free(f));
 
-	f = xmp_files_open_new("test.jpg", XMP_OPEN_READ);
+  f = xmp_files_open_new("test.jpg", XMP_OPEN_READ);
 
-	BOOST_CHECK(f != NULL);
-	if (f == NULL) {
-		return 3;
-	}
-	xmp = xmp_files_get_new_xmp(f);
-	BOOST_CHECK(xmp != NULL);
+  BOOST_CHECK(f != NULL);
+  if (f == NULL) {
+    return 3;
+  }
+  xmp = xmp_files_get_new_xmp(f);
+  BOOST_CHECK(xmp != NULL);
 
-	XmpStringPtr the_prop = xmp_string_new();
-	BOOST_CHECK(xmp_get_property(xmp, NS_PHOTOSHOP, "ICCProfile", the_prop, NULL));
-	BOOST_CHECK(strcmp("foo", xmp_string_cstr(the_prop)) == 0); 
+  XmpStringPtr the_prop = xmp_string_new();
+  BOOST_CHECK(
+    xmp_get_property(xmp, NS_PHOTOSHOP, "ICCProfile", the_prop, NULL));
+  BOOST_CHECK(strcmp("foo", xmp_string_cstr(the_prop)) == 0);
 
-	xmp_string_free(the_prop);
+  xmp_string_free(the_prop);
 
-	BOOST_CHECK(xmp_free(xmp));
-	BOOST_CHECK(xmp_files_close(f, XMP_CLOSE_NOOPTION));
-	BOOST_CHECK(xmp_files_free(f));
+  BOOST_CHECK(xmp_free(xmp));
+  BOOST_CHECK(xmp_files_close(f, XMP_CLOSE_NOOPTION));
+  BOOST_CHECK(xmp_files_free(f));
 
-//	unlink("test.jpg");
-	xmp_terminate();
+  //	unlink("test.jpg");
+  xmp_terminate();
 
-	BOOST_CHECK(!g_lt->check_leaks());
-	BOOST_CHECK(!g_lt->check_errors());
+  BOOST_CHECK(!g_lt->check_leaks());
+  BOOST_CHECK(!g_lt->check_errors());
 
-	return 0;
+  return 0;
 }
-

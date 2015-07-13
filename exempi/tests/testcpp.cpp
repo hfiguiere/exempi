@@ -10,7 +10,7 @@
  *
  * 1 Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2 Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the
@@ -43,27 +43,27 @@
 
 using boost::unit_test::test_suite;
 
-
-int test_main(int argc, char * argv[])
+int test_main(int argc, char* argv[])
 {
-	// this test is totally useless without leak checking.
-	// but for compiling.
-	{
-		xmp::ScopedPtr<XmpStringPtr> ptr(xmp_string_new());
-	}
-	
-	{
-		xmp::ScopedPtr<XmpFilePtr> ptr(xmp_files_new());
-	}
-	
-	{
-		xmp::ScopedPtr<XmpPtr> ptr(xmp_new_empty());
-		{
-			xmp::ScopedPtr<XmpIteratorPtr> iterptr(xmp_iterator_new(ptr, NS_EXIF, NULL, XMP_ITER_JUSTLEAFNODES));
-		}
-	}
-	
-	BOOST_CHECK(!g_lt->check_leaks());
-	BOOST_CHECK(!g_lt->check_errors());
-	return 0;
+  // this test is totally useless without leak checking.
+  // but for compiling.
+  {
+    xmp::ScopedPtr<XmpStringPtr> ptr(xmp_string_new());
+  }
+
+  {
+    xmp::ScopedPtr<XmpFilePtr> ptr(xmp_files_new());
+  }
+
+  {
+    xmp::ScopedPtr<XmpPtr> ptr(xmp_new_empty());
+    {
+      xmp::ScopedPtr<XmpIteratorPtr> iterptr(
+        xmp_iterator_new(ptr, NS_EXIF, NULL, XMP_ITER_JUSTLEAFNODES));
+    }
+  }
+
+  BOOST_CHECK(!g_lt->check_leaks());
+  BOOST_CHECK(!g_lt->check_errors());
+  return 0;
 }

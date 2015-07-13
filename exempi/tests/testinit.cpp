@@ -10,7 +10,7 @@
  *
  * 1 Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2 Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the
@@ -46,50 +46,49 @@
 #include "xmpconsts.h"
 #include "xmp.h"
 
-//void test_exempi_init()
-int test_main(int argc, char * argv[])
+// void test_exempi_init()
+int test_main(int argc, char* argv[])
 {
-	prepare_test(argc, argv, "test1.xmp");
- 
-	size_t len;
-	char * buffer;
-	
-	FILE * f = fopen(g_testfile.c_str(), "rb");
+  prepare_test(argc, argv, "test1.xmp");
 
-	BOOST_CHECK(f != NULL);
-	if (f == NULL) {
-		exit(128);
-	}
- 	fseek(f, 0, SEEK_END);
-	len = ftell(f);
- 	fseek(f, 0, SEEK_SET);
+  size_t len;
+  char* buffer;
 
-	buffer = (char*)malloc(len + 1);
-	size_t rlen = fread(buffer, 1, len, f);
+  FILE* f = fopen(g_testfile.c_str(), "rb");
 
-	BOOST_CHECK(rlen == len);
-	BOOST_CHECK(len != 0);
+  BOOST_CHECK(f != NULL);
+  if (f == NULL) {
+    exit(128);
+  }
+  fseek(f, 0, SEEK_END);
+  len = ftell(f);
+  fseek(f, 0, SEEK_SET);
 
-	BOOST_CHECK(xmp_init());
-	BOOST_CHECK(xmp_init());
+  buffer = (char*)malloc(len + 1);
+  size_t rlen = fread(buffer, 1, len, f);
 
-	XmpPtr xmp = xmp_new_empty();
-	BOOST_CHECK(xmp_parse(xmp, buffer, len));
-	BOOST_CHECK(xmp != NULL);
-	BOOST_CHECK(xmp_free(xmp));
-	
-	xmp_terminate();
-	
-	xmp = xmp_new_empty();
-	BOOST_CHECK(xmp_parse(xmp, buffer, len));
-	BOOST_CHECK(xmp != NULL);
-	BOOST_CHECK(xmp_free(xmp));
-	
-	xmp_terminate();
+  BOOST_CHECK(rlen == len);
+  BOOST_CHECK(len != 0);
 
-	free(buffer);
-	BOOST_CHECK(!g_lt->check_leaks());
-	BOOST_CHECK(!g_lt->check_errors());
-	return 0;
+  BOOST_CHECK(xmp_init());
+  BOOST_CHECK(xmp_init());
+
+  XmpPtr xmp = xmp_new_empty();
+  BOOST_CHECK(xmp_parse(xmp, buffer, len));
+  BOOST_CHECK(xmp != NULL);
+  BOOST_CHECK(xmp_free(xmp));
+
+  xmp_terminate();
+
+  xmp = xmp_new_empty();
+  BOOST_CHECK(xmp_parse(xmp, buffer, len));
+  BOOST_CHECK(xmp != NULL);
+  BOOST_CHECK(xmp_free(xmp));
+
+  xmp_terminate();
+
+  free(buffer);
+  BOOST_CHECK(!g_lt->check_leaks());
+  BOOST_CHECK(!g_lt->check_errors());
+  return 0;
 }
-

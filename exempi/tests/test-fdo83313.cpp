@@ -10,7 +10,7 @@
  *
  * 1 Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2 Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the
@@ -46,32 +46,29 @@
 #include "xmpconsts.h"
 #include "xmp.h"
 
-
-int test_main(int argc, char * argv[])
+int test_main(int argc, char* argv[])
 {
-    prepare_test(argc, argv, "fdo83313.jpg");
+  prepare_test(argc, argv, "fdo83313.jpg");
 
-	BOOST_CHECK(xmp_init());
+  BOOST_CHECK(xmp_init());
 
-	XmpFilePtr xf = xmp_files_open_new(g_testfile.c_str(), XMP_OPEN_READ);
+  XmpFilePtr xf = xmp_files_open_new(g_testfile.c_str(), XMP_OPEN_READ);
 
-	BOOST_CHECK(xf != NULL);
-	if (xf == NULL) {
-		return 1;
-	}
+  BOOST_CHECK(xf != NULL);
+  if (xf == NULL) {
+    return 1;
+  }
 
-	XmpPtr xmp = xmp_files_get_new_xmp(xf);
+  XmpPtr xmp = xmp_files_get_new_xmp(xf);
 
-	BOOST_CHECK(xmp != NULL);
+  BOOST_CHECK(xmp != NULL);
 
-	BOOST_CHECK(xmp_free(xmp));
-	BOOST_CHECK(xmp_files_free(xf));
+  BOOST_CHECK(xmp_free(xmp));
+  BOOST_CHECK(xmp_files_free(xf));
 
+  xmp_terminate();
 
-	xmp_terminate();
-
-	BOOST_CHECK(!g_lt->check_leaks());
-	BOOST_CHECK(!g_lt->check_errors());
-	return 0;
+  BOOST_CHECK(!g_lt->check_leaks());
+  BOOST_CHECK(!g_lt->check_errors());
+  return 0;
 }
-

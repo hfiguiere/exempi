@@ -10,7 +10,7 @@
  *
  * 1 Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2 Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the
@@ -49,65 +49,65 @@
 
 using boost::unit_test::test_suite;
 
-
-
-//void test_xmpfiles()
-int test_main(int argc, char * argv[])
+// void test_xmpfiles()
+int test_main(int argc, char* argv[])
 {
-	prepare_test(argc, argv, "../../samples/testfiles/BlueSquare.jpg");
+  prepare_test(argc, argv, "../../samples/testfiles/BlueSquare.jpg");
 
-	BOOST_CHECK(xmp_init());
+  BOOST_CHECK(xmp_init());
 
-	XmpFilePtr f = xmp_files_open_new(g_testfile.c_str(), XMP_OPEN_READ);
+  XmpFilePtr f = xmp_files_open_new(g_testfile.c_str(), XMP_OPEN_READ);
 
-	BOOST_CHECK(f != NULL);
-	if (f == NULL) {
-		exit(128);
-	}
+  BOOST_CHECK(f != NULL);
+  if (f == NULL) {
+    exit(128);
+  }
 
-	BOOST_CHECK(xmp_files_check_file_format(g_testfile.c_str()) == XMP_FT_JPEG);
+  BOOST_CHECK(xmp_files_check_file_format(g_testfile.c_str()) == XMP_FT_JPEG);
 
-	XmpStringPtr file_path = xmp_string_new();
-	XmpOpenFileOptions options;
-	XmpFileType file_format;
-	XmpFileFormatOptions handler_flags;
-	BOOST_CHECK(xmp_files_get_file_info(f, file_path, &options, &file_format, &handler_flags));
-	BOOST_CHECK(options == XMP_OPEN_READ);
-	BOOST_CHECK(file_format == XMP_FT_JPEG);
-	// the value check might break at each SDK update. You have been warned.
-	BOOST_CHECK(handler_flags == 0x27f);
-	BOOST_CHECK(g_testfile == xmp_string_cstr(file_path));
-	xmp_string_free(file_path);
+  XmpStringPtr file_path = xmp_string_new();
+  XmpOpenFileOptions options;
+  XmpFileType file_format;
+  XmpFileFormatOptions handler_flags;
+  BOOST_CHECK(xmp_files_get_file_info(f, file_path, &options, &file_format,
+                                      &handler_flags));
+  BOOST_CHECK(options == XMP_OPEN_READ);
+  BOOST_CHECK(file_format == XMP_FT_JPEG);
+  // the value check might break at each SDK update. You have been warned.
+  BOOST_CHECK(handler_flags == 0x27f);
+  BOOST_CHECK(g_testfile == xmp_string_cstr(file_path));
+  xmp_string_free(file_path);
 
-	XmpPtr xmp = xmp_new_empty();
+  XmpPtr xmp = xmp_new_empty();
 
-	BOOST_CHECK(xmp != NULL);
-	
-	BOOST_CHECK(xmp_files_get_xmp(f, xmp));
+  BOOST_CHECK(xmp != NULL);
 
-	XmpStringPtr the_prop = xmp_string_new();
+  BOOST_CHECK(xmp_files_get_xmp(f, xmp));
 
-	BOOST_CHECK(xmp_get_property(xmp, NS_PHOTOSHOP, "ICCProfile", the_prop, NULL));
-	BOOST_CHECK(strcmp("sRGB IEC61966-2.1", xmp_string_cstr(the_prop)) == 0); 
+  XmpStringPtr the_prop = xmp_string_new();
 
-	xmp_string_free(the_prop);
-	BOOST_CHECK(xmp_free(xmp));
+  BOOST_CHECK(
+    xmp_get_property(xmp, NS_PHOTOSHOP, "ICCProfile", the_prop, NULL));
+  BOOST_CHECK(strcmp("sRGB IEC61966-2.1", xmp_string_cstr(the_prop)) == 0);
 
-	BOOST_CHECK(xmp_files_free(f));
+  xmp_string_free(the_prop);
+  BOOST_CHECK(xmp_free(xmp));
 
-	XmpFileFormatOptions formatOptions;
-	
-	// the value check might break at each SDK update. You have been warned.
-	BOOST_CHECK(xmp_files_get_format_info(XMP_FT_JPEG, &formatOptions));
-	BOOST_CHECK(formatOptions == 0x27f);
-	BOOST_CHECK(xmp_files_get_format_info(XMP_FT_GIF, &formatOptions));
-	BOOST_CHECK(formatOptions == 0x46b);
-	BOOST_CHECK(xmp_files_get_format_info(XMP_FT_PNG, &formatOptions));
-	BOOST_CHECK(formatOptions == 0x46b);
+  BOOST_CHECK(xmp_files_free(f));
 
-	xmp_terminate();
-	
-	BOOST_CHECK(!g_lt->check_leaks());
-	BOOST_CHECK(!g_lt->check_errors());
-	return 0;
+  XmpFileFormatOptions formatOptions;
+
+  // the value check might break at each SDK update. You have been warned.
+  BOOST_CHECK(xmp_files_get_format_info(XMP_FT_JPEG, &formatOptions));
+  BOOST_CHECK(formatOptions == 0x27f);
+  BOOST_CHECK(xmp_files_get_format_info(XMP_FT_GIF, &formatOptions));
+  BOOST_CHECK(formatOptions == 0x46b);
+  BOOST_CHECK(xmp_files_get_format_info(XMP_FT_PNG, &formatOptions));
+  BOOST_CHECK(formatOptions == 0x46b);
+
+  xmp_terminate();
+
+  BOOST_CHECK(!g_lt->check_leaks());
+  BOOST_CHECK(!g_lt->check_errors());
+  return 0;
 }

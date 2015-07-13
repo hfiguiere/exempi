@@ -10,7 +10,7 @@
  *
  * 1 Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2 Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the
@@ -34,9 +34,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-
-
 #ifndef __TEST_UTILS_H__
 #define __TEST_UTILS_H__
 
@@ -47,26 +44,25 @@
 extern std::string g_testfile;
 extern std::string g_src_testdir;
 
-void prepare_test(int argc, char * argv[], const char * filename);
+void prepare_test(int argc, char* argv[], const char* filename);
 
-bool copy_file(const std::string & source, const std::string & dest);
+bool copy_file(const std::string& source, const std::string& dest);
 
-class LeakTracker
-{
+class LeakTracker {
 public:
-	LeakTracker();
-	~LeakTracker();
-/** return false if there is NO leak. Will print on stdout */
-	int check_leaks();
-	int check_errors();
-private:
-	int m_leaks;
-	int m_dubious;
-	int m_reachable;
-	int m_suppressed;
-	int m_errors;
-};
+  LeakTracker();
+  ~LeakTracker();
+  /** return false if there is NO leak. Will print on stdout */
+  int check_leaks();
+  int check_errors();
 
+private:
+  int m_leaks;
+  int m_dubious;
+  int m_reachable;
+  int m_suppressed;
+  int m_errors;
+};
 
 extern boost::scoped_ptr<LeakTracker> g_lt;
 

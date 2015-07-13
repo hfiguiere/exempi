@@ -10,7 +10,7 @@
  *
  * 1 Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2 Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the
@@ -33,8 +33,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-
 
 #ifndef _EXEMPI_XMP_CONSTS_H_
 #define _EXEMPI_XMP_CONSTS_H_
@@ -63,8 +61,6 @@ extern const char NS_DIMENSIONS_TYPE[];
 extern const char NS_CC[];
 /* Added in Exempi 2.1 */
 extern const char NS_PDF[];
-
-
 
 #ifdef __cplusplus
 }
