@@ -1,7 +1,7 @@
 /*
  * exempi - exempi.cpp
  *
- * Copyright (C) 2007-2015 Hubert Figuiere
+ * Copyright (C) 2007-2016 Hubert Figuiere
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -989,8 +989,16 @@ void xmp_string_free(XmpStringPtr s)
 
 const char *xmp_string_cstr(XmpStringPtr s)
 {
-    return reinterpret_cast<std::string *>(s)->c_str();
+    CHECK_PTR(s, nullptr);
+    return reinterpret_cast<const std::string *>(s)->c_str();
 }
+
+size_t xmp_string_len(XmpStringPtr s)
+{
+    CHECK_PTR(s, 0);
+    return reinterpret_cast<const std::string *>(s)->size();
+}
+
 
 XmpIteratorPtr xmp_iterator_new(XmpPtr xmp, const char *schema,
                                 const char *propName, XmpIterOptions options)
