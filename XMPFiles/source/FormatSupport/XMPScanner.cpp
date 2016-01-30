@@ -987,7 +987,7 @@ XMPScanner::InternalSnip::InternalSnip ( XMP_Int64 offset, XMP_Int64 length )
 
 XMPScanner::InternalSnip::InternalSnip ( const InternalSnip & rhs ) :
 	fInfo ( rhs.fInfo ),
-	fMachine ( NULL )
+	fMachine ( nullptr )
 {
 
 	assert ( rhs.fMachine.get() == NULL );	// Don't copy a snip with a machine.
@@ -1255,13 +1255,13 @@ XMPScanner::Scan ( const void * bufferOrigin, XMP_Int64 bufferOffset, XMP_Int64 
 	} else {
 		// *** snipPos->fMachine.reset ( new PacketMachine ( bufferOffset, bufferOrigin, bufferLength ) );		VC++ lacks reset
 		#if 0
-			snipPos->fMachine = auto_ptr<PacketMachine> ( new PacketMachine ( bufferOffset, bufferOrigin, bufferLength ) );
+			snipPos->fMachine = unique_ptr<PacketMachine> ( new PacketMachine ( bufferOffset, bufferOrigin, bufferLength ) );
 		#else
 			{
 				// Some versions of gcc complain about the assignment operator above.  This avoids the gcc bug.
 				PacketMachine *	pm	= new PacketMachine ( bufferOffset, bufferOrigin, bufferLength );
-				auto_ptr<PacketMachine>	ap ( pm );
-				snipPos->fMachine = ap;
+				unique_ptr<PacketMachine>	ap ( pm );
+				snipPos->fMachine = std::move(ap);
 			}
 		#endif
 		thisMachine = snipPos->fMachine.get();
@@ -1280,12 +1280,12 @@ XMPScanner::Scan ( const void * bufferOrigin, XMP_Int64 bufferOffset, XMP_Int64 
 
 			snipPos->fInfo.fState = eRawInputSnip;
 			#if 0
-				snipPos->fMachine = auto_ptr<PacketMachine>();	// *** snipPos->fMachine.reset();	VC++ lacks reset
+				snipPos->fMachine = unique_ptr<PacketMachine>();	// *** snipPos->fMachine.reset();	VC++ lacks reset
 			#else
 				{
 					// Some versions of gcc complain about the assignment operator above.  This avoids the gcc bug.
-					auto_ptr<PacketMachine>	ap ( 0 );
-					snipPos->fMachine = ap;
+					unique_ptr<PacketMachine>	ap (nullptr);
+					snipPos->fMachine = std::move(ap);
 				}
 			#endif
 			bufferDone = true;
@@ -1373,12 +1373,12 @@ XMPScanner::Scan ( const void * bufferOrigin, XMP_Int64 bufferOffset, XMP_Int64 
 
 					// This packet ends exactly at the end of the current snip.
 					#if 0
-						snipPos->fMachine = auto_ptr<PacketMachine>();	// *** snipPos->fMachine.reset();	VC++ lacks reset
+						snipPos->fMachine = unique_ptr<PacketMachine>();	// *** snipPos->fMachine.reset();	VC++ lacks reset
 					#else
 						{
 							// Some versions of gcc complain about the assignment operator above.  This avoids the gcc bug.
-							auto_ptr<PacketMachine>	ap ( 0 );
-							snipPos->fMachine = ap;
+							unique_ptr<PacketMachine>	ap ( nullptr );
+							snipPos->fMachine = std::move(ap);
 						}
 					#endif
 					bufferDone = true;
@@ -1390,7 +1390,7 @@ XMPScanner::Scan ( const void * bufferOrigin, XMP_Int64 bufferOffset, XMP_Int64 
 
 					InternalSnipIterator	tailPos	= NextSnip ( snipPos );
 
-					tailPos->fMachine = snipPos->fMachine;	// auto_ptr assignment - taking ownership
+					tailPos->fMachine = std::move(snipPos->fMachine);	// unique_ptr assignment - taking ownership
 					thisMachine->ResetMachine ();
 
 					snipPos = tailPos;
