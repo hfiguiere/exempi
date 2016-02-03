@@ -339,7 +339,7 @@ bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp)
     try {
         auto txf = reinterpret_cast<SXMPFiles *>(xf);
 
-        result = txf->GetXMP((SXMPMeta *)xmp);
+        result = txf->GetXMP(reinterpret_cast<SXMPMeta *>(xmp));
     }
     catch (const XMP_Error &e) {
         set_error(e);
@@ -355,7 +355,7 @@ bool xmp_files_can_put_xmp(XmpFilePtr xf, XmpPtr xmp)
     bool result = false;
 
     try {
-        result = txf->CanPutXMP(*(SXMPMeta *)xmp);
+        result = txf->CanPutXMP(*reinterpret_cast<const SXMPMeta *>(xmp));
     }
     catch (const XMP_Error &e) {
         set_error(e);
@@ -372,7 +372,7 @@ bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp)
     auto txf = reinterpret_cast<SXMPFiles *>(xf);
 
     try {
-        txf->PutXMP(*(SXMPMeta *)xmp);
+        txf->PutXMP(*reinterpret_cast<const SXMPMeta *>(xmp));
     }
     catch (const XMP_Error &e) {
         set_error(e);
