@@ -1,7 +1,7 @@
 /*
  * exempi - utils.cpp
  *
- * Copyright (C) 2007,2010 Hubert Figuiere
+ * Copyright (C) 2007-2016 Hubert Figuiere
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
 
 #include <boost/test/unit_test.hpp>
 
@@ -43,7 +44,7 @@
 
 std::string g_testfile;
 std::string g_src_testdir;
-boost::scoped_ptr<LeakTracker> g_lt(new LeakTracker);
+std::unique_ptr<LeakTracker> g_lt(new LeakTracker) ;
 
 void prepare_test(int argc, char *argv[], const char *filename)
 {
