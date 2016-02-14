@@ -1,7 +1,7 @@
 /*
  * exempi - test-xmpfiles.cpp
  *
- * Copyright (C) 2007 Hubert Figuiere
+ * Copyright (C) 2007-2016 Hubert Figuière
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -10,7 +10,7 @@
  *
  * 1 Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2 Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the
@@ -82,13 +82,27 @@ int test_main(int argc, char * argv[])
 	XmpPtr xmp = xmp_new_empty();
 
 	BOOST_CHECK(xmp != NULL);
-	
+
 	BOOST_CHECK(xmp_files_get_xmp(f, xmp));
+
+        {
+          XmpStringPtr thestring = xmp_string_new();
+          XmpPacketInfo packet_info;
+          BOOST_CHECK(xmp_files_get_xmp_xmpstring(f, thestring, &packet_info));
+          BOOST_CHECK(packet_info.offset == 2189);
+          BOOST_CHECK(packet_info.length == 4782);
+          BOOST_CHECK(packet_info.padSize == 2049);
+          BOOST_CHECK(packet_info.hasWrapper);
+
+          const char *xmp_str = xmp_string_cstr(thestring);
+          BOOST_CHECK(xmp_str);
+          xmp_string_free(thestring);
+        }
 
 	XmpStringPtr the_prop = xmp_string_new();
 
 	BOOST_CHECK(xmp_get_property(xmp, NS_PHOTOSHOP, "ICCProfile", the_prop, NULL));
-	BOOST_CHECK(strcmp("sRGB IEC61966-2.1", xmp_string_cstr(the_prop)) == 0); 
+	BOOST_CHECK(strcmp("sRGB IEC61966-2.1", xmp_string_cstr(the_prop)) == 0);
 
 	xmp_string_free(the_prop);
 	BOOST_CHECK(xmp_free(xmp));
@@ -96,7 +110,7 @@ int test_main(int argc, char * argv[])
 	BOOST_CHECK(xmp_files_free(f));
 
 	XmpFileFormatOptions formatOptions;
-	
+
 	// the value check might break at each SDK update. You have been warned.
 	BOOST_CHECK(xmp_files_get_format_info(XMP_FT_JPEG, &formatOptions));
 	BOOST_CHECK(formatOptions == 0x27f);
@@ -106,7 +120,7 @@ int test_main(int argc, char * argv[])
 	BOOST_CHECK(formatOptions == 0x46b);
 
 	xmp_terminate();
-	
+
 	BOOST_CHECK(!g_lt->check_leaks());
 	BOOST_CHECK(!g_lt->check_errors());
 	return 0;

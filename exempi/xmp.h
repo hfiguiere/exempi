@@ -1,7 +1,7 @@
 /*
  * exempi - xmp.h
  *
- * Copyright (C) 2007-2015 Hubert Figuiere
+ * Copyright (C) 2007-2016 Hubert Figuiere
  * Copyright 2002-2007 Adobe Systems Incorporated
  * All rights reserved.
  *
@@ -11,7 +11,7 @@
  *
  * 1 Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2 Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the
@@ -319,6 +319,28 @@ typedef struct _XmpDateTime {
     int32_t nanoSecond;
 } XmpDateTime;
 
+typedef struct _XmpPacketInfo {
+  /// Packet offset in the file in bytes, -1 if unknown.
+  int64_t offset;
+  /// Packet length in the file in bytes, -1 if unknown.
+  int32_t length;
+  /// Packet padding size in bytes, zero if unknown.
+  int32_t padSize;
+
+  /// Character format using the values \c kXMP_Char8Bit,
+  /// \c kXMP_Char16BitBig, etc.
+  uint8_t  charForm;
+  /// True if there is a packet wrapper and the trailer says writeable
+  /// by dumb packet scanners.
+  bool  writeable;
+  /// True if there is a packet wrapper, the "<?xpacket...>"
+  /// XML processing instructions.
+  bool  hasWrapper;
+
+  /// Padding to make the struct's size be a multiple 4.
+  uint8_t  pad;
+} XmpPacketInfo;
+
 /** Values used for tzSign field. */
 enum {
     XMP_TZ_WEST = -1, /**< West of UTC   */
@@ -362,6 +384,8 @@ XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf);
  * @param xmp the XMP Packet to fill. Must be valid.
  */
 bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp);
+bool xmp_files_get_xmp_xmpstring(XmpFilePtr xf, XmpStringPtr xmp_packet,
+                                 XmpPacketInfo* packet_info);
 
 bool xmp_files_can_put_xmp(XmpFilePtr xf, XmpPtr xmp);
 bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp);
