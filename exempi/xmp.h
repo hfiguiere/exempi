@@ -695,6 +695,11 @@ void xmp_string_free(XmpStringPtr s);
  */
 const char * xmp_string_cstr(XmpStringPtr s);
 
+/** Get the string length from the XmpStringPtr
+ * @param s the string object
+ * @return the string length. The unerlying implementation has it.
+ */
+size_t xmp_string_len(XmpStringPtr s);
 
 /** Create a new iterator.
  * @param xmp the packet

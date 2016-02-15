@@ -82,16 +82,19 @@ int test_main(int argc, char *argv[])
 	BOOST_CHECK(xmp != NULL);
 
 	XmpStringPtr the_prop = xmp_string_new();
+	BOOST_CHECK(xmp_string_len(the_prop) == 0);
 
 	BOOST_CHECK(xmp_has_property(xmp, NS_TIFF, "Make"));
 	BOOST_CHECK(!xmp_has_property(xmp, NS_TIFF, "Foo"));
 
 	BOOST_CHECK(xmp_get_property(xmp, NS_TIFF, "Make", the_prop, NULL));
-	BOOST_CHECK(strcmp("Canon", xmp_string_cstr(the_prop)) == 0); 
+	BOOST_CHECK(strcmp("Canon", xmp_string_cstr(the_prop)) == 0);
+	BOOST_CHECK(xmp_string_len(the_prop) == 5);
 
 	BOOST_CHECK(xmp_set_property(xmp, NS_TIFF, "Make", "Leica", 0));
 	BOOST_CHECK(xmp_get_property(xmp, NS_TIFF, "Make", the_prop, NULL));
-	BOOST_CHECK(strcmp("Leica", xmp_string_cstr(the_prop)) == 0); 
+	BOOST_CHECK(strcmp("Leica", xmp_string_cstr(the_prop)) == 0);
+	BOOST_CHECK(xmp_string_len(the_prop) == 5);
 
 	uint32_t bits;
 	BOOST_CHECK(xmp_get_property(xmp, NS_DC, "rights[1]/?xml:lang",

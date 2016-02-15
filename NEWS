@@ -1,6 +1,7 @@
 2.3.0
 
 - New: API xmp_datetime_compare().
+- New: API xmp_string_len() to get the length of the XmpString.
 - Bug #94065:
   - New: API xmp_files_can_put_xmp_xmpstring() and xmp_files_can_put_xmp_cstr()
     variants.
