@@ -118,6 +118,8 @@ int test_main(int argc, char * argv[])
 	BOOST_CHECK(formatOptions == 0x46b);
 	BOOST_CHECK(xmp_files_get_format_info(XMP_FT_PNG, &formatOptions));
 	BOOST_CHECK(formatOptions == 0x46b);
+        // PDF doesn't have a smart handler.
+	BOOST_CHECK(!xmp_files_get_format_info(XMP_FT_PDF, &formatOptions));
 
 	xmp_terminate();
 
