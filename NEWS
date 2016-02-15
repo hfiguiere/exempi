@@ -8,9 +8,6 @@
   - New: API xmp_files_put_xmp_xmpstring() and xmp_files_put_xmp_cstr()
     variants.
   - New: API xmp_files_get_xmp_xmpstring() variant.
-
-2.2.3
-
 - Bug #90380: Fix potential crash with corrupt TIFF file.
 - Bug #14612: Better Solaris compilation fix.
 - Fix header to pass -Wstrict-prototypes
