@@ -393,6 +393,8 @@ bool xmp_files_can_put_xmp_cstr(XmpFilePtr xf, const char* xmp_packet,
                                 size_t len);
 
 bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp);
+bool xmp_files_put_xmp_xmpstring(XmpFilePtr xf, XmpStringPtr xmp_packet);
+bool xmp_files_put_xmp_cstr(XmpFilePtr xf, const char* xmp_packet, size_t len);
 
 /** Get the file info from the open file
  * @param xf the file object
