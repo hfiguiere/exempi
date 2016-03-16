@@ -1,7 +1,7 @@
 /*
  * exempi - test-xmpfiles.cpp
  *
- * Copyright (C) 2007 Hubert Figuiere
+ * Copyright (C) 2007-2016 Hubert Figuière
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -84,6 +84,20 @@ int test_main(int argc, char* argv[])
 
   BOOST_CHECK(xmp_files_get_xmp(f, xmp));
 
+  {
+    XmpStringPtr thestring = xmp_string_new();
+    XmpPacketInfo packet_info;
+    BOOST_CHECK(xmp_files_get_xmp_xmpstring(f, thestring, &packet_info));
+    BOOST_CHECK(packet_info.offset == 2189);
+    BOOST_CHECK(packet_info.length == 4782);
+    BOOST_CHECK(packet_info.padSize == 2049);
+    BOOST_CHECK(packet_info.hasWrapper);
+
+    const char *xmp_str = xmp_string_cstr(thestring);
+    BOOST_CHECK(xmp_str);
+    xmp_string_free(thestring);
+  }
+
   XmpStringPtr the_prop = xmp_string_new();
 
   BOOST_CHECK(
@@ -104,6 +118,8 @@ int test_main(int argc, char* argv[])
   BOOST_CHECK(formatOptions == 0x46b);
   BOOST_CHECK(xmp_files_get_format_info(XMP_FT_PNG, &formatOptions));
   BOOST_CHECK(formatOptions == 0x46b);
+  // PDF doesn't have a smart handler.
+  BOOST_CHECK(!xmp_files_get_format_info(XMP_FT_PDF, &formatOptions));
 
   xmp_terminate();
 

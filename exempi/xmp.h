@@ -333,6 +333,28 @@ typedef struct _XmpDateTime {
     int32_t nanoSecond;
 } XmpDateTime;
 
+typedef struct _XmpPacketInfo {
+  /// Packet offset in the file in bytes, -1 if unknown.
+  int64_t offset;
+  /// Packet length in the file in bytes, -1 if unknown.
+  int32_t length;
+  /// Packet padding size in bytes, zero if unknown.
+  int32_t padSize;
+
+  /// Character format using the values \c kXMP_Char8Bit,
+  /// \c kXMP_Char16BitBig, etc.
+  uint8_t  charForm;
+  /// True if there is a packet wrapper and the trailer says writeable
+  /// by dumb packet scanners.
+  bool  writeable;
+  /// True if there is a packet wrapper, the "<?xpacket...>"
+  /// XML processing instructions.
+  bool  hasWrapper;
+
+  /// Padding to make the struct's size be a multiple 4.
+  uint8_t  pad;
+} XmpPacketInfo;
+
 /** Values used for tzSign field. */
 enum {
     XMP_TZ_WEST = -1, /**< West of UTC   */
@@ -374,9 +396,17 @@ XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf);
  * @param xmp the XMP Packet to fill. Must be valid.
  */
 bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp);
+bool xmp_files_get_xmp_xmpstring(XmpFilePtr xf, XmpStringPtr xmp_packet,
+                                 XmpPacketInfo* packet_info);
 
 bool xmp_files_can_put_xmp(XmpFilePtr xf, XmpPtr xmp);
+bool xmp_files_can_put_xmp_xmpstring(XmpFilePtr xf, XmpStringPtr xmp_packet);
+bool xmp_files_can_put_xmp_cstr(XmpFilePtr xf, const char* xmp_packet,
+                                size_t len);
+
 bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp);
+bool xmp_files_put_xmp_xmpstring(XmpFilePtr xf, XmpStringPtr xmp_packet);
+bool xmp_files_put_xmp_cstr(XmpFilePtr xf, const char* xmp_packet, size_t len);
 
 /** Get the file info from the open file
  * @param xf the file object
@@ -657,7 +687,8 @@ void xmp_string_free(XmpStringPtr s);
  * @return the const char * for the XmpStringPtr. It
  * belong to the object.
  */
-const char *xmp_string_cstr(XmpStringPtr s);
+const char * xmp_string_cstr(XmpStringPtr s);
+
 /** Get the string length from the XmpStringPtr
  * @param s the string object
  * @return the string length. The unerlying implementation has it.

@@ -1,7 +1,7 @@
 /*
  * exempi - exempi.cpp
  *
- * Copyright (C) 2007-2016 Hubert Figuiere
+ * Copyright (C) 2007-2016 Hubert Figuière
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -347,6 +347,37 @@ bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp)
     return result;
 }
 
+bool xmp_files_get_xmp_xmpstring(XmpFilePtr xf, XmpStringPtr xmp_packet,
+                                 XmpPacketInfo* packet_info)
+{
+  CHECK_PTR(xf, false);
+  CHECK_PTR(xmp_packet, false);
+  RESET_ERROR;
+  bool result = false;
+  try {
+    SXMPFiles *txf = reinterpret_cast<SXMPFiles*>(xf);
+
+    XMP_PacketInfo xmp_packet_info;
+    result = txf->GetXMP(NULL,
+                         reinterpret_cast<std::string*>(xmp_packet),
+                         &xmp_packet_info);
+    if (packet_info) {
+      packet_info->offset = xmp_packet_info.offset;
+      packet_info->length = xmp_packet_info.length;
+      packet_info->padSize = xmp_packet_info.padSize;
+      packet_info->charForm = xmp_packet_info.charForm;
+      packet_info->writeable = xmp_packet_info.writeable;
+      packet_info->hasWrapper = xmp_packet_info.hasWrapper;
+      packet_info->pad = xmp_packet_info.pad;
+    }
+  }
+  catch(const XMP_Error & e) {
+    set_error(e);
+  }
+  return result;
+}
+
+
 bool xmp_files_can_put_xmp(XmpFilePtr xf, XmpPtr xmp)
 {
     CHECK_PTR(xf, false);
@@ -364,6 +395,40 @@ bool xmp_files_can_put_xmp(XmpFilePtr xf, XmpPtr xmp)
     return result;
 }
 
+bool xmp_files_can_put_xmp_xmpstring(XmpFilePtr xf, XmpStringPtr xmp_packet)
+{
+  CHECK_PTR(xf, false);
+  RESET_ERROR;
+  SXMPFiles *txf = reinterpret_cast<SXMPFiles*>(xf);
+  bool result = false;
+
+  try {
+    result = txf->CanPutXMP(*reinterpret_cast<const std::string*>(xmp_packet));
+  }
+  catch(const XMP_Error & e) {
+    set_error(e);
+    return false;
+  }
+  return result;
+}
+
+bool xmp_files_can_put_xmp_cstr(XmpFilePtr xf, const char* xmp_packet, size_t len)
+{
+  CHECK_PTR(xf, false);
+  RESET_ERROR;
+  SXMPFiles *txf = reinterpret_cast<SXMPFiles*>(xf);
+  bool result = false;
+
+  try {
+    result = txf->CanPutXMP(xmp_packet, len);
+  }
+  catch(const XMP_Error & e) {
+    set_error(e);
+    return false;
+  }
+  return result;
+}
+
 bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp)
 {
     CHECK_PTR(xf, false);
@@ -379,6 +444,40 @@ bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp)
         return false;
     }
     return true;
+}
+
+bool xmp_files_put_xmp_xmpstring(XmpFilePtr xf, XmpStringPtr xmp_packet)
+{
+  CHECK_PTR(xf, false);
+  CHECK_PTR(xmp_packet, false);
+  RESET_ERROR;
+  SXMPFiles *txf = reinterpret_cast<SXMPFiles*>(xf);
+
+  try {
+    txf->PutXMP(*reinterpret_cast<const std::string*>(xmp_packet));
+  }
+  catch(const XMP_Error & e) {
+    set_error(e);
+    return false;
+  }
+  return true;
+}
+
+bool xmp_files_put_xmp_cstr(XmpFilePtr xf, const char* xmp_packet, size_t len)
+{
+  CHECK_PTR(xf, false);
+  CHECK_PTR(xmp_packet, false);
+  RESET_ERROR;
+  SXMPFiles *txf = reinterpret_cast<SXMPFiles*>(xf);
+
+  try {
+    txf->PutXMP(xmp_packet, len);
+  }
+  catch(const XMP_Error & e) {
+    set_error(e);
+    return false;
+  }
+  return true;
 }
 
 bool xmp_files_get_file_info(XmpFilePtr xf, XmpStringPtr filePath,
@@ -998,7 +1097,6 @@ size_t xmp_string_len(XmpStringPtr s)
     CHECK_PTR(s, 0);
     return reinterpret_cast<const std::string *>(s)->size();
 }
-
 
 XmpIteratorPtr xmp_iterator_new(XmpPtr xmp, const char *schema,
                                 const char *propName, XmpIterOptions options)

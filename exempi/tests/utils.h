@@ -39,7 +39,7 @@
 
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 
 extern std::string g_testfile;
 extern std::string g_src_testdir;
@@ -64,6 +64,6 @@ private:
   int m_errors;
 };
 
-extern boost::scoped_ptr<LeakTracker> g_lt;
+extern std::unique_ptr<LeakTracker> g_lt;
 
 #endif
