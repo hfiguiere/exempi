@@ -47,9 +47,9 @@ protected:
 	class ClipContent
 	{ 
 	public:
-		ClipContent():clipId(0),scaleUnit(0),
+		ClipContent():clipTitle(0),clipId(0),scaleUnit(0),
 			duration(0),OffsetInShot(0),topClipId(0),nextClipId(0),
-			prevClipId(0),shotId(0),clipMetadata(0),essenceList(0),clipTitle(0){}
+			prevClipId(0),shotId(0),clipMetadata(0),essenceList(0){}
 		std::string* clipTitle;
 		std::string* clipId;
 		std::string* scaleUnit;

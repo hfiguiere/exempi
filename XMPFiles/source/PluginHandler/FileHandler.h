@@ -51,7 +51,7 @@ class FileHandler
 public:
 	
 	FileHandler(std::string & uid, XMP_OptionBits handlerFlags, FileHandlerType type, ModuleSharedPtr module):
-	  mVersion(0), mUID(uid), mHandlerFlags(handlerFlags), mOverwrite(false), mType(type), mModule(module),mSerializeOption(0) {}
+	  mVersion(0), mUID(uid), mHandlerFlags(handlerFlags), mSerializeOption(0), mOverwrite(false), mType(type), mModule(module) {}
 
 	virtual ~FileHandler(){}
 
