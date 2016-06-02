@@ -871,7 +871,7 @@ void ID3v1Tag::write ( XMP_IO* file, SXMPMeta* meta )
 
 	}
 
-	if ( meta->GetProperty ( kXMP_NS_DM, "trackNumber", &utf8, kXMP_NoOptions ) ) {
+	if ( meta->GetProperty ( kXMP_NS_DM, "trackNumber", &utf8, 0 ) ) {
 
 		XMP_Uns8 trackNo = 0;
 		try {
