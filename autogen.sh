@@ -13,16 +13,18 @@ fi
 builddir=`pwd`
 
 AUTOCONF=autoconf
-if test -x /usr/bin/glibtool ; then
-    LIBTOOL=glibtool
-else
+
+LIBTOOL=$(command -v glibtool)
+if [ -z "$LIBTOOL" ]; then
     LIBTOOL=libtool
 fi
-if test -x /usr/bin/glibtoolize ; then
-    LIBTOOLIZE=glibtoolize
-else
+
+LIBTOOLIZE=$(command -v glibtoolize)
+if [ -z "$LIBTOOLIZE" ]; then
     LIBTOOLIZE=libtoolize
 fi
+
+
 AUTOMAKE=automake
 ACLOCAL=aclocal
 
