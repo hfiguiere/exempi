@@ -17,6 +17,9 @@
 	#include <memory>
 	#include <functional>
 	#define XMP_SHARED_PTR std::shared_ptr
+#elif XMP_MacBuild
+	#include <memory>
+	#define XMP_SHARED_PTR std::shared_ptr
 #else
 	#define XMP_SHARED_PTR std::tr1::shared_ptr
 #endif
