@@ -613,7 +613,7 @@ static void exportXMPtoBextChunk( RIFF_MetaHandler* handler, ValueChunk** bextCh
 	// prepare buffer, need to know CodingHistory size as the only variable
 	XMP_Int32 bextBufferSize = MIN_BEXT_SIZE - 8; // -8 because of header
 	std::string value;
-	if ( xmp->GetProperty( bextCodingHistory.ns, bextCodingHistory.prop, &value, kXMP_NoOptions ))
+	if ( xmp->GetProperty( bextCodingHistory.ns, bextCodingHistory.prop, &value, 0 ))
 	{
 		bextBufferSize += ((XMP_StringLen)value.size()) + 1 ; // add to size (and a trailing zero)
 	}
@@ -625,35 +625,35 @@ static void exportXMPtoBextChunk( RIFF_MetaHandler* handler, ValueChunk** bextCh
 
 	// grab props, write into buffer, remove from XMP ///////////////////////////
 	// bextDescription ------------------------------------------------
-	if ( xmp->GetProperty( bextDescription.ns, bextDescription.prop, &value, kXMP_NoOptions ) )
+	if ( xmp->GetProperty( bextDescription.ns, bextDescription.prop, &value, 0 ) )
 	{
 		setBextField( &value, (XMP_Uns8*) buffer, 0, 256 );
 		xmp->DeleteProperty( bextDescription.ns, bextDescription.prop)					;
 		chunkUsed = true;
 	}
 	// bextOriginator -------------------------------------------------
-	if ( xmp->GetProperty( bextOriginator.ns , bextOriginator.prop, &value, kXMP_NoOptions ) )
+	if ( xmp->GetProperty( bextOriginator.ns , bextOriginator.prop, &value, 0 ) )
 	{
 		setBextField( &value, (XMP_Uns8*) buffer, 256, 32 );
 		xmp->DeleteProperty( bextOriginator.ns , bextOriginator.prop );
 		chunkUsed = true;
 	}
 	// bextOriginatorRef ----------------------------------------------
-	if ( xmp->GetProperty( bextOriginatorRef.ns , bextOriginatorRef.prop, &value, kXMP_NoOptions ) )
+	if ( xmp->GetProperty( bextOriginatorRef.ns , bextOriginatorRef.prop, &value, 0 ) )
 	{
 		setBextField( &value, (XMP_Uns8*) buffer, 256+32, 32 );
 		xmp->DeleteProperty( bextOriginatorRef.ns , bextOriginatorRef.prop );
 		chunkUsed = true;
 	}
 	// bextOriginationDate --------------------------------------------
-	if ( xmp->GetProperty( bextOriginationDate.ns , bextOriginationDate.prop, &value, kXMP_NoOptions ) )
+	if ( xmp->GetProperty( bextOriginationDate.ns , bextOriginationDate.prop, &value, 0 ) )
 	{
 		setBextField( &value, (XMP_Uns8*) buffer, 256+32+32, 10 );
 		xmp->DeleteProperty( bextOriginationDate.ns , bextOriginationDate.prop );
 		chunkUsed = true;
 	}
 	// bextOriginationTime --------------------------------------------
-	if ( xmp->GetProperty( bextOriginationTime.ns , bextOriginationTime.prop, &value, kXMP_NoOptions ) )
+	if ( xmp->GetProperty( bextOriginationTime.ns , bextOriginationTime.prop, &value, 0 ) )
 	{
 		setBextField( &value, (XMP_Uns8*) buffer, 256+32+32+10, 8 );
 		xmp->DeleteProperty( bextOriginationTime.ns , bextOriginationTime.prop );
@@ -661,7 +661,7 @@ static void exportXMPtoBextChunk( RIFF_MetaHandler* handler, ValueChunk** bextCh
 	}
 	// bextTimeReference ----------------------------------------------
 	// thanx to friendly byte order, all 8 bytes can be written in one go:
-	if ( xmp->GetProperty( bextTimeReference.ns, bextTimeReference.prop, &value, kXMP_NoOptions ) )
+	if ( xmp->GetProperty( bextTimeReference.ns, bextTimeReference.prop, &value, 0 ) )
 	{
 		try
 		{
@@ -684,7 +684,7 @@ static void exportXMPtoBextChunk( RIFF_MetaHandler* handler, ValueChunk** bextCh
 	xmp->DeleteProperty( bextVersion.ns, bextVersion.prop );
 
 	// bextUMID -------------------------------------------------------
-	if ( xmp->GetProperty( bextUMID.ns, bextUMID.prop, &value, kXMP_NoOptions ) )
+	if ( xmp->GetProperty( bextUMID.ns, bextUMID.prop, &value, 0 ) )
 	{
 		std::string rawStr;
 
@@ -703,7 +703,7 @@ static void exportXMPtoBextChunk( RIFF_MetaHandler* handler, ValueChunk** bextCh
 	}
 
 	// bextCodingHistory ----------------------------------------------
-	if ( xmp->GetProperty( bextCodingHistory.ns, bextCodingHistory.prop, &value, kXMP_NoOptions ) )
+	if ( xmp->GetProperty( bextCodingHistory.ns, bextCodingHistory.prop, &value, 0 ) )
 	{
 		std::string ascii;
 		convertToASCII( value.data(), (XMP_StringLen) value.size() , &ascii, (XMP_StringLen) value.size() );
