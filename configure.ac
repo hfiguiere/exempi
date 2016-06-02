@@ -178,7 +178,8 @@ fi
 case $build_vendor in
 	apple)
 		EXEMPI_PLATFORM_DEF=MAC_ENV
-		LDFLAGS="$LDFLAGS -framework CoreServices"
+		LDFLAGS="$LDFLAGS -framework CoreServices -stdlib=libc++"
+		CPPFLAGS="$CPPFLAGS -std=c++11 -stdlib=libc++"
 		;;
 	*)
 		EXEMPI_PLATFORM_DEF=UNIX_ENV
@@ -187,6 +188,7 @@ esac
 
 AC_SUBST(EXEMPI_PLATFORM_DEF)
 AM_CONDITIONAL(MAC_ENV, test x$EXEMPI_PLATFORM_DEF = xMAC_ENV)
+AM_CONDITIONAL(UNIX_ENV, test x$EXEMPI_PLATFORM_DEF = xUNIX_ENV)
 
 AM_CONDITIONAL(WITH_UNIT_TEST, test x$ENABLE_UNITTEST = xyes)
 
