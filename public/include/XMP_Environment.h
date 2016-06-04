@@ -185,4 +185,15 @@
 	#define XMP_PRIVATE XMP_HELPER_DLL_PRIVATE
 #endif
 
+// Emulate nullptr for GCC < 4.6.0
+#if defined __GNUC__ && !defined __clang__ && (__GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 6))
+const class nullptr_t {
+ public:
+  template<class T> operator T*() const { return 0; }
+  template<class C, class T> operator T C::*() const { return 0; }
+ private:
+  void operator&() const;
+} nullptr = {};
+#endif
+
 #endif  // __XMP_Environment_h__
