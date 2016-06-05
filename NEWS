@@ -13,9 +13,9 @@
     - Better Postscript support.
     - Lot of bug fixes.
 - New API: added XMP_OPEN_OPTIMIZEFILELAYOUT for new SDK.
-- Now require C++11 to compile.
+- Now require (partial) C++11 support to compile (gcc 4.4.7 tested)
 
-2.3.0
+2.3.0 - 2016/03/15
 
 - New: API xmp_datetime_compare().
 - New: API xmp_string_len() to get the length of the XmpString.

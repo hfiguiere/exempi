@@ -4,6 +4,12 @@ GNU automake.
 It includes XMPCore and XMPFiles, libexempi, a C-based API and exempi
 a command line tool.
 
+It require at least the gcc 4.4.7 C++ compiler or clang++.
+
 It is maintained by Hubert Figuiere <hub@figuiere.net>
+
+Contributors:
+  Frankie Dintino <fdintino@theatlantic.com>
+
 
 Homepage: http://libopenraw.freedesktop.org/wiki/Exempi
