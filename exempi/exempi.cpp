@@ -259,12 +259,12 @@ XmpFilePtr xmp_files_new()
     catch (const XMP_Error &e) {
         set_error(e);
     }
-    return nullptr;
+    return NULL;
 }
 
 XmpFilePtr xmp_files_open_new(const char *path, XmpOpenFileOptions options)
 {
-    CHECK_PTR(path, nullptr);
+    CHECK_PTR(path, NULL);
     RESET_ERROR;
 
     try {
@@ -278,7 +278,7 @@ XmpFilePtr xmp_files_open_new(const char *path, XmpOpenFileOptions options)
         set_error(e);
     }
 
-    return nullptr;
+    return NULL;
 }
 
 bool xmp_files_open(XmpFilePtr xf, const char *path, XmpOpenFileOptions options)
@@ -312,7 +312,7 @@ bool xmp_files_close(XmpFilePtr xf, XmpCloseFileOptions options)
 
 XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf)
 {
-    CHECK_PTR(xf, nullptr);
+    CHECK_PTR(xf, NULL);
     RESET_ERROR;
     auto txf = reinterpret_cast<SXMPFiles *>(xf);
 
@@ -327,7 +327,7 @@ XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf)
     catch (const XMP_Error &e) {
         set_error(e);
     }
-    return nullptr;
+    return NULL;
 }
 
 bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp)
@@ -559,7 +559,7 @@ XmpPtr xmp_new_empty()
 
 XmpPtr xmp_new(const char *buffer, size_t len)
 {
-    CHECK_PTR(buffer, nullptr);
+    CHECK_PTR(buffer, NULL);
     RESET_ERROR;
 
     try {
@@ -569,12 +569,12 @@ XmpPtr xmp_new(const char *buffer, size_t len)
     catch (const XMP_Error &e) {
         set_error(e);
     }
-    return nullptr;
+    return NULL;
 }
 
 XmpPtr xmp_copy(XmpPtr xmp)
 {
-    CHECK_PTR(xmp, nullptr);
+    CHECK_PTR(xmp, NULL);
     RESET_ERROR;
 
     try {
@@ -584,7 +584,7 @@ XmpPtr xmp_copy(XmpPtr xmp)
     catch (const XMP_Error &e) {
         set_error(e);
     }
-    return nullptr;
+    return NULL;
 }
 
 bool xmp_parse(XmpPtr xmp, const char *buffer, size_t len)
@@ -1088,7 +1088,7 @@ void xmp_string_free(XmpStringPtr s)
 
 const char *xmp_string_cstr(XmpStringPtr s)
 {
-    CHECK_PTR(s, nullptr);
+    CHECK_PTR(s, NULL);
     return reinterpret_cast<const std::string *>(s)->c_str();
 }
 
@@ -1101,7 +1101,7 @@ size_t xmp_string_len(XmpStringPtr s)
 XmpIteratorPtr xmp_iterator_new(XmpPtr xmp, const char *schema,
                                 const char *propName, XmpIterOptions options)
 {
-    CHECK_PTR(xmp, nullptr);
+    CHECK_PTR(xmp, NULL);
     RESET_ERROR;
 
     try {
@@ -1114,7 +1114,7 @@ XmpIteratorPtr xmp_iterator_new(XmpPtr xmp, const char *schema,
         set_error(e);
     }
 
-    return nullptr;
+    return NULL;
 }
 
 bool xmp_iterator_free(XmpIteratorPtr iter)
