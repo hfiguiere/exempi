@@ -164,7 +164,7 @@ private:
 	/// share state across multiple XMP_IO objects.
 
 	XMP_IO ( const XMP_IO & original );
-	void operator= ( const XMP_IO& in ) { *this = in; /* Avoid Win compile warnings. */ };
+	XMP_IO& operator= ( const XMP_IO& in );
 
 };
 

@@ -140,7 +140,7 @@ const ChunkIdentifier WAVE_MetaHandler::kRF64iXML[2] = { { kChunk_RF64, kType_WA
 // ================================
 
 WAVE_MetaHandler::WAVE_MetaHandler ( XMPFiles * _parent )
-	: mChunkBehavior(NULL), mChunkController(NULL),
+	: mChunkController(NULL), mChunkBehavior(NULL),
 	mINFOMeta(), mBEXTMeta(), mCartMeta(), mDISPMeta(), miXMLMeta(),
 	mXMPChunk(NULL), mINFOChunk(NULL),
 	mBEXTChunk(NULL), mCartChunk(NULL), mDISPChunk(NULL), miXMLChunk(NULL)

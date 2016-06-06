@@ -33,9 +33,9 @@ static const char * kTIFF_TypeNames[] = { "ShortOrLong", "BYTE", "ASCII", "SHORT
 static bool sFirstCTor = true;
 
 TIFF_Manager::TIFF_Manager()
-	: bigEndian(false), nativeEndian(false), errorCallbackPtr( NULL ),
-	  GetUns16(0), GetUns32(0), GetFloat(0), GetDouble(0),
-	  PutUns16(0), PutUns32(0), PutFloat(0), PutDouble(0)
+	: GetUns16(0), GetUns32(0), GetFloat(0), GetDouble(0),
+	  PutUns16(0), PutUns32(0), PutFloat(0), PutDouble(0),
+	  bigEndian(false), nativeEndian(false), errorCallbackPtr( NULL )
 {
 
 	if ( sFirstCTor ) {

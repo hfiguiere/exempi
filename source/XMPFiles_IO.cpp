@@ -98,8 +98,8 @@ XMPFiles_IO::XMPFiles_IO (
 	, currOffset(0)
 	, isTemp(false)
 	, derivedTemp(0)
-	, errorCallback(_errorCallback)
 	, progressTracker(_progressTracker)
+	, errorCallback(_errorCallback)
 {
 	XMP_FILESIO_START
 	XMP_Assert ( this->fileRef != Host_IO::noFileRef );

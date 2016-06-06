@@ -15,6 +15,7 @@
 #include "source/XIO.hpp"
 
 #include <cstdio>
+#include <cstdlib>
 #include <typeinfo>
 
 using namespace IFF_RIFF;
@@ -1207,7 +1208,7 @@ void Chunk::adjustSize( XMP_Int64 sizeChange )
 		mSize = mBufferSize;
 
 		// if the difference is odd, the corrected even size has be incremented by 1
-		sizeChange += abs(sizeChange % 2);
+		sizeChange += std::abs(sizeChange % 2);
 	}
 	else // mChunkMode == CHUNK_NODE/CHUNK_UNKNOWN
 	{

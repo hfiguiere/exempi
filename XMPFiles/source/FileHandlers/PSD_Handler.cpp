@@ -81,7 +81,7 @@ XMPFileHandler * PSD_MetaHandlerCTor ( XMPFiles * parent )
 // PSD_MetaHandler::PSD_MetaHandler
 // ================================
 
-PSD_MetaHandler::PSD_MetaHandler ( XMPFiles * _parent ) : iptcMgr(0), exifMgr(0), skipReconcile(false),imageWidth(0),imageHeight(0)
+PSD_MetaHandler::PSD_MetaHandler ( XMPFiles * _parent ) : skipReconcile(false), iptcMgr(0), exifMgr(0),imageWidth(0),imageHeight(0)
 {
 	this->parent = _parent;
 	this->handlerFlags = kPSD_HandlerFlags;

@@ -51,8 +51,8 @@ namespace IFF_RIFF {
 	static const char * bextTagName = "BEXT";
 
 	iXMLMetadata::iXMLMetadata()
-		: mRootNode( NULL )
-		, mExpatAdapter( NULL )
+		: mExpatAdapter( NULL )
+		, mRootNode( NULL )
 		, mErrorCallback( NULL )
 		, mExtraSpaceSize( 1024 ) {}
 

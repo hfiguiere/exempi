@@ -31,8 +31,8 @@ ChunkController::ChunkController( IChunkBehavior* chunkBehavior, XMP_Bool bigEnd
   mChunkBehavior			(chunkBehavior), 
   mFileSize					(0),
   mRoot						(NULL), 
-  mTrailingGarbageSize		(0), 
-  mTrailingGarbageOffset	(0)
+  mTrailingGarbageOffset	(0),
+  mTrailingGarbageSize		(0)
 {
 	if (bigEndian)
 	{

@@ -25,7 +25,7 @@
 #include <sstream>
 
 P2_Clip::P2_Clip(const std::string & p2ClipMetadataFilePath)
-	try :p2XMLParser(0),p2Root(0),headContentCached(false)
+	try :headContentCached(false),p2XMLParser(0),p2Root(0)
 	,p2ClipContent(0),filePath(p2ClipMetadataFilePath)
 {
 	Host_IO::FileRef hostRef = Host_IO::Open ( p2ClipMetadataFilePath.c_str(), Host_IO::openReadOnly );

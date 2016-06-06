@@ -132,7 +132,7 @@ const ChunkIdentifier AIFF_MetaHandler::kAIFCAnno[2] = { { kChunk_FORM, kType_AI
 // ================================
 
 AIFF_MetaHandler::AIFF_MetaHandler ( XMPFiles * _parent )
-	: mChunkBehavior(NULL), mChunkController(NULL),
+	: mChunkController(NULL), mChunkBehavior(NULL),
 	mAiffMeta(), mXMPChunk(NULL),
 	mNameChunk(NULL), mAuthChunk(NULL),
 	mCprChunk(NULL), mAnnoChunk(NULL)
