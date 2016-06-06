@@ -127,8 +127,8 @@ MP3_MetaHandler::MP3_MetaHandler ( XMPFiles * _parent )
 	this->newFramesSize = 0;
 	this->tagIsDirty = false;
 	this->mustShift = false;
-	this->majorVersion = 2.3;
-	this->minorVersion = 2.3;
+	this->majorVersion = 2;
+	this->minorVersion = 3;
 	this->hasID3Tag = false;
 	this->hasFooter = false;
 	this->extHeaderSize = 0;
