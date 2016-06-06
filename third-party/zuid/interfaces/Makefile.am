@@ -35,14 +35,13 @@
 #
 
 
-INCLUDES = -I$(top_srcdir)/public/include \
-	-I$(top_srcdir)/public/include/client-glue \
-	-I$(top_srcdir)/build/ \
-	-I$(top_srcdir)
-
 AM_CXXFLAGS = -Wno-multichar -Wno-ctor-dtor-privacy \
 	-funsigned-char -fexceptions
-AM_CPPFLAGS = -Wall @XMPCORE_CPPFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir)/public/include \
+	-I$(top_srcdir)/public/include/client-glue \
+	-I$(top_srcdir)/build/ \
+	-I$(top_srcdir) \
+	-Wall @XMPCORE_CPPFLAGS@
 
 noinst_LTLIBRARIES = libmd5.la
 

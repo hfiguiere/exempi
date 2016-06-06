@@ -38,9 +38,8 @@
 
 noinst_LTLIBRARIES = libxmpfilehandlers.la
 
-INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/public/include
-
-AM_CPPFLAGS = -Wall @XMPCORE_CPPFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/public/include \
+	-Wall @XMPCORE_CPPFLAGS@
 
 
 libxmpfilehandlers_la_SOURCES = \

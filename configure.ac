@@ -9,7 +9,7 @@ dnl the same distribution terms as the rest of that program.
 
 AC_PREREQ(2.50)
 AC_INIT(exempi,2.4.0)
-AM_INIT_AUTOMAKE([foreign dist-bzip2])
+AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects])
 AM_MAINTAINER_MODE
 m4_ifndef([AM_SILENT_RULES], [m4_define([AM_SILENT_RULES],[])])
 AM_SILENT_RULES([yes])

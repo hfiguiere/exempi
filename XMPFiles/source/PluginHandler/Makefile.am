@@ -37,12 +37,11 @@
 
 noinst_LTLIBRARIES = libpluginhandler.la
 
-INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/public/include \
-	-I$(top_srcdir)/XMPFilesPlugins/api/source/
-
 AM_CXXFLAGS = -Wno-multichar -Wno-ctor-dtor-privacy \
 	-funsigned-char -fexceptions -fno-strict-aliasing
-AM_CPPFLAGS = -Wall @XMPCORE_CPPFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/public/include \
+	-I$(top_srcdir)/XMPFilesPlugins/api/source/ \
+	-Wall @XMPCORE_CPPFLAGS@
 
 if MAC_ENV
 PLATFORM_UTILS=OS_Utils_Mac.cpp

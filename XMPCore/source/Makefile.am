@@ -38,11 +38,10 @@
 
 noinst_LTLIBRARIES = libXMPCore.la
 
-INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/public/include
-
 AM_CXXFLAGS = -Wno-multichar -Wno-ctor-dtor-privacy \
 	-funsigned-char -fexceptions
-AM_CPPFLAGS = -Wall @XMPCORE_CPPFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/public/include \
+	-Wall @XMPCORE_CPPFLAGS@
 
 noinst_HEADERS =  \
 	XMPCore_Impl.hpp  XMPIterator.hpp \

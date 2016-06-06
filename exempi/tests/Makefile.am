@@ -35,16 +35,17 @@
 #
 
 
-INCLUDES = -I$(srcdir)/.. -I$(top_srcdir)/public/include -I$(top_srcdir)
-if WITH_UNIT_TEST
+
 AUTOMAKE_OPTIONS = parallel-tests
+TEST_EXTENSIONS = .sh
+
+if WITH_UNIT_TEST
 check_PROGRAMS = testexempicore testserialise testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
 	test3 testinit testfdo18635 testfdo83313 testcpp
 TESTS = testcore.sh testinit testexempicore testserialise testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
 	test3 testfdo18635 testfdo83313 testcpp
-TEST_EXTENSIONS = .sh
 TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) BOOST_TEST_CATCH_SYSTEM_ERRORS=no VALGRIND="$(VALGRIND)"
 LOG_COMPILER = $(VALGRIND)
 endif
@@ -58,6 +59,7 @@ EXTRA_DIST = $(check_DATA) $(check_SCRIPTS)
 CLEANFILES = test.jpg
 
 AM_CXXFLAGS = @BOOST_CPPFLAGS@
+AM_CPPFLAGS = -I$(srcdir)/.. -I$(top_srcdir)/public/include -I$(top_srcdir)
 
 testinit_SOURCES = testinit.cpp utils.cpp
 testinit_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@

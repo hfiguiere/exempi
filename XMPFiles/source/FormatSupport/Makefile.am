@@ -41,12 +41,11 @@ noinst_HEADERS = IPTC_Support.hpp  PSIR_Support.hpp\
 	ReconcileLegacy.hpp  TIFF_Support.hpp  GIF_Support.hpp
 
 
-INCLUDES = -I$(top_srcdir) \
-	-I$(top_srcdir)/public/include/
-
 AM_CXXFLAGS = -Wno-multichar -Wno-ctor-dtor-privacy \
 	-funsigned-char -fexceptions
-AM_CPPFLAGS = -Wall @XMPCORE_CPPFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir) \
+	-I$(top_srcdir)/public/include/ \
+	-Wall @XMPCORE_CPPFLAGS@
 
 libformatsupport_la_SOURCES = \
 	PackageFormat_Support.cpp PackageFormat_Support.hpp \

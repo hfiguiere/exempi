@@ -44,8 +44,9 @@ noinst_PROGRAMS = xmpcoverage xmpfilescoverage dumpxmp dumpmainxmp\
 
 AM_CXXFLAGS = -fexceptions -funsigned-char -fPIC \
 	-Wno-multichar -Wno-ctor-dtor-privacy
+AM_CPPFLAGS = -I$(top_srcdir)/public/include -I$(top_srcdir) \
+	-D@EXEMPI_PLATFORM_DEF@=1 -D_FILE_OFFSET_BITS=64
 
-AM_CPPFLAGS = -D@EXEMPI_PLATFORM_DEF@=1 -D_FILE_OFFSET_BITS=64
 XMPLIBS = $(top_builddir)/XMPCore/source/libXMPCore.la \
 	$(top_builddir)/XMPFiles/source/libXMPFiles.la \
 	$(top_builddir)/source/libxmpcommon.la -lexpat -lz \
@@ -55,8 +56,6 @@ XMPLIBS = $(top_builddir)/XMPCore/source/libXMPCore.la \
 if UNIX_ENV
 XMPLIBS += -lrt
 endif
-
-INCLUDES = -I$(top_srcdir)/public/include -I$(top_srcdir)
 
 noinst_LTLIBRARIES = libsamplescommon.la
 libsamplescommon_la_SOURCES = common/DumpFile.cpp common/DumpFile.h \
