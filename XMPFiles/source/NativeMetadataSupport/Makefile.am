@@ -42,12 +42,7 @@ INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/public/include \
 
 AM_CXXFLAGS = -Wno-multichar -Wno-ctor-dtor-privacy \
 	-funsigned-char -fexceptions -fno-strict-aliasing
-AM_CPPFLAGS = -Wall\
-	-D@EXEMPI_PLATFORM_DEF@=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
-	-DXMP_StaticBuild=1 \
-	-D_FILE_OFFSET_BITS=64 -DHAVE_EXPAT_CONFIG_H=1 -DXML_STATIC=1 \
-	-DDISABLE_QUICKTIME
-
+AM_CPPFLAGS = -Wall @XMPCORE_CPPFLAGS@
 
 libnativemetadata_la_SOURCES = \
 	IMetadata.cpp IMetadata.h \

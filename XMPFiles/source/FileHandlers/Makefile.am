@@ -40,10 +40,8 @@ noinst_LTLIBRARIES = libxmpfilehandlers.la
 
 INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/public/include
 
-AM_CPPFLAGS = \
-	-D@EXEMPI_PLATFORM_DEF@=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
-	-DXMP_StaticBuild=1 \
-	-D_FILE_OFFSET_BITS=64 -DHAVE_EXPAT_CONFIG_H=1 -DXML_STATIC=1
+AM_CPPFLAGS = -Wall @XMPCORE_CPPFLAGS@
+
 
 libxmpfilehandlers_la_SOURCES = \
 AIFF_Handler.cpp AIFF_Handler.hpp\

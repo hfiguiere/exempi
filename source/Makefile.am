@@ -37,16 +37,10 @@
 
 noinst_LTLIBRARIES = libxmpcommon.la
 
-INCLUDES = -I$(top_srcdir)
-
 AM_CXXFLAGS = -Wno-multichar -Wno-ctor-dtor-privacy \
 	-funsigned-char -fexceptions
-AM_CPPFLAGS = \
-	-D@EXEMPI_PLATFORM_DEF@=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
-	-DXMP_StaticBuild=1 \
-	-D_FILE_OFFSET_BITS=64 -DHAVE_EXPAT_CONFIG_H=1 -DXML_STATIC=1
-
-
+AM_CPPFLAGS = -I$(top_srcdir) \
+	-Wall @XMPCORE_CPPFLAGS@
 
 noinst_HEADERS = UnicodeConversions.hpp ExpatAdapter.hpp EndianUtils.hpp\
 	XMLParserAdapter.hpp XMPFiles_IO.hpp Endian.h Host_IO.hpp XIO.hpp

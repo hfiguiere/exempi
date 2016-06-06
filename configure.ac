@@ -208,6 +208,12 @@ dnl due to stupid m4 I had to double the [ and ] in the regexp
 fi
 AC_SUBST(VALGRIND)
 
+XMPCORE_CPPFLAGS="-D$EXEMPI_PLATFORM_DEF=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
+	-DXMP_StaticBuild=1 -DBanAllEntityUsage \
+	-D_FILE_OFFSET_BITS=64 -DHAVE_EXPAT_CONFIG_H=1 -DXML_STATIC=1 \
+	-DDISABLE_QUICKTIME"
+AC_SUBST(XMPCORE_CPPFLAGS)
+
 AC_OUTPUT([
 Makefile
 third-party/Makefile
