@@ -889,6 +889,8 @@ enum {
     kXMP_GIFFile             = 0x47494620UL,
 	/// Public file format constant: 'PNG '
     kXMP_PNGFile             = 0x504E4720UL,
+    /// Public file format constant: 'WEBP '
+    kXMP_WEBPFile            = 0x57454250UL,
 
 	/// Public file format constant: 'SWF '
     kXMP_SWFFile             = 0x53574620UL,

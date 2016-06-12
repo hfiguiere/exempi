@@ -38,6 +38,7 @@
 	#include "XMPFiles/source/FileHandlers/SWF_Handler.hpp"
 	#include "XMPFiles/source/FileHandlers/XDCAM_Handler.hpp"
 	#include "XMPFiles/source/FileHandlers/XDCAMEX_Handler.hpp"
+	#include "XMPFiles/source/FileHandlers/WEBP_Handler.hpp"
 #endif
 
 #if EnableMiscHandlers
@@ -141,6 +142,7 @@ void HandlerRegistry::initialize()
 	allOK &= this->registerNormalHandler ( kXMP_MP3File, kMP3_HandlerFlags, MP3_CheckFormat, MP3_MetaHandlerCTor );
 	allOK &= this->registerNormalHandler ( kXMP_WAVFile, kWAVE_HandlerFlags, WAVE_CheckFormat, WAVE_MetaHandlerCTor );
 	allOK &= this->registerNormalHandler ( kXMP_AVIFile, kRIFF_HandlerFlags, RIFF_CheckFormat, RIFF_MetaHandlerCTor );
+	allOK &= this->registerNormalHandler ( kXMP_WEBPFile, kWEBP_HandlerFlags, WEBP_CheckFormat, WEBP_MetaHandlerCTor );
 	allOK &= this->registerNormalHandler ( kXMP_SWFFile, kSWF_HandlerFlags, SWF_CheckFormat, SWF_MetaHandlerCTor );
 	allOK &= this->registerNormalHandler ( kXMP_MPEG4File, kMPEG4_HandlerFlags, MPEG4_CheckFormat, MPEG4_MetaHandlerCTor );
 	allOK &= this->registerNormalHandler ( kXMP_MOVFile, kMPEG4_HandlerFlags, MPEG4_CheckFormat, MPEG4_MetaHandlerCTor );	// ! Yes, MPEG-4 includes MOV.
