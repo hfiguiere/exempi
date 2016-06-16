@@ -105,6 +105,7 @@ typedef enum {
     XMP_FT_TIFF = 0x54494646UL,   /* 'TIFF' */
     XMP_FT_GIF = 0x47494620UL,    /* 'GIF ' */
     XMP_FT_PNG = 0x504E4720UL,    /* 'PNG ' */
+    XMP_FT_WEBP = 0x57454250UL,   /* 'WEBP' */
 
     XMP_FT_SWF = 0x53574620UL, /* 'SWF ' */
     XMP_FT_FLA = 0x464C4120UL, /* 'FLA ' */
