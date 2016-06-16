@@ -58,6 +58,10 @@ WEBP_MetaHandler::~WEBP_MetaHandler()
         delete this->mainChunk;
     if (this->exifMgr)
         delete this->exifMgr;
+    if (this->iptcMgr)
+        delete this->iptcMgr;
+    if (this->psirMgr)
+        delete this->psirMgr;
 }
 
 void WEBP_MetaHandler::CacheFileData()
@@ -101,6 +105,8 @@ void WEBP_MetaHandler::ProcessXMP()
         else {
             this->exifMgr = new TIFF_FileWriter();
         }
+        this->psirMgr = new PSIR_MemoryReader();
+        this->iptcMgr = new IPTC_Reader();
         if (this->parent) {
             exifMgr->SetErrorCallback(&this->parent->errorCallback);
         }
@@ -123,8 +129,8 @@ void WEBP_MetaHandler::ProcessXMP()
         if (this->containsXMP)
             options |= k2XMP_FileHadXMP;
         TIFF_Manager& exif = *this->exifMgr;
-        PSIR_Manager& psir = *(new PSIR_MemoryReader());
-        IPTC_Manager& iptc = *(new IPTC_Reader());
+        PSIR_Manager& psir = *this->psirMgr;
+        IPTC_Manager& iptc = *this->iptcMgr;
         ImportPhotoData(exif, iptc, psir, kDigestMatches, &this->xmpObj,
                         options);
         // Assume that, since the file had EXIF data, some of it was mapped to

@@ -6,6 +6,8 @@
 
 #include "XMPFiles/source/FormatSupport/WEBP_Support.hpp"
 #include "XMPFiles/source/FormatSupport/TIFF_Support.hpp"
+#include "XMPFiles/source/FormatSupport/IPTC_Support.hpp"
+#include "XMPFiles/source/FormatSupport/PSIR_Support.hpp"
 
 #include "source/XIO.hpp"
 
@@ -35,7 +37,11 @@ public:
     WEBP::XMPChunk* xmpChunk;
     XMP_Int64 initialFileSize;
     TIFF_Manager* exifMgr;
-	
+    // The PSIR_Manager and IPTC_Manager aren't actually used, but they need
+    // to be instantiated and passed to the function that reconciles EXIF and
+    // XMP data.
+	PSIR_Manager* psirMgr;
+    IPTC_Manager* iptcMgr;
 };
 
 #endif /* __WEBP_Handler_hpp__ */
