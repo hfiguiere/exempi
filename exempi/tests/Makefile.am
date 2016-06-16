@@ -42,10 +42,10 @@ TEST_EXTENSIONS = .sh
 if WITH_UNIT_TEST
 check_PROGRAMS = testexempicore testserialise testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
-	test3 testinit testfdo18635 testfdo83313 testcpp
+	test3 testinit testfdo18635 testfdo83313 testcpp testwebp
 TESTS = testcore.sh testinit testexempicore testserialise testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
-	test3 testfdo18635 testfdo83313 testcpp
+	test3 testfdo18635 testfdo83313 testcpp testwebp
 TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) BOOST_TEST_CATCH_SYSTEM_ERRORS=no VALGRIND="$(VALGRIND)"
 LOG_COMPILER = $(VALGRIND)
 endif
@@ -104,3 +104,7 @@ testfdo83313_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
 testcpp_SOURCES = testcpp.cpp utils.cpp
 testcpp_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
 testcpp_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
+
+testwebp_SOURCES = test-webp.cpp utils.cpp
+testwebp_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+testwebp_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
