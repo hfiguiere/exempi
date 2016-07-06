@@ -39,7 +39,7 @@
 // =================================================================================================
 
 // Make sure off_t is 64 bits and signed.
-static char check_off_t_size [ (sizeof(off_t) == 8) ? 1 : -1 ];
+// static char check_off_t_size [ (sizeof(off_t) == 8) ? 1 : -1 ];
 // *** No std::numeric_limits?  static char check_off_t_sign [ std::numeric_limits<off_t>::is_signed ? -1 : 1 ];
 
 static bool HaveWriteAccess( const std::string & path );
@@ -372,7 +372,7 @@ void Host_IO::Write ( Host_IO::FileRef refNum, const void * buffer, XMP_Uns32 co
 	ssize_t bytesWritten = write ( refNum, buffer, count );
 	if ( bytesWritten != (ssize_t)count ) {
 		int osCode = errno;	// Capture ASAP and once, might not be thread safe.
-		if ( errno == ENOSPC ) {
+		if ( osCode == ENOSPC ) {
 			XMP_Throw ( "Host_IO::Write, disk full", kXMPErr_DiskSpace );
 		} else {
 			XMP_Throw ( "Host_IO::Write, write failure", kXMPErr_WriteError );
