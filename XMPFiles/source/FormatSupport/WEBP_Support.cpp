@@ -46,7 +46,8 @@ Chunk::Chunk(Container* parent, WEBP_MetaHandler* handler)
 }
 
 // Constructor for creating a new chunk
-Chunk::Chunk(Container* parent, XMP_Uns32 tag) : parent(parent), tag(tag)
+Chunk::Chunk(Container* parent, XMP_Uns32 tag)
+  : parent(parent), tag(tag)
 {
     this->needsRewrite = true;
 }
@@ -74,7 +75,8 @@ Chunk::~Chunk()
     // Do nothing
 }
 
-XMPChunk::XMPChunk(Container* parent) : Chunk(parent, kChunk_XMP_)
+XMPChunk::XMPChunk(Container* parent)
+  : Chunk(parent, kChunk_XMP_)
 {
     this->size = 0;
 }

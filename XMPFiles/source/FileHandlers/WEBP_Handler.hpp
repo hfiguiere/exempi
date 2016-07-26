@@ -23,7 +23,8 @@ static const XMP_OptionBits kWEBP_HandlerFlags =
      kXMPFiles_AllowsOnlyXMP | kXMPFiles_ReturnsRawPacket |
      kXMPFiles_CanReconcile);
 
-class WEBP_MetaHandler : public XMPFileHandler {
+class WEBP_MetaHandler
+  : public XMPFileHandler {
 public:
     WEBP_MetaHandler(XMPFiles* parent);
     ~WEBP_MetaHandler();

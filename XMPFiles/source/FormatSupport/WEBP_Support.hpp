@@ -132,14 +132,16 @@ public:
     bool needsRewrite;
 };
 
-class XMPChunk : public Chunk {
+class XMPChunk
+  : public Chunk {
 public:
     XMPChunk(Container* parent, WEBP_MetaHandler* handler);
     XMPChunk(Container* parent);
     void write(WEBP_MetaHandler* handler);
 };
 
-class VP8XChunk : public Chunk {
+class VP8XChunk
+  : public Chunk {
 public:
     VP8XChunk(Container* parent, WEBP_MetaHandler* handler);
     VP8XChunk(Container* parent);
@@ -153,7 +155,8 @@ public:
 
 typedef std::array<std::vector<Chunk*>, WEBP_CHUNK_NIL> Chunks;
 
-class Container : public Chunk {
+class Container
+  : public Chunk {
 public:
     Container(WEBP_MetaHandler* handler);
     ~Container();
