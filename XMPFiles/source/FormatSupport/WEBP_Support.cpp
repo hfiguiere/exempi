@@ -109,7 +109,8 @@ void XMPChunk::write(WEBP_MetaHandler* handler)
     }
 }
 
-VP8XChunk::VP8XChunk(Container* parent) : Chunk(parent, kChunk_VP8X)
+VP8XChunk::VP8XChunk(Container* parent)
+  : Chunk(parent, kChunk_VP8X)
 {
     this->needsRewrite = true;
     this->size = 10;

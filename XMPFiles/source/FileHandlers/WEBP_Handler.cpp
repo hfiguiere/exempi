@@ -35,10 +35,12 @@ bool WEBP_CheckFormat(XMP_FileFormat format, XMP_StringPtr filePath,
 
     XMP_Uns8 chunkID[12];
     file->ReadAll(chunkID, 12);
-    if (!CheckBytes(&chunkID[0], "RIFF", 4))
+    if (!CheckBytes(&chunkID[0], "RIFF", 4)) {
         return false;
-    if (CheckBytes(&chunkID[8], "WEBP", 4) && format == kXMP_WEBPFile)
+    }
+    if (CheckBytes(&chunkID[8], "WEBP", 4) && format == kXMP_WEBPFile) {
         return true;
+    }
     return false;
 }
 
@@ -54,14 +56,18 @@ WEBP_MetaHandler::WEBP_MetaHandler(XMPFiles* parent) : exifMgr(0)
 
 WEBP_MetaHandler::~WEBP_MetaHandler()
 {
-    if (this->mainChunk)
+    if (this->mainChunk) {
         delete this->mainChunk;
-    if (this->exifMgr)
+    }
+    if (this->exifMgr) {
         delete this->exifMgr;
-    if (this->iptcMgr)
+    }
+    if (this->iptcMgr) {
         delete this->iptcMgr;
-    if (this->psirMgr)
+    }
+    if (this->psirMgr) {
         delete this->psirMgr;
+    }
 }
 
 void WEBP_MetaHandler::CacheFileData()
@@ -126,8 +132,9 @@ void WEBP_MetaHandler::ProcessXMP()
     }
     if (haveExif) {
         XMP_OptionBits options = k2XMP_FileHadExif;
-        if (this->containsXMP)
+        if (this->containsXMP) {
             options |= k2XMP_FileHadXMP;
+        }
         TIFF_Manager& exif = *this->exifMgr;
         PSIR_Manager& psir = *this->psirMgr;
         IPTC_Manager& iptc = *this->iptcMgr;

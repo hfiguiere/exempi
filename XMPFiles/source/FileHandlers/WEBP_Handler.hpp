@@ -40,7 +40,7 @@ public:
     // The PSIR_Manager and IPTC_Manager aren't actually used, but they need
     // to be instantiated and passed to the function that reconciles EXIF and
     // XMP data.
-	PSIR_Manager* psirMgr;
+    PSIR_Manager* psirMgr;
     IPTC_Manager* iptcMgr;
 };
 
