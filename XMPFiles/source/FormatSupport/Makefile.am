@@ -76,6 +76,7 @@ libformatsupport_la_SOURCES = \
 	WAVE/CartMetadata.cpp  WAVE/Cr8rMetadata.h    WAVE/INFOMetadata.cpp  WAVE/PrmLMetadata.h    WAVE/WAVEReconcile.cpp \
 	WAVE/iXMLMetadata.h WAVE/iXMLMetadata.cpp \
 	P2_Support.hpp P2_Support.cpp \
+	WEBP_Support.hpp WEBP_Support.cpp \
 	$(NULL)
 
 

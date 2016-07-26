@@ -92,6 +92,7 @@ const FileExtMapping kFileExtMap[] =
 	  { "avi",  kXMP_AVIFile },
 	  { "cin",  kXMP_CINFile },
 	  { "wav",  kXMP_WAVFile },
+	  { "webp", kXMP_WEBPFile },
 	  { "mp3",  kXMP_MP3File },
 	  { "mp4",  kXMP_MPEG4File },
 	  { "m4v",  kXMP_MPEG4File },

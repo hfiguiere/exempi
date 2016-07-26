@@ -14,6 +14,7 @@
     - Lot of bug fixes.
 - New API: added XMP_OPEN_OPTIMIZEFILELAYOUT for new SDK.
 - Now require (partial) C++11 support to compile (gcc 4.4.7 tested)
+- New: WebP format handler (contributed: Frankie Dintino, The Atlantic)
 
 2.3.0 - 2016/03/15
 
