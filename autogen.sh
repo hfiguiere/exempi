@@ -46,5 +46,7 @@ if test -z "$*"; then
 	echo "the $0 command line."
 fi
 
-echo "Running configure..."
-$topsrcdir/configure --enable-maintainer-mode "$@"
+if [ ! $NOCONFIGURE == "1" ]; then
+	echo "Running configure..."
+	$topsrcdir/configure --enable-maintainer-mode "$@"
+fi
