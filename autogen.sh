@@ -38,13 +38,13 @@ $AUTOCONF
 
 cd $builddir
 
-if test -z "$*"; then
+
+if [ ! $NOCONFIGURE == "1" ]; then
+    if test -z "$*"; then
         echo "I am going to run ./configure with --enable-maintainer-mode"
 	echo "If you wish to pass any to it, please specify them on "
 	echo "the $0 command line."
-fi
-
-if [ ! $NOCONFIGURE == "1" ]; then
-	echo "Running configure..."
-	$topsrcdir/configure --enable-maintainer-mode "$@"
+    fi
+    echo "Running configure..."
+    $topsrcdir/configure --enable-maintainer-mode "$@"
 fi
