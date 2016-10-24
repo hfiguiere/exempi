@@ -193,7 +193,7 @@ AM_CONDITIONAL(UNIX_ENV, test x$EXEMPI_PLATFORM_DEF = xUNIX_ENV)
 AM_CONDITIONAL(WITH_UNIT_TEST, test x$ENABLE_UNITTEST = xyes)
 
 dnl Check for valgrind (optional) for make check.
-AC_CHECK_PROG(VALGRIND, valgrind, valgrind)
+dnl AC_CHECK_PROG(VALGRIND, valgrind, valgrind)
 AC_CHECK_HEADERS(valgrind/memcheck.h)
 if test "$VALGRIND" = ""; then
         AC_MSG_WARN([Valgrind is missing. checks will run without])
@@ -207,6 +207,15 @@ dnl due to stupid m4 I had to double the [ and ] in the regexp
         fi
 fi
 AC_SUBST(VALGRIND)
+
+AC_ARG_ENABLE(asan,[  --enable-asan    Turn on address sanitizer],[
+    AX_CFLAGS_GCC_OPTION([-fsanitize=address -fno-omit-frame-pointer])
+    AX_CXXFLAGS_GCC_OPTION([-fsanitize=address -fno-omit-frame-pointer])
+]
+,
+[
+
+])
 
 XMPCORE_CPPFLAGS="-D$EXEMPI_PLATFORM_DEF=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
 	-DXMP_StaticBuild=1 -DBanAllEntityUsage \
