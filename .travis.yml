@@ -1,0 +1,13 @@
+language: cpp
+compiler:
+        - clang
+        - gcc
+addons:
+        apt:
+                packages:
+                        - libboost-test1.48-dev
+script:
+        - ./autogen.sh
+        - ./configure
+        - make
+        - make check

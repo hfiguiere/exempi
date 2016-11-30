@@ -16,6 +16,10 @@
 - Now require (partial) C++11 support to compile (gcc 4.4.7 tested)
 - New: WebP format handler (contributed: Frankie Dintino, The Atlantic)
 
+Internal:
+
+- Exempi is now automatically build and the test run by Travis CI.
+
 2.3.0 - 2016/03/15
 
 - New: API xmp_datetime_compare().
