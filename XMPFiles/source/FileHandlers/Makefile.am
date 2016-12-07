@@ -61,11 +61,14 @@ RIFF_Handler.cpp RIFF_Handler.hpp \
 Scanner_Handler.cpp Scanner_Handler.hpp\
 SonyHDV_Handler.cpp SonyHDV_Handler.hpp\
 SWF_Handler.cpp SWF_Handler.hpp\
+SVG_Handler.cpp  SVG_Handler.hpp\
 TIFF_Handler.cpp TIFF_Handler.hpp\
 Trivial_Handler.cpp Trivial_Handler.hpp\
 UCF_Handler.cpp UCF_Handler.hpp\
 XDCAMEX_Handler.cpp XDCAMEX_Handler.hpp\
 XDCAM_Handler.cpp XDCAM_Handler.hpp\
+XDCAMFAM_Handler.cpp XDCAMFAM_Handler.hpp\
+XDCAMSAM_Handler.cpp XDCAMSAM_Handler.hpp\
 WAVE_Handler.cpp WAVE_Handler.hpp \
 GIF_Handler.cpp GIF_Handler.hpp \
 WEBP_Handler.cpp WEB_Handler.hpp
