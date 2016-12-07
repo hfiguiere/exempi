@@ -16,6 +16,7 @@
 typedef HMODULE OS_ModuleRef;
 #elif XMP_MacBuild
 #include <CoreFoundation/CFBundle.h>
+#include <memory>
 typedef CFBundleRef OS_ModuleRef;
 #elif XMP_UNIXBuild
 #include <tr1/memory>

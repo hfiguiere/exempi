@@ -3,24 +3,27 @@
 
 // =================================================================================================
 // ADOBE SYSTEMS INCORPORATED
-// Copyright 2002-2007 Adobe Systems Incorporated
+// Copyright 2008 Adobe Systems Incorporated
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
 // of the Adobe license agreement accompanying it.
+// 
+// This file includes implementation of GIF file metadata, according to GIF89a Specification. 
+// https://www.w3.org/Graphics/GIF/spec-gif89a.txt
+// The Graphics Interchange Format(c) is the Copyright property of CompuServe Incorporated. 
+// GIF(sm) is a Service Mark property of CompuServe Incorporated.
+// All Rights Reserved . http://www.w3.org/Consortium/Legal
 //
-// Derived from PNG_Handler.hpp by Ian Jacobi
+//Derived from PNG_Handler.hpp by Ian Jacobi
 // =================================================================================================
 
-#include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
+#include "public/include/XMP_Environment.h"	// ! Must be the first #include!
 
 #include "public/include/XMP_Const.h"
 #include "public/include/XMP_IO.hpp"
 
 #include "XMPFiles/source/XMPFiles_Impl.hpp"
-#include "source/XMPFiles_IO.hpp"
-
-#include "XMPFiles/source/FormatSupport/GIF_Support.hpp"
 
 // =================================================================================================
 /// \file GIF_Handler.hpp
@@ -35,14 +38,14 @@
 extern XMPFileHandler* GIF_MetaHandlerCTor ( XMPFiles* parent );
 
 extern bool GIF_CheckFormat ( XMP_FileFormat format,
-							   XMP_StringPtr  filePath,
-                               XMP_IO*    fileRef,
+							   XMP_StringPtr filePath,
+                               XMP_IO*       fileRef,
                                XMPFiles*     parent );
 
-static const XMP_OptionBits kGIF_HandlerFlags = ( kXMPFiles_CanInjectXMP | 
-												  kXMPFiles_CanExpand | 
-												  kXMPFiles_PrefersInPlace | 
-												  kXMPFiles_AllowsOnlyXMP | 
+static const XMP_OptionBits kGIF_HandlerFlags = ( kXMPFiles_CanInjectXMP |
+												  kXMPFiles_CanExpand |
+												  kXMPFiles_PrefersInPlace |
+												  kXMPFiles_AllowsOnlyXMP |
 												  kXMPFiles_ReturnsRawPacket |
 												  kXMPFiles_NeedsReadOnlyPacket
 													);
@@ -52,16 +55,33 @@ class GIF_MetaHandler : public XMPFileHandler
 public:
 
 	void CacheFileData();
-	void ProcessTNail();
 	void ProcessXMP();
-	
+
 	void UpdateFile ( bool doSafeUpdate );
-	void WriteTempFile  ( XMP_IO* tempRef );
+	void WriteTempFile ( XMP_IO* tempRef );
 
 	bool SafeWriteFile ();
 
 	GIF_MetaHandler ( XMPFiles* parent );
 	virtual ~GIF_MetaHandler();
+
+private:
+
+	enum GIFBlockType 
+	{
+		kXMP_block_ImageDesc = 0x2C,
+		kXMP_block_Extension = 0x21,
+		kXMP_block_Trailer = 0x3B,
+		kXMP_block_Header = 0x47
+	};
+
+	XMP_Uns64 XMPPacketOffset;
+	XMP_Uns32 XMPPacketLength;
+	XMP_Uns64 trailerOffset;
+
+	bool ParseGIFBlocks( XMP_IO * fileRef );
+	void ReadLogicalScreenDesc( XMP_IO* fileRef );
+	void SeekFile( XMP_IO * fileRef, XMP_Int64 offset, SeekMode mode );
 
 };	// GIF_MetaHandler
 

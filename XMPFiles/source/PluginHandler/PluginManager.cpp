@@ -56,8 +56,11 @@ static XMPFileHandler* Plugin_MetaHandlerCTor ( FileHandlerSharedPtr handler, XM
 	{
 		XMP_Throw ( "Plugin not loaded", kXMPErr_InternalFailure );
 	}
-
-	handler->getModule()->getPluginAPIs()->mInitializeSessionProc ( handler->getUID().c_str(), parent->GetFilePath().c_str(), (XMP_Uns32)parent->format, (XMP_Uns32)handler->getHandlerFlags(), (XMP_Uns32)parent->openFlags, &object, &error );
+	
+	if( handler->getModule()->getPluginAPIs()->mInitializeSessionV2Proc )
+		handler->getModule()->getPluginAPIs()->mInitializeSessionV2Proc ( handler->getUID().c_str(), parent->GetFilePath().c_str(), (XMP_Uns32)parent->format, (XMP_Uns32)handler->getHandlerFlags(), (XMP_Uns32)parent->openFlags, &object, &error, ErrorCallbackBox( parent->errorCallback.wrapperProc, parent->errorCallback.clientProc, parent->errorCallback.context, parent->errorCallback.limit ), parent->progressTracker->GetCallbackInfo() );
+	else
+		handler->getModule()->getPluginAPIs()->mInitializeSessionProc ( handler->getUID().c_str(), parent->GetFilePath().c_str(), (XMP_Uns32)parent->format, (XMP_Uns32)handler->getHandlerFlags(), (XMP_Uns32)parent->openFlags, &object, &error );
 	CheckError ( error );
 
 	FileHandlerInstance* instance = new FileHandlerInstance ( object, handler, parent );

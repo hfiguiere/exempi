@@ -489,8 +489,7 @@ XMPIterator::XMPIterator ( XMP_StringPtr  /*schemaNS*/,
                              XMP_StringPtr  /*propName*/,
 						   XMP_OptionBits options ) : clientRefs(0), info(IterInfo(options,0))
 {
-
-	XMP_Throw ( "Unimplemented XMPIterator constructor for global tables", kXMPErr_Unimplemented );
+	XMP_Throw("Unimplemented XMPIterator constructor for global tables", kXMPErr_Unimplemented);
 
 }	// XMPIterator for global tables
 
@@ -552,7 +551,7 @@ XMPIterator::Next ( XMP_StringPtr *	 schemaNS,
 	}
 	
 	*schemaNS = info.currSchema.c_str();
-	*nsSize   = info.currSchema.size();
+	*nsSize   = static_cast<XMP_StringLen>(info.currSchema.size());
 
 	*propOptions = info.currPos->options;
 
@@ -564,7 +563,7 @@ XMPIterator::Next ( XMP_StringPtr *	 schemaNS,
 	if ( ! (*propOptions & kXMP_SchemaNode) ) {
 
 		*propPath = info.currPos->fullPath.c_str();
-		*pathSize = info.currPos->fullPath.size();
+		*pathSize = static_cast<XMP_StringLen>(info.currPos->fullPath.size());
 
 		if ( info.options & kXMP_IterJustLeafName ) {
 			*propPath += info.currPos->leafOffset;
@@ -574,7 +573,7 @@ XMPIterator::Next ( XMP_StringPtr *	 schemaNS,
 		
 		if ( ! (*propOptions & kXMP_PropCompositeMask) ) {
 			*propValue = xmpNode->value.c_str();
-			*valueSize = xmpNode->value.size();
+			*valueSize = static_cast<XMP_StringLen>(xmpNode->value.size());
 		}
 
 	}
