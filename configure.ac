@@ -90,7 +90,6 @@ AX_CXX_COMPILE_STDCXX_11(noext,mandatory)
 
 AC_C_BIGENDIAN
 AC_DEFINE(CHECKED_ENDIANNESS)
-AC_LANG(C++)
 
 AC_ARG_WITH(darwinports,[  --with-darwinports     add /opt/local/... to CPP/LDFLAGS (Mac OSX)],[
         if test "x$withval" != "xno"; then
@@ -211,7 +210,8 @@ fi
 AC_SUBST(VALGRIND)
 
 AC_ARG_ENABLE(asan,[  --enable-asan    Turn on address sanitizer],[
-    AX_APPEND_COMPILE_FLAGS([-fsanitize=address -fno-omit-frame-pointer])
+    AX_CFLAGS_GCC_OPTION([-fsanitize=address -fno-omit-frame-pointer])
+    AX_CXXFLAGS_GCC_OPTION([-fsanitize=address -fno-omit-frame-pointer])
 ]
 ,
 [
