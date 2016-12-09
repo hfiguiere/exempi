@@ -1,6 +1,22 @@
 2.5.0
 
 - Upgrade XMPCore to Adone XMP SDK CC 2016.07
+  - Support for iOS in XMPFiles
+  - New DOM based API’s are added in XMP Core to access metadata tree
+    hierarchy. (not exposed yet in Exempi)
+  - Added support XMP/metadata in utf-8 encoded uncompressed SVG files in XMPFiles.
+  - Added support of GIF handler in XMPFiles.
+  - Added support for reconciliation of iXML’s TRACK_LIST and its components to get
+    microphone data.
+  - Added support for IFDs of type 13 in TIFF.
+  - Added support for MPEG4 videos shot from Google Nexus 5 camera.
+  - Restructured the implementation of XDCAM Handler to support File Access Mode (FAM)
+    and Simple Access Mode (SAM)
+  - Added inbuilt support for iXML namespace in XMPCore.
+  - Modified the alias tiff:ImageDescription for dc:description as language alternative
+    array instead of simple property.
+  - Lot of bug fixes in XMPFiles and XMPCore.
+- Removed Exempi provided support for GIF in favour of Adobe's.
 
 2.4.0
 
