@@ -56,7 +56,7 @@ check_DATA = test1.xmp fdo18635.jpg fdo83313.jpg
 noinst_HEADERS = utils.h
 
 EXTRA_DIST = $(check_DATA) $(check_SCRIPTS)
-CLEANFILES = test.jpg
+CLEANFILES = test.jpg test.webp
 
 AM_CXXFLAGS = @BOOST_CPPFLAGS@
 AM_CPPFLAGS = -I$(srcdir)/.. -I$(top_srcdir)/public/include -I$(top_srcdir)

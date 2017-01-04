@@ -68,6 +68,6 @@ XDCAMEX_Handler.cpp XDCAMEX_Handler.hpp\
 XDCAM_Handler.cpp XDCAM_Handler.hpp\
 WAVE_Handler.cpp WAVE_Handler.hpp \
 GIF_Handler.cpp GIF_Handler.hpp \
-WEBP_Handler.cpp WEB_Handler.hpp
+WEBP_Handler.cpp WEBP_Handler.hpp
 $(NULL)
 
