@@ -1,4 +1,4 @@
-2.4.0
+2.4.0 - 2017/01/07
 
 - Bug #89449: Upgrade XMPCore to Adobe XMP CC 2014.12.
   - New flag to optimize layout on MPEG4 files.
