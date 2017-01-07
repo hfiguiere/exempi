@@ -25,6 +25,7 @@ shave-libtool
 *.la
 .libs
 .deps
+.dirstamp
 .git
 compile
 libtool
