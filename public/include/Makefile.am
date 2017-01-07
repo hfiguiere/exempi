@@ -47,4 +47,12 @@ noinst_HEADERS = TXMPFiles.hpp  TXMPIterator.hpp \
 	XMP_Const.h XMP_Environment.h \
 	XMP_IO.hpp \
 	XMP_UnixEndian.h \
+	XMPCore/XMPCoreDefines.h \
+	XMPCore/XMPCoreErrorCodes.h \
+	XMPCore/XMPCoreFwdDeclarations.h \
+	XMPCore/XMPCoreLatestInterfaceVersions.h \
+	XMPCommon/XMPCommonDefines.h \
+	XMPCommon/XMPCommonErrorCodes.h \
+	XMPCommon/XMPCommonFwdDeclarations.h \
+	XMPCommon/XMPCommonLatestInterfaceVersions.h \
 	$(NULL)

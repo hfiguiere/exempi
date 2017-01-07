@@ -1,7 +1,7 @@
 #
 # exempi - Makefile.am
 #
-# Copyright (C) 2007-2013 Hubert Figuiere
+# Copyright (C) 2007-2017 Hubert Figuiere
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -59,6 +59,8 @@ libXMPCore_la_SOURCES = ExpatAdapter.cpp  \
 	WXMPMeta.cpp     \
 	XMPCore_Impl.cpp  \
 	XMPMeta.cpp      \
+	XMPMeta2.hpp     \
 	XMPMeta-Parse.cpp   \
-	XMPUtils.cpp
+	XMPUtils.cpp \
+	$(NULL)
 

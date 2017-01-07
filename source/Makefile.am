@@ -1,7 +1,7 @@
 #
 # exempi - Makefile.am
 #
-# Copyright (C) 2007-2013 Hubert Figuiere
+# Copyright (C) 2007-2017 Hubert Figuiere
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -43,8 +43,10 @@ AM_CPPFLAGS = -I$(top_srcdir) \
 	-Wall @XMPCORE_CPPFLAGS@
 
 noinst_HEADERS = UnicodeConversions.hpp ExpatAdapter.hpp EndianUtils.hpp\
-	XMLParserAdapter.hpp XMPFiles_IO.hpp Endian.h Host_IO.hpp XIO.hpp
-
+	XMLParserAdapter.hpp XMPFiles_IO.hpp Endian.h \
+	Host_IO.hpp XIO.hpp\
+	SafeStringAPIs.cpp \
+	$(NULL)
 
 libxmpcommon_la_SOURCES = UnicodeInlines.incl_cpp UnicodeConversions.cpp\
 	XML_Node.cpp XMPFiles_IO.cpp \
@@ -57,4 +59,6 @@ libxmpcommon_la_SOURCES = UnicodeInlines.incl_cpp UnicodeConversions.cpp\
 	$(NULL)
 
 
-EXTRA_DIST = Host_IO-POSIX.cpp Host_IO-Win.cpp
+EXTRA_DIST = Host_IO-POSIX.cpp \
+	Host_IO-Win.cpp \
+	$(NULL)
