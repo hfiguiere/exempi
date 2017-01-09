@@ -414,7 +414,7 @@ private:
 	class XMP_HomeGrownLock {
 	public:
 		XMP_HomeGrownLock();
-		~XMP_HomeGrownLock();
+		~XMP_HomeGrownLock() noexcept(false);
 		void AcquireForRead();
 		void AcquireForWrite();
 		void ReleaseFromRead();

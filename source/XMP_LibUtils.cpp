@@ -265,7 +265,7 @@ void XMP_ReadWriteLock::Release()
 
 	// =============================================================================================
 
-	XMP_HomeGrownLock::~XMP_HomeGrownLock()
+	XMP_HomeGrownLock::~XMP_HomeGrownLock() noexcept(false)
 	{
 		TerminateBasicMutex ( this->queueMutex );
 		TerminateBasicQueue ( this->writerQueue );
