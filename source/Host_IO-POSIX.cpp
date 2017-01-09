@@ -337,7 +337,7 @@ XMP_Int64 Host_IO::Seek ( Host_IO::FileRef refNum, XMP_Int64 offset, SeekMode mo
 			break;
 	}
 
-	XMP_Int64 newPos = (XMP_Int64) lseek ( refNum, offset, mode );
+	XMP_Int64 newPos = (XMP_Int64) lseek ( refNum, offset, posMode );
 	if ( newPos == -1 ) XMP_Throw ( "Host_IO::Seek, lseek failure", kXMPErr_ExternalFailure );
 
 	return newPos;
