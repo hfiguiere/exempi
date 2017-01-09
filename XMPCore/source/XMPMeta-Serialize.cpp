@@ -297,7 +297,7 @@ AppendNodeValue ( XMP_VarString & outputStr, const XMP_VarString & value, bool f
 	unsigned char * runStart = (unsigned char *) value.c_str();
 	unsigned char * runLimit  = runStart + value.size();
 	unsigned char * runEnd;
-	unsigned char   ch;
+	unsigned char   ch = 0;
 	
 	while ( runStart < runLimit ) {
 	
