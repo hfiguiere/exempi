@@ -1,34 +1,43 @@
 dist: trusty
 language: cpp
+os:
+  - linux
+  - osx
+
 matrix:
-        include:
-                - compiler: gcc
-                  env: COMPILER=g++
-                - compiler: gcc
-                  addons:
-                      apt:
-                        sources:
-                                - ubuntu-toolchain-r-test
-                        packages:
-                                - libboost-test-dev
-                                - g++-5
-                  env: COMPILER=g++-5
-                - compiler: gcc
-                  addons:
-                      apt:
-                        sources:
-                                - ubuntu-toolchain-r-test
-                        packages:
-                                - libboost-test-dev
-                                - g++-6
-                  env: COMPILER=g++-6
-                - compiler: clang
-                  env: COMPILER=clang++
-addons:
+  include:
+    - os: linux
+    - os: osx
+      osx_image: xcode7.2
+    - os: osx
+      osx_image: xcode8.1
+    - compiler: gcc
+      env: COMPILER=g++
+    - compiler: gcc
+      addons:
         apt:
-                packages:
-                        - libboost-test-dev
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - libboost-test-dev
+            - g++-5
+      env: COMPILER=g++-5
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - libboost-test-dev
+            - g++-6
+      env: COMPILER=g++-6
+    - compiler: clang
+      env: COMPILER=clang++
+addons:
+  apt:
+    packages:
+      - libboost-test-dev
 script:
-        - ./autogen.sh
-        - make
-        - make distcheck
+  - ./autogen.sh
+  - make
+  - make distcheck
