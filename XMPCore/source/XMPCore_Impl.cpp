@@ -828,12 +828,20 @@ FindSchemaNode	( XMP_Node *		xmpTree,
 		try {
 			XMP_StringPtr prefixPtr;
 			XMP_StringLen prefixLen;
-			bool found ( false );
+#if XMP_DebugBuild
+			bool found;
+#endif
 			if (prefixSearchFnPtr && privateData) {
-				found = prefixSearchFnPtr ( privateData, nsURI, &prefixPtr, &prefixLen );
+#if XMP_DebugBuild
+				found =
+#endif
+					prefixSearchFnPtr ( privateData, nsURI, &prefixPtr, &prefixLen );
 			}
 			else {
-				found = XMPMeta::GetNamespacePrefix ( nsURI, &prefixPtr, &prefixLen );	// *** Use map directly?
+#if XMP_DebugBuild
+				found =
+#endif
+					XMPMeta::GetNamespacePrefix ( nsURI, &prefixPtr, &prefixLen );	// *** Use map directly?
 			}
 			XMP_Assert ( found );
 			schemaNode->value.assign ( prefixPtr, prefixLen );

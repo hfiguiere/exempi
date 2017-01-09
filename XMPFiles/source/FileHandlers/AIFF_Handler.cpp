@@ -176,9 +176,12 @@ void AIFF_MetaHandler::CacheFileData()
 	this->parent->ioRef ->Rewind();
 
 	XMP_Uns8 buffer[12];
-	XMP_Int32 got = this->parent->ioRef->Read ( buffer, 12 );
+#if XMP_DebugBuild
+	XMP_Int32 got =
+#endif
+          this->parent->ioRef->Read ( buffer, 12 );
 	XMP_Assert( got == 12 );
-	
+
 	XMP_Uns32 type = AIFF_MetaHandler::whatAIFFFormat( &buffer[8] );
 	XMP_Assert( type == kType_AIFF || type == kType_AIFC );
 
