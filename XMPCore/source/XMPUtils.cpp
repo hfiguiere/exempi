@@ -2399,9 +2399,14 @@ XMPUtils::ConvertToInt64 ( XMP_StringPtr strValue )
 	XMP_Int64 result;
 
 	if ( ! XMP_LitNMatch ( strValue, "0x", 2 ) ) {
-		count = sscanf ( strValue, "%lld%c", &result, &nextCh );
+		// when int64_t is defined as a long, we get a warning.
+		long long value;
+		count = sscanf ( strValue, "%lld%c", &value, &nextCh );
+		result = value;
 	} else {
-		count = sscanf ( strValue, "%llx%c", &result, &nextCh );
+		unsigned long long uvalue;
+		count = sscanf ( strValue, "%llx%c", &uvalue, &nextCh );
+		result = uvalue; // bad unsigned -> signed
 	}
 
 	if ( count != 1 ) XMP_Throw ( "Invalid integer string", kXMPErr_BadParam );
