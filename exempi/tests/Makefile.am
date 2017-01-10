@@ -42,10 +42,14 @@ TEST_EXTENSIONS = .sh
 if WITH_UNIT_TEST
 check_PROGRAMS = testexempicore testserialise testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
-	test3 testinit testfdo18635 testfdo83313 testcpp testwebp
+	test3 testinit testfdo18635 testfdo83313 testcpp testwebp \
+	testadobesdk \
+	$(NULL)
 TESTS = testcore.sh testinit testexempicore testserialise testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
-	test3 testfdo18635 testfdo83313 testcpp testwebp
+	test3 testfdo18635 testfdo83313 testcpp testwebp \
+	testadobesdk \
+	$(NULL)
 TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) BOOST_TEST_CATCH_SYSTEM_ERRORS=no VALGRIND="$(VALGRIND)"
 LOG_COMPILER = $(VALGRIND)
 endif
@@ -59,7 +63,8 @@ EXTRA_DIST = $(check_DATA) $(check_SCRIPTS)
 CLEANFILES = test.jpg test.webp
 
 AM_CXXFLAGS = @BOOST_CPPFLAGS@
-AM_CPPFLAGS = -I$(srcdir)/.. -I$(top_srcdir)/public/include -I$(top_srcdir)
+AM_CPPFLAGS = -I$(srcdir)/.. -I$(top_srcdir)/public/include -I$(top_srcdir) \
+	-Wall -D@EXEMPI_PLATFORM_DEF@=1
 
 testinit_SOURCES = testinit.cpp utils.cpp
 testinit_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
@@ -108,3 +113,7 @@ testcpp_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
 testwebp_SOURCES = test-webp.cpp utils.cpp
 testwebp_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
 testwebp_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
+
+testadobesdk_SOURCES = test-adobesdk.cpp
+testadobesdk_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+testadobesdk_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
