@@ -48,7 +48,7 @@ ChunkController::ChunkController( IChunkBehavior* chunkBehavior, XMP_Bool bigEnd
 	mChunkBehavior->setMovablePaths( &mChunkPaths );
 }
 
-ChunkController::~ChunkController()
+ChunkController::~ChunkController() noexcept(false)
 {
 	XMP_Validate( mRoot != NULL, "ERROR inserting Chunk. mRoot is NULL.", kXMPErr_InternalFailure );
 	XMP_Assert(dynamic_cast<Chunk*>(mRoot) == static_cast<Chunk*>(mRoot));

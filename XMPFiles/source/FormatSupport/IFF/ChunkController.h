@@ -51,7 +51,7 @@ class ChunkController
 		 */
 		ChunkController( IChunkBehavior* chunkBehavior, XMP_Bool bigEndian );
 
-		~ChunkController();
+		~ChunkController() noexcept(false);
 
 		/**
 		 * Adds the given path to the array of "Chunk's of interest",
