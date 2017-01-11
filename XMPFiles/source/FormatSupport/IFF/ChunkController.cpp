@@ -623,7 +623,7 @@ std::string ChunkController::dumpTree( )
 
 	if ( mTrailingGarbageSize != 0 )
 	{
-		snprintf( buffer, 255, "\n Trailing Bytes: %llu",	mTrailingGarbageSize );
+		snprintf( buffer, 255, "\n Trailing Bytes: %llu", (long long unsigned)mTrailingGarbageSize );
 
 		std::string str(buffer);
 		ret.append(str);

@@ -670,9 +670,9 @@ std::string Chunk::toString( std::string tabs, XMP_Bool showOriginal )
 								"type: %.4s,  "
 								"offset: 0x%.8llX",
 				(char*)(&id),
-				size,
+				(long long unsigned)size,
 				(char*)(&type),
-				offset );
+				(long long unsigned)offset );
 	std::string str(buffer);
 
 	// Dump children

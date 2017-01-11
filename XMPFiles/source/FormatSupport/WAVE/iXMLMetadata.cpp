@@ -284,7 +284,7 @@ namespace IFF_RIFF {
 	static XMP_Uns64 ConvertStringToUns64( const std::string & strValue ) {
 		int count;
 		char nextCh;
-		XMP_Uns64 result;
+		long long unsigned result;
 
 		count = sscanf ( strValue.c_str(), "%llu%c", &result, &nextCh );
 		if ( count != 1 ) XMP_Throw ( "Invalid integer string", kXMPErr_BadParam );
@@ -422,7 +422,7 @@ namespace IFF_RIFF {
 	static std::string ConvertUns64ToString( XMP_Uns64 uValue ) {
 		char buffer[64];
 
-		snprintf( buffer, sizeof( buffer ), "%llu", uValue );
+		snprintf( buffer, sizeof( buffer ), "%llu", (long long unsigned)uValue );
 		std::string str( buffer );
 		return str;
 	}

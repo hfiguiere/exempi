@@ -377,8 +377,12 @@ XMP_Bool WAVEReconcile::importToXMP( SXMPMeta& outXMP, const MetadataSet& inMeta
 			int count;
 			char nextCh;
 			const char * strValue = xmpValue.c_str();
-			count = sscanf ( strValue, "%llu%c", &nSamples, &nextCh );
-		
+
+			// make sure the format use the right type
+			long long unsigned numSamples;
+			count = sscanf ( strValue, "%llu%c", &numSamples, &nextCh );
+			nSamples = numSamples;
+
 			if ( count != 1 ) ok = false;
 		}
 		if ( ok )
