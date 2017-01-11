@@ -39,5 +39,4 @@ addons:
       - libboost-test-dev
 script:
   - ./autogen.sh
-  - make
   - make distcheck
