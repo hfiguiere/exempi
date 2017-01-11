@@ -46,7 +46,7 @@ public:
 	void AddWorkDone ( float workIncrement );
 	void WorkComplete();
 	CallbackInfo * GetCallbackInfo() {
-		return ( (&cbInfo) ? (&cbInfo) : NULL);
+		return &cbInfo;
 	}
 
 	bool WorkInProgress() { return this->workInProgress; };
