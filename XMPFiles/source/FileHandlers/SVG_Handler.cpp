@@ -56,7 +56,7 @@ bool SVG_CheckFormat( XMP_FileFormat format,
 		return false;
 
 	// Checking for UTF-16 BOM and UTF-32 BOM
-	if ( ( buffer[ 0 ] == 0xFF && buffer[ 1 ] == 0xFE ) || ( buffer[ 0 ] == 0xFE && buffer[ 1 ] == 0xFF ) || ( buffer[ 0 ] == buffer[ 1 ] == 0x00 && buffer[ 2 ] == 0xFE && buffer[ 3 ] == 0xFF ) )
+	if ( ( (buffer[ 0 ] == 0xFF) && (buffer[ 1 ] == 0xFE) ) || ( (buffer[ 0 ] == 0xFE) && (buffer[ 1 ] == 0xFF) ) || ( (buffer[ 0 ] == 0x00) && (buffer[ 1 ] == 0x00) && (buffer[ 2 ] == 0xFE) && (buffer[ 3 ] == 0xFF) ) )
 	{
 		return false;
 	}
@@ -156,7 +156,7 @@ void SVG_MetaHandler::CacheFileData()
 	fileRef->Read( marker, 4 );
 
 	// Checking for UTF-16 BOM and UTF-32 BOM
-	if ( ( marker[ 0 ] == 0xFF && marker[ 1 ] == 0xFE ) || ( marker[ 0 ] == 0xFE && marker[ 1 ] == 0xFF ) || ( marker[ 0 ] == marker[ 1 ] == 0x00 && marker[ 2 ] == 0xFE && marker[ 3 ] == 0xFF ) )
+	if ( ( (marker[ 0 ] == 0xFF) && (marker[ 1 ] == 0xFE) ) || ( (marker[ 0 ] == 0xFE) && (marker[ 1 ] == 0xFF) ) || ( (marker[ 0 ] == 0x00) && (marker[ 1 ] == 0x00) && (marker[ 2 ] == 0xFE) && (marker[ 3 ] == 0xFF) ) )
 	{
 		XMP_Error error( kXMPErr_BadXML, "Invalid SVG file" );
 		this->NotifyClient( &this->parent->errorCallback, kXMPErrSev_OperationFatal, error );
@@ -447,7 +447,7 @@ void SVG_MetaHandler::UpdateFile( bool doSafeUpdate )
 	bool isUpdateRequire = isTitleUpdateReq | isDescUpdateReq | (this->packetInfo.offset == kXMPFiles_UnknownOffset);
 
 	// Inplace Updation of XMP
-	if ( !isUpdateRequire && this->xmpPacket.size() == this->packetInfo.length )
+	if ( !isUpdateRequire && ((XMP_Int32)(this->xmpPacket.size()) == this->packetInfo.length) )
 	{
 		sourceRef->Seek( this->packetInfo.offset, kXMP_SeekFromStart );
 		sourceRef->Write( this->xmpPacket.c_str(), static_cast< int >( this->xmpPacket.size() ) );
