@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(test_getFloat)
   float_union piF;
   piF.value = M_PI;
   double_union piD;
-  piD.value = M_PIl;
+  piD.value = M_PI;
 
   // copy these byte representations
   // and flip endian as needed.
@@ -134,9 +134,9 @@ BOOST_AUTO_TEST_CASE(test_getFloat)
 
   // check getting double
   double resultD = GetDoubleLE(doubleLE);
-  BOOST_CHECK(resultD == (double)M_PIl);
+  BOOST_CHECK(resultD == (double)M_PI);
   resultD = GetDoubleBE(doubleBE);
-  BOOST_CHECK(resultD == (double)M_PIl);
+  BOOST_CHECK(resultD == (double)M_PI);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
