@@ -199,12 +199,20 @@ static inline XMP_Uns64 GetUns64AsIs ( const void * addr )
 
 // -------------------------------------------------------------------------------------------------
 
+union float_uns_union {
+  float f;
+  XMP_Uns32 u;
+};
+
 static inline float
 GetFloatBE ( const void * addr )
 {
-	XMP_Uns32 value = *((XMP_Uns32*)addr);
-	if ( kLittleEndianHost ) value = Flip4 ( value );
-	return *((float*)&value);
+	float_uns_union value;
+	value.u = *((XMP_Uns32*)addr);
+	if ( kLittleEndianHost ) {
+		value.u = Flip4 ( value.u );
+	}
+	return value.f;
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -212,19 +220,30 @@ GetFloatBE ( const void * addr )
 static inline float
 GetFloatLE ( const void * addr )
 {
-	XMP_Uns32 value = *((XMP_Uns32*)addr);
-	if ( kBigEndianHost ) value = Flip4 ( value );
-	return *((float*)&value);
+	float_uns_union value;
+	value.u = *((XMP_Uns32*)addr);
+	if ( kBigEndianHost ) {
+		value.u = Flip4 ( value.u );
+	}
+	return value.f;
 }
 
 // -------------------------------------------------------------------------------------------------
 
+union double_uns_union {
+  double d;
+  XMP_Uns64 u;
+};
+
 static inline double
 GetDoubleBE ( const void * addr )
 {
-	XMP_Uns64 value = *((XMP_Uns64*)addr);
-	if ( kLittleEndianHost ) value = Flip8 ( value );
-	return *((double*)&value);
+	double_uns_union value;
+	value.u = *((XMP_Uns64*)addr);
+	if ( kLittleEndianHost ) {
+		value.u = Flip8 ( value.u );
+	}
+	return value.d;
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -232,9 +251,12 @@ GetDoubleBE ( const void * addr )
 static inline double
 GetDoubleLE ( const void * addr )
 {
-	XMP_Uns64 value = *((XMP_Uns64*)addr);
-	if ( kBigEndianHost ) value = Flip8 ( value );
-	return *((double*)&value);
+	double_uns_union value;
+	value.u = *((XMP_Uns64*)addr);
+	if ( kBigEndianHost ) {
+		value.u = Flip8 ( value.u );
+	}
+	return value.d;
 }
 
 // =================================================================================================
