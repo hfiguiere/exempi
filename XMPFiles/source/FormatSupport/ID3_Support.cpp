@@ -416,7 +416,8 @@ bool ID3Header::read ( XMP_IO* file )
 	}
 
 	XMP_Uns8 major = this->fields[o_vMajor];
-	XMP_Uns8 minor = this->fields[o_vMinor];
+	/*XMP_Uns8 minor = this->fields[o_vMinor];*/
+	// XXX I'm pretty sure it is minor <= 4. -- Hub
 	XMP_Validate ( ((2 <= major) && (major <= 4)), "Invalid ID3 major version", kXMPErr_BadFileFormat );
 
 	return true;

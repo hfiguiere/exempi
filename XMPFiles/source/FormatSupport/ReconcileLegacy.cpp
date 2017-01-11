@@ -41,7 +41,7 @@ void ImportPhotoData ( const TIFF_Manager & exif,
 					   SXMPMeta *		    xmp,
 					   XMP_OptionBits	    options /* = 0 */ )
 {
-	bool haveXMP  = XMP_OptionIsSet ( options, k2XMP_FileHadXMP );
+	/*bool haveXMP  = XMP_OptionIsSet ( options, k2XMP_FileHadXMP );*/
 	bool haveExif = XMP_OptionIsSet ( options, k2XMP_FileHadExif );
 	bool haveIPTC = XMP_OptionIsSet ( options, k2XMP_FileHadIPTC );
 	

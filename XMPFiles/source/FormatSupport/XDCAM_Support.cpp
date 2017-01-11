@@ -111,7 +111,7 @@ bool XDCAM_Support::GetMediaProLegacyMetadata ( SXMPMeta * xmpObjPtr,
 		{ if ( expat != 0 ) delete expat; return containsXMP; }
 		
 	XML_NodePtr mediaproRootElem = 0;
-	XML_NodePtr contentContext = 0, materialContext = 0;
+	XML_NodePtr contentContext = 0 /*, materialContext = 0*/;
 	
 	XMP_Uns8 buffer [64*1024];
 	while ( true ) {

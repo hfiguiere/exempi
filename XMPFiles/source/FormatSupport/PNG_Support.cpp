@@ -73,11 +73,13 @@ namespace CRC
 		return c;
 	}
 
+#if 0 // unused
 	/* Return the CRC of the bytes buf[0..len-1]. */
 	static unsigned long crc(unsigned char *buf, int len)
 	{
 		return update_crc(0xffffffffL, buf, len) ^ 0xffffffffL;
 	}
+#endif
 } // namespace CRC
 
 namespace PNG_Support
@@ -149,7 +151,7 @@ namespace PNG_Support
 			bytesRead = fileRef->Read ( buffer, 4 );
 			if ( bytesRead != 4 ) return false;
 			inOutPosition += 4;
-			long crc = GetUns32BE(buffer);
+			/*long crc =*/ GetUns32BE(buffer);
 
 			ChunkData	newChunk;
 	
@@ -243,7 +245,7 @@ namespace PNG_Support
 			fileRef->Seek ( (inOutChunkData.pos + 4), kXMP_SeekFromStart );
 
 			size_t pos = 0;
-			long bytesRead = fileRef->Read ( &buffer[pos], (inOutChunkData.len + 4) );
+			/*long bytesRead =*/ fileRef->Read ( &buffer[pos], (inOutChunkData.len + 4) );
 
 			unsigned long crc = CalculateCRC( buffer, (inOutChunkData.len + 4) );
 			unsigned long crc_value = MakeUns32BE( crc );

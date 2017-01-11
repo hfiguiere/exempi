@@ -301,7 +301,7 @@ bool CartMetadata::isEmptyValue ( XMP_Uns32 id, ValueObject& valueObj ) {
 			if( obj != NULL )
 			{
 				XMP_Uns32 size	 = 0;
-				const StoredCartTimer* const buffer = obj->getArray( size );
+				/*const StoredCartTimer* const buffer =*/ obj->getArray( size );
 
 				isEmpty = ( size == 0 );
 			}

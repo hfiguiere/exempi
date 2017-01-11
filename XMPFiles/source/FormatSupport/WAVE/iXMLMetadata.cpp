@@ -127,9 +127,9 @@ namespace IFF_RIFF {
 			return;
 		}
 
-		XMP_StringPtr ns = mRootNode->ns.c_str();
+		/*XMP_StringPtr ns = mRootNode->ns.c_str();*/
 
-		XML_NodePtr currentNode( NULL );
+		/*XML_NodePtr currentNode( NULL );*/
 
 		ParseAndSetProperties();
 		resetChanges();
@@ -871,7 +871,7 @@ namespace IFF_RIFF {
 		std::string strValue = ParseStringValue( parentNode, tagName, false );
 
 		if ( strValue.size() > 0 ) {
-			XMP_Uns64 uValue;
+			XMP_Uns64 uValue = 0;
 			try {
 				uValue = ConvertStringToUns64( Trim( strValue ) );
 			} catch( ... ) {

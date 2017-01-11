@@ -222,7 +222,7 @@ void IPTC_Manager::ParseMemoryDataSets ( const void* data, XMP_Uns32 length, boo
 		// dsPtr	- pointer to the current DataSet's header
 		// dsLen	- value length, does not include extended size bytes
 	
-		XMP_Uns8* dsPtr  = iptcPtr;
+		/*XMP_Uns8* dsPtr  = iptcPtr;*/
 		XMP_Uns8  oneC   = *iptcPtr;
 		XMP_Uns8  recNum = *(iptcPtr+1);
 		XMP_Uns8  dsNum  = *(iptcPtr+2);

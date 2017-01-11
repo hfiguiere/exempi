@@ -267,7 +267,7 @@ void MOOV_Manager::ParseNestedBoxes ( BoxNode * parentNode, const std::string & 
 		#endif
 		
 		const char * pathSuffix = 0;	// Set to non-zero for boxes of interest.
-		char buffer[6];	buffer[0] = 0;
+		/*char buffer[6];	buffer[0] = 0;*/
 		
 			switch ( isoInfo.boxType ) {	// Want these boxes regardless of parent.
 				case ISOMedia::k_udta : pathSuffix = "/udta"; break;

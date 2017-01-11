@@ -487,7 +487,7 @@ XMP_Uns32 PSIR_FileWriter::UpdateFileResources ( XMP_IO* sourceRef, XMP_IO* dest
 												 XMP_ProgressTracker* progressTracker )
 {
 	const XMP_Uns32 zero32 = 0;
-	const bool checkAbort = (abortProc != 0);
+	/*const bool checkAbort = (abortProc != 0);*/
 
 	struct RsrcHeader {
 		XMP_Uns32 type;

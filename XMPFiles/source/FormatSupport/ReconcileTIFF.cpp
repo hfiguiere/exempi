@@ -1345,7 +1345,7 @@ ImportTIFF_Date ( const TIFF_Manager & tiff, const TIFF_Manager::TagInfo & dateI
 // =================================================================================================
 // ImportTIFF_LocTextASCII
 // =======================
-
+#if 0 // unused
 static void
 ImportTIFF_LocTextASCII ( const TIFF_Manager & tiff, XMP_Uns8 ifd, XMP_Uns16 tagID,
 						  SXMPMeta * xmp, const char * xmpNS, const char * xmpProp )
@@ -1383,7 +1383,7 @@ ImportTIFF_LocTextASCII ( const TIFF_Manager & tiff, XMP_Uns8 ifd, XMP_Uns16 tag
 	}
 
 }	// ImportTIFF_LocTextASCII
-
+#endif
 // =================================================================================================
 // ImportTIFF_EncodedString
 // ========================

@@ -145,7 +145,7 @@ bool ASF_Support::ReadHeaderObject ( XMP_IO* fileRef, ObjectState& inOutObjectSt
 		pos += bufferSize;
 
 		// read contained header objects
-		XMP_Uns32 numberOfHeaders = GetUns32LE ( &buffer[24] );
+		/*XMP_Uns32 numberOfHeaders = GetUns32LE ( &buffer[24] );*/
 		ASF_ObjectBase objectBase;
 
 		while ( read < newObject.len ) {
@@ -188,7 +188,7 @@ bool ASF_Support::ReadHeaderObject ( XMP_IO* fileRef, ObjectState& inOutObjectSt
 				XMP_Uns16 authorLen = GetUns16LE ( &buffer[26] );
 				XMP_Uns16 copyrightLen = GetUns16LE ( &buffer[28] );
 				XMP_Uns16 descriptionLen = GetUns16LE ( &buffer[30] );
-				XMP_Uns16 ratingLen = GetUns16LE ( &buffer[32] );
+				/*XMP_Uns16 ratingLen = GetUns16LE ( &buffer[32] );*/
 
 				XMP_Uns16 fieldPos = 34;
 
@@ -314,7 +314,7 @@ bool ASF_Support::WriteHeaderObject ( XMP_IO* sourceRef, XMP_IO* destRef, const 
 		pos += bufferSize;
 
 		// read contained header objects
-		XMP_Uns32 numberOfHeaders = GetUns32LE ( &buffer[24] );
+		/*XMP_Uns32 numberOfHeaders = GetUns32LE ( &buffer[24] );*/
 		ASF_ObjectBase objectBase;
 
 		// prepare new header in memory

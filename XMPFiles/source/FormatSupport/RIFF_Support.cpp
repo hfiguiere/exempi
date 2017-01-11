@@ -643,7 +643,7 @@ void importProperties( RIFF_MetaHandler* handler )
 
 void relocateWronglyPlacedXMPChunk( RIFF_MetaHandler* handler )
 {
-	XMP_IO* file = handler->parent->ioRef;
+	/*XMP_IO* file = handler->parent->ioRef;*/
 	RIFF::containerVect *rc = &handler->riffChunks;
 	RIFF::ContainerChunk* lastChunk = rc->at( rc->size()-1 );
 

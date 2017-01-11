@@ -1930,7 +1930,10 @@ void TIFF_FileWriter::UpdateFileStream ( XMP_IO* fileRef, XMP_ProgressTracker* p
 
 	// Append the IFDs and tag values that grow.
 
-	XMP_Int64 fileEnd = fileRef->Seek ( 0, kXMP_SeekFromEnd  );
+#if XMP_DebugBuild
+	XMP_Int64 fileEnd =
+#endif
+		fileRef->Seek ( 0, kXMP_SeekFromEnd  );
 	XMP_Assert ( fileEnd == appendedOrigin );
 
 	for ( int ifd = 0; ifd < kTIFF_KnownIFDCount; ++ifd ) {

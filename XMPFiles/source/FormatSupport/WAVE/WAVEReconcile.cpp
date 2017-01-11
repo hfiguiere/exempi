@@ -73,7 +73,7 @@ static const char * kDM_timeValue = "timeValue";
 static const char * kDM_good = "good";
 static const char * kIXML_trackList = "trackList";
 static const char * kIXML_channelIndex = "channelIndex";
-static const char * kIXML_interleaveIndex = "interleaveIndex";
+/*static const char * kIXML_interleaveIndex = "interleaveIndex";*/
 static const char * kIXML_Name = "name";
 static const char * kIXML_Function = "function";
 
@@ -917,9 +917,6 @@ void IFF_RIFF::WAVEReconcile::exportSpecialXMPToiXML( SXMPMeta & inXMP, IMetadat
 	bool bextTimeReferenceDataAvailable = false;
 	XMP_Uns32 bextLowValue = 0;
 	XMP_Uns32 bextHighValue = 0;
-	bool timeCodeDataAvailable = false;
-	XMP_Uns32 tcLowValue = 0;
-	XMP_Uns32 tcHighValue = 0;
 
 	try
 	{
@@ -937,6 +934,10 @@ void IFF_RIFF::WAVEReconcile::exportSpecialXMPToiXML( SXMPMeta & inXMP, IMetadat
 	}
 
 #if 0 // reverse calculation from timecode to samples can result in different number of samples. So ignoring for time being
+	bool timeCodeDataAvailable = false;
+	XMP_Uns32 tcLowValue = 0;
+	XMP_Uns32 tcHighValue = 0;
+
 	if ( outNativeMeta.valueExists( iXMLMetadata::kTimeStampSampleRate ) )
 	{
 		try

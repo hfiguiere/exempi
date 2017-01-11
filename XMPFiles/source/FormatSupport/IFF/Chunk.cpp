@@ -843,7 +843,8 @@ void Chunk::writeChunk( XMP_IO* file )
 		XIO::WriteInt32_BE( file, mChunkId.id );
 
 		// writes size, which is always 32bit
-		XMP_Uns32 outSize = ( mSize >= 0x00000000FFFFFFFF ? 0xFFFFFFFF : static_cast<XMP_Uns32>( mSize & 0x00000000FFFFFFFF ) );
+		// XXX for some reason this is unused -- Hub
+		/*XMP_Uns32 outSize = ( mSize >= 0x00000000FFFFFFFF ? 0xFFFFFFFF : static_cast<XMP_Uns32>( mSize & 0x00000000FFFFFFFF ) );*/
 
 		if (typeid(mEndian) == typeid(LittleEndian))
 		{	
