@@ -114,9 +114,9 @@ bool InDesign_CheckFormat ( XMP_FileFormat format,
 	enum { kBufferSize = 2*kINDD_PageSize };
 	XMP_Uns8 buffer [kBufferSize];
 
-	XMP_Int64 filePos   = 0;
+	/*XMP_Int64 filePos   = 0;*/
 	XMP_Uns8 * bufPtr   = buffer;
-	XMP_Uns8 * bufLimit = bufPtr + kBufferSize;
+	/*XMP_Uns8 * bufLimit = bufPtr + kBufferSize;*/
 
 	fileRef->Rewind();
 	size_t bufLen = fileRef->Read ( buffer, kBufferSize );

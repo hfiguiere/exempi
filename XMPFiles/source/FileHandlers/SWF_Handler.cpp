@@ -239,7 +239,10 @@ void SWF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		memcpy ( &this->expandedSWF[this->firstTagOffset], &buffer[0], 6 );
 
 		this->hasFileAttributes = true;
-		bool ok = SWF_IO::GetTagInfo ( this->expandedSWF, this->firstTagOffset, &this->fileAttributesTag );
+#if XMP_DebugBuild
+		bool ok =
+#endif
+			SWF_IO::GetTagInfo ( this->expandedSWF, this->firstTagOffset, &this->fileAttributesTag );
 		XMP_Assert ( ok );
 		
 		if ( this->hasMetadata ) this->metadataTag.tagOffset += 6;	// The Metadata tag is now further back.

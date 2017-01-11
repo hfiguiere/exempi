@@ -592,7 +592,7 @@ void XDCAMEX_MetaHandler::CacheFileData()
 	this->xmpPacket.erase();
 	this->xmpPacket.append ( (size_t)xmpLen, ' ' );
 
-	XMP_Int32 ioCount = xmpFile->ReadAll ( (void*)this->xmpPacket.data(), (XMP_Int32)xmpLen );
+	/*XMP_Int32 ioCount =*/ xmpFile->ReadAll ( (void*)this->xmpPacket.data(), (XMP_Int32)xmpLen );
 
 	this->packetInfo.offset = 0;
 	this->packetInfo.length = (XMP_Int32)xmpLen;
@@ -743,7 +743,7 @@ void XDCAMEX_MetaHandler::GetTakeUMID ( const std::string& clipUMID,
 	// Parse MEDIAPRO.XML.
 
 	XML_NodePtr mediaproRootElem = 0;
-	XML_NodePtr contentContext = 0, materialContext = 0;
+	XML_NodePtr contentContext = 0/*, materialContext = 0*/;
 
 	Host_IO::FileRef hostRef = Host_IO::Open ( mediapropath.c_str(), Host_IO::openReadOnly );
 	if ( hostRef == Host_IO::noFileRef ) return;	// The open failed.

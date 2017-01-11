@@ -206,8 +206,8 @@ void SVG_MetaHandler::CacheFileData()
 	// Making SVG node as Root Node
 	svgNode = rootElem;
 
-	bool FoundPI = false;
-	bool FoundWrapper = false;
+	/*bool FoundPI = false;*/
+	/*bool FoundWrapper = false;*/
 	XML_NodePtr metadataNode = svgNode->GetNamedElement( rootElem->ns.c_str(), "metadata" );
 
 	// We are intersted only in the Metadata tag of outer SVG element

@@ -273,7 +273,6 @@ static void CacheExtendedXMP ( ExtendedXMPInfo * extXMP, XMP_Uns8 * buffer, size
 void JPEG_MetaHandler::CacheFileData()
 {
 	XMP_IO* fileRef = this->parent->ioRef;
-	XMP_PacketInfo & packetInfo = this->packetInfo;
 
 	static const size_t kBufferSize = 64*1024;	// Enough for maximum segment contents.
 	XMP_Uns8 buffer [kBufferSize];

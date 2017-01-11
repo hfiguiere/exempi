@@ -559,13 +559,13 @@ static bool ReadAVCHDProgramInfo ( XMPFiles_IO & cpiFile, AVCHD_blkProgramInfo& 
 	cpiFile.ReadAll ( &avchdProgramInfo.mNumberOfStreamsInPS, 1 );
 	cpiFile.ReadAll ( &avchdProgramInfo.mReserved2, 1 );
 
-	XMP_Uns16 streamPID = 0;
 	for ( int i=0; i<avchdProgramInfo.mNumberOfStreamsInPS; ++i ) {
 
 		XMP_Uns8	length = 0;
 		XMP_Uns8	streamCodingType = 0;
 
-		streamPID = XIO::ReadUns16_BE ( &cpiFile );
+		// Unused. But we shall read it.
+		/*streamPID =*/ XIO::ReadUns16_BE ( &cpiFile );
 		cpiFile.ReadAll ( &length, 1 );
 
 		XMP_Int64 pos = cpiFile.Offset();
@@ -917,7 +917,7 @@ static bool ReadAVCCAMMakersPrivateData ( XMPFiles_IO & fileRef,
 										  XMP_Uns16 playlistMarkID,
 										  AVCHD_blkPanasonicPrivateData& avccamPrivateData )
 {
-	const XMP_Uns64 blockStart = fileRef.Offset();
+	/*const XMP_Uns64 blockStart =*/ fileRef.Offset();
 
 	avccamPrivateData.mNumberOfData = XIO::ReadUns16_BE ( &fileRef );
 	fileRef.ReadAll ( &avccamPrivateData.mReserved, 2 );
@@ -968,13 +968,13 @@ static bool ReadAVCHDMakersPrivateData ( XMPFiles_IO & mplFile,
 	XMP_Uns16 makerID;
 	XMP_Uns16 makerModelCode;
 	XMP_Uns32 mpdStartAddress;
-	XMP_Uns32 mpdLength;
 
 	for ( int i = 0; i < avchdLegacyData.mNumberOfMakerEntries; ++i ) {
 		makerID = XIO::ReadUns16_BE ( &mplFile );
 		makerModelCode = XIO::ReadUns16_BE ( &mplFile );
 		mpdStartAddress = XIO::ReadUns32_BE ( &mplFile );
-		mpdLength = XIO::ReadUns32_BE ( &mplFile );
+		// Unused bu we must read it.
+		/*mpdLength =*/ XIO::ReadUns32_BE ( &mplFile );
 
 		// We only have documentation for Panasonic's Maker's Private Data blocks, so we'll ignore everyone else's
 		if ( makerID == kMakerIDPanasonic ) {
@@ -1552,7 +1552,7 @@ static void AVCCAM_SetXMPStartTimecode ( SXMPMeta& xmpObj, const XMP_Uns8* avcca
 		return;
 	}
 
-	const XMP_Uns8 isColor = ( avccamTimecode[0] >> 7 ) & 0x01;
+	/*const XMP_Uns8 isColor = ( avccamTimecode[0] >> 7 ) & 0x01;*/
 	const XMP_Uns8 isDropFrame = ( avccamTimecode[0] >> 6 ) & 0x01;
 	const XMP_Uns8 frameTens = ( avccamTimecode[0] >> 4 ) & 0x03;
 	const XMP_Uns8 frameUnits = avccamTimecode[0] & 0x0f;
@@ -1783,7 +1783,7 @@ static std::string BytesToHex ( const XMP_Uns8* inClipIDBytes, int inNumBytes )
 
 static std::string AVCHD_DateFieldToXMP ( XMP_Uns8 avchdTimeZone, const XMP_Uns8* avchdDateTime )
 {
-	const XMP_Uns8 daylightSavingsTime = ( avchdTimeZone >> 6 ) & 0x01;
+	/* const XMP_Uns8 daylightSavingsTime = ( avchdTimeZone >> 6 ) & 0x01; */
 	const XMP_Uns8 timezoneSign = ( avchdTimeZone >> 5 ) & 0x01;
 	const XMP_Uns8 timezoneValue = ( avchdTimeZone >> 1 ) & 0x0F;
 	const XMP_Uns8 halfHourFlag = avchdTimeZone & 0x01;
@@ -2162,7 +2162,7 @@ void AVCHD_MetaHandler::CacheFileData()
 	this->xmpPacket.erase();
 	this->xmpPacket.append ( (size_t ) xmpLen, ' ' );
 
-	XMP_Int32 ioCount = xmpFile->ReadAll ( (void*)this->xmpPacket.data(), (XMP_Int32)xmpLen );
+	/*XMP_Int32 ioCount =*/ xmpFile->ReadAll ( (void*)this->xmpPacket.data(), (XMP_Int32)xmpLen );
 
 	this->packetInfo.offset = 0;
 	this->packetInfo.length = (XMP_Int32)xmpLen;

@@ -167,7 +167,7 @@ void XDCAMSAM_MetaHandler::SetPathVariables ( const std::string & clientPath )
 
 		XMP_Assert ( IsDigit( leafName.at( length - 2 ) ) && IsDigit( leafName.at( length - 1 ) ) );
 		// Last 3rd character of file will inform us about its type
-		const char fileType = leafName.at( length - 3 );
+		/*const char fileType = leafName.at( length - 3 );*/
 
 		// A = Audio, C = ClipInfo, I = Picture Pointer, M = Non-Realtime, R = Realtime, S = Sub (Proxy), V = Video
 		XMP_Assert ( fileType == 'A' || fileType == 'C' || fileType == 'I' || fileType == 'M' || fileType == 'R' || fileType == 'S' || fileType == 'V' );

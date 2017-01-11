@@ -489,7 +489,7 @@ static bool ImportMVHDItems ( MOOV_Manager::BoxInfo mvhdInfo, SXMPMeta * xmp )
 	if ( timescale != 0 ) {	// Avoid 1/0 for the scale field.
 		char buffer [32];	// A 64-bit number is at most 20 digits.
 		xmp->DeleteProperty ( kXMP_NS_DM, "duration" );	// Delete the whole struct.
-		snprintf ( buffer, sizeof(buffer), "%llu", duration );	// AUDIT: The buffer is big enough.
+		snprintf ( buffer, sizeof(buffer), "%llu", (long long unsigned)duration );	// AUDIT: The buffer is big enough.
 		xmp->SetStructField ( kXMP_NS_DM, "duration", kXMP_NS_DM, "value", &buffer[0] );
 		snprintf ( buffer, sizeof(buffer), "1/%u", timescale );	// AUDIT: The buffer is big enough.
 		xmp->SetStructField ( kXMP_NS_DM, "duration", kXMP_NS_DM, "scale", &buffer[0] );
@@ -722,7 +722,7 @@ static void ExportISOCopyrights ( const SXMPMeta & xmp, MOOV_Manager * moovMgr )
 	// Go through the XMP items and look for a corresponding ISO item. Skip if found (did it above),
 	// otherwise add a new ISO item.
 
-	bool haveXDefault = false;
+	/*bool haveXDefault = false;*/
 	XMP_Index xmpCount = xmp.CountArrayItems ( kXMP_NS_DC, "rights" );
 
 	for ( XMP_Index xmpIndex = 1; xmpIndex <= xmpCount; ++xmpIndex ) {	// ! The first XMP array index is 1.
@@ -732,7 +732,7 @@ static void ExportISOCopyrights ( const SXMPMeta & xmp, MOOV_Manager * moovMgr )
 		bool hasLang = xmp.GetQualifier ( kXMP_NS_DC, xmpPath.c_str(), kXMP_NS_XML, "lang", &xmpLang, 0 );
 		if ( ! hasLang ) continue;	// Sanity check.
 		if ( xmpLang == "x-default" ) {
-			haveXDefault = true;	// See later special case.
+			/*haveXDefault = true;*/	// See later special case.
 			continue;
 		}
 
@@ -2647,7 +2647,7 @@ void MPEG4_MetaHandler::OptimizeFileLayout()
 
 	XMP_AbortProc abortProc  = parent->abortProc;
 	void *        abortArg   = parent->abortArg;
-	const bool    checkAbort = (abortProc != 0);
+	/*const bool    checkAbort = (abortProc != 0);*/
 
 	XMP_Uns64 currPos, nextPos;
 	ISOMedia::BoxInfo currBox;
@@ -2922,12 +2922,12 @@ void MPEG4_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	this->needsUpdate = false;	// Make sure only called once.
 	XMP_Assert ( ! doSafeUpdate );	// This should only be called for "unsafe" updates.
 
-	XMP_AbortProc abortProc  = this->parent->abortProc;
-	void *        abortArg   = this->parent->abortArg;
-	const bool    checkAbort = (abortProc != 0);
+	/*XMP_AbortProc abortProc  = this->parent->abortProc;*/
+	/*void *        abortArg   = this->parent->abortArg;*/
+	/*const bool    checkAbort = (abortProc != 0);*/
 
 	XMP_IO* fileRef  = this->parent->ioRef;
-	XMP_Uns64   fileSize = fileRef->Length();
+	/*XMP_Uns64   fileSize =*/ fileRef->Length();
 
 	bool haveISOFile = (this->fileMode == MOOV_Manager::kFileIsNormalISO);
 

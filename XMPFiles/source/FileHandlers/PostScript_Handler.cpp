@@ -91,7 +91,7 @@ PostScript_MetaHandler::~PostScript_MetaHandler()
 
 int PostScript_MetaHandler::FindPostScriptHint()
 {
-	bool     found = false;
+	/*bool     found = false;*/
 	IOBuffer ioBuf;
 	XMP_Uns8 ch;
 
@@ -112,7 +112,7 @@ int PostScript_MetaHandler::FindPostScriptHint()
 		if ( ! CheckFileSpace ( fileRef, &ioBuf, 30 ) ) return false;
 
 		XMP_Uns32 psOffset = GetUns32LE ( ioBuf.ptr+4 );	// PostScript offset.
-		XMP_Uns32 psLength = GetUns32LE ( ioBuf.ptr+8 );	// PostScript length.
+		/*XMP_Uns32 psLength =*/ GetUns32LE ( ioBuf.ptr+8 );	// PostScript length.
 
 		MoveToOffset ( fileRef, psOffset, &ioBuf );
 
@@ -227,7 +227,7 @@ int PostScript_MetaHandler::FindPostScriptHint()
 bool PostScript_MetaHandler::FindFirstPacket()
 {
 	int		snipCount;
-	bool 	found	= false;
+	/*bool 	found	= false;*/
 	size_t	bufPos, bufLen;
 
 	XMP_IO* fileRef = this->parent->ioRef;
@@ -453,7 +453,7 @@ bool PostScript_MetaHandler::ExtractDSCCommentValue(IOBuffer &ioBuf,NativeMetada
 bool PostScript_MetaHandler::ExtractContainsXMPHint(IOBuffer &ioBuf,XMP_Int64 containsXMPStartpos)
 {
 	XMP_IO* fileRef = this->parent->ioRef;
-	int xmpHint = kPSHint_NoMain;	// ! From here on, a failure means "no main", not "no marker".
+	/*int xmpHint = kPSHint_NoMain;*/	// ! From here on, a failure means "no main", not "no marker".
 	//checkfor atleast one whitespace
 	if ( ! CheckFileSpace ( fileRef, &ioBuf, 1 ) ) return false;
 	if ( ! IsSpaceOrTab ( *ioBuf.ptr ) ) return false;
@@ -547,7 +547,7 @@ bool PostScript_MetaHandler::ExtractDocInfoDict(IOBuffer &ioBuf)
 		std::string key, value;
 		while(true)
 		{
-			XMP_Uns32 noOfMarks=0;
+			/*XMP_Uns32 noOfMarks=0;*/
 			if ( ! PostScript_Support::RevCheckFileSpace ( fileRef, &ioBuf, 1 ) ) return false;
 			if (*ioBuf.ptr==')')
 			{
@@ -639,7 +639,7 @@ bool PostScript_MetaHandler::ExtractDocInfoDict(IOBuffer &ioBuf)
 // and other insertion related Data is looked for and stored
 void PostScript_MetaHandler::ParsePSFile()
 {
-	bool     found = false;
+	/*bool     found = false;*/
 	IOBuffer ioBuf;
 
 	XMP_IO* fileRef = this->parent->ioRef;
@@ -1752,7 +1752,7 @@ void PostScript_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 	XMP_IO *	tempRef			= 0;
 	XMP_IO*      fileRef		= this->parent->ioRef;
-	std::string &    xmpPacket  = this->xmpPacket;
+	/*std::string &    xmpPacket  = this->xmpPacket;*/
 	std::string outStr;
 	
 	if (!fileRef )

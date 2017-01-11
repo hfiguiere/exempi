@@ -114,7 +114,7 @@ TIFF_MetaHandler::~TIFF_MetaHandler()
 void TIFF_MetaHandler::CacheFileData()
 {
 	XMP_IO*      fileRef    = this->parent->ioRef;
-	XMP_PacketInfo & packetInfo = this->packetInfo;
+	/*XMP_PacketInfo & packetInfo = this->packetInfo;*/
 
 	XMP_AbortProc abortProc  = this->parent->abortProc;
 	void *        abortArg   = this->parent->abortArg;
@@ -294,8 +294,8 @@ void TIFF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	XMP_Assert ( ! doSafeUpdate );	// This should only be called for "unsafe" updates.
 
 	XMP_IO*   destRef    = this->parent->ioRef;
-	XMP_AbortProc abortProc  = this->parent->abortProc;
-	void *        abortArg   = this->parent->abortArg;
+	/*XMP_AbortProc abortProc  = this->parent->abortProc;*/
+	/*void *        abortArg   = this->parent->abortArg;*/
 
 	XMP_Int64 oldPacketOffset = this->packetInfo.offset;
 	XMP_Int32 oldPacketLength = this->packetInfo.length;

@@ -186,9 +186,12 @@ void WAVE_MetaHandler::CacheFileData()
 	this->parent->ioRef->Rewind();
 
 	XMP_Uns8 buffer[4];
-	XMP_Int32 got = this->parent->ioRef->Read ( buffer, 4 );
+#if XMP_DebugBuild
+	XMP_Int32 got =
+#endif
+		this->parent->ioRef->Read ( buffer, 4 );
 	XMP_Assert( got == 4 );
-	
+
 	XMP_Uns32 type = WAVE_MetaHandler::whatRIFFFormat( buffer );
 	XMP_Assert( type == kChunk_RIFF || type == kChunk_RF64 );
 

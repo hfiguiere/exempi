@@ -511,7 +511,7 @@ void XDCAM_MetaHandler::CacheFileData()
 	this->xmpPacket.erase();
 	this->xmpPacket.append ( (size_t)xmpLen, ' ' );
 
-	XMP_Int32 ioCount = xmpFile->ReadAll ( (void*)this->xmpPacket.data(), (XMP_Int32)xmpLen );
+	/*XMP_Int32 ioCount =*/ xmpFile->ReadAll ( (void*)this->xmpPacket.data(), (XMP_Int32)xmpLen );
 
 	this->packetInfo.offset = 0;
 	this->packetInfo.length = (XMP_Int32)xmpLen;

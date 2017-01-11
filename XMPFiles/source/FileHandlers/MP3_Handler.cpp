@@ -167,7 +167,7 @@ void MP3_MetaHandler::CacheFileData()
 	this->containsXMP = false;		//assume no XMP for now
 
 	XMP_IO* file = this->parent->ioRef;
-	XMP_PacketInfo &packetInfo = this->packetInfo;
+	/* XMP_PacketInfo &packetInfo = this->packetInfo; */
 
 	file->Rewind();
 
@@ -190,7 +190,7 @@ void MP3_MetaHandler::CacheFileData()
 	} else {
 
 		this->extHeaderSize = synchToInt32( XIO::ReadInt32_BE( file));
-		XMP_Uns8 extHeaderNumFlagBytes = XIO::ReadUns8( file );
+		/*XMP_Uns8 extHeaderNumFlagBytes =*/ XIO::ReadUns8( file );
 
 		// v2.3 doesn't include the size, while v2.4 does
 		if ( this->majorVersion < 4 ) this->extHeaderSize += 4;
@@ -714,7 +714,7 @@ void MP3_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	}
 
 	// check end of file for ID3v1 tag
-	XMP_Int64 possibleTruncationPoint = file->Seek ( -128, kXMP_SeekFromEnd );
+	/* XMP_Int64 possibleTruncationPoint = */ file->Seek ( -128, kXMP_SeekFromEnd );
 	bool alreadyHasID3v1 = (XIO::ReadInt32_BE( file ) & 0xFFFFFF00) == 0x54414700; // "TAG"
 	if ( ! alreadyHasID3v1 ) file->Seek ( 128, kXMP_SeekFromEnd );	// Seek will extend the file.
 	id3v1Tag.write( file, &this->xmpObj );

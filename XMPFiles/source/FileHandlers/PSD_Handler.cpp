@@ -113,7 +113,7 @@ PSD_MetaHandler::~PSD_MetaHandler()
 void PSD_MetaHandler::CacheFileData()
 {
 	XMP_IO*      fileRef    = this->parent->ioRef;
-	XMP_PacketInfo & packetInfo = this->packetInfo;
+	/*XMP_PacketInfo & packetInfo = this->packetInfo;*/
 
 	XMP_AbortProc abortProc  = this->parent->abortProc;
 	void *        abortArg   = this->parent->abortArg;
@@ -357,7 +357,7 @@ void PSD_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 
 	XMP_AbortProc abortProc  = this->parent->abortProc;
 	void *        abortArg   = this->parent->abortArg;
-	const bool    checkAbort = (abortProc != 0);
+	/*const bool    checkAbort = (abortProc != 0);*/
 	XMP_ProgressTracker* progressTracker = this->parent->progressTracker;
 
 	XMP_Uns64 sourceLen = origRef->Length();

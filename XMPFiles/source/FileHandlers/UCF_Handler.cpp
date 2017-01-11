@@ -204,7 +204,7 @@ void UCF_MetaHandler::CacheFileData()
 	//*** abort procedures
 	this->containsXMP = false;		//assume no XMP for now (beware of exceptions...)
 	XMP_IO* file = this->parent->ioRef;
-	XMP_PacketInfo &packetInfo = this->packetInfo;
+	/*XMP_PacketInfo &packetInfo = this->packetInfo;*/
 
 	// clear file positioning info ---------------------------------------------------
 	b=0;b2=0;x=0;x2=0;cd=0;cd2=0;cdx=0;cdx2=0;h=0;h2=0,fl=0;f2l=0;
@@ -224,8 +224,8 @@ void UCF_MetaHandler::CacheFileData()
 	// plus almost all comments will be zero or rather short
 
 	//no need to check anything but the 21 chars of "METADATA-INF/metadata.xml"
-	char filenameToTest[22];
-	filenameToTest[21]='\0';
+	/*char filenameToTest[22];*/
+	/*filenameToTest[21]='\0';*/
 
 	XMP_Int32 zipCommentLen = 0;
 	for ( ; zipCommentLen <= EndOfDirectory::COMMENT_MAX; zipCommentLen++ )
@@ -267,7 +267,7 @@ void UCF_MetaHandler::CacheFileData()
 	// to to central directory
 	if ( cd == 0xffffffff )
 	{	// deal with zip 64, otherwise continue
-		XMP_Int64 tmp = file->Seek ( -(EndOfDirectory::FIXED_SIZE + Zip64Locator::TOTAL_SIZE),
+		/*XMP_Int64 tmp =*/ file->Seek ( -(EndOfDirectory::FIXED_SIZE + Zip64Locator::TOTAL_SIZE),
 				  kXMP_SeekFromCurrent ); //go to begining of zip64 locator
 		//relative movement , absolute would imho only require another -zipCommentLen
 
@@ -290,7 +290,7 @@ void UCF_MetaHandler::CacheFileData()
 			XMP_Validate( Zip64EndOfDirectory::ID == XIO::ReadUns32_LE(file),
 				   "invalid zip64 end of CD sig", kXMPErr_BadFileFormat );
 
-			XMP_Int64 sizeOfZip64EOD = XIO::ReadUns64_LE(file);
+			/*XMP_Int64 sizeOfZip64EOD =*/ XIO::ReadUns64_LE(file);
 			file->Seek ( 12, kXMP_SeekFromCurrent  );
 			//yes twice "total" and "per disk"
 			XMP_Int64 tmp64 = XIO::ReadUns64_LE(file);
@@ -361,8 +361,8 @@ void UCF_MetaHandler::CacheFileData()
 	XMP_Uns16 CD_compression		= GetUns16LE( &xmpCDHeader.fields[CDFileHeader::o_compression] );
 	XMP_Validate(( CD_compression == 0 || CD_compression == 0x08),
 		"illegal compression, must be flate or none", kXMPErr_BadFileFormat );
-	XMP_Uns16 CD_flags				= GetUns16LE( &xmpCDHeader.fields[CDFileHeader::o_flags] );
-	XMP_Uns32 CD_crc				= GetUns32LE( &xmpCDHeader.fields[CDFileHeader::o_crc32] );
+	/*XMP_Uns16 CD_flags				= GetUns16LE( &xmpCDHeader.fields[CDFileHeader::o_flags] );*/
+	/*XMP_Uns32 CD_crc				= GetUns32LE( &xmpCDHeader.fields[CDFileHeader::o_crc32] );*/
 
 	// parse (actual, non-CD!) file header ////////////////////////////////////////////////
 	x  = xmpCDHeader.offsetLocalHeader;
@@ -829,8 +829,8 @@ void UCF_MetaHandler::writeOut( XMP_IO* sourceFile, XMP_IO* targetFile, bool isR
 	// if inPlace, the only thing that needs still correction is the CRC in CDX:
 	if ( isInPlace )
 	{
-		XMP_Uns32 crc;	//TEMP, not actually needed
-		crc = GetUns32LE( &xmpFileHeader.fields[FileHeader::o_crc32] );
+		/*XMP_Uns32 crc;	//TEMP, not actually needed
+		crc = GetUns32LE( &xmpFileHeader.fields[FileHeader::o_crc32] ); */
 
 		// go there,
 		// do the job (take value directly from (non-CD-)fileheader),
@@ -847,10 +847,10 @@ void UCF_MetaHandler::writeOut( XMP_IO* sourceFile, XMP_IO* targetFile, bool isR
 	int tmptmp=1;
 	for( iter = cdEntries.begin(); iter != cdEntries.end(); iter++ ) {
 		CDFileHeader* p=&(*iter);
-		XMP_Int64 before = targetFile->Offset();
+		/*XMP_Int64 before = targetFile->Offset();*/
 		p->write( targetFile );
-		XMP_Int64 total = targetFile->Offset() - before;
-		XMP_Int64 tmpSize = p->size();
+		/*XMP_Int64 total = targetFile->Offset() - before;*/
+		/*XMP_Int64 tmpSize = p->size();*/
 		tmptmp++;
 	}
 

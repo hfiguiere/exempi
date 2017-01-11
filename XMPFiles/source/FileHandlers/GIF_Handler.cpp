@@ -215,7 +215,7 @@ bool GIF_MetaHandler::ParseGIFBlocks( XMP_IO* fileRef )
 		{
 			XMP_Uns8 extensionLbl;
 			XMP_Uns32 blockSize = 0;
-			XMP_Uns64 blockOffset = fileRef->Offset();
+			/*XMP_Uns64 blockOffset = fileRef->Offset();*/
 
 			// Extension Label
 			fileRef->Read( &extensionLbl, 1 );
@@ -335,7 +335,7 @@ void GIF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 	XMP_IO * fileRef = this->parent->ioRef;
 
-	XMP_StringPtr packetStr = xmpPacket.c_str();
+	/*XMP_StringPtr packetStr = xmpPacket.c_str();*/
 	XMP_StringLen newPacketLength = (XMP_StringLen)xmpPacket.size();
 
 	if ( newPacketLength == XMPPacketLength )

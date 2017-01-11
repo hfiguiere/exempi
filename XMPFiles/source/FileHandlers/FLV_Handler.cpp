@@ -523,12 +523,12 @@ void FLV_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	if ( ! this->needsUpdate ) return;
 	XMP_Assert ( ! doSafeUpdate );	// This should only be called for "unsafe" updates.
 
-	XMP_AbortProc abortProc  = this->parent->abortProc;
-	void *        abortArg   = this->parent->abortArg;
-	const bool    checkAbort = (abortProc != 0);
+	//XMP_AbortProc abortProc  = this->parent->abortProc;
+	//void *        abortArg   = this->parent->abortArg;
+	//const bool    checkAbort = (abortProc != 0);
 
 	XMP_IO* fileRef  = this->parent->ioRef;
-	XMP_Uns64   fileSize = fileRef->Length();
+	/*XMP_Uns64   fileSize =*/ fileRef->Length();
 
 	// Make sure the XMP has a legacy digest if appropriate.
 
@@ -668,7 +668,7 @@ void FLV_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 
 	XMP_AbortProc abortProc  = this->parent->abortProc;
 	void *        abortArg   = this->parent->abortArg;
-	const bool    checkAbort = (abortProc != 0);
+	//const bool    checkAbort = (abortProc != 0);
 
 	XMP_IO* originalRef = this->parent->ioRef;
 
