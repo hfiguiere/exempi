@@ -33,7 +33,7 @@ struct FileHandlerPair
 };
 
 // =================================================================================================
-
+#if 0 // unused
 static XMP_FileFormat GetXMPFileFormatFromFilePath( XMP_StringPtr filePath )
 {
 	XMP_StringPtr pathName = filePath + strlen(filePath);
@@ -44,7 +44,7 @@ static XMP_FileFormat GetXMPFileFormatFromFilePath( XMP_StringPtr filePath )
 	XMP_StringPtr fileExt = pathName + 1;
 	return HandlerRegistry::getInstance().getFileFormat ( fileExt );
 }
-
+#endif
 // =================================================================================================
 
 static XMPFileHandler* Plugin_MetaHandlerCTor ( FileHandlerSharedPtr handler, XMPFiles* parent )
@@ -321,7 +321,7 @@ static bool registerHandler( XMP_FileFormat format, FileHandlerSharedPtr handler
 	bool ret = false;
 
 	HandlerRegistry& hdlrReg				= HandlerRegistry::getInstance();
-	FileHandlerType type					= handler->getHandlerType();
+	/*FileHandlerType type					=*/ handler->getHandlerType();
 	CheckFileFormatProc chkFileFormat		= NULL;
 	CheckFolderFormatProc chkFolderFormat	= NULL;
 	XMPFileHandlerCTor hdlCtor				= NULL;

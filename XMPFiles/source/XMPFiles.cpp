@@ -1395,7 +1395,7 @@ XMPFiles::GetFileInfo ( XMP_StringPtr *  filePath /* = 0 */,
 {
 	XMP_FILES_START
 	if ( this->handler == 0 ) return false;
-	XMPFileHandler * handler = this->handler;
+	/*XMPFileHandler * handler = this->handler;*/
 
 	if ( filePath == 0 ) filePath = &voidStringPtr;
 	if ( pathLen == 0 ) pathLen = &voidStringLen;
