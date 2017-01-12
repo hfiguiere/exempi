@@ -79,7 +79,7 @@ using namespace std;
 // ! also made sure that for a logical clip path the rootPath is an existing folder, and that the
 // ! file exists for a full file path.
 
-bool SonyHDV_CheckFormat ( XMP_FileFormat format,
+bool SonyHDV_CheckFormat ( XMP_FileFormat /*format*/,
 						   const std::string & rootPath,
 						   const std::string & gpName,
 						   const std::string & parentName,
@@ -941,7 +941,7 @@ void SonyHDV_MetaHandler::UpdateFile ( bool doSafeUpdate )
 // SonyHDV_MetaHandler::WriteTempFile
 // ==================================
 
-void SonyHDV_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
+void SonyHDV_MetaHandler::WriteTempFile ( XMP_IO* /*tempRef*/ )
 {
 
 	// ! WriteTempFile is not supposed to be called for handlers that own the file.

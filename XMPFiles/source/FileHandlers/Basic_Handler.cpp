@@ -54,7 +54,7 @@ void Basic_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	XMP_IO* fileRef = this->parent->ioRef;
 	XMP_PacketInfo & packetInfo = this->packetInfo;
 	std::string &    xmpPacket  = this->xmpPacket;
-
+        
 	XMP_AbortProc abortProc  = this->parent->abortProc;
 	void *        abortArg   = this->parent->abortArg;
 	const bool    checkAbort = (abortProc != 0);
@@ -210,32 +210,32 @@ void Basic_MetaHandler::ShuffleTrailingContent ( XMP_IO* fileRef )
 // Dummies needed for VS.Net
 // =========================
 
-void Basic_MetaHandler::WriteXMPPrefix ( XMP_IO* fileRef )
+void Basic_MetaHandler::WriteXMPPrefix ( XMP_IO* /*fileRef*/ )
 {
 	XMP_Throw ( "Basic_MetaHandler::WriteXMPPrefix - Needs specific override", kXMPErr_InternalFailure );
 }
 
-void Basic_MetaHandler::WriteXMPSuffix ( XMP_IO* fileRef )
+void Basic_MetaHandler::WriteXMPSuffix ( XMP_IO* /*fileRef*/ )
 {
 	XMP_Throw ( "Basic_MetaHandler::WriteXMPSuffix - Needs specific override", kXMPErr_InternalFailure );
 }
 
-void Basic_MetaHandler::NoteXMPRemoval ( XMP_IO* fileRef )
+void Basic_MetaHandler::NoteXMPRemoval ( XMP_IO* /*fileRef*/ )
 {
 	XMP_Throw ( "Basic_MetaHandler::NoteXMPRemoval - Needs specific override", kXMPErr_InternalFailure );
 }
 
-void Basic_MetaHandler::NoteXMPInsertion ( XMP_IO* fileRef )
+void Basic_MetaHandler::NoteXMPInsertion ( XMP_IO* /*fileRef*/ )
 {
 	XMP_Throw ( "Basic_MetaHandler::NoteXMPInsertion - Needs specific override", kXMPErr_InternalFailure );
 }
 
-void Basic_MetaHandler::CaptureFileEnding ( XMP_IO* fileRef )
+void Basic_MetaHandler::CaptureFileEnding ( XMP_IO* /*fileRef*/ )
 {
 	XMP_Throw ( "Basic_MetaHandler::CaptureFileEnding - Needs specific override", kXMPErr_InternalFailure );
 }
 
-void Basic_MetaHandler::RestoreFileEnding ( XMP_IO* fileRef )
+void Basic_MetaHandler::RestoreFileEnding ( XMP_IO* /*fileRef*/ )
 {
 	XMP_Throw ( "Basic_MetaHandler::RestoreFileEnding - Needs specific override", kXMPErr_InternalFailure );
 }

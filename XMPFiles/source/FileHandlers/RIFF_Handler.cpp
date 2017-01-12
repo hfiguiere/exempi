@@ -42,7 +42,7 @@ bool RIFF_CheckFormat ( XMP_FileFormat  format,
 			           XMP_IO*      	file,
 			           XMPFiles*        parent )
 {
-	IgnoreParam(format); IgnoreParam(parent);
+	IgnoreParam(filePath); IgnoreParam(parent);
 	XMP_Assert ( (format == kXMP_AVIFile) || (format == kXMP_WAVFile) );
 
 	if ( file->Length() < 12 ) return false;

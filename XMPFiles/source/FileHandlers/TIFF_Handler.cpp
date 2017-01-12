@@ -291,6 +291,7 @@ void TIFF_MetaHandler::ProcessXMP()
 
 void TIFF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 {
+	IgnoreParam(doSafeUpdate);
 	XMP_Assert ( ! doSafeUpdate );	// This should only be called for "unsafe" updates.
 
 	XMP_IO*   destRef    = this->parent->ioRef;

@@ -130,7 +130,7 @@ XMP_Uns64 DISPMetadata::serialize( XMP_Uns8** outBuffer )
 // 
 //-----------------------------------------------------------------------------
 
-bool DISPMetadata::isEmptyValue( XMP_Uns32 id, ValueObject& valueObj )
+bool DISPMetadata::isEmptyValue( XMP_Uns32 /*id*/, ValueObject& valueObj )
 {
 	TValueObject<std::string>* strObj = dynamic_cast<TValueObject<std::string>*>(&valueObj);
 

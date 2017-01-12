@@ -302,7 +302,7 @@ bool PhotoDataUtils::GetNativeInfo ( const TIFF_Manager & exif, XMP_Uns8 ifd, XM
 
 // =================================================================================================
 
-size_t PhotoDataUtils::GetNativeInfo ( const IPTC_Manager & iptc, XMP_Uns8 id, int digestState, bool haveXMP, IPTC_Manager::DataSetInfo * info )
+size_t PhotoDataUtils::GetNativeInfo ( const IPTC_Manager & iptc, XMP_Uns8 id, int /*digestState*/, bool /*haveXMP*/, IPTC_Manager::DataSetInfo * info )
 {
 	size_t iptcCount = 0;
 
@@ -1421,7 +1421,7 @@ ImportTIFF_EncodedString ( const TIFF_Manager & tiff, const TIFF_Manager::TagInf
 
 static void
 ImportTIFF_Flash ( const TIFF_Manager::TagInfo & tagInfo, bool nativeEndian,
-				   SXMPMeta * xmp, const char * xmpNS, const char * xmpProp )
+                   SXMPMeta * xmp, const char * /*xmpNS*/, const char * /*xmpProp*/ )
 {
 	try {	// Don't let errors with one stop the others.
 
@@ -1994,7 +1994,7 @@ static void ImportTIFF_PhotographicSensitivity ( const TIFF_Manager & exif, SXMP
 // These are always imported for the tiff: and exif: namespaces, but not for others.
 
 void
-PhotoDataUtils::Import2WayExif ( const TIFF_Manager & exif, SXMPMeta * xmp, int iptcDigestState )
+PhotoDataUtils::Import2WayExif ( const TIFF_Manager & exif, SXMPMeta * xmp, int /*iptcDigestState*/ )
 {
 	const bool nativeEndian = exif.IsNativeEndian();
 
@@ -2254,7 +2254,7 @@ PhotoDataUtils::Import2WayExif ( const TIFF_Manager & exif, SXMPMeta * xmp, int 
 // ==================
 
 static void Import3WayDateTime ( XMP_Uns16 exifTag, const TIFF_Manager & exif, const IPTC_Manager & iptc,
-								 SXMPMeta * xmp, int iptcDigestState, const IPTC_Manager & oldIPTC )
+                                 SXMPMeta * xmp, int iptcDigestState, const IPTC_Manager & /*oldIPTC*/ )
 {
 	XMP_Uns8  iptcDS;
 	XMP_StringPtr xmpNS, xmpProp;
@@ -2450,7 +2450,7 @@ static bool DecodeRational ( const char * ratio, XMP_Uns32 * num, XMP_Uns32 * de
 
 static void
 ExportSingleTIFF ( TIFF_Manager * tiff, XMP_Uns8 ifd, const TIFF_MappingToXMP & mapInfo,
-				   bool nativeEndian, const std::string & xmpValue )
+                   bool /*nativeEndian*/, const std::string & xmpValue )
 {
 	XMP_Assert ( (mapInfo.count == 1) || (mapInfo.type == kTIFF_ASCIIType) );
 	XMP_Assert ( mapInfo.name[0] != 0 );	// Must be a standard mapping.

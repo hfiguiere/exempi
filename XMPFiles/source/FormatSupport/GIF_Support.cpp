@@ -68,7 +68,7 @@ namespace GIF_Support
 		long bytesRead;
 		long headerSize;
 		long tableSize = 0;
-		long bytesPerColor = 0;
+		/*long bytesPerColor = 0;*/
 		unsigned char buffer[768];
 		
 		headerSize = 0;
@@ -96,13 +96,13 @@ namespace GIF_Support
 
 	// =============================================================================================
 
-	bool  ReadBlock ( XMP_IO* fileRef, BlockState & inOutBlockState, unsigned char * blockType, XMP_Uns32 * blockLength, XMP_Uns64 & inOutPosition )
+	bool  ReadBlock ( XMP_IO* fileRef, BlockState & inOutBlockState, unsigned char * /*blockType*/, XMP_Uns32 * /*blockLength*/, XMP_Uns64 & inOutPosition )
 	{
 		try
 		{
 			XMP_Uns64 startPosition = inOutPosition;
 			long bytesRead;
-			long blockSize;
+			/*long blockSize;*/
 			unsigned char buffer[768];
 
 			bytesRead = fileRef->Read ( buffer, 1 );
@@ -287,7 +287,7 @@ namespace GIF_Support
 				{
 					// We still have to go through all of the data...
 					long tableSize = 0;
-					long xmpSize;
+					/*long xmpSize;*/
 					
 					inOutPosition = inOutBlockData.pos + APPLICATION_HEADER_LEN;
 					inOutBlockState.xmpPos = inOutPosition;

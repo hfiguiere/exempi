@@ -630,7 +630,7 @@ bool
 XMPFiles::GetFileModDate ( const Common::XMPFileHandlerInfo& hdlInfo,
 						   XMP_StringPtr    clientPath,
 						   XMP_DateTime *   modDate,
-						   XMP_OptionBits   options /* = 0 */ )
+						   XMP_OptionBits   /* options = 0 */ )
 {
 	XMP_FILES_STATIC_START
 	Host_IO::FileMode clientMode;
@@ -762,7 +762,7 @@ XMPFiles::GetAssociatedResources (
 		const Common::XMPFileHandlerInfo& hdlInfo,
 		XMP_StringPtr              filePath,
         std::vector<std::string> * resourceList,
-        XMP_OptionBits             options /*  = 0 */ )
+        XMP_OptionBits             /* options = 0 */ )
 {
 	XMP_FILES_STATIC_START
 	Host_IO::FileMode clientMode;
@@ -883,7 +883,7 @@ XMPFiles::IsMetadataWritable (
 		const Common::XMPFileHandlerInfo& hdlInfo,
 		XMP_StringPtr  filePath,
         XMP_Bool *     writable,
-        XMP_OptionBits options  /* = 0 */ )
+        XMP_OptionBits /* options = 0 */ )
 {
 	XMP_FILES_STATIC_START
 	Host_IO::FileMode clientMode;

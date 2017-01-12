@@ -25,7 +25,7 @@ XMPFileHandler* WEBP_MetaHandlerCTor(XMPFiles* parent)
 bool WEBP_CheckFormat(XMP_FileFormat format, XMP_StringPtr filePath,
                       XMP_IO* file, XMPFiles* parent)
 {
-    IgnoreParam(format);
+    IgnoreParam(filePath);
     IgnoreParam(parent);
     XMP_Assert(format == kXMP_WEBPFile);
 
@@ -148,7 +148,7 @@ void WEBP_MetaHandler::ProcessXMP()
     this->processedXMP = true;
 }
 
-void WEBP_MetaHandler::UpdateFile(bool doSafeUpdate)
+void WEBP_MetaHandler::UpdateFile(bool /*doSafeUpdate*/)
 {
     XMP_Validate(this->needsUpdate, "nothing to update",
                  kXMPErr_InternalFailure);

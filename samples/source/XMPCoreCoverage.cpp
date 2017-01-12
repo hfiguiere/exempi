@@ -340,6 +340,7 @@ static void WriteMinorLabel ( FILE * log, const char * title )
 
 // -------------------------------------------------------------------------------------------------
 
+#if 0
 static XMP_Status DumpToString ( void * refCon, XMP_StringPtr outStr, XMP_StringLen outLen )
 {
 	XMP_Status	status	= 0;
@@ -353,6 +354,7 @@ static XMP_Status DumpToString ( void * refCon, XMP_StringPtr outStr, XMP_String
 	return status;
 	
 }	// DumpToString
+#endif
 
 // -------------------------------------------------------------------------------------------------
 

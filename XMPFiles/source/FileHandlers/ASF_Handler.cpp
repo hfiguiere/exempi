@@ -46,7 +46,7 @@ bool ASF_CheckFormat ( XMP_FileFormat format,
                        XMPFiles *     parent )
 {
 
-	IgnoreParam(format); IgnoreParam(fileRef); IgnoreParam(parent);
+	IgnoreParam(format); IgnoreParam(filePath); IgnoreParam(fileRef); IgnoreParam(parent);
 	XMP_Assert ( format == kXMP_WMAVFile );
 
 	if ( fileRef->Length() < guidLen ) return false;

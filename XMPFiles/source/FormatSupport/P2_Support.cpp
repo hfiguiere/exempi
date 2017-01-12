@@ -268,7 +268,7 @@ std::string P2_Clip::GetXMPFilePath()
 	return ClipMetadataPath+ ".XMP";
 }
 
-void P2_Clip::CreateDigest ( std::string * digestStr )
+void P2_Clip::CreateDigest ( std::string * /*digestStr*/ )
 {
 	return;
 }

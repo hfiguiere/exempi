@@ -92,7 +92,7 @@ void TIFF_FileWriter::DeleteExistingInfo()
 // TIFF_FileWriter::PickIFD
 // ========================
 
-XMP_Uns8 TIFF_FileWriter::PickIFD ( XMP_Uns8 ifd, XMP_Uns16 id )
+XMP_Uns8 TIFF_FileWriter::PickIFD ( XMP_Uns8 ifd, XMP_Uns16 /*id*/ )
 {
 	if ( ifd > kTIFF_LastRealIFD ) {
 		if ( ifd != kTIFF_KnownIFD ) XMP_Throw ( "Invalid IFD number", kXMPErr_BadParam );
@@ -571,7 +571,7 @@ bool TIFF_FileWriter::IsLegacyChanged()
 // TIFF_FileWriter::ParseMemoryStream
 // ==================================
 
-void TIFF_FileWriter::ParseMemoryStream ( const void* data, XMP_Uns32 length, bool copyData /* = true */, bool isAlreadyLittle /*= false */ )
+void TIFF_FileWriter::ParseMemoryStream ( const void* data, XMP_Uns32 length, bool copyData /* = true */, bool /* isAlreadyLittle = false */ )
 {
 	this->DeleteExistingInfo();
 	this->memParsed = true;
@@ -1037,7 +1037,7 @@ static bool FlipCFATable ( void* voidPtr, XMP_Uns32 tagLen, GetUns16_Proc GetUns
 
 // ! The Exif 2.2 description is a bit garbled. It might be wrong. It would be nice to have a real example.
 
-static bool FlipDSDTable ( void* voidPtr, XMP_Uns32 tagLen, GetUns16_Proc GetUns16 )
+static bool FlipDSDTable ( void* voidPtr, XMP_Uns32 tagLen, GetUns16_Proc /*GetUns16*/ )
 {
 	if ( tagLen < 4 ) return false;
 

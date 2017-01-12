@@ -129,7 +129,7 @@ XMPFiles_IO::~XMPFiles_IO()
 // XMPFiles_IO::operator=
 // ======================
 
-void XMPFiles_IO::operator = ( const XMP_IO& in )
+void XMPFiles_IO::operator = ( const XMP_IO& /*in*/ )
 {
 	XMP_FILESIO_START
 	XMP_Throw ( "No assignment for XMPFiles_IO", kXMPErr_InternalFailure );

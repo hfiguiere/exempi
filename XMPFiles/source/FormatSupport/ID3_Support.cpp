@@ -639,7 +639,7 @@ bool ID3v2Frame::advancePastCOMMDescriptor ( XMP_Int32& pos )
 
 // =================================================================================================
 
-bool ID3v2Frame::getFrameValue ( XMP_Uns8 majorVersion, XMP_Uns32 logicalID, std::string* utf8string )
+bool ID3v2Frame::getFrameValue ( XMP_Uns8 /*majorVersion*/, XMP_Uns32 logicalID, std::string* utf8string )
 {
 
 	XMP_Assert ( (this->content != 0) && (this->contentSize >= 0) && (this->contentSize < 20*1024*1024) );

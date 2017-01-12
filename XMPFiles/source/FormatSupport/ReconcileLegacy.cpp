@@ -107,7 +107,7 @@ void ExportPhotoData ( XMP_FileFormat destFormat,
 					   TIFF_Manager * exif, // Pass 0 if not wanted.
 					   IPTC_Manager * iptc, // Pass 0 if not wanted.
 					   PSIR_Manager * psir, // Pass 0 if not wanted.
-					   XMP_OptionBits options /* = 0 */ )
+					   XMP_OptionBits /* options = 0 */ )
 {
 	XMP_Assert ( (destFormat == kXMP_JPEGFile) || (destFormat == kXMP_TIFFFile) || (destFormat == kXMP_PhotoshopFile) );
 

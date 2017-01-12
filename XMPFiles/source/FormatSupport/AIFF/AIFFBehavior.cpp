@@ -35,7 +35,7 @@ const BigEndian& AIFFBehavior::mEndian = BigEndian::getInstance();
 // 
 //-----------------------------------------------------------------------------
 
-XMP_Uns64 AIFFBehavior::getRealSize( const XMP_Uns64 size, const ChunkIdentifier& id, IChunkContainer& tree, XMP_IO* stream )
+XMP_Uns64 AIFFBehavior::getRealSize( const XMP_Uns64 size, const ChunkIdentifier& /*id*/, IChunkContainer& /*tree*/, XMP_IO* /*stream*/ )
 {
 	if( (size & 0x80000000) > 0 )
 	{

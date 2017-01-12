@@ -505,7 +505,7 @@ static void CommentHandler ( void * userData, XMP_StringPtr comment )
 
 #if BanAllEntityUsage
 static void StartDoctypeDeclHandler ( void * userData, XMP_StringPtr doctypeName,
-									  XMP_StringPtr sysid, XMP_StringPtr pubid, int has_internal_subset )
+                                      XMP_StringPtr /*sysid*/, XMP_StringPtr /*pubid*/, int /*has_internal_subset*/ )
 {
 	IgnoreParam(userData);
 
@@ -516,6 +516,8 @@ static void StartDoctypeDeclHandler ( void * userData, XMP_StringPtr doctypeName
 			PrintIndent ( thiz->parseLog, thiz->elemNesting );
 			fprintf ( thiz->parseLog, "DocType: \"%s\"\n", doctypeName );
 		}
+	#else
+		IgnoreParam(doctypeName);
 	#endif
 	
 	thiz->isAborted = true;	// ! Can't throw an exception across the plain C Expat frames.

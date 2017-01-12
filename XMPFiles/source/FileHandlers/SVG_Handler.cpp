@@ -42,7 +42,7 @@ bool SVG_CheckFormat( XMP_FileFormat format,
 {
 	// 8K buffer is provided just to handle maximum SVG files
 	// We can't check for SVG element in whole file which could take a lot of time for valid XML files
-	IgnoreParam( filePath ); IgnoreParam( parent );
+	IgnoreParam(format); IgnoreParam( filePath ); IgnoreParam( parent );
 
 	XMP_Assert( format == kXMP_SVGFile );
 
@@ -412,6 +412,7 @@ void SVG_MetaHandler::InsertNewMetadata( XMP_IO * destRef, const std::string &va
 
 void SVG_MetaHandler::UpdateFile( bool doSafeUpdate )
 {
+	IgnoreParam(doSafeUpdate);
 	XMP_Assert( !doSafeUpdate );	// This should only be called for "unsafe" updates.
 	
 	XMP_IO* sourceRef = this->parent->ioRef;

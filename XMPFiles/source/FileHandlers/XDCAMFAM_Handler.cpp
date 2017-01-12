@@ -33,7 +33,7 @@ bool XDCAMFAM_CheckFormat ( XMP_FileFormat format,
 						 const std::string & groupName,
 						 const std::string & parentName,
 						 const std::string & leafName,
-						 XMPFiles * parent )
+						 XMPFiles * /*parent*/ )
 {
 	/* isXDStyle   = true Means SxS Memory or XDStyle
 	             , = false Means Professional Disk */ 

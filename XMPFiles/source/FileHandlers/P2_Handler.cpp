@@ -137,7 +137,7 @@ static void InternalMakeClipFilePath ( std::string * path,
 // ! also made sure that for a logical clip path the rootPath is an existing folder, and that the
 // ! file exists for a full file path.
 
-bool P2_CheckFormat ( XMP_FileFormat format,
+bool P2_CheckFormat ( XMP_FileFormat /*format*/,
 					  const std::string & rootPath,
 					  const std::string & gpName,
 					  const std::string & parentName,
@@ -368,7 +368,7 @@ void P2_MetaHandler::SetXMPPropertyFromLegacyXML ( bool digestFound,
 // =================================================================================================
 // P2_MetaHandler::SetXMPPropertyFromLegacyXML
 // ===========================================
-void P2_MetaHandler::SetXMPPropertyFromLegacyXML ( bool digestFound,
+void P2_MetaHandler::SetXMPPropertyFromLegacyXML ( bool /*digestFound*/,
 												   XML_NodePtr legacyContext,
 												   XMP_StringPtr schemaNS,
 												   XMP_StringPtr propName,
@@ -1382,7 +1382,7 @@ void P2_MetaHandler::UpdateFile ( bool doSafeUpdate )
 // P2_MetaHandler::WriteTempFile
 // =============================
 
-void P2_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
+void P2_MetaHandler::WriteTempFile ( XMP_IO* /*tempRef*/ )
 {
 
 	// ! WriteTempFile is not supposed to be called for handlers that own the file.

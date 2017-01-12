@@ -203,7 +203,7 @@ Chunk::Chunk( ContainerChunk* parent, RIFF_MetaHandler* handler, bool skip, Chun
 	}
 }
 
-void Chunk::changesAndSize( RIFF_MetaHandler* handler )
+void Chunk::changesAndSize( RIFF_MetaHandler* /*handler*/ )
 {
 	// only unknown chunks should reach this method,
 	// all others must reach overloads, hence little to do here:
@@ -211,7 +211,7 @@ void Chunk::changesAndSize( RIFF_MetaHandler* handler )
 	this->newSize = this->oldSize;
 }
 
-std::string Chunk::toString(XMP_Uns8 level )
+std::string Chunk::toString(XMP_Uns8 /*level*/)
 {
 	char buffer[256];
 	snprintf( buffer, 255, "%.4s -- "
@@ -222,7 +222,7 @@ std::string Chunk::toString(XMP_Uns8 level )
 	return std::string(buffer);
 }
 
-void Chunk::write( RIFF_MetaHandler* handler, XMP_IO* file , bool isMainChunk )
+void Chunk::write( RIFF_MetaHandler* /*handler*/, XMP_IO* /*file*/, bool /*isMainChunk*/ )
 {
 	throw new XMP_Error(kXMPErr_InternalFailure, "Chunk::write never to be called for unknown chunks.");
 }
@@ -696,7 +696,7 @@ XMPChunk::XMPChunk( ContainerChunk* parent, RIFF_MetaHandler* handler ) : Chunk(
 {
 	chunkType = chunk_XMP;
 	XMP_IO* file = handler->parent->ioRef;
-	XMP_Uns8 level = handler->level;
+	/*XMP_Uns8 level = handler->level*/;
 
 	handler->packetInfo.offset = this->oldPos + 8;
 	handler->packetInfo.length = (XMP_Int32) this->oldSize - 8;
@@ -723,7 +723,7 @@ void XMPChunk::changesAndSize( RIFF_MetaHandler* handler )
 	this->hasChange = true;
 }
 
-void XMPChunk::write( RIFF_MetaHandler* handler, XMP_IO* file, bool isMainChunk )
+void XMPChunk::write( RIFF_MetaHandler* handler, XMP_IO* file, bool /*isMainChunk*/ )
 {
 	XIO::WriteUns32_LE( file, kChunk_XMP );
 	XIO::WriteUns32_LE( file, (XMP_Uns32) this->newSize - 8 ); // validated in changesAndSize() above
@@ -743,7 +743,7 @@ ValueChunk::ValueChunk( ContainerChunk* parent, RIFF_MetaHandler* handler ) : Ch
 {
 	// set value: -----------------
 	XMP_IO* file = handler->parent->ioRef;
-	XMP_Uns8 level = handler->level;
+	/*XMP_Uns8 level = handler->level;*/
 
 	// unless changed through reconciliation, assume for now.
 	// IMPORTANT to stay true to the original (no \0 cleanup or similar)
@@ -769,7 +769,7 @@ void ValueChunk::SetValue( std::string value, bool optionalNUL /* = false */ )
 	this->newSize = this->newValue.size() + 8;
 }
 
-void ValueChunk::changesAndSize( RIFF_MetaHandler* handler )
+void ValueChunk::changesAndSize( RIFF_MetaHandler* /*handler*/ )
 {
 	// Don't simply assign to this->hasChange, it might already be true.
 	if ( this->newValue.size() != this->oldValue.size() ) {
@@ -779,7 +779,7 @@ void ValueChunk::changesAndSize( RIFF_MetaHandler* handler )
 	}
 }
 
-void ValueChunk::write( RIFF_MetaHandler* handler, XMP_IO* file, bool isMainChunk )
+void ValueChunk::write( RIFF_MetaHandler* /*handler*/, XMP_IO* file, bool /*isMainChunk*/ )
 {
 	XIO::WriteUns32_LE( file, this->id );
 	XIO::WriteUns32_LE( file, (XMP_Uns32)this->newSize - 8 );
@@ -859,7 +859,7 @@ JunkChunk::JunkChunk( ContainerChunk* parent, RIFF_MetaHandler* handler ) : Chun
 	chunkType = chunk_JUNK;
 }
 
-void JunkChunk::changesAndSize( RIFF_MetaHandler* handler )
+void JunkChunk::changesAndSize( RIFF_MetaHandler* /*handler*/ )
 {
 	this->newSize = this->oldSize; // optimization at a later stage
 	XMP_Validate( this->newSize <= 0xFFFFFFFFLL, "no single chunk may be above 4 GB", kXMPErr_InternalFailure );
@@ -870,7 +870,7 @@ void JunkChunk::changesAndSize( RIFF_MetaHandler* handler )
 const static XMP_Uns32 kZeroBufferSize64K = 64 * 1024;
 static XMP_Uns8 kZeroes64K [ kZeroBufferSize64K ]; // C semantics guarantee zero initialization.
 
-void JunkChunk::write( RIFF_MetaHandler* handler, XMP_IO* file, bool isMainChunk )
+void JunkChunk::write( RIFF_MetaHandler* /*handler*/, XMP_IO* file, bool /*isMainChunk*/ )
 {
 	XIO::WriteUns32_LE( file, kChunk_JUNK );		// write JUNK, never JUNQ
 	XMP_Enforce( this->newSize < 0xFFFFFFFF );

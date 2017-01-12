@@ -168,20 +168,20 @@ public:
 
 	bool GetImgRsrc ( XMP_Uns16 id, ImgRsrcInfo* info ) const;
 
-	void SetImgRsrc ( XMP_Uns16 id, const void* dataPtr, XMP_Uns32 length ) { NotAppropriate(); };
+	void SetImgRsrc ( XMP_Uns16 /*id*/, const void* /*dataPtr*/, XMP_Uns32 /*length*/ ) { NotAppropriate(); };
 
-	void DeleteImgRsrc ( XMP_Uns16 id ) { NotAppropriate(); };
+	void DeleteImgRsrc ( XMP_Uns16 /*id*/ ) { NotAppropriate(); };
 
 	bool IsChanged() { return false; };
 	bool IsLegacyChanged() { return false; };
 
 	void ParseMemoryResources ( const void* data, XMP_Uns32 length, bool copyData = true );
-	void ParseFileResources   ( XMP_IO* file, XMP_Uns32 length ) { NotAppropriate(); };
+	void ParseFileResources   ( XMP_IO* /*file*/, XMP_Uns32 /*length*/ ) { NotAppropriate(); };
 
 	XMP_Uns32 UpdateMemoryResources ( void** dataPtr ) { if ( dataPtr != 0 ) *dataPtr = psirContent; return psirLength; };
-	XMP_Uns32 UpdateFileResources ( XMP_IO* sourceRef, XMP_IO* destRef,
-									XMP_AbortProc abortProc, void * abortArg,
-									XMP_ProgressTracker* progressTracker ) { NotAppropriate(); return 0; };
+	XMP_Uns32 UpdateFileResources ( XMP_IO* /*sourceRef*/, XMP_IO* /*destRef*/,
+                                        XMP_AbortProc /*abortProc*/, void * /*abortArg*/,
+                                        XMP_ProgressTracker* /*progressTracker*/ ) { NotAppropriate(); return 0; };
 
 	PSIR_MemoryReader() : ownedContent(false), psirLength(0), psirContent(0) {};
 

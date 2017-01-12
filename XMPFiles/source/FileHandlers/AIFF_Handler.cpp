@@ -41,10 +41,10 @@ XMPFileHandler * AIFF_MetaHandlerCTor ( XMPFiles * parent )
 // The first 12 bytes are checked. The first 4 must be "FORM"
 // Bytes 8 to 12 must be "AIFF" or "AIFC"
 
-bool AIFF_CheckFormat ( XMP_FileFormat  format,
-					   XMP_StringPtr    filePath,
+bool AIFF_CheckFormat ( XMP_FileFormat  /*format*/,
+			           XMP_StringPtr    /*filePath*/,
 			           XMP_IO*      file,
-			           XMPFiles*        parent )
+			           XMPFiles*        /*parent*/ )
 {
 	// Reset file pointer position
 	file ->Rewind();
@@ -438,7 +438,7 @@ void AIFF_MetaHandler::updateLegacyChunk( IChunkData **chunk, XMP_Uns32 chunkID,
 // AIFF_MetaHandler::WriteTempFile
 // ===============================
 
-void AIFF_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
+void AIFF_MetaHandler::WriteTempFile ( XMP_IO* /*tempRef*/ )
 {
 	XMP_Throw ( "AIFF_MetaHandler::WriteTempFile is not Implemented!", kXMPErr_Unimplemented );
 }	// AIFF_MetaHandler::WriteTempFile

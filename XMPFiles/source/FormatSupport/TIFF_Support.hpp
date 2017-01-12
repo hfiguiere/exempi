@@ -708,9 +708,9 @@ public:
 
 	bool GetTag ( XMP_Uns8 ifd, XMP_Uns16 id, TagInfo* info ) const;
 
-	void SetTag ( XMP_Uns8 ifd, XMP_Uns16 id, XMP_Uns16 type, XMP_Uns32 count, const void* dataPtr ) { NotAppropriate(); };
+	void SetTag ( XMP_Uns8 /*ifd*/, XMP_Uns16 /*id*/, XMP_Uns16 /*type*/, XMP_Uns32 /*count*/, const void* /*dataPtr*/ ) { NotAppropriate(); };
 
-	void DeleteTag ( XMP_Uns8 ifd, XMP_Uns16 id ) { NotAppropriate(); };
+	void DeleteTag ( XMP_Uns8 /*ifd*/, XMP_Uns16 /*id*/ ) { NotAppropriate(); };
 
 	XMP_Uns32 GetValueOffset ( XMP_Uns8 ifd, XMP_Uns16 id ) const;
 
@@ -733,19 +733,19 @@ public:
 
 	bool GetTag_EncodedString ( XMP_Uns8 ifd, XMP_Uns16 id, std::string* utf8Str ) const;
 
-	void SetTag_EncodedString ( XMP_Uns8 ifd, XMP_Uns16 id, const std::string& utf8Str, XMP_Uns8 encoding ) { NotAppropriate(); };
+	void SetTag_EncodedString ( XMP_Uns8 /*ifd*/, XMP_Uns16 /*id*/, const std::string& /*utf8Str*/, XMP_Uns8 /*encoding*/ ) { NotAppropriate(); };
 
 	bool IsChanged() { return false; };
 	bool IsLegacyChanged() { return false; };
 
 	// isAlredyLittle is provided for case when data contain no information about Endianess, So need not to check for header
 	void ParseMemoryStream ( const void* data, XMP_Uns32 length, bool copyData = true, bool isAlreadyLittle = false );
-	void ParseFileStream   ( XMP_IO* fileRef ) { NotAppropriate(); };
+	void ParseFileStream   ( XMP_IO* /*fileRef*/ ) { NotAppropriate(); };
 
-	void IntegrateFromPShop6 ( const void * buriedPtr, size_t buriedLen ) { NotAppropriate(); };
+	void IntegrateFromPShop6 ( const void * /*buriedPtr*/, size_t /*buriedLen*/ ) { NotAppropriate(); };
 
-	XMP_Uns32 UpdateMemoryStream ( void** dataPtr, bool condenseStream = false ) { if ( dataPtr != 0 ) *dataPtr = tiffStream; return tiffLength; };
-	void      UpdateFileStream   ( XMP_IO* fileRef, XMP_ProgressTracker* progressTracker ) { NotAppropriate(); };
+	XMP_Uns32 UpdateMemoryStream ( void** dataPtr, bool condenseStream = false ) { IgnoreParam(condenseStream); if ( dataPtr != 0 ) *dataPtr = tiffStream; return tiffLength; };
+	void      UpdateFileStream   ( XMP_IO* /*fileRef*/, XMP_ProgressTracker* /*progressTracker*/ ) { NotAppropriate(); };
 
 	TIFF_MemoryReader() : ownedStream(false), tiffStream(0), tiffLength(0) {};
 

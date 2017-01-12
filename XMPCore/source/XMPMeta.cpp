@@ -1105,7 +1105,7 @@ XMPMeta::GetNamespaceURI ( XMP_StringPtr   namespacePrefix,
 // *** restricted to the object that introduced them.
 
 /* class-static */ void
-XMPMeta::DeleteNamespace ( XMP_StringPtr namespaceURI )
+XMPMeta::DeleteNamespace ( XMP_StringPtr /*namespaceURI*/ )
 {
 
 	XMP_Throw ( "Unimplemented method XMPMeta::DeleteNamespace", kXMPErr_Unimplemented );
@@ -1482,7 +1482,7 @@ bool XMPMeta::ErrorCallbackInfo::CanNotify() const
 //
 // This is const just to be usable from const XMPMeta functions.
 
-bool XMPMeta::ErrorCallbackInfo::ClientCallbackWrapper ( XMP_StringPtr filePath, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr messsage ) const
+bool XMPMeta::ErrorCallbackInfo::ClientCallbackWrapper ( XMP_StringPtr /*filePath*/, XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr messsage ) const
 {
 	XMP_Bool retValue = (*this->wrapperProc) ( this->clientProc, this->context, severity, cause, messsage );
 	return ConvertXMP_BoolToBool(retValue);

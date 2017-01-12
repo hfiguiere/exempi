@@ -728,7 +728,7 @@ bool ASF_Support::UpdateFileSize ( XMP_IO* fileRef )
 
 // =============================================================================================
 
-bool ASF_Support::ReadHeaderExtensionObject ( XMP_IO* fileRef, ObjectState& inOutObjectState, const XMP_Uns64& _pos, const ASF_ObjectBase& _objectBase )
+bool ASF_Support::ReadHeaderExtensionObject ( XMP_IO* fileRef, ObjectState& /*inOutObjectState*/, const XMP_Uns64& _pos, const ASF_ObjectBase& _objectBase )
 {
 	if ( ! IsEqualGUID ( ASF_Header_Extension_Object, _objectBase.guid) || (! legacyManager ) ) return false;
 

@@ -42,7 +42,7 @@ static XMP_Node * sDummySchema = 0;	// ! Used for some ugliness with aliases.
 // Add the top level properties to the IterNode for a schema.
 
 static void
-AddSchemaProps ( IterInfo & info, IterNode & iterSchema, const XMP_Node * xmpSchema )
+AddSchemaProps ( IterInfo & /*info*/, IterNode & iterSchema, const XMP_Node * xmpSchema )
 {
 	#if TraceIterators
 		printf ( "    Adding properties of %s\n", xmpSchema->name.c_str() );

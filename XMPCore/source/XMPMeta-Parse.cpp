@@ -633,7 +633,7 @@ RepairAltText ( XMP_Node & tree, XMP_StringPtr schemaNS, XMP_StringPtr arrayName
 // ----------------
 
 void
-TouchUpDataModel ( XMPMeta * xmp, XMPMeta::ErrorCallbackInfo & errorCallback )
+TouchUpDataModel ( XMPMeta * xmp, XMPMeta::ErrorCallbackInfo & /*errorCallback*/ )
 {
 	XMP_Node & tree = xmp->tree;
 	

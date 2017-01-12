@@ -85,7 +85,7 @@ using namespace std;
 
 // ! Using explicit '/' as a separator when creating paths, it works on Windows.
 
-bool XDCAMEX_CheckFormat ( XMP_FileFormat format,
+bool XDCAMEX_CheckFormat ( XMP_FileFormat /*format*/,
 						   const std::string & _rootPath,
 						   const std::string & gpName,
 						   const std::string & parentName,
@@ -1035,7 +1035,7 @@ void XDCAMEX_MetaHandler::UpdateFile ( bool doSafeUpdate )
 // XDCAMEX_MetaHandler::WriteTempFile
 // ==================================
 
-void XDCAMEX_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
+void XDCAMEX_MetaHandler::WriteTempFile ( XMP_IO* /*tempRef*/ )
 {
 
 	// ! WriteTempFile is not supposed to be called for handlers that own the file.

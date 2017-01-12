@@ -483,7 +483,7 @@ XMP_Uns32 PSIR_FileWriter::UpdateMemoryResources ( void** dataPtr )
 // ====================================
 
 XMP_Uns32 PSIR_FileWriter::UpdateFileResources ( XMP_IO* sourceRef, XMP_IO* destRef,
-												 XMP_AbortProc abortProc, void * abortArg,
+                                                 XMP_AbortProc /*abortProc*/, void * /*abortArg*/,
 												 XMP_ProgressTracker* progressTracker )
 {
 	const XMP_Uns32 zero32 = 0;

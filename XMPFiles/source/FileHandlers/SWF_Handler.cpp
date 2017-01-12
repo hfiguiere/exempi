@@ -48,7 +48,7 @@ bool SWF_CheckFormat ( XMP_FileFormat format,
                        XMP_IO *       fileRef,
                        XMPFiles *     parent )
 {
-	IgnoreParam(format); IgnoreParam(fileRef); IgnoreParam(parent);
+	IgnoreParam(format); IgnoreParam(filePath); IgnoreParam(parent);
 	XMP_Assert ( format == kXMP_SWFFile );
 	
 	// Make sure the file is long enough for an empty SWF stream. Check the signature.
@@ -331,7 +331,7 @@ void SWF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 // ! See important notes in SWF_Handler.hpp about file handling.
 
-void SWF_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
+void SWF_MetaHandler::WriteTempFile ( XMP_IO* /*tempRef*/ )
 {
 
 	// ! WriteTempFile is not supposed to be called for SWF.

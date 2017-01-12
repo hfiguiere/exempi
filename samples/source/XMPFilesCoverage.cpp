@@ -265,7 +265,7 @@ static void TestOneFile ( const char * fileName )
 
 // -------------------------------------------------------------------------------------------------
 
-extern "C" int main ( int argc, const char * argv[] )
+extern "C" int main ( int /*argc*/, const char * argv[] )
 {
 	int result = 0;
 

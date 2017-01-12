@@ -86,7 +86,7 @@ bool MP3_CheckFormat ( XMP_FileFormat format,
 					  XMP_IO*    file,
 					  XMPFiles *     parent )
 {
-	IgnoreParam(filePath); IgnoreParam(parent);	//supress warnings
+	IgnoreParam(format); IgnoreParam(filePath); IgnoreParam(parent);	//suppress warnings
 	XMP_Assert ( format == kXMP_MP3File );		//standard assert
 
 	if ( file->Length() < 10 ) return false;

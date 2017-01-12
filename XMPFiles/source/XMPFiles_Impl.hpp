@@ -303,8 +303,8 @@ public:
 
 	// Currently, FileHandleInstance needs to implement Error and progress callback because of plugins,
 	// Rest handlers need not to implement them because handlers can access them parent
-	virtual void SetErrorCallback ( ErrorCallbackBox errorCallbackBox ) {}		
-	virtual void SetProgressCallback ( XMP_ProgressTracker::CallbackInfo * progCBInfoPtr ) {}
+	virtual void SetErrorCallback ( ErrorCallbackBox /*errorCallbackBox*/ ) {}
+	virtual void SetProgressCallback ( XMP_ProgressTracker::CallbackInfo * /*progCBInfoPtr*/ ) {}
 
 
 	static void NotifyClient(GenericErrorCallback * errCBptr, XMP_ErrorSeverity severity, XMP_Error & error);

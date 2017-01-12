@@ -26,7 +26,7 @@ bool XDCAMSAM_CheckFormat ( XMP_FileFormat format,
 						 const std::string & groupName,
 						 const std::string & parentName,
 						 const std::string & leafName,
-						 XMPFiles * parent )
+						 XMPFiles * /*parent*/ )
 {	
 	// We only support file in CLPR folder not in other folders
 

@@ -44,7 +44,7 @@ bool PNG_CheckFormat ( XMP_FileFormat format,
                        XMP_IO*    fileRef,
                        XMPFiles *     parent )
 {
-	IgnoreParam(format); IgnoreParam(fileRef); IgnoreParam(parent);
+	IgnoreParam(format); IgnoreParam(filePath); IgnoreParam(parent);
 	XMP_Assert ( format == kXMP_PNGFile );
 
 	if ( fileRef->Length() < PNG_SIGNATURE_LEN ) return false;

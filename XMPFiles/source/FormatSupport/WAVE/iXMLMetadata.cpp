@@ -981,7 +981,7 @@ namespace IFF_RIFF {
 		return false;
 	}
 
-	bool iXMLMetadata::validateTrackListInfo( ValueObject * value ) {
+	bool iXMLMetadata::validateTrackListInfo( ValueObject * /*value*/ ) {
 		return true;
 	}
 

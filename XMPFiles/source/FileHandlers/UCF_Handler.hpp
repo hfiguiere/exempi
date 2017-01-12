@@ -470,7 +470,7 @@ private:
 			}
 
 			// Assignment operator
-			CDFileHeader& operator=(const CDFileHeader& obj)
+			CDFileHeader& operator=(const CDFileHeader& /*obj*/)
 			{
 				XMP_Throw("not supported",kXMPErr_Unimplemented);
 			}

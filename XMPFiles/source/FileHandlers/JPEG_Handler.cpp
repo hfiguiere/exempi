@@ -665,6 +665,7 @@ void JPEG_MetaHandler::ProcessXMP()
 
 void JPEG_MetaHandler::UpdateFile ( bool doSafeUpdate )
 {
+	IgnoreParam(doSafeUpdate);
 	XMP_Assert ( ! doSafeUpdate );	// This should only be called for "unsafe" updates.
 
 	XMP_Int64 oldPacketOffset = this->packetInfo.offset;

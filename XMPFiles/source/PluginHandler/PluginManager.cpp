@@ -83,7 +83,7 @@ static XMPFileHandler* Plugin_MetaHandlerCTor_Replacement( XMPFiles * parent )
 
 // =================================================================================================
 
-static bool Plugin_CheckFileFormat ( FileHandlerSharedPtr handler, XMP_StringPtr filePath, XMP_IO * fileRef, XMPFiles * parent )
+static bool Plugin_CheckFileFormat ( FileHandlerSharedPtr handler, XMP_StringPtr filePath, XMP_IO * fileRef, XMPFiles * /*parent*/ )
 {
 	if ( handler != 0 ) {
 
@@ -186,7 +186,7 @@ static bool Plugin_CheckFolderFormat( FileHandlerSharedPtr handler,
 									  const std::string & gpName,
 									  const std::string & parentName,
 									  const std::string & leafName,
-									  XMPFiles * parent )
+									  XMPFiles * /*parent*/ )
 {
 	XMP_Bool result = false;
 

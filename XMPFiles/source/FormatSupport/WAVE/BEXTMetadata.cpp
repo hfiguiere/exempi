@@ -340,7 +340,7 @@ bool BEXTMetadata::isEmptyValue( XMP_Uns32 id, ValueObject& valueObj )
 			if( obj != NULL )
 			{
 				XMP_Uns32 size	 = 0;
-				const XMP_Uns8* const buffer = obj->getArray( size );
+				/*const XMP_Uns8* const buffer =*/ obj->getArray( size );
 
 				ret = ( size == 0 );
 			}

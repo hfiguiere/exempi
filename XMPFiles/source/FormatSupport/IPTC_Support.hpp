@@ -258,9 +258,9 @@ public:
 
 	IPTC_Reader() {};
 		
-	void SetDataSet_UTF8 ( XMP_Uns8 dsNum, const void* utf8Ptr, XMP_Uns32 utf8Len, long which = -1 ) { NotAppropriate(); };
+	void SetDataSet_UTF8 ( XMP_Uns8 /*dsNum*/, const void* /*utf8Ptr*/, XMP_Uns32 /*utf8Len*/, long which = -1 ) { IgnoreParam(which); NotAppropriate(); };
 	
-	void DeleteDataSet ( XMP_Uns8 dsNum, long which = -1 ) { NotAppropriate(); };
+	void DeleteDataSet ( XMP_Uns8 /*dsNum*/, long which = -1 ) { IgnoreParam(which); NotAppropriate(); };
 
 	bool IsChanged() { return false; };
 	

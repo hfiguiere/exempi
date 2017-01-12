@@ -38,7 +38,7 @@ AIFFMetadata::~AIFFMetadata()
 // 
 //-----------------------------------------------------------------------------
 
-bool AIFFMetadata::isEmptyValue( XMP_Uns32 id, ValueObject& valueObj )
+bool AIFFMetadata::isEmptyValue( XMP_Uns32 /*id*/, ValueObject& valueObj )
 {
 	TValueObject<std::string>* strObj = dynamic_cast<TValueObject<std::string>*>(&valueObj);
 

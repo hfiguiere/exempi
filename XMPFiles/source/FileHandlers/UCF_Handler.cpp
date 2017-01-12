@@ -79,7 +79,7 @@ bool UCF_CheckFormat (  XMP_FileFormat format,
 {
 	// *not* using buffer functionality here, all we need
 	// to detect UCF securely is in the first 38 bytes...
-	IgnoreParam(filePath); IgnoreParam(parent);	//suppress warnings
+	IgnoreParam(format); IgnoreParam(filePath); IgnoreParam(parent);	//suppress warnings
 	XMP_Assert ( format == kXMP_UCFFile );								//standard assert
 
 	XMP_Uns8 buffer[MIN_UCF_LENGTH];

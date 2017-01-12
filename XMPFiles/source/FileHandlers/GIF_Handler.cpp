@@ -54,7 +54,7 @@ bool GIF_CheckFormat ( XMP_FileFormat format,
                        XMP_IO*        fileRef,
                        XMPFiles *     parent )
 {
-	IgnoreParam(format); IgnoreParam(fileRef); IgnoreParam(parent);
+	IgnoreParam(format); IgnoreParam(filePath); IgnoreParam(parent);
 	XMP_Assert ( format == kXMP_GIFFile );
 
 	if ( fileRef->Length() < GIF_89_Header_LEN ) return false;
@@ -329,6 +329,7 @@ void GIF_MetaHandler::SeekFile( XMP_IO * fileRef, XMP_Int64 offset, SeekMode mod
 
 void GIF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 {
+	IgnoreParam(doSafeUpdate);
 	XMP_Assert( !doSafeUpdate );	// This should only be called for "unsafe" updates.
 
 	if ( ! this->needsUpdate ) return;

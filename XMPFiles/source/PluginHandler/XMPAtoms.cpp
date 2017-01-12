@@ -122,7 +122,7 @@ void ResourceParser::addHandler()
 	}
 }
 
-bool ResourceParser::parseElementAttrs( const XML_Node * xmlNode, bool isTopLevel )
+bool ResourceParser::parseElementAttrs( const XML_Node * xmlNode, bool /*isTopLevel*/ )
 {
 	XMPAtom nodeAtom = getXMPAtomFromString( xmlNode->name );
 	if( nodeAtom == Handler_K )

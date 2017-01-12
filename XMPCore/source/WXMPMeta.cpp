@@ -1247,12 +1247,14 @@ WXMPMeta_ResetErrorCallbackLimit_1 ( XMPMetaRef    xmpObjRef,
 }
 
 void WXMPMeta_Use_CPP_DOM_APIs_1(XMP_Bool useNewCoreAPIs,
-								 WXMP_Result * wResult )
+				 WXMP_Result * /*wResult*/ )
 {
 #if ENABLE_CPP_DOM_MODEL
 	XMP_ENTER_Static ( "WXMPMeta_Use_CPP_DOM_APIs_1" )
 		sUseNewCoreAPIs = useNewCoreAPIs;
 	XMP_EXIT
+#else
+	IgnoreParam(useNewCoreAPIs);
 #endif
 
 }

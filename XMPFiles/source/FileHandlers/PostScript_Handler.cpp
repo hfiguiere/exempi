@@ -1641,7 +1641,7 @@ void PostScript_MetaHandler::DetermineInsertionOffsets(XMP_Int64& ADOhintOffset,
 // Method inserts a new Xpacket in the postscript file.This will be called in two cases
 //	a) If there is no xpacket in the PS file
 //	b) If the existing xpacket is embedded using readstring or readline method
-void PostScript_MetaHandler::InsertNewUpdate (std::string &outStr,XMP_IO* &tempRef,bool doSafeUpdate )
+void PostScript_MetaHandler::InsertNewUpdate (std::string &outStr, XMP_IO* &tempRef, bool /*doSafeUpdate*/ )
 {
 	// In this case it is better to have safe update 
 	// as non-safe update implementation is going to be complex 

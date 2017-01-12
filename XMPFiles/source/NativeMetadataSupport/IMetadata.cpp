@@ -41,7 +41,7 @@ IMetadata::~IMetadata()
 // 
 //-----------------------------------------------------------------------------
 
-void IMetadata::parse( const XMP_Uns8* input, XMP_Uns64 size )
+void IMetadata::parse( const XMP_Uns8* /*input*/, XMP_Uns64 /*size*/ )
 {
 	XMP_Throw ( "Method not implemented", kXMPErr_Unimplemented );
 }
@@ -55,7 +55,7 @@ void IMetadata::parse( const XMP_Uns8* input, XMP_Uns64 size )
 // 
 //-----------------------------------------------------------------------------
 
-void IMetadata::parse( XMP_IO* input )
+void IMetadata::parse( XMP_IO* /*input*/ )
 {
 	XMP_Throw ( "Method not implemented", kXMPErr_Unimplemented );
 }
@@ -73,7 +73,7 @@ void IMetadata::parse( XMP_IO* input )
 // 
 //-----------------------------------------------------------------------------
 
-XMP_Uns64 IMetadata::serialize( XMP_Uns8** buffer )
+XMP_Uns64 IMetadata::serialize( XMP_Uns8** /*buffer*/ )
 {
 	XMP_Throw ( "Method not implemented", kXMPErr_Unimplemented );
 }
@@ -213,7 +213,7 @@ bool IMetadata::valueChanged( XMP_Uns32 id ) const
 //
 //-----------------------------------------------------------------------------
 
-bool IMetadata::valueValid( XMP_Uns32 id, ValueObject *value )
+bool IMetadata::valueValid( XMP_Uns32 /*id*/, ValueObject * /*value*/ )
 {
 	return true;
 }
@@ -225,7 +225,7 @@ bool IMetadata::valueValid( XMP_Uns32 id, ValueObject *value )
 // Purpose: Return true if the value for the passed identifier is valid
 //
 //-----------------------------------------------------------------------------
-void IMetadata::valueModify(XMP_Uns32 id, ValueObject *value)
+void IMetadata::valueModify(XMP_Uns32 /*id*/, ValueObject * /*value*/)
 {
 	return;
 }

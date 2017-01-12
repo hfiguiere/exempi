@@ -35,7 +35,7 @@ public:
 
 	bool GetFileModDate ( XMP_DateTime * modDate );
 
-	virtual void FillAssociatedResources ( std::vector<std::string> * resourceList ) {};
+	virtual void FillAssociatedResources ( std::vector<std::string> * /*resourceList*/ ) {};
 	bool IsMetadataWritable ( ) ;
 
 	void CacheFileData();
@@ -54,13 +54,13 @@ protected:
 
 	XDCAM_MetaHandler() : expat(0), clipMetadata(0) {};	// Hidden on purpose.
 
-	virtual bool MakeClipFilePath ( std::string * path, XMP_StringPtr suffix, bool checkFile = false ) { return false; }
-	virtual void SetPathVariables ( const std::string & clientPath )  { }
-	virtual bool GetMediaProMetadata ( SXMPMeta * xmpObjPtr, const std::string& clipUMID, bool digestFound ) {
+	virtual bool MakeClipFilePath ( std::string * /*path*/, XMP_StringPtr /*suffix*/, bool checkFile = false ) { IgnoreParam(checkFile); return false; }
+	virtual void SetPathVariables ( const std::string & /*clientPath*/ )  { }
+	virtual bool GetMediaProMetadata ( SXMPMeta * /*xmpObjPtr*/, const std::string& /*clipUMID*/, bool /*digestFound*/ ) {
 		return false;
 	}
 	bool MakeMediaproPath ( std::string * path, bool checkFile = false );
-	virtual bool GetClipUmid ( std::string &clipUmid ) { return false; }
+	virtual bool GetClipUmid ( std::string & /*clipUmid*/ ) { return false; }
 	void readXMLFile( XMP_StringPtr filePath,ExpatAdapter* &expat );
 	bool RefersClipUmid ( std::string clipUmid , XMP_StringPtr editInfoPath )  ;
 	std::string rootPath, clipName, sidecarPath;

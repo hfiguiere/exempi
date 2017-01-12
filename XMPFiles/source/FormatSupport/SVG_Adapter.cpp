@@ -273,7 +273,7 @@ static void EndNamespaceDeclHandler( void * userData, XMP_StringPtr prefix )
 
 // =================================================================================================
 
-static void StartElementHandler( void * userData, XMP_StringPtr name, XMP_StringPtr* attrs )
+static void StartElementHandler( void * userData, XMP_StringPtr name, XMP_StringPtr* /*attrs*/ )
 {
 	// In case, if name is NULL then ParseBuffer would return with error status
 	SVG_Adapter * thiz = ( SVG_Adapter* ) userData;
@@ -429,7 +429,7 @@ static void ProcessingInstructionHandler( void * userData, XMP_StringPtr target,
 
 // =================================================================================================
 
-static void DeclarationHandler( void *userData, const XML_Char  *version, const XML_Char  *encoding, int standalone )
+static void DeclarationHandler( void *userData, const XML_Char  * /*version*/, const XML_Char  *encoding, int /*standalone*/ )
 {
 	if ( encoding == NULL || strlen( encoding ) != 5 ||
 		( tolower( encoding[ 0 ] ) == 'u'
@@ -448,11 +448,10 @@ static void DeclarationHandler( void *userData, const XML_Char  *version, const 
 // =================================================================================================
 
 #if BanAllEntityUsage
-static void StartDoctypeDeclHandler( void * userData, XMP_StringPtr doctypeName,
-	XMP_StringPtr sysid, XMP_StringPtr pubid, int has_internal_subset )
+static void StartDoctypeDeclHandler( void * userData, XMP_StringPtr /*doctypeName*/,
+                                     XMP_StringPtr /*sysid*/, XMP_StringPtr /*pubid*/,
+                                     int /*has_internal_subset*/ )
 {
-	IgnoreParam( userData );
-
 	SVG_Adapter * thiz = ( SVG_Adapter* ) userData;
 
 	thiz->isAborted = true;	// ! Can't throw an exception across the plain C Expat frames.

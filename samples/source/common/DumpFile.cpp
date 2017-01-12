@@ -804,11 +804,13 @@ void static Rewind(LFA_FileRef file, XMP_Int64 size)
 	LFA_Seek (file, -size, SEEK_CUR); // ditto to above
 }
 
+#if 0
 // overload, no size parameter, rewinds to start
 void static Rewind(LFA_FileRef file)
 {
 	LFA_Seek (file, 0, SEEK_SET);
 }
+#endif
 
 XMP_Uns32 static Peek32u(LFA_FileRef file, bool bigEndian = false )
 {
@@ -916,6 +918,7 @@ static void PrintOnlyASCII_8 ( XMP_Uns8 * strPtr, XMP_Uns32 strLen, bool stopOnN
 // this wrap and the LE counterpart can only be inferior, since
 // its always added as a comment, even if value was more appropriate.
 // ==> callers should make use of convert16Bit directly.
+#if 0
 static void PrintOnlyASCII_16BE ( XMP_Uns16 * u16Ptr, XMP_Uns32 u16Bytes, bool stopOnNUL = true )
 {
 	tree->addComment ( convert16Bit( true, (XMP_Uns8*) u16Ptr, stopOnNUL, u16Bytes ) );
@@ -927,6 +930,7 @@ static void PrintOnlyASCII_16LE ( XMP_Uns16 * u16Ptr, XMP_Uns32 u16Bytes, bool s
 {
 	tree->addComment ( convert16Bit( false, (XMP_Uns8*) u16Ptr, stopOnNUL, u16Bytes ) );
 }	// PrintOnlyASCII_16LE
+#endif
 
 // =================================================================================================
 
@@ -1281,7 +1285,7 @@ DumpImageResources ( const JpegMarkers& psirMarkers, XMP_Uns8 * dataStart, const
 			lastIndexUsed = i;
 		}
 		XMP_Uns32 fileOffset = psirMarkers[i].jpegMarkerPtr - dataStart;
-		XMP_Uns8 * psirOrigin =  psirMarkers[i].jpegMarkerPtr;
+		/* XMP_Uns8 * psirOrigin =  psirMarkers[i].jpegMarkerPtr;*/
 
 		std::string irTypeStr = convert8Bit(psirPtr,false,4); //get in an endian neutral way
 		XMP_Uns16 irID = GetUns16BE ( psirPtr+4 );	// The image resource ID.
@@ -3220,7 +3224,7 @@ struct DataSize64Chunk // declare DataSize64Chunk structure
 
 static XMP_Uns64 parseRF64( LFA_FileRef file, DataSize64Chunk* rf64Sizes )
 {
-	XMP_Int64 chunkPos= LFA_Tell( file );
+	/*XMP_Int64 chunkPos= */ LFA_Tell( file );
 	rf64Sizes->chunkId = tree->digest32u( file, "", false );
 	std::string ds64ChunkID_ST( fromArgs( "%.4s" , &rf64Sizes->chunkId) );
 	assertMsg("Not a valid RF64 file!", ds64ChunkID_ST == "ds64");
@@ -3764,7 +3768,7 @@ DumpPNGChunk ( LFA_FileRef file, XMP_Uns32 pngLen, XMP_Uns32 chunkOffset )
 // =================================================================================================
 
 static void
-DumpPS ( LFA_FileRef file, XMP_Uns32 fileLen )
+DumpPS ( LFA_FileRef file, XMP_Uns32 /*fileLen*/ )
 {
 	XMP_Int32 psOffset;
 	size_t psLength;
@@ -4838,7 +4842,7 @@ struct ID3_v23_FrameHeader {
 
 // =================================================================================================
 
-static void DumpID3v22Frames ( LFA_FileRef file, XMP_Uns8 vMajor, XMP_Uns32 framePos, XMP_Uns32 frameEnd ) {
+static void DumpID3v22Frames ( LFA_FileRef file, XMP_Uns8 /*vMajor*/, XMP_Uns32 framePos, XMP_Uns32 frameEnd ) {
 
 	// Dump the frames in an ID3 v2.2 tag.
 

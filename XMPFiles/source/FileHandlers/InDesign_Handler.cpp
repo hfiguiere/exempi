@@ -376,7 +376,7 @@ void InDesign_MetaHandler::WriteXMPSuffix ( XMP_IO* fileRef )
 // InDesign_MetaHandler::NoteXMPRemoval
 // ====================================
 
-void InDesign_MetaHandler::NoteXMPRemoval ( XMP_IO* fileRef )
+void InDesign_MetaHandler::NoteXMPRemoval ( XMP_IO* /*fileRef*/ )
 {
 	// Nothing to do.
 
@@ -386,7 +386,7 @@ void InDesign_MetaHandler::NoteXMPRemoval ( XMP_IO* fileRef )
 // InDesign_MetaHandler::NoteXMPInsertion
 // ======================================
 
-void InDesign_MetaHandler::NoteXMPInsertion ( XMP_IO* fileRef )
+void InDesign_MetaHandler::NoteXMPInsertion ( XMP_IO* /*fileRef*/ )
 {
 	// Nothing to do.
 
@@ -396,7 +396,7 @@ void InDesign_MetaHandler::NoteXMPInsertion ( XMP_IO* fileRef )
 // InDesign_MetaHandler::CaptureFileEnding
 // =======================================
 
-void InDesign_MetaHandler::CaptureFileEnding ( XMP_IO* fileRef )
+void InDesign_MetaHandler::CaptureFileEnding ( XMP_IO* /*fileRef*/ )
 {
 	// Nothing to do. The back of an InDesign file is the final zero padding.
 

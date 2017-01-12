@@ -454,7 +454,7 @@ static bool MakeLeafPath ( std::string * path, XMP_StringPtr root, XMP_StringPtr
 
 // ! Sample files show that the ".bdmv" extension can sometimes be ".bdm". Allow either.
 
-bool AVCHD_CheckFormat ( XMP_FileFormat format,
+bool AVCHD_CheckFormat ( XMP_FileFormat /*format*/,
 						 const std::string & rootPath,
 						 const std::string & gpName,
 						 const std::string & parentName,
@@ -1744,7 +1744,7 @@ static std::string AVCHD_StringFieldToXMP ( XMP_Uns8 avchdLength,
 // AVCHD_SetXMPShotName
 // ====================
 
-static void AVCHD_SetXMPShotName ( SXMPMeta& xmpObj, const AVCHD_blkPlayListMarkExt& markExt, const std::string& strClipName )
+static void AVCHD_SetXMPShotName ( SXMPMeta& xmpObj, const AVCHD_blkPlayListMarkExt& markExt, const std::string& /*strClipName*/ )
 {
 	if ( markExt.mPresent ) {
 		const std::string shotName = AVCHD_StringFieldToXMP ( markExt.mMarkNameLength, markExt.mMarkCharacterSet, markExt.mMarkName, 24 );
@@ -2413,7 +2413,7 @@ void AVCHD_MetaHandler::UpdateFile ( bool doSafeUpdate )
 // AVCHD_MetaHandler::WriteTempFile
 // ================================
 
-void AVCHD_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
+void AVCHD_MetaHandler::WriteTempFile ( XMP_IO* /*tempRef*/ )
 {
 
 	// ! WriteTempFile is not supposed to be called for handlers that own the file.

@@ -933,7 +933,7 @@ XMPFileHandlerInfo* HandlerRegistry::tryFolderHandlers( XMP_FileFormat format,
 																   const std::string& parentName, 
 																   const std::string& leafName )
 {
-	IgnoreParam ( parentName );
+	IgnoreParam(leafName);
 
 	// This is called when the input path to XMPFiles::OpenFile names an existing file. We need to
 	// quickly decide if this might be inside a folder-handler's structure. See if the containing

@@ -111,10 +111,10 @@ static inline void PutUns24BE ( XMP_Uns32 value, void * addr )
 
 #define kFLV1 0x464C5601UL
 
-bool FLV_CheckFormat ( XMP_FileFormat format,
-					   XMP_StringPtr  filePath,
+bool FLV_CheckFormat ( XMP_FileFormat /*format*/,
+					   XMP_StringPtr  /*filePath*/,
 					   XMP_IO*    fileRef,
-					   XMPFiles *     parent )
+					   XMPFiles *     /*parent*/ )
 {
 	XMP_Uns8 buffer [9];
 
@@ -521,6 +521,7 @@ void FLV_MetaHandler::ProcessXMP()
 void FLV_MetaHandler::UpdateFile ( bool doSafeUpdate )
 {
 	if ( ! this->needsUpdate ) return;
+	IgnoreParam(doSafeUpdate);
 	XMP_Assert ( ! doSafeUpdate );	// This should only be called for "unsafe" updates.
 
 	//XMP_AbortProc abortProc  = this->parent->abortProc;

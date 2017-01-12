@@ -201,7 +201,7 @@ static inline bool IsXMPUUID ( XMP_IO * fileRef,XMP_Uns64 contentSize, bool unmo
 // ! can check afterwards using GetFileInfo to see what the file happens to be.
 
 bool MPEG4_CheckFormat ( XMP_FileFormat format,
-						 XMP_StringPtr  filePath,
+						 XMP_StringPtr  /*filePath*/,
 						 XMP_IO*    fileRef,
 						 XMPFiles*      parent )
 {
@@ -1243,7 +1243,7 @@ static bool ImportTimecodeItems ( const MPEG4_MetaHandler::TimecodeTrackInfo & t
 // ===================
 
 static void ExportTimecodeItems ( const SXMPMeta & xmp, MPEG4_MetaHandler::TimecodeTrackInfo * tmcdInfo,
-								  TradQT_Manager * qtMgr, MOOV_Manager * moovMgr )
+								  TradQT_Manager * /*qtMgr*/, MOOV_Manager * moovMgr )
 {
 	// Export the items that go into the timecode track:
 	//  - the timescale and frame duration in the first 'stsd' table entry
@@ -2920,6 +2920,7 @@ void MPEG4_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	}
 
 	this->needsUpdate = false;	// Make sure only called once.
+	IgnoreParam(doSafeUpdate);
 	XMP_Assert ( ! doSafeUpdate );	// This should only be called for "unsafe" updates.
 
 	/*XMP_AbortProc abortProc  = this->parent->abortProc;*/

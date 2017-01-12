@@ -666,7 +666,7 @@ void XDCAM_MetaHandler::UpdateFile ( bool doSafeUpdate )
 // XDCAM_MetaHandler::WriteTempFile
 // ================================
 
-void XDCAM_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
+void XDCAM_MetaHandler::WriteTempFile ( XMP_IO* /*tempRef*/ )
 {
 
 	// ! WriteTempFile is not supposed to be called for handlers that own the file.
