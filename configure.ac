@@ -209,9 +209,44 @@ dnl due to stupid m4 I had to double the [ and ] in the regexp
 fi
 AC_SUBST(VALGRIND)
 
+AC_LANG_CPLUSPLUS
+AC_LANG_COMPILER_REQUIRE
+
+dnl ***************************************************************
+dnl Excessive warnings
+dnl ***************************************************************
+AX_CHECK_COMPILE_FLAG([-Werror=unknown-warning-option], [
+        ax_compiler_flags_test="-Werror=unknown-warning-option"
+], [
+        ax_compiler_flags_test=""
+])
+AX_APPEND_COMPILE_FLAGS([ \
+   -Wchar-subscripts \
+   -Wcast-align \
+   -Wextra \
+   -Wexceptions \
+   -Wheader-guard \
+   -Wformat \
+dnl   -Wformat-nonliteral \
+   -Wformat-security \
+   -Wlogical-not-parentheses \
+   -Wmisleading-indentation \
+   -Wmissing-noreturn \
+   -Woverloaded-virtual \
+   -Wpointer-arith \
+dnl   -Wredundant-decls \
+   -Wpointer-bool-conversion \
+   -Wshadow \
+   -Wsign-compare \
+   -Wno-suggest-attribute=noreturn \
+   -Wnull-conversion \
+   -Wunreachable-code \
+   -Wunused \
+   -Wwrite-strings \
+], [], [$ax_compiler_flags_test])
+
 AC_ARG_ENABLE(asan,[  --enable-asan    Turn on address sanitizer],[
-    AX_CFLAGS_GCC_OPTION([-fsanitize=address -fno-omit-frame-pointer])
-    AX_CXXFLAGS_GCC_OPTION([-fsanitize=address -fno-omit-frame-pointer])
+    AX_APPEND_COMPILE_FLAGS([-fsanitize=address -fno-omit-frame-pointer])
 ]
 ,
 [
