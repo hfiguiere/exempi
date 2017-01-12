@@ -54,8 +54,8 @@ protected:
 
 private:
 	// Operators hidden on purpose
-	AIFFMetadata( const AIFFMetadata& ) {};
-	AIFFMetadata& operator=( const AIFFMetadata& ) { return *this; };
+	AIFFMetadata( const AIFFMetadata& );
+	AIFFMetadata& operator=( const AIFFMetadata& );
 };
 
 } // namespace

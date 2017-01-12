@@ -90,8 +90,8 @@ protected:
 
 private:
 	// Operators hidden on purpose
-	BEXTMetadata( const BEXTMetadata& ) {};
-	BEXTMetadata& operator=( const BEXTMetadata& ) { return *this; };
+	BEXTMetadata( const BEXTMetadata& );
+	BEXTMetadata& operator=( const BEXTMetadata& );
 };
 
 }

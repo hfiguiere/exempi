@@ -81,8 +81,8 @@ protected:
 
 private:
 	// Operators hidden on purpose
-	PrmLMetadata( const PrmLMetadata& ) {};
-	PrmLMetadata& operator=( const PrmLMetadata& ) { return *this; };
+	PrmLMetadata( const PrmLMetadata& );
+	PrmLMetadata& operator=( const PrmLMetadata& );
 };
 
 }

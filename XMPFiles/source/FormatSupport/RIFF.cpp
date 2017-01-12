@@ -218,7 +218,8 @@ std::string Chunk::toString(XMP_Uns8 /*level*/)
 							"oldSize: 0x%.8llX,  "
 							"newSize: 0x%.8llX,  "
 							"oldPos: 0x%.8llX\n",
-		(char*)(&this->id), this->oldSize, this->newSize, this->oldPos );
+                  (char*)(&this->id), (long long unsigned)this->oldSize,
+                  (long long unsigned)this->newSize, (long long unsigned)this->oldPos );
 	return std::string(buffer);
 }
 
@@ -600,7 +601,10 @@ std::string ContainerChunk::toString(XMP_Uns8 level )
 			"oldSize: 0x%8llX, "
 			"newSize: 0x%.8llX, "
 			"oldPos: 0x%.8llX\n",
-			(char*)(&this->id), (char*)(&this->containerType), this->oldSize, this->newSize, this->oldPos );
+			(char*)(&this->id), (char*)(&this->containerType),
+                  (long long unsigned)this->oldSize,
+                  (long long unsigned)this->newSize,
+                  (long long unsigned)this->oldPos );
 
 	std::string r(buffer);
 	chunkVectIter iter;

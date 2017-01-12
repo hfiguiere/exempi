@@ -85,8 +85,8 @@ protected:
 private:
 
 	// Operators hidden on purpose.
-	CartMetadata ( const CartMetadata& ) {};
-	CartMetadata& operator= ( const CartMetadata& ) { return *this; };
+	CartMetadata ( const CartMetadata& );
+	CartMetadata& operator= ( const CartMetadata& );
 
 };	// CartMetadata
 

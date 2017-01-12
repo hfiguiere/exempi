@@ -82,8 +82,8 @@ protected:
 
 private:
 	// Operators hidden on purpose
-	Cr8rMetadata( const Cr8rMetadata& ) {};
-	Cr8rMetadata& operator=( const Cr8rMetadata& ) { return *this; };
+	Cr8rMetadata( const Cr8rMetadata& );
+	Cr8rMetadata& operator=( const Cr8rMetadata& );
 };
 
 }

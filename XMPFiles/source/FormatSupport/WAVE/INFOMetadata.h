@@ -79,8 +79,8 @@ protected:
 
 private:
 	// Operators hidden on purpose
-	INFOMetadata( const INFOMetadata& ) {};
-	INFOMetadata& operator=( const INFOMetadata& ) { return *this; };
+	INFOMetadata( const INFOMetadata& );
+	INFOMetadata& operator=( const INFOMetadata& );
 };
 
 }

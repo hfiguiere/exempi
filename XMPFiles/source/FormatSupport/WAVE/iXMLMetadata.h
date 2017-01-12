@@ -174,8 +174,8 @@ namespace IFF_RIFF {
 		bool validateTrackListInfo( ValueObject * value );
 	private:
 		// Operators hidden on purpose
-		iXMLMetadata( const iXMLMetadata& ) {};
-		iXMLMetadata& operator=( const iXMLMetadata& ) { return *this; };
+		iXMLMetadata( const iXMLMetadata& );
+		iXMLMetadata& operator=( const iXMLMetadata& );
 
 		ExpatAdapter *			mExpatAdapter;
 		XML_Node *				mRootNode;

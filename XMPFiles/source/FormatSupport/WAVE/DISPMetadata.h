@@ -88,8 +88,8 @@ protected:
 
 private:
 	// Operators hidden on purpose
-	DISPMetadata( const DISPMetadata& ) {};
-	DISPMetadata& operator=( const DISPMetadata& ) { return *this; };
+	DISPMetadata( const DISPMetadata& );
+	DISPMetadata& operator=( const DISPMetadata& );
 };
 
 }
