@@ -686,13 +686,13 @@ ContainerChunk::~ContainerChunk()
 // a) create
 
 // a) creation
-XMPChunk::XMPChunk( ContainerChunk* parent ) : Chunk( parent, chunk_XMP , kChunk_XMP )
+XMPChunk::XMPChunk( ContainerChunk* parent_ ) : Chunk( parent_, chunk_XMP , kChunk_XMP )
 {
 	// nothing
 }
 
 // b) parse
-XMPChunk::XMPChunk( ContainerChunk* parent, RIFF_MetaHandler* handler ) : Chunk( parent, handler, false, chunk_XMP )
+XMPChunk::XMPChunk( ContainerChunk* parent_, RIFF_MetaHandler* handler ) : Chunk( parent_, handler, false, chunk_XMP )
 {
 	chunkType = chunk_XMP;
 	XMP_IO* file = handler->parent->ioRef;
@@ -732,14 +732,14 @@ void XMPChunk::write( RIFF_MetaHandler* handler, XMP_IO* file, bool /*isMainChun
 
 // Value CHUNK ///////////////////////////////////////////////
 // a) creation
-ValueChunk::ValueChunk( ContainerChunk* parent, std::string value, XMP_Uns32 id ) : Chunk( parent, chunk_VALUE, id )
+ValueChunk::ValueChunk( ContainerChunk* parent_, std::string value, XMP_Uns32 id_ ) : Chunk( parent_, chunk_VALUE, id_ )
 {
 	this->oldValue = std::string();
 	this->SetValue( value );
 }
 
 // b) parsing
-ValueChunk::ValueChunk( ContainerChunk* parent, RIFF_MetaHandler* handler ) : Chunk( parent, handler, false, chunk_VALUE )
+ValueChunk::ValueChunk( ContainerChunk* parent_, RIFF_MetaHandler* handler ) : Chunk( parent_, handler, false, chunk_VALUE )
 {
 	// set value: -----------------
 	XMP_IO* file = handler->parent->ioRef;
@@ -788,10 +788,10 @@ void ValueChunk::write( RIFF_MetaHandler* /*handler*/, XMP_IO* file, bool /*isMa
 
 /* remove value chunk if existing.
    return true if it was existing. */
-bool ContainerChunk::removeValue( XMP_Uns32	id )
+bool ContainerChunk::removeValue( XMP_Uns32	id_ )
 {
 	valueMap* cm = &this->childmap;
-	valueMapIter iter = cm->find( id );
+	valueMapIter iter = cm->find( id_ );
 
 	if( iter == cm->end() )
 		return false;  //not found
@@ -803,7 +803,7 @@ bool ContainerChunk::removeValue( XMP_Uns32	id )
 	chunkVectIter cvIter;
 	for (cvIter = cv->begin(); cvIter != cv->end(); ++cvIter )
 	{
-		if ( (*cvIter)->id == id )
+		if ( (*cvIter)->id == id_ )
 			break; // found!
 	}
 	XMP_Validate( cvIter != cv->end(), "property not found in children vector", kXMPErr_InternalFailure );
@@ -845,7 +845,7 @@ void ContainerChunk::replaceChildWithJunk( Chunk* child, bool deleteChild )
 
 // JunkChunk ///////////////////////////////////////////////////
 // a) creation
-JunkChunk::JunkChunk( ContainerChunk* parent, XMP_Int64 size ) : Chunk( parent, chunk_JUNK, kChunk_JUNK )
+JunkChunk::JunkChunk( ContainerChunk* parent_, XMP_Int64 size ) : Chunk( parent_, chunk_JUNK, kChunk_JUNK )
 {
 	XMP_Assert( size >= 8 );
 	this->oldSize = size;

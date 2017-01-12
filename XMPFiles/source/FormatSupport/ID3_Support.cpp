@@ -451,11 +451,11 @@ ID3v2Frame::ID3v2Frame() : frameDefaults
 
 // =================================================================================================
 
-ID3v2Frame::ID3v2Frame ( XMP_Uns32 id ) : frameDefaults
+ID3v2Frame::ID3v2Frame ( XMP_Uns32 id_ ) : frameDefaults
 {
 	memset ( this->fields, 0, kV23_FrameHeaderSize );
-	this->id = id;
-	PutUns32BE ( id, &this->fields[o_id] );
+	this->id = id_;
+	PutUns32BE ( id_, &this->fields[o_id] );
 }
 
 // =================================================================================================

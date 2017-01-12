@@ -119,16 +119,16 @@ static inline void
 	node->SetValue( value );
 }	//SetNodeValue
 
-void XMP_Node::SetValue( XMP_StringPtr value )
+void XMP_Node::SetValue( XMP_StringPtr value_ )
 {
 
 	#if XMP_DebugBuild	// ! Hack to force an assert.
-		if ( (this->name == "xmp:TestAssertNotify") && XMP_LitMatch ( value, "DoIt!" ) ) {
+		if ( (this->name == "xmp:TestAssertNotify") && XMP_LitMatch ( value_, "DoIt!" ) ) {
 			XMP_Assert ( this->name != "xmp:TestAssertNotify" );
 		}
 	#endif
 	
-	std::string newValue = value;	// Need a local copy to tweak and not change node.value for errors.
+	std::string newValue = value_;	// Need a local copy to tweak and not change node.value for errors.
 	
 	XMP_Uns8* chPtr = (XMP_Uns8*) newValue.c_str();	// Check for valid UTF-8, replace ASCII controls with a space.
 	while ( *chPtr != 0 ) {
