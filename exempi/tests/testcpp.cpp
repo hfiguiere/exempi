@@ -43,7 +43,7 @@
 
 using boost::unit_test::test_suite;
 
-int test_main(int argc, char* argv[])
+int test_main(int /*argc*/, char* /*argv*/ [])
 {
   // this test is totally useless without leak checking.
   // but for compiling.

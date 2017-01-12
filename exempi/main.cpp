@@ -193,7 +193,7 @@ int main(int argc, char **argv)
     return 0;
 }
 
-static XmpPtr get_xmp_from_sidecar(const char *filename, bool is_an_xmp)
+static XmpPtr get_xmp_from_sidecar(const char *filename, bool /*is_an_xmp*/)
 {
     struct stat s;
 
@@ -280,7 +280,7 @@ static void get_xmp_prop(const char *filename, const std::string &value_name,
 
 static void set_xmp_prop(const char *filename, const std::string &value_name,
                          const std::string &prop_value, bool no_reconcile,
-                         bool is_an_xmp, bool write_in_place, FILE *outio)
+                         bool is_an_xmp, bool write_in_place, FILE * /*outio*/)
 {
     xmp::ScopedPtr<XmpPtr> xmp(
         get_xmp_from_file(filename, no_reconcile, is_an_xmp));
