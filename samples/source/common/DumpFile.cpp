@@ -2543,6 +2543,7 @@ static size_t GetASFObjectInfo (LFA_FileRef file, XMP_Uns32 objOffset, ASF_ObjHe
 		tree->addComment("%s   <<unknown object>>, offset %u (0x%X), size %u",
 			indent.c_str(), objOffset, objOffset, size32);
 		ASF_GUID guid;
+		memset(&guid, 0, sizeof(ASF_GUID));
 		guid.part1 = GetUns32LE (&objHeader->guid.part1);
 		guid.part2 = GetUns16LE (&objHeader->guid.part2);
 		guid.part3 = GetUns16LE (&objHeader->guid.part3);
