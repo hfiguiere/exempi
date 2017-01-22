@@ -42,12 +42,12 @@ TEST_EXTENSIONS = .sh
 if WITH_UNIT_TEST
 check_PROGRAMS = testexempicore testserialise testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
-	testparse test3 testinit testfdo18635 testfdo83313 testcpp testwebp \
+	testparse testiterator testinit testfdo18635 testfdo83313 testcpp testwebp \
 	testadobesdk \
 	$(NULL)
 TESTS = testcore.sh testinit testexempicore testserialise testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
-	testparse test3 testfdo18635 testfdo83313 testcpp testwebp \
+	testparse testiterator testfdo18635 testfdo83313 testcpp testwebp \
 	testadobesdk \
 	$(NULL)
 TESTS_ENVIRONMENT = TEST_DIR=$(srcdir) BOOST_TEST_CATCH_SYSTEM_ERRORS=no VALGRIND="$(VALGRIND)"
@@ -98,9 +98,9 @@ testparse_SOURCES = testparse.cpp utils.cpp
 testparse_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
 testparse_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
 
-test3_SOURCES = test3.cpp utils.cpp
-test3_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
-test3_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
+testiterator_SOURCES = test-iterator.cpp utils.cpp
+testiterator_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+testiterator_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
 
 testfdo18635_SOURCES = test-bgo.cpp utils.cpp
 testfdo18635_LDADD = ../libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@

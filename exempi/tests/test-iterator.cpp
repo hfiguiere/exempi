@@ -1,7 +1,7 @@
 /*
  * exempi - test3.cpp
  *
- * Copyright (C) 2007-2008 Hubert Figuiere
+ * Copyright (C) 2007-2017 Hubert Figuiere
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,28 +81,85 @@ int test_main(int argc, char *argv[])
 
   BOOST_CHECK(xmp != NULL);
 
-  XmpIteratorPtr iter =
-    xmp_iterator_new(xmp, NULL, NULL, XMP_ITER_JUSTLEAFNODES);
-
   XmpStringPtr the_schema = xmp_string_new();
   XmpStringPtr the_path = xmp_string_new();
   XmpStringPtr the_prop = xmp_string_new();
   uint32_t options;
 
-  while (xmp_iterator_next(iter, the_schema, the_path, the_prop, &options)) {
-    std::cout << xmp_string_cstr(the_schema) << " / "
-              << xmp_string_cstr(the_path) << " = "
-              << xmp_string_cstr(the_prop);
-    if (options) {
-      std::cout << boost::format(" options = 0x%1$x") % options;
+  typedef std::array<std::string, 3> tuple3;
+
+  {
+    // leafnodes iteration
+    XmpIteratorPtr iter =
+      xmp_iterator_new(xmp, NS_DC, NULL, XMP_ITER_JUSTLEAFNODES);
+
+    BOOST_CHECK(iter);
+    std::vector<tuple3> props;
+
+    while (xmp_iterator_next(iter, the_schema, the_path, the_prop, &options)) {
+      props.push_back(tuple3 {
+          xmp_string_cstr(the_schema),
+          xmp_string_cstr(the_path),
+          xmp_string_cstr(the_prop)
+        });
     }
-    std::cout << std::endl;
+
+    BOOST_CHECK(props.size() == 7);
+    for (auto prop_tuple : props) {
+      BOOST_CHECK(prop_tuple[0] == NS_DC);
+    }
+    BOOST_CHECK(props[0][2] == "unknown");
+    BOOST_CHECK(props[3][1] == "dc:subject[1]");
+
+    BOOST_CHECK(xmp_iterator_free(iter));
+  }
+
+  {
+    // leafname iteration
+    XmpIteratorPtr iter =
+      xmp_iterator_new(xmp, NS_DC, "rights", XMP_ITER_JUSTLEAFNAME);
+
+    BOOST_CHECK(iter);
+    std::vector<tuple3> props;
+
+    while (xmp_iterator_next(iter, the_schema, the_path, the_prop, &options)) {
+      props.push_back(tuple3 {
+          xmp_string_cstr(the_schema),
+          xmp_string_cstr(the_path),
+          xmp_string_cstr(the_prop)
+        });
+    }
+
+    BOOST_CHECK(props.size() == 3);
+
+    BOOST_CHECK(props[0] == tuple3({ NS_DC, "dc:rights", "" }));
+    BOOST_CHECK(props[1] == tuple3({ "", "[1]", "2006, Hubert Figuiere" }));
+    BOOST_CHECK(props[2] == tuple3({ "http://www.w3.org/XML/1998/namespace", "xml:lang", "x-default" }));
+
+    BOOST_CHECK(xmp_iterator_free(iter));
+  }
+
+  {
+    // Iterator with property but no NS is invalid.
+    XmpIteratorPtr iter =
+      xmp_iterator_new(xmp, NULL, "rights", XMP_ITER_JUSTLEAFNODES);
+
+    // Invalid iterator
+    BOOST_CHECK(!iter);
+  }
+
+  {
+    // Iterating namespaces is invalid.
+    XmpIteratorPtr iter =
+      xmp_iterator_new(xmp, NULL, NULL, XMP_ITER_NAMESPACES);
+
+    // Invalid iterator
+    BOOST_CHECK(!iter);
   }
 
   xmp_string_free(the_prop);
   xmp_string_free(the_path);
   xmp_string_free(the_schema);
-  BOOST_CHECK(xmp_iterator_free(iter));
   BOOST_CHECK(xmp_free(xmp));
 
   free(buffer);
