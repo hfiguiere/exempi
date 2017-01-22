@@ -24,6 +24,26 @@ Internal:
 - Fixed warnings and other issues and Adobe SDK.
 - Compile with much more warnings enabled.
 
+2.4.1 -
+
+- Bug #99494: Restore error reporting.
+
+Internal:
+
+- Added test for xmp_parse()
+- Renamed test3 to testiterator and more comprehensive test for
+  iterator to detect thing like bug 99480
+
+Release notes:
+
+- In 2.4.0 the XMP iterator corrected behaviour when used for
+  XMP_ITER_JUSTLEAFNAME: The returned values are now set to they
+  actual schema NS instead of the top level one.
+  This required fixed in third party packages:
+  https://github.com/python-xmp-toolkit/python-xmp-toolkit/issues/67
+  This changes is the result of a bug fix in Adobe SDK.
+  See bug #99480
+
 2.4.0 - 2017/01/07
 
 - Bug #89449: Upgrade XMPCore to Adobe XMP CC 2014.12.
