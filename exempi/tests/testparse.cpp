@@ -62,8 +62,7 @@ int test_main(int argc, char *argv[])
 
   XmpPtr xmp = xmp_new_empty();
 
-  // TODO current xmp_parse will succeed with invalid XML
-  BOOST_CHECK(xmp_parse(xmp, buffer, len));
+  BOOST_CHECK(!xmp_parse(xmp, buffer, len));
 
   BOOST_CHECK(xmp != NULL);
 
