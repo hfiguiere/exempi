@@ -24,7 +24,7 @@ Internal:
 - Fixed warnings and other issues and Adobe SDK.
 - Compile with much more warnings enabled.
 
-2.4.1 -
+2.4.1 - 2017/01/23
 
 - Bug #99494: Restore error reporting.
 
