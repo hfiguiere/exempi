@@ -1,3 +1,8 @@
+2.4.2 - 2017/01/29
+
+- Properly define BanAllEntityUsage.
+  See https://bugzilla.redhat.com/show_bug.cgi?id=888765
+
 2.4.1 - 2017/01/23
 
 - Bug #99494: Restore error reporting.
