@@ -255,7 +255,7 @@ AC_ARG_ENABLE(asan,[  --enable-asan    Turn on address sanitizer],[
 ])
 
 XMPCORE_CPPFLAGS="-D$EXEMPI_PLATFORM_DEF=1 -DXMP_IMPL=1 -DXMP_ClientBuild=0 \
-	-DXMP_StaticBuild=1 -DBanAllEntityUsage \
+	-DXMP_StaticBuild=1 -DBanAllEntityUsage=1 \
 	-D_FILE_OFFSET_BITS=64 -DHAVE_EXPAT_CONFIG_H=1 -DXML_STATIC=1 \
 	-DDISABLE_QUICKTIME"
 AC_SUBST(XMPCORE_CPPFLAGS)
