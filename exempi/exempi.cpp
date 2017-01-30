@@ -165,6 +165,7 @@ const char NS_TPG[] = kXMP_NS_XMP_PagedFile;
 const char NS_DIMENSIONS_TYPE[] = kXMP_NS_XMP_Dimensions;
 const char NS_CC[] = "http://creativecommons.org/ns#";
 const char NS_PDF[] = kXMP_NS_PDF;
+const char NS_XML[] = kXMP_NS_XML;
 
 #define STRING(x) reinterpret_cast<std::string *>(x)
 

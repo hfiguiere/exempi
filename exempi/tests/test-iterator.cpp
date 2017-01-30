@@ -134,7 +134,7 @@ int test_main(int argc, char *argv[])
 
     BOOST_CHECK(props[0] == tuple3({ NS_DC, "dc:rights", "" }));
     BOOST_CHECK(props[1] == tuple3({ "", "[1]", "2006, Hubert Figuiere" }));
-    BOOST_CHECK(props[2] == tuple3({ "http://www.w3.org/XML/1998/namespace", "xml:lang", "x-default" }));
+    BOOST_CHECK(props[2] == tuple3({ NS_XML, "xml:lang", "x-default" }));
 
     BOOST_CHECK(xmp_iterator_free(iter));
   }

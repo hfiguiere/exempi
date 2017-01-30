@@ -61,6 +61,8 @@ extern const char NS_DIMENSIONS_TYPE[];
 extern const char NS_CC[];
 /* Added in Exempi 2.1 */
 extern const char NS_PDF[];
+/* Added in Exempi 2.5 */
+extern const char NS_XML[];
 
 #ifdef __cplusplus
 }
