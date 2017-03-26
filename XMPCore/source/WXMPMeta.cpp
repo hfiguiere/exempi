@@ -1063,13 +1063,13 @@ WXMPMeta_GetIXMPMetadata_1(XMPMetaRef	  xmpObjRef,
 			wResult->ptrResult = ptr;
 		} catch ( ... ) {
 			wResult->ptrResult = NULL;
-			wResult->errMessage = "Not Available";
+			wResult->SetErrMessage("Not Available");
 		}
     }
 #endif
     if(!haveResult) {
         wResult->ptrResult = NULL;
-        wResult->errMessage = "Not Available";
+        wResult->SetErrMessage("Not Available");
     }
 
 	XMP_EXIT
