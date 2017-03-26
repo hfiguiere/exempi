@@ -786,7 +786,13 @@ private:
 		{ if ( GetUns32AsIs(&tifdEntry->bytes) <= 4 ) {
 		  	return &tifdEntry->dataOrPos;
 		  } else {
-		  	return (this->tiffStream + GetUns32AsIs(&tifdEntry->dataOrPos));
+			XMP_Uns32 pos = GetUns32AsIs(&tifdEntry->dataOrPos);
+			if (pos + GetUns32AsIs (&tifdEntry->bytes) > this->tiffLength) {
+				// Invalid file.
+				// The data is past the length of the TIFF.
+				return NULL;
+			}
+			return (this->tiffStream + pos);
 		  }
 		}
 

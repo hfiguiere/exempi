@@ -444,13 +444,13 @@ private:
 #define XMP_ENTER_NoLock(Proc)		\
 	AnnounceStaticEntry ( Proc );	\
 	try {							\
-		wResult->errMessage = 0;
+		wResult->SetErrMessage(0);
 
 #define XMP_ENTER_Static(Proc)				\
 	AnnounceStaticEntry ( Proc );			\
 	AcquireLibraryLock ( sLibraryLock );	\
 	try {									\
-		wResult->errMessage = 0;
+		wResult->SetErrMessage(0);
 
 #define XMP_ENTER_ObjRead(XMPClass,Proc)				\
 	AnnounceObjectEntry ( Proc, "reader" );				\
@@ -458,7 +458,7 @@ private:
 	const XMPClass & thiz = *((XMPClass*)xmpObjRef);	\
 	XMP_AutoLock objLock ( &thiz.lock, kXMP_ReadLock );	\
 	try {												\
-		wResult->errMessage = 0;
+		wResult->SetErrMessage(0);
 
 #define XMP_ENTER_ObjWrite(XMPClass,Proc)					\
 	AnnounceObjectEntry ( Proc, "writer" );					\
@@ -466,7 +466,7 @@ private:
 	XMPClass * thiz = (XMPClass*)xmpObjRef;					\
 	XMP_AutoLock objLock ( &thiz->lock, kXMP_WriteLock );	\
 	try {													\
-		wResult->errMessage = 0;
+		wResult->SetErrMessage(0);
 
 #define XMP_EXIT			\
 	XMP_CATCH_EXCEPTIONS	\
@@ -483,18 +483,18 @@ private:
 	} catch ( XMP_Error & xmpErr ) {								\
 		wResult->int32Result = xmpErr.GetID(); 						\
 		wResult->ptrResult   = (void*)"XMP";						\
-		wResult->errMessage  = xmpErr.GetErrMsg();					\
-		if ( wResult->errMessage == 0 ) wResult->errMessage = "";	\
-		AnnounceCatch ( wResult->errMessage );						\
+		wResult->SetErrMessage(xmpErr.GetErrMsg());             \
+		if ( wResult->GetErrMessage() == 0 ) wResult->SetErrMessage(""); \
+		AnnounceCatch ( wResult->GetErrMessage() );             \
 	} catch ( std::exception & stdErr ) {							\
 		wResult->int32Result = kXMPErr_StdException; 				\
-		wResult->errMessage  = stdErr.what(); 						\
-		if ( wResult->errMessage == 0 ) wResult->errMessage = "";	\
-		AnnounceCatch ( wResult->errMessage );						\
+		wResult->SetErrMessage(stdErr.what());                  \
+		if ( wResult->GetErrMessage() == 0 ) wResult->SetErrMessage(""); \
+		AnnounceCatch ( wResult->GetErrMessage() );             \
 	} catch ( ... ) {												\
 		wResult->int32Result = kXMPErr_UnknownException; 			\
-		wResult->errMessage  = "Caught unknown exception";			\
-		AnnounceCatch ( wResult->errMessage );						\
+		wResult->SetErrMessage("Caught unknown exception");     \
+		AnnounceCatch ( wResult->GetErrMessage() );                \
 	}
 
 #if XMP_DebugBuild

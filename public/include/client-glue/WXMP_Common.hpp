@@ -9,6 +9,9 @@
 // of the Adobe license agreement accompanying it.
 // =================================================================================================
 
+#include <stdlib.h>
+#include <string.h>
+
 #ifndef XMP_Inline
 	#if TXMP_EXPAND_INLINE
 		#define XMP_Inline inline
@@ -24,12 +27,38 @@ typedef void (* SetClientStringProc) ( void * clientPtr, XMP_StringPtr valuePtr,
 typedef void (* SetClientStringVectorProc) ( void * clientPtr, XMP_StringPtr * arrayPtr, XMP_Uns32 stringCount );
 
 struct WXMP_Result {
-    XMP_StringPtr errMessage;
+private:
+    char*         errMessage;
+public:
     void *        ptrResult;
     double        floatResult;
     XMP_Uns64     int64Result;
     XMP_Uns32     int32Result;
-	WXMP_Result() : errMessage(0),ptrResult(NULL),floatResult(0),int64Result(0),int32Result(0){};
+	WXMP_Result() : errMessage(NULL),ptrResult(NULL),floatResult(0),int64Result(0),int32Result(0){};
+	~WXMP_Result()
+	{
+		if (errMessage) {
+			free(errMessage);
+		}
+	}
+	void SetErrMessage(const char* msg)
+		{
+			if (errMessage) {
+				free(errMessage);
+				errMessage = NULL;
+			}
+			if (msg) {
+				errMessage = strdup(msg);
+			}
+		}
+	const char* GetErrMessage() const
+		{
+			return errMessage;
+		}
+private:
+	// We should avoid automatic copy.
+	WXMP_Result(const WXMP_Result&);
+	WXMP_Result& operator=(const WXMP_Result&);
 };
 
 #if __cplusplus
@@ -37,7 +66,7 @@ extern "C" {
 #endif
 
 #define PropagateException(res)	\
-	if ( res.errMessage != 0 ) throw XMP_Error ( res.int32Result, res.errMessage );
+	if ( res.GetErrMessage() != 0 ) throw XMP_Error ( res.int32Result, res.GetErrMessage() );
 
 #ifndef XMP_TraceClientCalls
 	#define XMP_TraceClientCalls		0
@@ -55,10 +84,10 @@ extern "C" {
     	WXMP_Result wResult;                                                                                 \
     	fprintf ( xmpClientLog, "WXMP calling: %s\n", #WCallProto ); fflush ( xmpClientLog );                \
     	WCallProto;                                                                                          \
-    	if ( wResult.errMessage == 0 ) {                                                                     \
+	if ( wResult.GetErrMessage() == 0 ) {				\
 			fprintf ( xmpClientLog, "WXMP back, no error\n" ); fflush ( xmpClientLog );                      \
     	} else {                                                                                             \
-			fprintf ( xmpClientLog, "WXMP back, error: %s\n", wResult.errMessage ); fflush ( xmpClientLog ); \
+			fprintf ( xmpClientLog, "WXMP back, error: %s\n", wResult.GetErrMessage() ); fflush ( xmpClientLog ); \
     	}                                                                                                    \
 		PropagateException ( wResult )
 #endif

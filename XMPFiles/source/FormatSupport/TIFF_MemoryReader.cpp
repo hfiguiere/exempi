@@ -70,7 +70,7 @@ void TIFF_MemoryReader::SortIFD ( TweakedIFDInfo* thisIFD )
 		} else if ( thisTag == prevTag ) {
 
 			// Duplicate tag, keep the 2nd copy, move the tail of the array up, prevTag is unchanged.
-			memcpy ( &ifdEntries[i-1], &ifdEntries[i], 12*(tagCount-i) );	// AUDIT: Safe, moving tail forward, i >= 1.
+			memmove ( &ifdEntries[i-1], &ifdEntries[i], 12*(tagCount-i) ); // may overlap -- Hub
 			--tagCount;
 			--i; // ! Don't move forward in the array, we've moved the unseen part up.
 
@@ -86,7 +86,7 @@ void TIFF_MemoryReader::SortIFD ( TweakedIFDInfo* thisIFD )
 
 				// Out of order duplicate, move it to position j, move the tail of the array up.
 				ifdEntries[j] = ifdEntries[i];
-				memcpy ( &ifdEntries[i], &ifdEntries[i+1], 12*(tagCount-(i+1)) );	// AUDIT: Safe, moving tail forward, i >= 1.
+				memmove ( &ifdEntries[i], &ifdEntries[i+1], 12*(tagCount-(i+1)) );	// may overlap -- Hub
 				--tagCount;
 				--i; // ! Don't move forward in the array, we've moved the unseen part up.
 
@@ -232,7 +232,11 @@ bool TIFF_MemoryReader::GetTag ( XMP_Uns8 ifd, XMP_Uns16 id, TagInfo* info ) con
 		info->dataLen = thisBytes;
 
 		info->dataPtr = this->GetDataPtr ( thisTag );
-
+		// Here we know that if it is NULL, it is wrong. -- Hub
+		// GetDataPtr will return NULL in case of overflow.
+		if (info->dataPtr == NULL) {
+			return false;
+		}
 	}
 
 	return true;

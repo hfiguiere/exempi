@@ -233,7 +233,7 @@ static XMP_Uns32 GatherInt ( const char * strPtr, size_t count )
 
 static size_t TrimTrailingSpaces ( char * firstChar, size_t origLen )
 {
-	if ( origLen == 0 ) return 0;
+	if ( !firstChar || origLen == 0 ) return 0;
 
 	char * lastChar  = firstChar + origLen - 1;
 	if ( (*lastChar != ' ') && (*lastChar != 0) ) return origLen;	// Nothing to do.
