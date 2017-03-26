@@ -38,8 +38,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <string>
+#include <array>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include <boost/test/minimal.hpp>
 #include <boost/format.hpp>
