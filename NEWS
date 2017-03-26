@@ -1,3 +1,8 @@
+2.4.3 -
+
+- Bug #10397: Fix a buffer overrun, memcpy() on overlapping
+  regions, use after free in the exception handling.
+
 2.4.2 - 2017/01/29
 
 - Properly define BanAllEntityUsage.
