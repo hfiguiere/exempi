@@ -12,6 +12,9 @@
 #include "XMP_Environment.h"
 
 	#include <stddef.h>
+	#include <stddef.h>
+	#include <string.h>
+	#include <stdlib.h>
 
 #if XMP_MacBuild | XMP_iOSBuild	// ! No stdint.h on Windows and some UNIXes.
     #include <stdint.h>
@@ -1322,7 +1325,25 @@ public:
 	///
 	/// @param _errMsg The descriptive string, for debugging use only. It must not be shown to users
 	/// in a final product. It is written for developers, not users, and never localized.
-	XMP_Error ( XMP_Int32 _id, XMP_StringPtr _errMsg ) : id(_id), errMsg(_errMsg), notified(false) {};
+	XMP_Error ( XMP_Int32 _id, XMP_StringPtr _errMsg ) : id(_id), errMsg(NULL), notified(false) {
+		if (_errMsg) {
+			errMsg = strdup(_errMsg);
+		}
+	};
+	/// @brief Copy constructor for an XMP_Error.
+	///
+	/// Because we rethrow it.
+	XMP_Error (const XMP_Error& e)
+		: id(e.id), errMsg(NULL), notified(e.notified) {
+		if (e.errMsg) {
+			errMsg = strdup(e.errMsg);
+		}
+	};
+	~XMP_Error() {
+		if (errMsg) {
+			free(errMsg);
+		}
+	};
 
 	/// Retrieves the numeric code from an XMP_Error.
 	inline XMP_Int32     GetID() const     { return id; };
@@ -1341,7 +1362,7 @@ private:
 	XMP_Int32     id;
 	/// Descriptive string, for debugging use only. It must not be shown to users in a final
 	/// product. It is written for developers, not users, and never localized.
-	XMP_StringPtr errMsg;
+	char* errMsg;
 	/// Variable to store whether this particular error is notified to user or not
 	XMP_Bool notified;
 };
