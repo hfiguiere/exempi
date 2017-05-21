@@ -15,7 +15,7 @@
 #include "XMPCommon/XMPCommonDefines.h"
 
 
-#if SUPPORT_SHARED_POINTERS_IN_STD
+#ifdef SUPPORT_SHARED_POINTERS_IN_STD
 	#include <memory>
 	#include <functional>
 #elif SUPPORT_SHARED_POINTERS_IN_TR1
@@ -34,7 +34,7 @@
 namespace XMP_PLUGIN
 {
 
-#if SUPPORT_SHARED_POINTERS_IN_STD
+#ifdef SUPPORT_SHARED_POINTERS_IN_STD
 	using std::shared_ptr;
 #elif SUPPORT_SHARED_POINTERS_IN_TR1
 	using std::tr1::shared_ptr;
