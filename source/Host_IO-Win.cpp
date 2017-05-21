@@ -88,7 +88,7 @@ bool Host_IO::Writable( const char * path, bool checkCreationPossible )
 			return false;
 			break;
 		}
-	} 
+	}
 	else if ( checkCreationPossible )
 	{
 		// file doesn't exist. Let's check if we can create it temporarily.
@@ -182,11 +182,11 @@ bool Host_IO::GetModifyDate ( const char* filePath, XMP_DateTime * modifyDate )
 	ok = GetFileTime ( fileHandle, 0, 0, &binTime );
 	Host_IO::Close ( fileHandle );
 	if ( ! ok ) return false;
-	
+
 	SYSTEMTIME utcTime;
 	ok = FileTimeToSystemTime ( &binTime, &utcTime );
 	if ( ! ok ) return false;
-	
+
 	FillXMPTime ( utcTime, modifyDate );
 	return true;
 
@@ -272,14 +272,14 @@ void Host_IO::SwapData ( const char* sourcePath, const char* destPath )
 	XMP_Assert ( ! Host_IO::Exists ( thirdPath.c_str() ) );
 
 	Host_IO::Rename ( sourcePath, thirdPath.c_str() );
-	
+
 	try {
 		Host_IO::Rename ( destPath, sourcePath );
 	} catch ( ... ) {
 		Host_IO::Rename ( thirdPath.c_str(), sourcePath );
 		throw;
 	}
-	
+
 	try {
 		Host_IO::Rename ( thirdPath.c_str(), destPath );
 	} catch ( ... ) {
@@ -305,7 +305,7 @@ void Host_IO::Rename ( const char* oldPath, const char* newPath )
 
 	if ( ::Exists ( wideNewPath ) ) XMP_Throw ( "Host_IO::Rename, new path exists", kXMPErr_InternalFailure );
 
-	
+
 
 	BOOL ok = MoveFileW ( (LPCWSTR)wideOldPath.data(), (LPCWSTR)wideNewPath.data() );
 	if ( ! ok ) XMP_Throw ( "Host_IO::Rename, MoveFileW failure", kXMPErr_ExternalFailure );
@@ -321,10 +321,10 @@ void Host_IO::Delete ( const char* filePath )
 	std::string wideName;
 	if ( !GetWidePath ( filePath, wideName ) || wideName.length() == 0 )
 		XMP_Throw ( "Host_IO::Delete, GetWidePath failure", kXMPErr_ExternalFailure );
-	
+
 	if ( !::Exists ( wideName ) ) return;
 
-	
+
 
 	BOOL ok = DeleteFileW ( (LPCWSTR)wideName.data() );
 	if ( ! ok ) {
@@ -452,7 +452,7 @@ Host_IO::FileMode Host_IO::GetFileMode ( const char * path )
 	std::string utf16;	// GetFileAttributes wants native UTF-16.
 	if ( !GetWidePath ( path, utf16 ) )
 		XMP_Throw ( "Host_IO::GetFileMode, GetWidePath failure", kXMPErr_ExternalFailure );
-	
+
 	return ::GetFileMode( utf16 );
 }	// Host_IO::GetFileMode
 
@@ -535,7 +535,7 @@ bool Host_IO::GetNextChild ( Host_IO::FolderRef folder, std::string* childName )
 	if ( folder == Host_IO::noFolderRef ) return false;
 
 	do {	// Ignore all children with names starting in '.'. This covers ., .., .DS_Store, etc.
-		found = (bool) FindNextFile ( folder, &childInfo );
+//		found = (bool) FindNextFile ( folder, &childInfo );
 	} while ( found && (childInfo.cFileName[0] == '.') );
 	if ( ! found ) return false;
 
@@ -729,7 +729,7 @@ static std::string ConstructPreservedPath( const std::string& inputPath )
 	}
 	if (isNetworkPath) skipServerAndShareName=2;
 	bool loopvar=true;
-	while(loopvar) 
+	while(loopvar)
 	{
 		size_t newpos = utfPath.find_first_of( pathSep, pos );
 		if ( newpos ==  std::string::npos )
@@ -749,7 +749,7 @@ static std::string ConstructPreservedPath( const std::string& inputPath )
 			searchNext = ::FindFirstFileW ( (LPCWSTR) widePath.c_str(), &fileInfo );
 			if( searchNext == INVALID_HANDLE_VALUE || ! ::FindClose(searchNext) )
 				XMP_Throw ( "Host_IO::GetCasePresevedLeafName, cannot convert path", kXMPErr_ExternalFailure );
-			
+
 			allocate_size=::WideCharToMultiByte(CP_UTF8,0,fileInfo.cFileName,-1,NULL,0,NULL,NULL);
 			leafname.reserve(allocate_size);
 			leafname.assign ( allocate_size , 0 );
@@ -816,4 +816,4 @@ std::string Host_IO::GetCasePreservedName( const std::string& inputPath )
 		 return ConstructPreservedPath( inputPath );
 	}
 }
-
+ 
