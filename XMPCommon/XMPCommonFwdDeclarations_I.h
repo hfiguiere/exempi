@@ -16,7 +16,7 @@
 namespace XMP_COMPONENT_INT_NAMESPACE {
 	using namespace AdobeXMPCommon;
 
-#if SUPPORT_SHARED_POINTERS_IN_STD
+#ifdef SUPPORT_SHARED_POINTERS_IN_STD
 	using std::weak_ptr;
 	using std::dynamic_pointer_cast;
 	using std::static_pointer_cast;
