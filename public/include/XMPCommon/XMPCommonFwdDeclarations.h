@@ -14,7 +14,7 @@
 #include "XMPCommon/XMPCommonLatestInterfaceVersions.h"
 #include <vector>
 
-#if SUPPORT_SHARED_POINTERS_IN_STD
+#ifdef SUPPORT_SHARED_POINTERS_IN_STD
 	#include <memory>
 	#include <functional>
 #elif SUPPORT_SHARED_POINTERS_IN_TR1
@@ -30,7 +30,7 @@
 
 namespace AdobeXMPCommon {
 
-	#if SUPPORT_SHARED_POINTERS_IN_STD
+	#ifdef SUPPORT_SHARED_POINTERS_IN_STD
 		using std::shared_ptr;
 		using std::enable_shared_from_this;
 		using std::mem_fn;
