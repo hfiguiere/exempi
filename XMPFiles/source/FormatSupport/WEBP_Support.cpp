@@ -141,7 +141,7 @@ XMP_Uns32 VP8XChunk::width()
 }
 void VP8XChunk::width(XMP_Uns32 val)
 {
-    PutLE24(&this->data[4], val - 1);
+    PutLE24(&this->data[4], val > 0 ? val - 1 : 0);
 }
 XMP_Uns32 VP8XChunk::height()
 {
@@ -149,7 +149,7 @@ XMP_Uns32 VP8XChunk::height()
 }
 void VP8XChunk::height(XMP_Uns32 val)
 {
-    PutLE24(&this->data[7], val - 1);
+    PutLE24(&this->data[7], val > 0 ? val - 1 : 0);
 }
 bool VP8XChunk::xmp()
 {
