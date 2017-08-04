@@ -1,4 +1,4 @@
-2.4.3 -
+2.4.3 - 2017/08/03
 
 - Bug #100397: Fix a buffer overrun, memcpy() on overlapping
   regions, use after free in the exception handling.
