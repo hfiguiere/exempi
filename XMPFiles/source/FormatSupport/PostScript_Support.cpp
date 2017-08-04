@@ -814,7 +814,8 @@ std::string PostScript_Support::ConvertToDate(const char* inString)
 	std::vector<PostScript_Support::DateTimeTokens>:: const_iterator itr=tokenzs.begin();
 	for(;itr!=tokenzs.end();itr++)
 	{
-		if(itr->token[0]=='+' ||itr->token[0]=='-')
+		// token[0] is invalid on an empty string. -- Hub
+		if(!itr->token.empty() && (itr->token[0]=='+' ||itr->token[0]=='-'))
 		{
 			const char *str=itr->token.c_str();
 			date.offsetSign=*(str++);
@@ -1013,7 +1014,14 @@ std::string PostScript_Support::ConvertToDate(const char* inString)
 					if(itr!=tokenzs.end())
 					{
 						++itr;
-						if (itr!=tokenzs.end()&&itr->noOfDelimiter==0 && IsNumeric(itr->token[0]) )
+						if (itr == tokenzs.end())
+						{
+							// bug 101914 - corrupt file make us
+							// reach the end. -- Hub
+							// https://bugs.freedesktop.org/show_bug.cgi?id=101914
+							break;
+						}
+						if (itr->noOfDelimiter==0 && IsNumeric(itr->token[0]) )
 						{
 							const char * str=itr->token.c_str();
 							short day= GetNumber(&str);
