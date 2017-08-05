@@ -374,9 +374,22 @@ void xmp_terminate(void);
 int xmp_get_error(void);
 
 XmpFilePtr xmp_files_new(void);
-XmpFilePtr xmp_files_open_new(const char *, XmpOpenFileOptions options);
 
-bool xmp_files_open(XmpFilePtr xf, const char *, XmpOpenFileOptions options);
+/** Open a file to load the XMP from.
+ * @param path the file path
+ * @param options open flags
+ * @return an XmpFilePtr if successful.
+ */
+XmpFilePtr xmp_files_open_new(const char *path, XmpOpenFileOptions options);
+
+/** Open a file to load the XMP from into an existing XmpFile.
+ * See %xmp_file_open_new
+ * @paran xf the XmpFilePtr to load into.
+ * @param path the file path
+ * @param options open flags
+ * @return true if successful.
+ */
+bool xmp_files_open(XmpFilePtr xf, const char *path, XmpOpenFileOptions options);
 
 /** Close an XMP file. Will flush the changes
  * @param xf the file object
@@ -387,12 +400,17 @@ bool xmp_files_open(XmpFilePtr xf, const char *, XmpOpenFileOptions options);
 bool xmp_files_close(XmpFilePtr xf, XmpCloseFileOptions options);
 
 /** Get the XMP packet from the file
+ * If the file has a handler, the handler will be used and reconcile depending
+ * on the options. Otherwise it will try to locate the XMP packet wrapper.
+ * Note: a XMP sidecar shouldn't have a pacet wrapper, therefor it shouldn't
+ * recognized by this.
  * @param xf the %XmpFilePtr to get the XMP packet from
  * @return a newly allocated XmpPtr. Use %xmp_free to release it.
  */
 XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf);
 
 /** File the XMP packet from the file
+ * See %xmp_files_get_new_xmp
  * @param xf the %XmpFilePtr to get the XMP packet from
  * @param xmp the XMP Packet to fill. Must be valid.
  */
@@ -439,7 +457,9 @@ bool xmp_files_free(XmpFilePtr xf);
 bool xmp_files_get_format_info(XmpFileType format,
                                XmpFileFormatOptions *options);
 
-/** Check the file format of a file. Use the same logic as in xmp_files_open()
+/** Check the file format of a file. Use the same logic as in xmp_files_open().
+ * A file that doesn't have a handler will be considered as unknown. This doesn't
+ * mean that xmp_files_get_new_xmp() will fail.
  * @param filePath the path to the file
  * @return XMP_FT_UNKNOWN on error or if the file type is unknown
  */

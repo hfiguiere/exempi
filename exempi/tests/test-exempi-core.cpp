@@ -74,6 +74,10 @@ int test_main(int argc, char *argv[])
 
   BOOST_CHECK(xmp_init());
 
+  // See https://bugs.freedesktop.org/show_bug.cgi?id=53983
+  // It is recognized as unknown.
+  BOOST_CHECK(xmp_files_check_file_format(g_testfile.c_str()) == XMP_FT_UNKNOWN);
+
   XmpPtr xmp = xmp_new_empty();
 
   BOOST_CHECK(xmp_parse(xmp, buffer, len));
