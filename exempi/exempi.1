@@ -6,13 +6,14 @@ exempi - command line tool to manipulate XMP metadata
 
 .SH SYNTAX
 
-exempi { -h | [ -R ] [ -x ] [ { -w | -o <file> } ] [ { -g <prop_name> | -s <prop_name> -v <value> }  ] } <files>
+exempi { -h | [ -R ] [ -X ] [ -x [ -p ] ] [ { -w | -o <file> } ] [ { -g <prop_name> | -s <prop_name> -v <value> }  ] } <files>
 
 .SH OPTIONS
 
 .IP "-h: show this help"
 .IP "-R: don't reconcile"
 .IP "-x: dump XML"
+.IP "-p: wrap XML packet wrapper. Only for -x."
 .IP "-X: file(s) is XMP"
 .IP "-w: write in place. Only for -s. Not compatible with -o."
 .IP "-o <file>: file to write the output to."

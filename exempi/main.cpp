@@ -50,7 +50,8 @@
 enum { ACTION_NONE = 0, ACTION_SET, ACTION_GET };
 
 static void process_file(const char *filename, bool no_reconcile,
-                         bool is_an_xmp, bool dump_xml, bool write_in_place,
+                         bool is_an_xmp, bool write_in_place, bool dump_xml,
+                         bool wrap_packet,
                          int action, const std::string &value_name,
                          const std::string &prop_value,
                          const std::string &output);
@@ -67,11 +68,12 @@ static void fatal_error(const char *error)
 static void usage()
 {
     fprintf(stderr, "Exempi version %s\n", VERSION);
-    fprintf(stderr, "exempi { -h | [ -R ] [ -x ] [ { -w | -o <file> } ] [ { -g "
+    fprintf(stderr, "exempi { -h | [ -R ] [ -X ]  [ -x [ -p ] ] [ { -w | -o <file> } ] [ { -g "
                     "<prop_name> | -s <prop_name> -v <value> }  ] } <files>\n");
     fprintf(stderr, "\t-h: show this help\n");
     fprintf(stderr, "\t-R: don't reconcile\n");
     fprintf(stderr, "\t-x: dump XML packet.\n");
+    fprintf(stderr, "\t-p: wrap XML packet wrapper. Only for -x.\n");
     fprintf(stderr, "\t-X: file(s) is XMP\n");
     fprintf(stderr,
             "\t-w: write in place. Only for -s. Not compatible with -o.\n");
@@ -93,13 +95,14 @@ int main(int argc, char **argv)
     bool dont_reconcile = false;
     bool write_in_place = false;
     bool dump_xml = false;
+    bool wrap_packet = false;
     bool is_an_xmp = false;
     std::string output_file;
     std::string value_name;
     std::string prop_value;
     std::vector<std::pair<std::string, std::string>> namespaces;
 
-    while ((ch = getopt(argc, argv, "hRo:wxXn:g:s:v:")) != -1) {
+    while ((ch = getopt(argc, argv, "hRo:wxpXn:g:s:v:")) != -1) {
         switch (ch) {
 
         case 'R':
@@ -113,6 +116,9 @@ int main(int argc, char **argv)
             break;
         case 'x':
             dump_xml = true;
+            break;
+        case 'p':
+            wrap_packet = true;
             break;
         case 'X':
             is_an_xmp = true;
@@ -184,6 +190,7 @@ int main(int argc, char **argv)
     while (argc) {
 
         process_file(*argv, dont_reconcile, is_an_xmp, write_in_place, dump_xml,
+                     wrap_packet,
                      action, value_name, prop_value, output_file);
         argc--;
         argv++;
@@ -243,7 +250,7 @@ static XmpPtr get_xmp_from_file(const char *filename, bool no_reconcile,
 
 /** dump the XMP xml to the output IO */
 static void dump_xmp(const char *filename, bool no_reconcile, bool is_an_xmp,
-                     FILE *outio)
+                     bool wrap_packet, FILE *outio)
 {
     printf("dump_xmp for file %s\n", filename);
     xmp::ScopedPtr<XmpPtr> xmp(
@@ -251,8 +258,8 @@ static void dump_xmp(const char *filename, bool no_reconcile, bool is_an_xmp,
 
     xmp::ScopedPtr<XmpStringPtr> output(xmp_string_new());
 
-    xmp_serialize_and_format(xmp, output, XMP_SERIAL_OMITPACKETWRAPPER, 0, "\n",
-                             " ", 0);
+    xmp_serialize_and_format(xmp, output, wrap_packet ? 0 : XMP_SERIAL_OMITPACKETWRAPPER,
+                             0, "\n", " ", 0);
 
     fprintf(outio, "%s", xmp_string_cstr(output));
 }
@@ -320,6 +327,7 @@ static void set_xmp_prop(const char *filename, const std::string &value_name,
 /** process a file with all the options */
 static void process_file(const char *filename, bool no_reconcile,
                          bool is_an_xmp, bool write_in_place, bool dump_xml,
+                         bool wrap_packet,
                          int action, const std::string &value_name,
                          const std::string &prop_value,
                          const std::string &output)
@@ -337,7 +345,7 @@ static void process_file(const char *filename, bool no_reconcile,
     switch (action) {
     case ACTION_NONE:
         if (dump_xml) {
-            dump_xmp(filename, no_reconcile, is_an_xmp, outio);
+            dump_xmp(filename, no_reconcile, is_an_xmp, wrap_packet, outio);
         }
         break;
     case ACTION_SET:
