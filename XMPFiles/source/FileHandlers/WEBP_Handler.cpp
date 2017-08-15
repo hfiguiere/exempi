@@ -45,7 +45,11 @@ bool WEBP_CheckFormat(XMP_FileFormat format, XMP_StringPtr filePath,
 }
 
 WEBP_MetaHandler::WEBP_MetaHandler(XMPFiles* parent_)
-  : exifMgr(0)
+  : mainChunk(NULL)
+  , xmpChunk(NULL)
+  , exifMgr(NULL)
+  , psirMgr(NULL)
+  , iptcMgr(NULL)
 {
     this->parent = parent_;
     this->handlerFlags = kWEBP_HandlerFlags;
