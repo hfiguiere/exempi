@@ -61,6 +61,7 @@ dnl 2.4.0 is the revision 7.4.0
 dnl 2.4.1 is the revision 7.4.1
 dnl 2.4.2 is the revision 7.4.2
 dnl 2.4.3 is the revision 7.4.3
+dnl 2.4.4 is the revision 7.4.4
 dnl 2.5.0 is the revision 8.5.0
 AC_SUBST([EXEMPI_REVISION], [0])
 AC_SUBST([EXEMPI_AGE],      [5])

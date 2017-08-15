@@ -25,6 +25,11 @@ Internal:
 - Fixed warnings and other issues and Adobe SDK.
 - Compile with much more warnings enabled.
 
+2.4.4 -
+
+- Bug #102197: Properly initialize pointers in WEBP.
+- Bug #102151: Fix and infinite loop in RIFF parser.
+
 2.4.3 - 2017/08/03
 
 - Bug #100397: Fix a buffer overrun, memcpy() on overlapping
