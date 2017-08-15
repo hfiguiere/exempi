@@ -173,7 +173,8 @@ Chunk::Chunk( ContainerChunk* parent, RIFF_MetaHandler* handler, bool skip, Chun
 
 	this->oldPos = file->Offset();
 	this->id = XIO::ReadUns32_LE( file );
-	this->oldSize = XIO::ReadUns32_LE( file ) + 8;
+	this->oldSize = XIO::ReadUns32_LE( file );
+	this->oldSize += 8;
 
 	// Make sure the size is within expected bounds.
 	XMP_Int64 chunkEnd = this->oldPos + this->oldSize;
