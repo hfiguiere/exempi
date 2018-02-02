@@ -920,7 +920,8 @@ bool TradQT_Manager::ParseCachedBoxes ( const MOOV_Manager & moovMgr )
 
 			miniLen = 4 + GetUns16BE ( boxPtr );	// ! Include header in local miniLen.
 			macLang  = GetUns16BE ( boxPtr+2);
-			if ( (miniLen <= 4) || (miniLen > (boxEnd - boxPtr)) ) continue;	// Ignore bad or empty values.
+			if ( (miniLen <= 4) || (miniLen > (boxEnd - boxPtr)) )
+				break;	// Ignore bad or empty values.
 			
 			XMP_StringPtr valuePtr = (char*)(boxPtr+4);
 			size_t valueLen = miniLen - 4;
