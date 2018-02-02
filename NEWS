@@ -1,7 +1,9 @@
 2.4.4 -
 
 - Bug #102197: Properly initialize pointers in WEBP.
-- Bug #102151: Fix and infinite loop in RIFF parser.
+- Bug #102151: Fix an infinite loop in RIFF parser.
+- Bug #102483: Fix an infinite loop in QuickTime parser.
+- Bug #102484: Fix an infinite loop in ASF parser.
 - Bug #104885: Adjust minimum version for gcc in documentation.
 
 2.4.3 - 2017/08/03
