@@ -4,7 +4,7 @@ GNU automake.
 It includes XMPCore and XMPFiles, libexempi, a C-based API and exempi
 a command line tool.
 
-It require at least the gcc 4.4.7 C++ compiler or clang++ with some
+It require at least the gcc 4.6.0 C++ compiler or clang++ with some
 support for C++11.
 
 It is maintained by Hubert Figuiere <hub@figuiere.net>
