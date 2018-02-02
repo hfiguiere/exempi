@@ -270,6 +270,8 @@ bool ASF_Support::ReadHeaderObject ( XMP_IO* fileRef, ObjectState& inOutObjectSt
 
 				this->ReadHeaderExtensionObject ( fileRef, inOutObjectState, pos, objectBase );
 
+			} else if (objectBase.size == 0) {
+				break;
 			}
 
 			pos += objectBase.size;
