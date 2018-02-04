@@ -122,7 +122,7 @@ public:
 	 * @param outBuffer		Array
 	 * @return				Number of array elements
 	 */
-	template<class T> const T* const getArray( XMP_Uns32 id, XMP_Uns32& outSize ) const;
+	template<class T> const T* getArray( XMP_Uns32 id, XMP_Uns32& outSize ) const;
 
 	/**
 	 * Remove value for passed identifier
@@ -324,7 +324,7 @@ template<class T> const T& IMetadata::getValue( XMP_Uns32 id ) const
 	}
 }
 
-template<class T> const T* const IMetadata::getArray( XMP_Uns32 id, XMP_Uns32& outSize ) const
+template<class T> const T* IMetadata::getArray( XMP_Uns32 id, XMP_Uns32& outSize ) const
 {
 	ValueMap::const_iterator iterator = mValues.find( id );
 

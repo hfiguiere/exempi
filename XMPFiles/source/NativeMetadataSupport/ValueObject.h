@@ -79,7 +79,7 @@ public:
 	TArrayObject( const T* buffer, XMP_Uns32 bufferSize );
 	~TArrayObject();
 
-   inline const T* const getArray( XMP_Uns32& outSize ) const		{ outSize = mSize; return mArray; }
+   inline const T* getArray( XMP_Uns32& outSize ) const		{ outSize = mSize; return mArray; }
    void setArray( const T* buffer, XMP_Uns32 numElements);
 
 private:
