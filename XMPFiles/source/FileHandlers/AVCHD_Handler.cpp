@@ -1607,7 +1607,7 @@ static void AVCCAM_SetXMPStartTimecode ( SXMPMeta& xmpObj, const XMP_Uns8* avcca
 	}
 
 	if ( dmTimeFormat != NULL ) {
-		char timecodeBuff [12];
+		char timecodeBuff [16];
 
 		sprintf ( timecodeBuff, "%d%d%c%d%d%c%d%d%c%d%d", hourTens, hourUnits, tcSeparator,
 			minuteTens, minuteUnits, tcSeparator, secondTens, secondUnits, tcSeparator, frameTens, frameUnits);
@@ -1798,7 +1798,7 @@ static std::string AVCHD_DateFieldToXMP ( XMP_Uns8 avchdTimeZone, const XMP_Uns8
 		utcOffsetMinutes = 30 * halfHourFlag;
 	}
 
-	char dateBuff [26];
+	char dateBuff [40];
 
 	sprintf ( dateBuff,
 			  "%01d%01d%01d%01d-%01d%01d-%01d%01dT%01d%01d:%01d%01d:%01d%01d%+02d:%02d",
