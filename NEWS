@@ -1,4 +1,4 @@
-2.4.4 -
+2.4.4 - 2018/02/04
 
 - Bug #102197: Properly initialize pointers in WEBP.
 - Bug #102151: Fix an infinite loop in RIFF parser.
