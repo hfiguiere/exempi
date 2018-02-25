@@ -141,7 +141,7 @@ void INFOMetadata::parse( const XMP_Uns8* input, XMP_Uns64 size )
 
 XMP_Uns64 INFOMetadata::serialize( XMP_Uns8** outBuffer )
 {
-	XMP_Uns64 size = 0;
+	XMP_Uns64 ssize = 0;
 
 	if( outBuffer != NULL )
 	{
@@ -160,16 +160,16 @@ XMP_Uns64 INFOMetadata::serialize( XMP_Uns8** outBuffer )
 				chunkSize++;
 			}
 
-			size += chunkSize;
+			ssize += chunkSize;
 		}
 		
-		size += kSizeChunkType; // add size of type "INFO"
+		ssize += kSizeChunkType; // add size of type "INFO"
 
-		if( size > 0 )
+		if( ssize > 0 )
 		{
-			XMP_Uns8* buffer = new XMP_Uns8[static_cast<size_t>(size)];		// output buffer
+			XMP_Uns8* buffer = new XMP_Uns8[static_cast<size_t>(ssize)];		// output buffer
 
-			memset( buffer, 0, static_cast<size_t>(size) );
+			memset( buffer, 0, static_cast<size_t>(ssize) );
 
 			const BigEndian& BE		= BigEndian::getInstance();
 			const LittleEndian& LE	= LittleEndian::getInstance();
@@ -245,7 +245,7 @@ XMP_Uns64 INFOMetadata::serialize( XMP_Uns8** outBuffer )
 		XMP_Throw ( "Invalid buffer", kXMPErr_InternalFailure );
 	}
 
-	return size;
+	return ssize;
 }
 
 //-----------------------------------------------------------------------------

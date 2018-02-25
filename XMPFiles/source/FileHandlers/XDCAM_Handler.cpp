@@ -254,29 +254,29 @@ void XDCAM_MetaHandler::MakeLegacyDigest ( std::string * digestStr )
 	if ( this->clipMetadata == 0 ) return;	// Bail if we don't have any legacy XML.
 	XMP_Assert ( this->expat != 0 );
 
-	XMP_StringPtr xdcNS = this->xdcNS.c_str();
+	XMP_StringPtr xdcNS_ = this->xdcNS.c_str();
 	XML_NodePtr legacyContext, legacyProp;
 
-	legacyContext = this->clipMetadata->GetNamedElement ( xdcNS, "Access" );
+	legacyContext = this->clipMetadata->GetNamedElement ( xdcNS_, "Access" );
 	if ( legacyContext == 0 ) return;
 
 	MD5_CTX    context;
 	unsigned char digestBin [16];
 	MD5Init ( &context );
 
-	legacyProp = legacyContext->GetNamedElement ( xdcNS, "Creator" );
+	legacyProp = legacyContext->GetNamedElement ( xdcNS_, "Creator" );
 	if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() && (! legacyProp->content.empty()) ) {
 		const XML_Node * xmlValue = legacyProp->content[0];
 		MD5Update ( &context, (XMP_Uns8*)xmlValue->value.c_str(), (unsigned int)xmlValue->value.size() );
 	}
 
-	legacyProp = legacyContext->GetNamedElement ( xdcNS, "CreationDate" );
+	legacyProp = legacyContext->GetNamedElement ( xdcNS_, "CreationDate" );
 	if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() && (! legacyProp->content.empty()) ) {
 		const XML_Node * xmlValue = legacyProp->content[0];
 		MD5Update ( &context, (XMP_Uns8*)xmlValue->value.c_str(), (unsigned int)xmlValue->value.size() );
 	}
 
-	legacyProp = legacyContext->GetNamedElement ( xdcNS, "LastUpdateDate" );
+	legacyProp = legacyContext->GetNamedElement ( xdcNS_, "LastUpdateDate" );
 	if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() && (! legacyProp->content.empty()) ) {
 		const XML_Node * xmlValue = legacyProp->content[0];
 		MD5Update ( &context, (XMP_Uns8*)xmlValue->value.c_str(), (unsigned int)xmlValue->value.size() );
@@ -312,22 +312,22 @@ void XDCAM_MetaHandler::CleanupLegacyXML()
 // XDCAM_MetaHandler::readXMLFile
 // ================================
 
-void  XDCAM_MetaHandler::readXMLFile( XMP_StringPtr filePath, ExpatAdapter* &expat )
+void  XDCAM_MetaHandler::readXMLFile( XMP_StringPtr filePath, ExpatAdapter* &expat_ )
 {
 	Host_IO::FileRef hostRef = Host_IO::Open ( filePath, Host_IO::openReadOnly );
 	if ( hostRef == Host_IO::noFileRef ) return;	// The open failed.
 	XMPFiles_IO xmlFile ( hostRef, filePath, Host_IO::openReadOnly );
 
-	expat = XMP_NewExpatAdapter ( ExpatAdapter::kUseLocalNamespaces );
-	if ( expat == 0 ) XMP_Throw ( "XDCAM_MetaHandler: Can't create Expat adapter", kXMPErr_NoMemory );
+	expat_ = XMP_NewExpatAdapter ( ExpatAdapter::kUseLocalNamespaces );
+	if ( expat_ == 0 ) XMP_Throw ( "XDCAM_MetaHandler: Can't create Expat adapter", kXMPErr_NoMemory );
 
 	XMP_Uns8 buffer [64*1024];
 	while ( true ) {
 		XMP_Int32 ioCount = xmlFile.Read ( buffer, sizeof(buffer) );
 		if ( ioCount == 0 ) break;
-		expat->ParseBuffer ( buffer, ioCount, false /* not the end */ );
+		expat_->ParseBuffer ( buffer, ioCount, false /* not the end */ );
 	}
-	expat->ParseBuffer ( 0, 0, true );	// End the parse.
+	expat_->ParseBuffer ( 0, 0, true );	// End the parse.
 
 	xmlFile.Close();
 }
@@ -574,7 +574,7 @@ void XDCAM_MetaHandler::ProcessXMP()
 
 	// Check the legacy digest.
 
-	XMP_StringPtr legacyNS = this->legacyNS.c_str();
+	XMP_StringPtr legacyNS_ = this->legacyNS.c_str();
 
 	this->clipMetadata = rootElem;	// ! Save the NonRealTimeMeta pointer for other use.
 
@@ -589,7 +589,7 @@ void XDCAM_MetaHandler::ProcessXMP()
 	// Either there is no old digest in the XMP, or the digests differ. In the former case keep any
 	// existing XMP, in the latter case take new legacy values.
 
-	this->containsXMP = XDCAM_Support::GetLegacyMetadata ( &this->xmpObj, rootElem, legacyNS, digestFound, umid );
+	this->containsXMP = XDCAM_Support::GetLegacyMetadata ( &this->xmpObj, rootElem, legacyNS_, digestFound, umid );
 	this->containsXMP |= GetMediaProMetadata ( &this->xmpObj, umid, digestFound );
 
 	CleanupAndExit

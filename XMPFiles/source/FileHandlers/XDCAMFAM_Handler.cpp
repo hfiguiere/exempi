@@ -249,22 +249,22 @@ void XDCAMFAM_MetaHandler::FillAssociatedResources(  std::vector<std::string> * 
 	XMP_VarString clipPath = rootPath + kDirChar + "Clip" + kDirChar ;
 	size_t oldCount = resourceList->size();
 
-	XMP_VarString regExp;
+	XMP_VarString regExp1;
 	XMP_StringVector regExpVec;
 	
-	regExp = "^" + clipName + ".MXF$";
-	regExpVec.push_back ( regExp );
-	regExp = "^" + clipName + "M\\d\\d.XML$";
-	regExpVec.push_back ( regExp );
+	regExp1 = "^" + clipName + ".MXF$";
+	regExpVec.push_back ( regExp1 );
+	regExp1 = "^" + clipName + "M\\d\\d.XML$";
+	regExpVec.push_back ( regExp1 );
 	if ( this->isXDStyle )
 	{
-		regExp = "^" + clipName + "R\\d\\d.BIM$";
-		regExpVec.push_back ( regExp );
+		regExp1 = "^" + clipName + "R\\d\\d.BIM$";
+		regExpVec.push_back ( regExp1 );
 	}
 	else
 	{
-		regExp = "^" + clipName + "M\\d\\d.KLV$";
-		regExpVec.push_back ( regExp );
+		regExp1 = "^" + clipName + "M\\d\\d.KLV$";
+		regExpVec.push_back ( regExp1 );
 	}
 	IOUtils::GetMatchingChildren ( *resourceList, clipPath, regExpVec, false, true, true ); 
 	PackageFormat_Support::AddResourceIfExists( resourceList, this->sidecarPath);
@@ -276,8 +276,8 @@ void XDCAMFAM_MetaHandler::FillAssociatedResources(  std::vector<std::string> * 
 	//Get the files Under Sub folder
 	clipPath = rootPath + kDirChar + "Sub" + kDirChar ;
 	regExpVec.clear();
-	regExp = "^" + clipName + "S\\d\\d.MXF$";
-	regExpVec.push_back ( regExp );
+	regExp1 = "^" + clipName + "S\\d\\d.MXF$";
+	regExpVec.push_back ( regExp1 );
 	oldCount = resourceList->size();
 	IOUtils::GetMatchingChildren ( *resourceList, clipPath, regExpVec, false, true, true );
 	// Add Sub folder if no file inside this, was added.
@@ -292,11 +292,11 @@ void XDCAMFAM_MetaHandler::FillAssociatedResources(  std::vector<std::string> * 
 		clipPath = rootPath + kDirChar + "Local" + kDirChar ;
 		regExpVec.clear();
 		// ClipInfo file
-		regExp = "^" + clipName + "C\\d\\d.SMI$";
-		regExpVec.push_back ( regExp );
+		regExp1 = "^" + clipName + "C\\d\\d.SMI$";
+		regExpVec.push_back ( regExp1 );
 		// Picture pointer file
-		regExp = "^" + clipName + "I\\d\\d.PPN$";
-		regExpVec.push_back ( regExp );
+		regExp1 = "^" + clipName + "I\\d\\d.PPN$";
+		regExpVec.push_back ( regExp1 );
 		oldCount = resourceList->size();
 		IOUtils::GetMatchingChildren ( *resourceList, clipPath, regExpVec, false, true, true );
 		// Add Local folder if no file inside this, was added.

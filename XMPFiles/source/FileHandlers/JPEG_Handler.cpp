@@ -483,8 +483,8 @@ static void TrimFullExifAPP1 ( std::string * exifContents )
 		TIFF_MemoryReader::TagInfoMap::const_iterator mapEnd = tagMap.end();
 
 		for ( ; mapPos != mapEnd; ++mapPos ) {
-			const TIFF_MemoryReader::TagInfo & tagInfo = mapPos->second;
-			XMP_Uns32 tagEnd = tempMgr.GetValueOffset ( ifd, tagInfo.id ) + tagInfo.dataLen;
+			const TIFF_MemoryReader::TagInfo & value = mapPos->second;
+			XMP_Uns32 tagEnd = tempMgr.GetValueOffset ( ifd, value.id ) + value.dataLen;
 			if ( tagEnd > padOffset ) padOffset = tagEnd;
 		}
 

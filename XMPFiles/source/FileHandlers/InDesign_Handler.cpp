@@ -174,7 +174,7 @@ InDesign_MetaHandler::~InDesign_MetaHandler()
 void InDesign_MetaHandler::CacheFileData()
 {
 	XMP_IO* fileRef = this->parent->ioRef;
-	XMP_PacketInfo & packetInfo = this->packetInfo;
+	XMP_PacketInfo & packetInfo_ = this->packetInfo;
 
 	XMP_Assert ( kINDD_PageSize == sizeof(InDesignMasterPage) );
 	static const size_t kBufferSize = (2 * kINDD_PageSize);
@@ -287,8 +287,8 @@ void InDesign_MetaHandler::CacheFileData()
 
 		this->xmpPrefixSize = sizeof(InDesignContigObjMarker) + 4;
 		this->xmpSuffixSize = sizeof(InDesignContigObjMarker);
-		packetInfo.offset = cobjPos + this->xmpPrefixSize;
-		packetInfo.length = innerLength;
+		packetInfo_.offset = cobjPos + this->xmpPrefixSize;
+		packetInfo_.length = innerLength;
 
 		XMP_Int64 tcStart = cobjPos + streamLength + (2 * sizeof(InDesignContigObjMarker));
 		while ( true ) {
@@ -319,8 +319,8 @@ void InDesign_MetaHandler::CacheFileData()
 	}
 
 	if ( this->containsXMP ) {
-		this->xmpFileOffset = packetInfo.offset;
-		this->xmpFileSize = packetInfo.length;
+		this->xmpFileOffset = packetInfo_.offset;
+		this->xmpFileSize = packetInfo_.length;
 		ReadXMPPacket ( this );
 	}
 

@@ -604,10 +604,10 @@ static void RemoveTimeStampFromClipName(std::string &clipName)
 // SonyHDV_MetaHandler::MakeIndexFilePath
 // ======================================
 
-bool SonyHDV_MetaHandler::MakeIndexFilePath ( std::string& idxPath, const std::string& rootPath, const std::string& leafName )
+bool SonyHDV_MetaHandler::MakeIndexFilePath ( std::string& idxPath, const std::string& rootPath_, const std::string& leafName )
 {
 	std::string tempPath;
-	tempPath = rootPath;
+	tempPath = rootPath_;
 	tempPath += kDirChar;
 	tempPath += "VIDEO";
 	tempPath += kDirChar;
@@ -626,8 +626,8 @@ bool SonyHDV_MetaHandler::MakeIndexFilePath ( std::string& idxPath, const std::s
 	// Scanning code taken from SonyHDV_CheckFormat
 	// Can be isolated to a separate function.
 
-	std::string clipName = leafName;
-	RemoveTimeStampFromClipName(clipName);
+	std::string clipName_ = leafName;
+	RemoveTimeStampFromClipName(clipName_);
 
 	Host_IO::AutoFolder aFolder;
 	std::string childName;
@@ -639,10 +639,10 @@ bool SonyHDV_MetaHandler::MakeIndexFilePath ( std::string& idxPath, const std::s
 		if ( childLen < 4 ) continue;
 		MakeUpperCase ( &childName );
 		if ( childName.compare ( childLen-4, 4, ".IDX" ) != 0 ) continue;
-		if ( childName.compare ( 0, clipName.size(), clipName ) == 0 ) {
+		if ( childName.compare ( 0, clipName_.size(), clipName_ ) == 0 ) {
 			found = true;
-			clipName = childName;
-			clipName.erase ( childLen-4 );
+			clipName_ = childName;
+			clipName_.erase ( childLen-4 );
 		}
 	}
 	aFolder.Close();
@@ -650,7 +650,7 @@ bool SonyHDV_MetaHandler::MakeIndexFilePath ( std::string& idxPath, const std::s
 
 	idxPath = tempPath;
 	idxPath += kDirChar;
-	idxPath += clipName;
+	idxPath += clipName_;
 	idxPath += ".IDX";
 
 	return true;

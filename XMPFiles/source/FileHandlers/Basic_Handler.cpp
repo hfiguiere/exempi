@@ -52,8 +52,8 @@ void Basic_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	if ( ! this->needsUpdate ) return;
 
 	XMP_IO* fileRef = this->parent->ioRef;
-	XMP_PacketInfo & packetInfo = this->packetInfo;
-	std::string &    xmpPacket  = this->xmpPacket;
+	XMP_PacketInfo & packetInfo_ = this->packetInfo;
+	std::string &    xmpPacket_  = this->xmpPacket;
         
 	XMP_AbortProc abortProc  = this->parent->abortProc;
 	void *        abortArg   = this->parent->abortArg;
@@ -73,12 +73,12 @@ void Basic_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	XMP_Int64 tempLength = this->xmpFileOffset - this->xmpPrefixSize + this->trailingContentSize;
 	fileRef->Truncate ( tempLength );
 
-	packetInfo.offset = tempLength + this->xmpPrefixSize;
+	packetInfo_.offset = tempLength + this->xmpPrefixSize;
 	this->NoteXMPInsertion ( fileRef );
 
 	fileRef->ToEOF();
 	this->WriteXMPPrefix ( fileRef );
-	fileRef->Write ( xmpPacket.c_str(), (XMP_StringLen)xmpPacket.size() );
+	fileRef->Write ( xmpPacket_.c_str(), (XMP_StringLen)xmpPacket_.size() );
 	this->WriteXMPSuffix ( fileRef );
 	if ( checkAbort && abortProc(abortArg) ) {
 		XMP_Throw ( "Basic_MetaHandler::UpdateFile - User abort", kXMPErr_UserAbort );
@@ -86,8 +86,8 @@ void Basic_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 	this->RestoreFileEnding ( fileRef );
 
-	this->xmpFileOffset = packetInfo.offset;
-	this->xmpFileSize = packetInfo.length;
+	this->xmpFileOffset = packetInfo_.offset;
+	this->xmpFileSize = packetInfo_.length;
 	this->needsUpdate = false;
 
 }	// Basic_MetaHandler::UpdateFile

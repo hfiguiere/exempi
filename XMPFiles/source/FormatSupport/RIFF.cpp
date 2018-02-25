@@ -141,12 +141,12 @@ Chunk* getChunk ( ContainerChunk* parent, RIFF_MetaHandler* handler )
 
 // BASE CLASS CHUNK ///////////////////////////////////////////////
 // ad hoc creation
-Chunk::Chunk( ContainerChunk* parent, ChunkType c, XMP_Uns32 id )
+Chunk::Chunk( ContainerChunk* parent_, ChunkType c, XMP_Uns32 id_ )
 {
 	this->hasChange = false;
 	this->chunkType = c; // base class assumption
-	this->parent = parent;
-	this->id = id;
+	this->parent = parent_;
+	this->id = id_;
 	this->oldSize = 0;
 	this->newSize = 8;
 	this->oldPos = 0; // inevitable for ad-hoc
@@ -162,10 +162,10 @@ Chunk::Chunk( ContainerChunk* parent, ChunkType c, XMP_Uns32 id )
 }
 
 // parsing creation
-Chunk::Chunk( ContainerChunk* parent, RIFF_MetaHandler* handler, bool skip, ChunkType c )
+Chunk::Chunk( ContainerChunk* parent_, RIFF_MetaHandler* handler, bool skip, ChunkType c )
 {
 	chunkType = c; // base class assumption
-	this->parent = parent;
+	this->parent = parent_;
 	this->oldSize = 0;
 	this->hasChange = false; // [2414649] valid assumption at creation time
 
@@ -179,11 +179,11 @@ Chunk::Chunk( ContainerChunk* parent, RIFF_MetaHandler* handler, bool skip, Chun
 	// Make sure the size is within expected bounds.
 	XMP_Int64 chunkEnd = this->oldPos + this->oldSize;
 	XMP_Int64 chunkLimit = handler->oldFileSize;
-	if ( parent != 0 ) chunkLimit = parent->oldPos + parent->oldSize;
+	if ( parent_ != 0 ) chunkLimit = parent_->oldPos + parent_->oldSize;
 	if ( chunkEnd > chunkLimit ) {
 		bool isUpdate = XMP_OptionIsSet ( handler->parent->openFlags, kXMPFiles_OpenForUpdate );
 		bool repairFile = XMP_OptionIsSet ( handler->parent->openFlags, kXMPFiles_OpenRepairFile );
-		if ( (! isUpdate) || (repairFile && (parent == 0)) ) {
+		if ( (! isUpdate) || (repairFile && (parent_ == 0)) ) {
 			this->oldSize = chunkLimit - this->oldPos;
 		} else {
 			XMP_Throw ( "Bad RIFF chunk size", kXMPErr_BadFileFormat );
@@ -237,16 +237,16 @@ Chunk::~Chunk()
 // CONTAINER CHUNK /////////////////////////////////////////////////
 // a) creation
 // [2376832] expectedSize - minimum padding "parking size" to use, if not available append to end
-ContainerChunk::ContainerChunk( ContainerChunk* parent, XMP_Uns32 id, XMP_Uns32 containerType ) : Chunk( NULL /* !! */, chunk_CONTAINER, id )
+ContainerChunk::ContainerChunk( ContainerChunk* parent_, XMP_Uns32 id_, XMP_Uns32 containerType ) : Chunk( NULL /* !! */, chunk_CONTAINER, id_ )
 {
 	// accept no unparented ConatinerChunks
-	XMP_Enforce( parent != NULL );
+	XMP_Enforce( parent_ != NULL );
 
 	this->containerType = containerType;
 	this->newSize = 12;
-	this->parent = parent;
+	this->parent = parent_;
 
-	chunkVect* siblings = &parent->children;
+	chunkVect* siblings = &parent_->children;
 
 	// add at end. ( oldSize==0 will flag optimization later in the process)
 	siblings->push_back( this );
@@ -597,8 +597,8 @@ std::string ContainerChunk::toString(XMP_Uns8 level )
 	XMP_Int64 offset= 12; // compute offsets, just for informational purposes
 	// (actually only correct for first chunk)
 
-	char buffer[256];
-	snprintf( buffer, 255, "%.4s:%.4s, "
+	char buffer0[256];
+	snprintf( buffer0, 255, "%.4s:%.4s, "
 			"oldSize: 0x%8llX, "
 			"newSize: 0x%.8llX, "
 			"oldPos: 0x%.8llX\n",
@@ -607,7 +607,7 @@ std::string ContainerChunk::toString(XMP_Uns8 level )
                   (long long unsigned)this->newSize,
                   (long long unsigned)this->oldPos );
 
-	std::string r(buffer);
+	std::string r(buffer0);
 	chunkVectIter iter;
 	for( iter = this->children.begin(); iter != this->children.end(); iter++ )
 	{
@@ -859,7 +859,7 @@ JunkChunk::JunkChunk( ContainerChunk* parent_, XMP_Int64 size ) : Chunk( parent_
 }
 
 // b) parsing
-JunkChunk::JunkChunk( ContainerChunk* parent, RIFF_MetaHandler* handler ) : Chunk( parent, handler, true, chunk_JUNK )
+JunkChunk::JunkChunk( ContainerChunk* parent_, RIFF_MetaHandler* handler ) : Chunk( parent_, handler, true, chunk_JUNK )
 {
 	chunkType = chunk_JUNK;
 }

@@ -159,10 +159,10 @@ void IPTC_Manager::ParseMemoryDataSets ( const void* data, XMP_Uns32 length, boo
 {
 	// Get rid of any existing data.
 
-	DataSetMap::iterator dsPos = this->dataSets.begin();
+	DataSetMap::iterator dsPos0 = this->dataSets.begin();
 	DataSetMap::iterator dsEnd = this->dataSets.end();
 	
-	for ( ; dsPos != dsEnd; ++dsPos ) this->DisposeLooseValue ( dsPos->second );
+	for ( ; dsPos0 != dsEnd; ++dsPos0 ) this->DisposeLooseValue ( dsPos0->second );
 
 	this->dataSets.clear();
 	

@@ -48,12 +48,12 @@ void Trivial_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	if ( ! this->needsUpdate ) return;
 
 	XMP_IO*      fileRef    = this->parent->ioRef;
-	XMP_PacketInfo & packetInfo = this->packetInfo;
-	std::string &    xmpPacket  = this->xmpPacket;
+	XMP_PacketInfo & packetInfo_ = this->packetInfo;
+	std::string &    xmpPacket_  = this->xmpPacket;
 
-	fileRef->Seek ( packetInfo.offset, kXMP_SeekFromStart );
-	fileRef->Write ( xmpPacket.c_str(), packetInfo.length );
-	XMP_Assert ( xmpPacket.size() == (size_t)packetInfo.length );
+	fileRef->Seek ( packetInfo_.offset, kXMP_SeekFromStart );
+	fileRef->Write ( xmpPacket_.c_str(), packetInfo_.length );
+	XMP_Assert ( xmpPacket_.size() == (size_t)packetInfo_.length );
 
 	this->needsUpdate = false;
 
