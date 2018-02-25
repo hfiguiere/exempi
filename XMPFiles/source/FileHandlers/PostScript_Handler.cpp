@@ -885,7 +885,8 @@ void PostScript_MetaHandler::ParsePSFile()
 					if (CheckBytes ( ioBuf.ptr, Uns8Ptr("iler"), 4 ))
 					{
 						ioBuf.ptr+=4;
-						while ( !IsNewline( *ioBuf.ptr ) )
+						while (ioBuf.ptr < ioBuf.limit &&
+                                                       !IsNewline( *ioBuf.ptr ) )
 						{
 							if ( !CheckFileSpace( fileRef, &ioBuf, 1 ) ) return;
 							++ioBuf.ptr;
