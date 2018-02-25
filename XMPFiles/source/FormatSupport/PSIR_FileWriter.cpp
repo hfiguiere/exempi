@@ -319,6 +319,12 @@ void PSIR_FileWriter::ParseFileResources ( XMP_IO* fileRef, XMP_Uns32 length )
 
 		XMP_Uns32 dataLen   = XIO::ReadUns32_BE ( fileRef );
 		XMP_Uns32 dataTotal = ((dataLen + 1) & 0xFFFFFFFEUL);	// Round up to an even total.
+		// See bug https://bugs.freedesktop.org/show_bug.cgi?id=105204
+		// If dataLen is 0xffffffff, then dataTotal might be 0
+		// and therefor make the CheckFileSpace test pass.
+		if (dataTotal < dataLen) {
+			break;
+		}
 		if ( ! XIO::CheckFileSpace ( fileRef, dataTotal ) ) break;	// Bad image resource.
 
 		XMP_Int64 thisDataPos = fileRef->Offset();
