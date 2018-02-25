@@ -25,6 +25,12 @@ Internal:
 - Fixed warnings and other issues and Adobe SDK.
 - Compile with much more warnings enabled.
 
+2.4.5 -
+
+- Bug #105204: fix a buffer overflow in the PSD parser.
+- Bug #105205: fix a buffer overflow in the TIFF parser.
+- Bug #105206: fix a buffer overflow in PostScript parser.
+
 2.4.4 - 2018/02/04
 
 - Bug #102197: Properly initialize pointers in WEBP.
