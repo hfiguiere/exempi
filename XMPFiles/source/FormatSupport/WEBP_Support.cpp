@@ -120,8 +120,10 @@ VP8XChunk::VP8XChunk(Container* parent)
     this->data.assign(this->size, 0);
     XMP_Uns8* bitstream =
         (XMP_Uns8*)parent->chunks[WEBP_CHUNK_IMAGE][0]->data.data();
-    XMP_Uns32 width = ((bitstream[7] << 8) | bitstream[6]) & 0x3fff;
-    XMP_Uns32 height = ((bitstream[9] << 8) | bitstream[8]) & 0x3fff;
+    // See bug https://bugs.freedesktop.org/show_bug.cgi?id=105247
+    // bitstream could be NULL.
+    XMP_Uns32 width = bitstream ? ((bitstream[7] << 8) | bitstream[6]) & 0x3fff : 0;
+    XMP_Uns32 height = bitstream ? ((bitstream[9] << 8) | bitstream[8]) & 0x3fff : 0;
     this->width(width);
     this->height(height);
     parent->vp8x = this;
