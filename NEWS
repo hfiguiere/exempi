@@ -1,8 +1,9 @@
-2.4.5 -
+2.4.5 - 2018/03/07
 
-- Bug #105204: fix a buffer overflow in the PSD parser.
-- Bug #105205: fix a buffer overflow in the TIFF parser.
-- Bug #105206: fix a buffer overflow in PostScript parser.
+- Bug #105204: [CVE-2018-7730] fix a buffer overflow in the PSD parser.
+- Bug #105205: [CVE-2018-7728] fix a buffer overflow in the TIFF parser.
+- Bug #105206: [CVE-2018-7729] fix a buffer overflow in PostScript parser.
+- Bug #105247: [CVE-2018-7731] fix a null dereference in WEBP parser.
 
 2.4.4 - 2018/02/04
 
