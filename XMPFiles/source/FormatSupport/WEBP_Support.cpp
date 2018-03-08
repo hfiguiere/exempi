@@ -18,10 +18,10 @@ using namespace WEBP;
 namespace WEBP {
 
 // Constructor for reading an existing chunk
-Chunk::Chunk(Container* parent, WEBP_MetaHandler* handler)
+Chunk::Chunk(Container* parent_, WEBP_MetaHandler* handler)
 {
-    this->needsRewrite = (parent) ? parent->needsRewrite : false;
-    this->parent = parent;
+    this->needsRewrite = (parent_) ? parent_->needsRewrite : false;
+    this->parent = parent_;
 
     XMP_IO* file = handler->parent->ioRef;
     this->pos = file->Offset();
@@ -46,8 +46,8 @@ Chunk::Chunk(Container* parent, WEBP_MetaHandler* handler)
 }
 
 // Constructor for creating a new chunk
-Chunk::Chunk(Container* parent, XMP_Uns32 tag)
-  : parent(parent), tag(tag)
+Chunk::Chunk(Container* parent_, XMP_Uns32 tag_)
+  : parent(parent_), tag(tag_)
 {
     this->needsRewrite = true;
 }
@@ -75,14 +75,14 @@ Chunk::~Chunk()
     // Do nothing
 }
 
-XMPChunk::XMPChunk(Container* parent)
-  : Chunk(parent, kChunk_XMP_)
+XMPChunk::XMPChunk(Container* parent_)
+  : Chunk(parent_, kChunk_XMP_)
 {
     this->size = 0;
 }
 
-XMPChunk::XMPChunk(Container* parent, WEBP_MetaHandler* handler)
-  : Chunk(parent, handler)
+XMPChunk::XMPChunk(Container* parent_, WEBP_MetaHandler* handler)
+  : Chunk(parent_, handler)
 {
     handler->packetInfo.offset = this->pos + 8;
     handler->packetInfo.length = (XMP_Int32) this->data.size();
@@ -111,8 +111,8 @@ void XMPChunk::write(WEBP_MetaHandler* handler)
     }
 }
 
-VP8XChunk::VP8XChunk(Container* parent)
-  : Chunk(parent, kChunk_VP8X)
+VP8XChunk::VP8XChunk(Container* parent_)
+  : Chunk(parent_, kChunk_VP8X)
 {
     this->needsRewrite = true;
     this->size = 10;
@@ -126,15 +126,15 @@ VP8XChunk::VP8XChunk(Container* parent)
     XMP_Uns32 height = bitstream ? ((bitstream[9] << 8) | bitstream[8]) & 0x3fff : 0;
     this->width(width);
     this->height(height);
-    parent->vp8x = this;
+    parent_->vp8x = this;
 }
 
-VP8XChunk::VP8XChunk(Container* parent, WEBP_MetaHandler* handler)
-  : Chunk(parent, handler)
+VP8XChunk::VP8XChunk(Container* parent_, WEBP_MetaHandler* handler)
+  : Chunk(parent_, handler)
 {
     this->size = 10;
     this->needsRewrite = true;
-    parent->vp8x = this;
+    parent_->vp8x = this;
 }
 
 XMP_Uns32 VP8XChunk::width()
@@ -173,11 +173,11 @@ Container::Container(WEBP_MetaHandler* handler) : Chunk(NULL, handler)
 
     file->Seek(12, kXMP_SeekFromStart);
 
-    XMP_Int64 size = handler->initialFileSize;
+    XMP_Int64 size_ = handler->initialFileSize;
 
     XMP_Uns32 peek = 0;
 
-    while (file->Offset() < size) {
+    while (file->Offset() < size_) {
         peek = XIO::PeekUns32_LE(file);
         switch (peek) {
         case kChunk_XMP_:
