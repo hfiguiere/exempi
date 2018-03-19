@@ -158,6 +158,9 @@
 	#define XMP_HELPER_DLL_EXPORT __attribute__ ((visibility ("default")))
 	#define XMP_HELPER_DLL_PRIVATE __attribute__ ((visibility ("hidden")))
 	#define APICALL 
+	#ifdef __arm__
+		#define XMP_IOS_ARM 1
+	#endif
 #endif
 
 // =================================================================================================
