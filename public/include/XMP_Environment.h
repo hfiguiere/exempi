@@ -155,6 +155,9 @@
 	#define XMP_HELPER_DLL_IMPORT
 	#define XMP_HELPER_DLL_EXPORT
 	#define XMP_HELPER_DLL_PRIVATE
+	#ifdef __arm__
+		#define XMP_IOS_ARM 1
+	#endif
 #endif
 
 // =================================================================================================
