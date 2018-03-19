@@ -12,7 +12,7 @@
   - Added support for MPEG4 videos shot from Google Nexus 5 camera.
   - Restructured the implementation of XDCAM Handler to support File Access Mode (FAM)
     and Simple Access Mode (SAM)
-  - Added inbuilt support for iXML namespace in XMPCore.
+  - Added built-in support for iXML namespace in XMPCore.
   - Modified the alias tiff:ImageDescription for dc:description as language alternative
     array instead of simple property.
   - Lot of bug fixes in XMPFiles and XMPCore.
