@@ -25,6 +25,10 @@ Internal:
 - Fixed warnings and other issues and Adobe SDK.
 - Compile with much more warnings enabled.
 
+2.4.6
+
+- Bug #105580: Access memory aligned on ARM.
+
 2.4.5 - 2018/03/07
 
 - Bug #105204: [CVE-2018-7730] fix a buffer overflow in the PSD parser.
