@@ -160,9 +160,11 @@ bool VP8XChunk::xmp()
 }
 void VP8XChunk::xmp(bool hasXMP)
 {
-    XMP_Uns32 flags = GetLE32(&this->data[0]);
-    flags ^= (-hasXMP ^ flags) & (1 << XMP_FLAG_BIT);
-    PutLE32(&this->data[0], flags);
+    if(&this->data[0] != NULL){
+        XMP_Uns32 flags = GetLE32(&this->data[0]);
+        flags ^= (-hasXMP ^ flags) & (1 << XMP_FLAG_BIT);
+        PutLE32(&this->data[0], flags);
+    }
 }
 
 Container::Container(WEBP_MetaHandler* handler) : Chunk(NULL, handler)
