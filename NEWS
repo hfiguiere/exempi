@@ -1,6 +1,7 @@
 2.4.6
 
 - Bug #105580: Access memory aligned on ARM.
+- Bug #106981 / Issue #9: [CVE-2018-12648] Fix null derefence in WEBP parser.
 
 2.4.5 - 2018/03/07
 
