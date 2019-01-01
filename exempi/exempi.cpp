@@ -1,7 +1,7 @@
 /*
  * exempi - exempi.cpp
  *
- * Copyright (C) 2007-2016 Hubert Figuière
+ * Copyright (C) 2007-2019 Hubert Figuière
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,11 @@
 #include "XMP.hpp"
 #include "XMP.incl_cpp"
 #include "XMPUtils.hpp"
+
+/*
+ * Use this to mark a symbol to be exported
+ */
+#define API_EXPORT __attribute__ ((visibility ("default")))
 
 #if HAVE_NATIVE_TLS
 
@@ -146,26 +151,26 @@ static void set_error(const XMP_Error &e)
 extern "C" {
 #endif
 
-const char NS_XMP_META[] = "adobe:ns:meta/";
-const char NS_RDF[] = kXMP_NS_RDF;
-const char NS_EXIF[] = kXMP_NS_EXIF;
-const char NS_TIFF[] = kXMP_NS_TIFF;
-const char NS_XAP[] = kXMP_NS_XMP;
-const char NS_XAP_RIGHTS[] = kXMP_NS_XMP_Rights;
-const char NS_DC[] = kXMP_NS_DC;
-const char NS_EXIF_AUX[] = kXMP_NS_EXIF_Aux;
-const char NS_CRS[] = kXMP_NS_CameraRaw;
-const char NS_LIGHTROOM[] = "http://ns.adobe.com/lightroom/1.0/";
-const char NS_CAMERA_RAW_SETTINGS[] = kXMP_NS_CameraRaw;
-const char NS_CAMERA_RAW_SAVED_SETTINGS[] =
+API_EXPORT extern const char NS_XMP_META[] = "adobe:ns:meta/";
+API_EXPORT extern const char NS_RDF[] = kXMP_NS_RDF;
+API_EXPORT extern const char NS_EXIF[] = kXMP_NS_EXIF;
+API_EXPORT extern const char NS_TIFF[] = kXMP_NS_TIFF;
+API_EXPORT extern const char NS_XAP[] = kXMP_NS_XMP;
+API_EXPORT extern const char NS_XAP_RIGHTS[] = kXMP_NS_XMP_Rights;
+API_EXPORT extern const char NS_DC[] = kXMP_NS_DC;
+API_EXPORT extern const char NS_EXIF_AUX[] = kXMP_NS_EXIF_Aux;
+API_EXPORT extern const char NS_CRS[] = kXMP_NS_CameraRaw;
+API_EXPORT extern const char NS_LIGHTROOM[] = "http://ns.adobe.com/lightroom/1.0/";
+API_EXPORT extern const char NS_CAMERA_RAW_SETTINGS[] = kXMP_NS_CameraRaw;
+API_EXPORT extern const char NS_CAMERA_RAW_SAVED_SETTINGS[] =
     "http://ns.adobe.com/camera-raw-saved-settings/1.0/";
-const char NS_PHOTOSHOP[] = kXMP_NS_Photoshop;
-const char NS_IPTC4XMP[] = kXMP_NS_IPTCCore;
-const char NS_TPG[] = kXMP_NS_XMP_PagedFile;
-const char NS_DIMENSIONS_TYPE[] = kXMP_NS_XMP_Dimensions;
-const char NS_CC[] = "http://creativecommons.org/ns#";
-const char NS_PDF[] = kXMP_NS_PDF;
-const char NS_XML[] = kXMP_NS_XML;
+API_EXPORT extern const char NS_PHOTOSHOP[] = kXMP_NS_Photoshop;
+API_EXPORT extern const char NS_IPTC4XMP[] = kXMP_NS_IPTCCore;
+API_EXPORT extern const char NS_TPG[] = kXMP_NS_XMP_PagedFile;
+API_EXPORT extern const char NS_DIMENSIONS_TYPE[] = kXMP_NS_XMP_Dimensions;
+API_EXPORT extern const char NS_CC[] = "http://creativecommons.org/ns#";
+API_EXPORT extern const char NS_PDF[] = kXMP_NS_PDF;
+API_EXPORT extern const char NS_XML[] = kXMP_NS_XML;
 
 #define STRING(x) reinterpret_cast<std::string *>(x)
 
@@ -175,6 +180,7 @@ const char NS_XML[] = kXMP_NS_XML;
         return r;                                                              \
     }
 
+API_EXPORT
 int xmp_get_error()
 {
 #if HAVE_NATIVE_TLS
@@ -191,6 +197,7 @@ static bool _xmp_error_callback(void* /*context*/, XMP_ErrorSeverity /*severity*
     return false;
 }
 
+API_EXPORT
 bool xmp_init()
 {
     RESET_ERROR;
@@ -208,12 +215,14 @@ bool xmp_init()
     return false;
 }
 
+API_EXPORT
 void xmp_terminate()
 {
     RESET_ERROR;
     SXMPFiles::Terminate();
 }
 
+API_EXPORT
 bool xmp_register_namespace(const char *namespaceURI,
                             const char *suggestedPrefix,
                             XmpStringPtr registeredPrefix)
@@ -229,6 +238,7 @@ bool xmp_register_namespace(const char *namespaceURI,
     return false;
 }
 
+API_EXPORT
 bool xmp_namespace_prefix(const char *ns, XmpStringPtr prefix)
 {
     CHECK_PTR(ns, false);
@@ -242,6 +252,7 @@ bool xmp_namespace_prefix(const char *ns, XmpStringPtr prefix)
     return false;
 }
 
+API_EXPORT
 bool xmp_prefix_namespace_uri(const char *prefix, XmpStringPtr ns)
 {
     CHECK_PTR(prefix, false);
@@ -255,6 +266,7 @@ bool xmp_prefix_namespace_uri(const char *prefix, XmpStringPtr ns)
     return false;
 }
 
+API_EXPORT
 XmpFilePtr xmp_files_new()
 {
     RESET_ERROR;
@@ -270,6 +282,7 @@ XmpFilePtr xmp_files_new()
     return NULL;
 }
 
+API_EXPORT
 XmpFilePtr xmp_files_open_new(const char *path, XmpOpenFileOptions options)
 {
     CHECK_PTR(path, NULL);
@@ -289,6 +302,7 @@ XmpFilePtr xmp_files_open_new(const char *path, XmpOpenFileOptions options)
     return NULL;
 }
 
+API_EXPORT
 bool xmp_files_open(XmpFilePtr xf, const char *path, XmpOpenFileOptions options)
 {
     CHECK_PTR(xf, false);
@@ -303,6 +317,7 @@ bool xmp_files_open(XmpFilePtr xf, const char *path, XmpOpenFileOptions options)
     return false;
 }
 
+API_EXPORT
 bool xmp_files_close(XmpFilePtr xf, XmpCloseFileOptions options)
 {
     CHECK_PTR(xf, false);
@@ -318,6 +333,7 @@ bool xmp_files_close(XmpFilePtr xf, XmpCloseFileOptions options)
     return true;
 }
 
+API_EXPORT
 XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf)
 {
     CHECK_PTR(xf, NULL);
@@ -338,6 +354,7 @@ XmpPtr xmp_files_get_new_xmp(XmpFilePtr xf)
     return NULL;
 }
 
+API_EXPORT
 bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp)
 {
     CHECK_PTR(xf, false);
@@ -355,6 +372,7 @@ bool xmp_files_get_xmp(XmpFilePtr xf, XmpPtr xmp)
     return result;
 }
 
+API_EXPORT
 bool xmp_files_get_xmp_xmpstring(XmpFilePtr xf, XmpStringPtr xmp_packet,
                                  XmpPacketInfo* packet_info)
 {
@@ -386,6 +404,7 @@ bool xmp_files_get_xmp_xmpstring(XmpFilePtr xf, XmpStringPtr xmp_packet,
 }
 
 
+API_EXPORT
 bool xmp_files_can_put_xmp(XmpFilePtr xf, XmpPtr xmp)
 {
     CHECK_PTR(xf, false);
@@ -403,6 +422,7 @@ bool xmp_files_can_put_xmp(XmpFilePtr xf, XmpPtr xmp)
     return result;
 }
 
+API_EXPORT
 bool xmp_files_can_put_xmp_xmpstring(XmpFilePtr xf, XmpStringPtr xmp_packet)
 {
   CHECK_PTR(xf, false);
@@ -420,6 +440,7 @@ bool xmp_files_can_put_xmp_xmpstring(XmpFilePtr xf, XmpStringPtr xmp_packet)
   return result;
 }
 
+API_EXPORT
 bool xmp_files_can_put_xmp_cstr(XmpFilePtr xf, const char* xmp_packet, size_t len)
 {
   CHECK_PTR(xf, false);
@@ -437,6 +458,7 @@ bool xmp_files_can_put_xmp_cstr(XmpFilePtr xf, const char* xmp_packet, size_t le
   return result;
 }
 
+API_EXPORT
 bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp)
 {
     CHECK_PTR(xf, false);
@@ -454,6 +476,7 @@ bool xmp_files_put_xmp(XmpFilePtr xf, XmpPtr xmp)
     return true;
 }
 
+API_EXPORT
 bool xmp_files_put_xmp_xmpstring(XmpFilePtr xf, XmpStringPtr xmp_packet)
 {
   CHECK_PTR(xf, false);
@@ -471,6 +494,7 @@ bool xmp_files_put_xmp_xmpstring(XmpFilePtr xf, XmpStringPtr xmp_packet)
   return true;
 }
 
+API_EXPORT
 bool xmp_files_put_xmp_cstr(XmpFilePtr xf, const char* xmp_packet, size_t len)
 {
   CHECK_PTR(xf, false);
@@ -488,6 +512,7 @@ bool xmp_files_put_xmp_cstr(XmpFilePtr xf, const char* xmp_packet, size_t len)
   return true;
 }
 
+API_EXPORT
 bool xmp_files_get_file_info(XmpFilePtr xf, XmpStringPtr filePath,
                              XmpOpenFileOptions *options,
                              XmpFileType *file_format,
@@ -511,6 +536,7 @@ bool xmp_files_get_file_info(XmpFilePtr xf, XmpStringPtr filePath,
     return result;
 }
 
+API_EXPORT
 bool xmp_files_free(XmpFilePtr xf)
 {
     CHECK_PTR(xf, false);
@@ -526,6 +552,7 @@ bool xmp_files_free(XmpFilePtr xf)
     return true;
 }
 
+API_EXPORT
 bool xmp_files_get_format_info(XmpFileType format,
                                XmpFileFormatOptions *options)
 {
@@ -542,6 +569,7 @@ bool xmp_files_get_format_info(XmpFileType format,
     return result;
 }
 
+API_EXPORT
 XmpFileType xmp_files_check_file_format(const char *filePath)
 {
     CHECK_PTR(filePath, XMP_FT_UNKNOWN);
@@ -558,6 +586,7 @@ XmpFileType xmp_files_check_file_format(const char *filePath)
     return file_type;
 }
 
+API_EXPORT
 XmpPtr xmp_new_empty()
 {
     RESET_ERROR;
@@ -565,6 +594,7 @@ XmpPtr xmp_new_empty()
     return (XmpPtr)txmp;
 }
 
+API_EXPORT
 XmpPtr xmp_new(const char *buffer, size_t len)
 {
     CHECK_PTR(buffer, NULL);
@@ -580,6 +610,7 @@ XmpPtr xmp_new(const char *buffer, size_t len)
     return NULL;
 }
 
+API_EXPORT
 XmpPtr xmp_copy(XmpPtr xmp)
 {
     CHECK_PTR(xmp, NULL);
@@ -595,6 +626,7 @@ XmpPtr xmp_copy(XmpPtr xmp)
     return NULL;
 }
 
+API_EXPORT
 bool xmp_parse(XmpPtr xmp, const char *buffer, size_t len)
 {
     CHECK_PTR(xmp, false);
@@ -611,6 +643,7 @@ bool xmp_parse(XmpPtr xmp, const char *buffer, size_t len)
     return true;
 }
 
+API_EXPORT
 bool xmp_serialize(XmpPtr xmp, XmpStringPtr buffer, uint32_t options,
                    uint32_t padding)
 {
@@ -619,6 +652,7 @@ bool xmp_serialize(XmpPtr xmp, XmpStringPtr buffer, uint32_t options,
                                     0);
 }
 
+API_EXPORT
 bool xmp_serialize_and_format(XmpPtr xmp, XmpStringPtr buffer, uint32_t options,
                               uint32_t padding, const char *newline,
                               const char *tab, int32_t indent)
@@ -639,6 +673,7 @@ bool xmp_serialize_and_format(XmpPtr xmp, XmpStringPtr buffer, uint32_t options,
     return true;
 }
 
+API_EXPORT
 bool xmp_free(XmpPtr xmp)
 {
     CHECK_PTR(xmp, false);
@@ -648,6 +683,7 @@ bool xmp_free(XmpPtr xmp)
     return true;
 }
 
+API_EXPORT
 bool xmp_get_property(XmpPtr xmp, const char *schema, const char *name,
                       XmpStringPtr property, uint32_t *propsBits)
 {
@@ -669,6 +705,7 @@ bool xmp_get_property(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_get_property_date(XmpPtr xmp, const char *schema, const char *name,
                            XmpDateTime *property, uint32_t *propsBits)
 {
@@ -693,6 +730,7 @@ bool xmp_get_property_date(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_get_property_float(XmpPtr xmp, const char *schema, const char *name,
                             double *property, uint32_t *propsBits)
 {
@@ -714,6 +752,7 @@ bool xmp_get_property_float(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_get_property_bool(XmpPtr xmp, const char *schema, const char *name,
                            bool *property, uint32_t *propsBits)
 {
@@ -735,6 +774,7 @@ bool xmp_get_property_bool(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_get_property_int32(XmpPtr xmp, const char *schema, const char *name,
                             int32_t *property, uint32_t *propsBits)
 {
@@ -758,6 +798,7 @@ bool xmp_get_property_int32(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_get_property_int64(XmpPtr xmp, const char *schema, const char *name,
                             int64_t *property, uint32_t *propsBits)
 {
@@ -779,6 +820,7 @@ bool xmp_get_property_int64(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_get_array_item(XmpPtr xmp, const char *schema, const char *name,
                         int32_t index, XmpStringPtr property,
                         uint32_t *propsBits)
@@ -802,6 +844,7 @@ bool xmp_get_array_item(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_set_property(XmpPtr xmp, const char *schema, const char *name,
                       const char *value, uint32_t optionBits)
 {
@@ -829,6 +872,7 @@ bool xmp_set_property(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_set_property_date(XmpPtr xmp, const char *schema, const char *name,
                            const XmpDateTime *value, uint32_t optionBits)
 {
@@ -851,6 +895,7 @@ bool xmp_set_property_date(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_set_property_float(XmpPtr xmp, const char *schema, const char *name,
                             double value, uint32_t optionBits)
 {
@@ -871,6 +916,7 @@ bool xmp_set_property_float(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_set_property_bool(XmpPtr xmp, const char *schema, const char *name,
                            bool value, uint32_t optionBits)
 {
@@ -891,6 +937,7 @@ bool xmp_set_property_bool(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_set_property_int32(XmpPtr xmp, const char *schema, const char *name,
                             int32_t value, uint32_t optionBits)
 {
@@ -911,6 +958,7 @@ bool xmp_set_property_int32(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_set_property_int64(XmpPtr xmp, const char *schema, const char *name,
                             int64_t value, uint32_t optionBits)
 {
@@ -931,6 +979,7 @@ bool xmp_set_property_int64(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_set_array_item(XmpPtr xmp, const char *schema, const char *name,
                         int32_t index, const char *value, uint32_t optionBits)
 {
@@ -951,6 +1000,7 @@ bool xmp_set_array_item(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_append_array_item(XmpPtr xmp, const char *schema, const char *name,
                            uint32_t arrayOptions, const char *value,
                            uint32_t optionBits)
@@ -972,6 +1022,7 @@ bool xmp_append_array_item(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_delete_property(XmpPtr xmp, const char *schema, const char *name)
 {
     CHECK_PTR(xmp, false);
@@ -992,6 +1043,7 @@ bool xmp_delete_property(XmpPtr xmp, const char *schema, const char *name)
     return ret;
 }
 
+API_EXPORT
 bool xmp_has_property(XmpPtr xmp, const char *schema, const char *name)
 {
     CHECK_PTR(xmp, false);
@@ -1012,6 +1064,7 @@ bool xmp_has_property(XmpPtr xmp, const char *schema, const char *name)
     return ret;
 }
 
+API_EXPORT
 bool xmp_get_localized_text(XmpPtr xmp, const char *schema, const char *name,
                             const char *genericLang, const char *specificLang,
                             XmpStringPtr actualLang, XmpStringPtr itemValue,
@@ -1038,6 +1091,7 @@ bool xmp_get_localized_text(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_set_localized_text(XmpPtr xmp, const char *schema, const char *name,
                             const char *genericLang, const char *specificLang,
                             const char *value, uint32_t optionBits)
@@ -1061,6 +1115,7 @@ bool xmp_set_localized_text(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 bool xmp_delete_localized_text(XmpPtr xmp, const char *schema, const char *name,
                                const char *genericLang,
                                const char *specificLang)
@@ -1083,29 +1138,34 @@ bool xmp_delete_localized_text(XmpPtr xmp, const char *schema, const char *name,
     return ret;
 }
 
+API_EXPORT
 XmpStringPtr xmp_string_new()
 {
     return (XmpStringPtr) new std::string;
 }
 
+API_EXPORT
 void xmp_string_free(XmpStringPtr s)
 {
     auto str = reinterpret_cast<std::string *>(s);
     delete str;
 }
 
+API_EXPORT
 const char *xmp_string_cstr(XmpStringPtr s)
 {
     CHECK_PTR(s, NULL);
     return reinterpret_cast<const std::string *>(s)->c_str();
 }
 
+API_EXPORT
 size_t xmp_string_len(XmpStringPtr s)
 {
     CHECK_PTR(s, 0);
     return reinterpret_cast<const std::string *>(s)->size();
 }
 
+API_EXPORT
 XmpIteratorPtr xmp_iterator_new(XmpPtr xmp, const char *schema,
                                 const char *propName, XmpIterOptions options)
 {
@@ -1125,6 +1185,7 @@ XmpIteratorPtr xmp_iterator_new(XmpPtr xmp, const char *schema,
     return NULL;
 }
 
+API_EXPORT
 bool xmp_iterator_free(XmpIteratorPtr iter)
 {
     CHECK_PTR(iter, false);
@@ -1134,6 +1195,7 @@ bool xmp_iterator_free(XmpIteratorPtr iter)
     return true;
 }
 
+API_EXPORT
 bool xmp_iterator_next(XmpIteratorPtr iter, XmpStringPtr schema,
                        XmpStringPtr propName, XmpStringPtr propValue,
                        uint32_t *options)
@@ -1146,6 +1208,7 @@ bool xmp_iterator_next(XmpIteratorPtr iter, XmpStringPtr schema,
                        reinterpret_cast<std::string *>(propValue), options);
 }
 
+API_EXPORT
 bool xmp_iterator_skip(XmpIteratorPtr iter, XmpIterSkipOptions options)
 {
     CHECK_PTR(iter, false);
@@ -1155,6 +1218,7 @@ bool xmp_iterator_skip(XmpIteratorPtr iter, XmpIterSkipOptions options)
     return true;
 }
 
+API_EXPORT
 int xmp_datetime_compare(XmpDateTime *left, XmpDateTime *right)
 {
     if (!left && !right) {

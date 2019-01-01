@@ -218,6 +218,8 @@ AC_SUBST(VALGRIND)
 AC_LANG_CPLUSPLUS
 AC_LANG_COMPILER_REQUIRE
 
+AX_APPEND_COMPILE_FLAGS([-fvisibility=hidden])
+
 dnl ***************************************************************
 dnl Excessive warnings
 dnl ***************************************************************
