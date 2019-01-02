@@ -50,7 +50,7 @@
 using boost::unit_test::test_suite;
 
 // void test_exempi_iterate()
-int test_main(int argc, char *argv[])
+int test_main(int, char *[])
 {
   char *buffer;
 
