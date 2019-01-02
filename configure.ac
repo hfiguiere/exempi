@@ -64,9 +64,9 @@ dnl 2.4.3 is the revision 7.4.3
 dnl 2.4.4 is the revision 7.4.4
 dnl 2.4.5 is the revision 7.4.5
 dnl 2.4.6 is the revision 7.4.6
-dnl 2.5.0 is the revision 8.5.0
+dnl 2.5.0 is the revision 8.0.0 -- Removed XMP SDK symbols.
 AC_SUBST([EXEMPI_REVISION], [0])
-AC_SUBST([EXEMPI_AGE],      [5])
+AC_SUBST([EXEMPI_AGE],      [0])
 AC_SUBST([EXEMPI_CURRENT],  [8])
 AC_SUBST([EXEMPI_CURRENT_MIN],
          [`expr $EXEMPI_CURRENT - $EXEMPI_AGE`])

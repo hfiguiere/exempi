@@ -4027,7 +4027,7 @@ DumpSVGTag ( std::string basePath, XML_NodePtr currentNode )
 
 		// Iterating over all XML children.
 		XML_NodeVector currNodeVector = currentNode->content;
-		for ( int i = 0; i < currNodeVector.size ( ); i++ )
+		for ( XML_NodeVector::size_type i = 0; i < currNodeVector.size ( ); i++ )
 		{
 			// Dump all children who are element nodes.
 			if ( currNodeVector[i]->kind == kElemNode )
@@ -5095,9 +5095,9 @@ static void DumpID3v23Frames ( LFA_FileRef file, XMP_Uns8 vMajor, XMP_Uns32 fram
 			XMP_Uns8 *picPtr = (sDataPtr + iOffset);
 			unsigned long size_PictureData = frameHead.size - iOffset;
 			
-			char picDataSize[8];
-			memset ( picDataSize , 0x0 , 8 );
-			sprintf ( picDataSize, "%d", size_PictureData );
+			char picDataSize[11];
+			memset ( picDataSize , 0x0 , 11 );
+			sprintf ( picDataSize, "%lu", size_PictureData );
 
 			std::string picData;
 			picData.assign ( ( char* ) picPtr , size_PictureData );
@@ -5111,8 +5111,8 @@ static void DumpID3v23Frames ( LFA_FileRef file, XMP_Uns8 vMajor, XMP_Uns32 fram
 	}
 	
 	if ( iIterator ) {
-		char noOfAPICs[2];
-		memset ( noOfAPICs , 0x0 , 2 );
+		char noOfAPICs[11];
+		memset ( noOfAPICs , 0x0 , 11 );
 		sprintf ( noOfAPICs , "%d" , iIterator );
 		tree->setKeyValue ( "ID3v2:NoOfAPIC" , noOfAPICs );
 	}
