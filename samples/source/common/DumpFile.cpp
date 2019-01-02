@@ -1264,7 +1264,7 @@ DumpImageResources ( const JpegMarkers& psirMarkers, XMP_Uns8 * dataStart, const
 	XMP_Uns8 * exif1Ptr = 0;
 	XMP_Uns8 * exif3Ptr = 0;
 	XMP_Uns32  iptcLen, xmpLen, exif1Len, exif3Len;
-	XMP_Int32 lastIndexUsed = -1;
+	XMP_Int64 lastIndexUsed = -1;
 	while (psirPtr < psirEnd) {
 		// calculate fileOffset and psirOrigin
 		size_t currentOffset = (const char *) psirPtr - combinedPSIRData.data();
@@ -1274,7 +1274,7 @@ DumpImageResources ( const JpegMarkers& psirMarkers, XMP_Uns8 * dataStart, const
 			if ( currentOffset <= length )
 				break;
 		}
-		if ( lastIndexUsed != i ) {
+		if ( lastIndexUsed != (XMP_Int64)i ) {
 			if ( lastIndexUsed != -1 )
 				tree->popNode();
 			// time to push a new node
@@ -2200,11 +2200,13 @@ DumpISOBoxes ( LFA_FileRef file, XMP_Uns32 maxBoxLen, std::string _isoPath )
 
 				digestISOFullBoxExtension( file, isoPath, remainingSize, version, flags );
 				// intentionally: no break.
+				// fallthrough
 
 			// container boxes (all non-FULL), that contain (relevant) boxes:
 			case 0x666E696D: // minf - "simple container, no direct content"
 				if ( boxString == "minf" && isoPath != "moov/trak/mdia/minf/" )
 					break;
+				// fallthrough
 			case 0x6C627473: // stbl is a simple container, no direct content
 				{
 					TimeCodeTrack = false; // assume until we known better by a relevant
@@ -2212,6 +2214,7 @@ DumpISOBoxes ( LFA_FileRef file, XMP_Uns32 maxBoxLen, std::string _isoPath )
 					if ( boxString == "stbl" && isoPath != "moov/trak/mdia/minf/stbl/")
 						break;
 				}
+				// fallthrough
 			case 0x766F6F6D: // moov
 			case 0x6169646D: // mdia
 			case 0x61746475: // udta - user data
@@ -2430,8 +2433,8 @@ DumpISOBoxes ( LFA_FileRef file, XMP_Uns32 maxBoxLen, std::string _isoPath )
 				LFA_Seek( file, absOffset, SEEK_SET, 0 );
 				tree->digest32u( file, isoPath+"timecodeMediaSample", true, true );
 				LFA_Seek( file, oldPos, SEEK_SET, 0 );
-
 			}
+			// fallthrough
 			case 0x34366F63: // co64 - timecode sample description table -> 64 bit offset
 			{
 				if ( isoPath != "moov/trak/mdia/minf/stbl/co64/")
@@ -3311,8 +3314,8 @@ DumpRIFFChunk ( LFA_FileRef file, XMP_Int64 parentEnd, std::string origChunkPath
 		}
 		else
 		{
-			XMP_Uns32 tmp = tree->digest32u( file, "", true );
-			XMP_Uns32 chunkID = GetUns32BE(&tmp); // flip if necessary for LE systems
+			XMP_Uns32 tmp1 = tree->digest32u( file, "", true );
+			XMP_Uns32 chunkID = GetUns32BE(&tmp1); // flip if necessary for LE systems
 
 			std::string idString( fromArgs( "%.4s" , &chunkID ) );
 
@@ -3324,8 +3327,8 @@ DumpRIFFChunk ( LFA_FileRef file, XMP_Int64 parentEnd, std::string origChunkPath
 
 			if (hasSubChunks)
 			{	
-				XMP_Uns32 tmp = tree->digest32u( file, "", true  );
-				chunkType = GetUns32BE(&tmp); // flip if necessary for LE systems
+				XMP_Uns32 tmp2 = tree->digest32u( file, "", true  );
+				chunkType = GetUns32BE(&tmp2); // flip if necessary for LE systems
 				typeString =  fromArgs( "%.4s" , &chunkType ) ;
 			}
 			//get inner ID 'type' as in 'listType', 'fileType', ...

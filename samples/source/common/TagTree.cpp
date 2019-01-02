@@ -197,7 +197,7 @@ XMP_Int64 TagTree::digest64s(LFA_FileRef file,const std::string key /* ="" */ , 
 
 	if (!key.empty()) {
 		char out[25]; //longest is "18446744073709551615", 21 chars ==> 25
-		snprintf(out,24,"%lld",r); //signed, mind the trailing \0 on Mac btw
+		snprintf(out,24,"%lld", (long long)r); //signed, mind the trailing \0 on Mac btw
 		setKeyValue(key,out);
 	}
 	return r;
@@ -219,7 +219,7 @@ XMP_Uns64 TagTree::digest64u(LFA_FileRef file,const std::string key /* ="" */, b
 				snprintf(out , 24 , "%I64u" , r);
 			#else 
 				// MAC, UNIX
-				snprintf(out , 24 , "%llu" , r);
+				snprintf(out , 24 , "%llu" , (long long)r);
 			#endif
 		}
 		else
@@ -228,7 +228,7 @@ XMP_Uns64 TagTree::digest64u(LFA_FileRef file,const std::string key /* ="" */, b
 			#if WIN_ENV
 				snprintf( out , 24 , "0x%.16I64X" , r );
 			#else
-				snprintf( out , 24 , "0x%.16llX" , r );
+				snprintf( out , 24 , "0x%.16llX" , (long long)r );
 			#endif
 		}
 		setKeyValue(key,out);
