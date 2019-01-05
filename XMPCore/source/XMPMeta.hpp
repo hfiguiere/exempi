@@ -48,9 +48,6 @@ public:
 	
 	static XMP_OptionBits
 	GetGlobalOptions();
-	
-	static void
-	SetGlobalOptions ( XMP_OptionBits options );
 
 	// ---------------------------------------------------------------------------------------------
 
@@ -75,9 +72,6 @@ public:
 	GetNamespaceURI ( XMP_StringPtr	  namespacePrefix,
 					  XMP_StringPtr * namespaceURI,
 					  XMP_StringLen * uriSize );
-	
-	static void
-	DeleteNamespace ( XMP_StringPtr namespaceURI );
 
 	// ---------------------------------------------------------------------------------------------
 	
@@ -300,9 +294,6 @@ public:
 
 	XMP_OptionBits
 	GetObjectOptions() const;
-	
-	void
-	SetObjectOptions ( XMP_OptionBits options );
 
 	virtual void
 	Sort();

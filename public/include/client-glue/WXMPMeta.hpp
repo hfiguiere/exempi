@@ -45,9 +45,6 @@ inline XMP_Bool WrapErrorNotify ( XMPMeta_ErrorCallbackProc proc, void * context
 #define zXMPMeta_GetGlobalOptions_1() \
     WXMPMeta_GetGlobalOptions_1 ( &wResult )
 
-#define zXMPMeta_SetGlobalOptions_1(options) \
-    WXMPMeta_SetGlobalOptions_1 ( options, &wResult )
-
 #define zXMPMeta_DumpNamespaces_1(outProc,refCon) \
     WXMPMeta_DumpNamespaces_1 ( outProc, refCon, &wResult )
 
@@ -61,9 +58,6 @@ inline XMP_Bool WrapErrorNotify ( XMPMeta_ErrorCallbackProc proc, void * context
 
 #define zXMPMeta_GetNamespaceURI_1(namespacePrefix,namespaceURI,SetClientString) \
     WXMPMeta_GetNamespaceURI_1 ( namespacePrefix, namespaceURI, SetClientString, &wResult )
-
-#define zXMPMeta_DeleteNamespace_1(namespaceURI) \
-    WXMPMeta_DeleteNamespace_1 ( namespaceURI, &wResult )
 
 #define zXMPMeta_GetIXMPMetadata_1() \
 	WXMPMeta_GetIXMPMetadata_1( this->xmpRef, &wResult )
@@ -166,9 +160,6 @@ inline XMP_Bool WrapErrorNotify ( XMPMeta_ErrorCallbackProc proc, void * context
 #define zXMPMeta_GetObjectOptions_1() \
     WXMPMeta_GetObjectOptions_1 ( this->xmpRef, &wResult )
 
-#define zXMPMeta_SetObjectOptions_1(options) \
-    WXMPMeta_SetObjectOptions_1 ( this->xmpRef, options, &wResult )
-
 #define zXMPMeta_Sort_1() \
     WXMPMeta_Sort_1 ( this->xmpRef, &wResult )
 
@@ -225,10 +216,6 @@ XMP_PUBLIC WXMPMeta_DecrementRefCount_1 ( XMPMetaRef xmpRef );
 extern void
 XMP_PUBLIC WXMPMeta_GetGlobalOptions_1 ( WXMP_Result * wResult );
 
-extern void
-XMP_PUBLIC WXMPMeta_SetGlobalOptions_1 ( XMP_OptionBits options,
-                              WXMP_Result *  wResult );
-
 // -------------------------------------------------------------------------------------------------
 
 extern void
@@ -259,10 +246,6 @@ extern void
 XMP_PUBLIC WXMPMeta_GetNamespaceURI_1 ( XMP_StringPtr namespacePrefix,
                              void *        namespaceURI,
                              SetClientStringProc SetClientString,
-                             WXMP_Result * wResult );
-
-extern void
-XMP_PUBLIC WXMPMeta_DeleteNamespace_1 ( XMP_StringPtr namespaceURI,
                              WXMP_Result * wResult );
 
 // -------------------------------------------------------------------------------------------------
@@ -553,11 +536,6 @@ XMP_PUBLIC WXMPMeta_SetObjectName_1 ( XMPMetaRef    xmpRef,
 extern void
 XMP_PUBLIC WXMPMeta_GetObjectOptions_1 ( XMPMetaRef    xmpRef,
                               WXMP_Result * wResult ) /* const */ ;
-
-extern void
-XMP_PUBLIC WXMPMeta_SetObjectOptions_1 ( XMPMetaRef     xmpRef,
-                              XMP_OptionBits options,
-                              WXMP_Result *  wResult );
 
 extern void
 XMP_PUBLIC WXMPMeta_Sort_1 ( XMPMetaRef    xmpRef,

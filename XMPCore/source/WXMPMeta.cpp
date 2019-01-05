@@ -151,18 +151,6 @@ WXMPMeta_GetGlobalOptions_1 ( WXMP_Result * wResult )
 // -------------------------------------------------------------------------------------------------
 
 /* class static */ void
-WXMPMeta_SetGlobalOptions_1 ( XMP_OptionBits options,
-							  WXMP_Result *	 wResult )
-{
-	XMP_ENTER_Static ( "WXMPMeta_SetGlobalOptions_1" )
-
-		XMPMeta::SetGlobalOptions ( options );
-
-	XMP_EXIT
-}
-// -------------------------------------------------------------------------------------------------
-
-/* class static */ void
 WXMPMeta_DumpNamespaces_1 ( XMP_TextOutputProc outProc,
 							void *			   refCon,
 							WXMP_Result *	   wResult )
@@ -244,21 +232,6 @@ WXMPMeta_GetNamespaceURI_1 ( XMP_StringPtr namespacePrefix,
 		wResult->int32Result = found;
 		
 		if ( found && (namespaceURI != 0) ) (*SetClientString) ( namespaceURI, uriPtr, uriSize );
-
-	XMP_EXIT
-}
-
-// -------------------------------------------------------------------------------------------------
-
-/* class static */ void
-WXMPMeta_DeleteNamespace_1 ( XMP_StringPtr namespaceURI,
-							 WXMP_Result * wResult )
-{
-	XMP_ENTER_Static ( "WXMPMeta_DeleteNamespace_1" )
-
-		if ( (namespaceURI == 0) || (*namespaceURI == 0) ) XMP_Throw ( "Empty namespace URI", kXMPErr_BadSchema );
-
-		XMPMeta::DeleteNamespace ( namespaceURI );
 
 	XMP_EXIT
 }
@@ -1139,20 +1112,6 @@ WXMPMeta_GetObjectOptions_1 ( XMPMetaRef    xmpObjRef,
 
 		XMP_OptionBits options = thiz.GetObjectOptions();
 		wResult->int32Result = options;
-		
-	XMP_EXIT
-}
-
-// -------------------------------------------------------------------------------------------------
-
-void
-WXMPMeta_SetObjectOptions_1 ( XMPMetaRef	 xmpObjRef,
-							  XMP_OptionBits options,
-							  WXMP_Result *	 wResult )
-{
-	XMP_ENTER_ObjWrite ( XMPMeta, "WXMPMeta_SetObjectOptions_1" )
-	
-		thiz->SetObjectOptions ( options );
 		
 	XMP_EXIT
 }

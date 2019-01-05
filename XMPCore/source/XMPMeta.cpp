@@ -1028,19 +1028,6 @@ XMPMeta::GetGlobalOptions()
 
 
 // -------------------------------------------------------------------------------------------------
-// SetGlobalOptions
-// ----------------
-
-/* class-static */ void
-XMPMeta::SetGlobalOptions ( XMP_OptionBits /*options*/ )
-{
-
-	XMP_Throw("Unimplemented method XMPMeta::SetGlobalOptions", kXMPErr_Unimplemented);
-
-}	// SetGlobalOptions
-
-
-// -------------------------------------------------------------------------------------------------
 // RegisterNamespace
 // -----------------
 
@@ -1094,23 +1081,6 @@ XMPMeta::GetNamespaceURI ( XMP_StringPtr   namespacePrefix,
 	return sRegisteredNamespaces->GetURI ( namespacePrefix, namespaceURI, uriSize );
 
 }	// GetNamespaceURI
-
-
-// -------------------------------------------------------------------------------------------------
-// DeleteNamespace
-// ---------------
-
-// *** Don't allow standard namespaces to be deleted.
-// *** We would be better off not having this. Instead, have local namespaces from parsing be
-// *** restricted to the object that introduced them.
-
-/* class-static */ void
-XMPMeta::DeleteNamespace ( XMP_StringPtr /*namespaceURI*/ )
-{
-
-	XMP_Throw ( "Unimplemented method XMPMeta::DeleteNamespace", kXMPErr_Unimplemented );
-
-}	// DeleteNamespace
 
 
 // =================================================================================================
@@ -1261,18 +1231,6 @@ XMPMeta::GetObjectOptions() const
 	return options;
 
 }	// GetObjectOptions
-
-
-// -------------------------------------------------------------------------------------------------
-// SetObjectOptions
-// ----------------
-
-void
-XMPMeta::SetObjectOptions ( XMP_OptionBits /*options*/ )
-{
-	XMP_Throw ( "Unimplemented method XMPMeta::SetObjectOptions", kXMPErr_Unimplemented );
-
-}	// SetObjectOptions
 
 
 // -------------------------------------------------------------------------------------------------

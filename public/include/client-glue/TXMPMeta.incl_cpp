@@ -261,16 +261,6 @@ GetGlobalOptions()
 
 // -------------------------------------------------------------------------------------------------
 
-XMP_MethodIntro(TXMPMeta,void)::
-SetGlobalOptions ( XMP_OptionBits options )
-{
-	WrapCheckVoid ( zXMPMeta_SetGlobalOptions_1 ( options ) );
-}
-
-// -------------------------------------------------------------------------------------------------
-
-// -------------------------------------------------------------------------------------------------
-
 XMP_MethodIntro(TXMPMeta,XMP_Status)::
 DumpNamespaces ( XMP_TextOutputProc outProc,
                  void *             refCon )
@@ -309,14 +299,6 @@ GetNamespaceURI ( XMP_StringPtr namespacePrefix,
 {
 	WrapCheckBool ( found, zXMPMeta_GetNamespaceURI_1 ( namespacePrefix, namespaceURI, SetClientString ) );
 	return found;
-}
-
-// -------------------------------------------------------------------------------------------------
-
-XMP_MethodIntro(TXMPMeta,void)::
-DeleteNamespace ( XMP_StringPtr namespaceURI )
-{
-	WrapCheckVoid ( zXMPMeta_DeleteNamespace_1 ( namespaceURI ) );
 }
 
 // =================================================================================================
@@ -795,14 +777,6 @@ GetObjectOptions() const
 {
 	WrapCheckOptions ( options, zXMPMeta_GetObjectOptions_1() );
 	return options;
-}
-
-// -------------------------------------------------------------------------------------------------
-
-XMP_MethodIntro(TXMPMeta,void)::
-SetObjectOptions ( XMP_OptionBits options )
-{
-	WrapCheckVoid ( zXMPMeta_SetObjectOptions_1 ( options ) );
 }
 
 // -------------------------------------------------------------------------------------------------
