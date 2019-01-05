@@ -99,11 +99,11 @@ int test_main(int argc, char *argv[])
     std::vector<tuple3> props;
 
     while (xmp_iterator_next(iter, the_schema, the_path, the_prop, &options)) {
-      props.push_back(tuple3 {
+      props.push_back(tuple3 {{
           xmp_string_cstr(the_schema),
           xmp_string_cstr(the_path),
           xmp_string_cstr(the_prop)
-        });
+        }});
     }
 
     BOOST_CHECK(props.size() == 7);
@@ -125,18 +125,18 @@ int test_main(int argc, char *argv[])
     std::vector<tuple3> props;
 
     while (xmp_iterator_next(iter, the_schema, the_path, the_prop, &options)) {
-      props.push_back(tuple3 {
+      props.push_back(tuple3 {{
           xmp_string_cstr(the_schema),
           xmp_string_cstr(the_path),
           xmp_string_cstr(the_prop)
-        });
+        }});
     }
 
     BOOST_CHECK(props.size() == 3);
 
-    BOOST_CHECK(props[0] == tuple3({ NS_DC, "dc:rights", "" }));
-    BOOST_CHECK(props[1] == tuple3({ "", "[1]", "2006, Hubert Figuiere" }));
-    BOOST_CHECK(props[2] == tuple3({ NS_XML, "xml:lang", "x-default" }));
+    BOOST_CHECK(props[0] == (tuple3{{NS_DC, "dc:rights", ""}}));
+    BOOST_CHECK(props[1] == (tuple3{{"", "[1]", "2006, Hubert Figuiere"}}));
+    BOOST_CHECK(props[2] == (tuple3{{NS_XML, "xml:lang", "x-default"}}));
 
     BOOST_CHECK(xmp_iterator_free(iter));
   }
