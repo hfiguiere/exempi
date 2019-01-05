@@ -18,6 +18,8 @@
   - Lot of bug fixes in XMPFiles and XMPCore.
 - Removed Exempi provided support for GIF in favour of Adobe's.
 - New: API NS_XML constant
+- Bug #5: Restrict the exported symbols.
+  https://gitlab.freedesktop.org/libopenraw/exempi/issues/5
 
 Internal:
 
