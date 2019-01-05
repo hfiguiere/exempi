@@ -677,23 +677,23 @@ XMP_Uns32 TIFF_FileWriter::ProcessMemoryIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd 
 	}
 
 	XMP_Uns8* ifdPtr = this->memStream + ifdOffset;
-	XMP_Uns16 tagCount = this->GetUns16 ( ifdPtr );
+	XMP_Uns16 tagCount1 = this->GetUns16 ( ifdPtr );
 	RawIFDEntry* ifdEntries = (RawIFDEntry*)(ifdPtr+2);
 
-	if ( tagCount >= 0x8000 ) {
+	if ( tagCount1 >= 0x8000 ) {
 		XMP_Error error ( kXMPErr_BadTIFF, "Outrageous IFD count" );
 		this->NotifyClient ( kXMPErrSev_FileFatal, error );
 	}
 
-	if ( (XMP_Uns32)(2 + tagCount*12 + 4) > (this->tiffLength - ifdOffset) ) {
+	if ( (XMP_Uns32)(2 + tagCount1*12 + 4) > (this->tiffLength - ifdOffset) ) {
 		XMP_Error error ( kXMPErr_BadTIFF, "Out of bounds IFD" );
 		this->NotifyClient ( kXMPErrSev_FileFatal, error );
 	}
 
 	ifdInfo.origIFDOffset = ifdOffset;
-	ifdInfo.origCount  = tagCount;
+	ifdInfo.origCount  = tagCount1;
 
-	for ( size_t i = 0; i < tagCount; ++i ) {
+	for ( size_t i = 0; i < tagCount1; ++i ) {
 
 		RawIFDEntry* rawTag  = &ifdEntries[i];
 		XMP_Uns16    tagType = this->GetUns16 ( &rawTag->type );
@@ -731,7 +731,7 @@ XMP_Uns32 TIFF_FileWriter::ProcessMemoryIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd 
 
 	}
 
-	ifdPtr += (2 + tagCount*12);
+	ifdPtr += (2 + tagCount1*12);
 	ifdInfo.origNextIFD = this->GetUns32 ( ifdPtr );
 // The following code modifies a file in case it is invalid, we should keep this fix so that we can track this issue if we receive client bugs for this
 #if 0
@@ -865,10 +865,10 @@ XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, X
 	if ( ! XIO::CheckFileSpace ( fileRef, 2 ) ) return 0;	// Bail for a truncated file.
 	fileRef->ReadAll ( intBuffer, 2 );
 
-	XMP_Uns16 tagCount = this->GetUns16 ( intBuffer );
-	if ( tagCount >= 0x8000 ) return 0;	// Maybe wrong byte order.
-	if ( ! XIO::CheckFileSpace ( fileRef, 12*tagCount ) ) return 0;	// Bail for a truncated file.
-	fileRef->ReadAll ( &ifdBuffer[0], 12*tagCount );
+	XMP_Uns16 tagCount1 = this->GetUns16 ( intBuffer );
+	if ( tagCount1 >= 0x8000 ) return 0;	// Maybe wrong byte order.
+	if ( ! XIO::CheckFileSpace ( fileRef, 12*tagCount1 ) ) return 0;	// Bail for a truncated file.
+	fileRef->ReadAll ( &ifdBuffer[0], 12*tagCount1 );
 
 	if ( ! XIO::CheckFileSpace ( fileRef, 4 ) ) {
         ifdInfo.origNextIFD = 0;	// Tolerate a trncated file, do the remaining processing.
@@ -878,7 +878,7 @@ XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, X
 	}
 
 	ifdInfo.origIFDOffset = ifdOffset;
-	ifdInfo.origCount  = tagCount;
+	ifdInfo.origCount  = tagCount1;
 
 	// ---------------------------------------------------------------------------------------------
 	// First create all of the IFD map entries, capturing short values, and get the next IFD offset.
@@ -888,7 +888,7 @@ XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, X
 
 	XMP_Uns8* ifdPtr = &ifdBuffer[0];	// Move to the first IFD entry.
 
-	for ( XMP_Uns16 i = 0; i < tagCount; ++i, ifdPtr += 12 ) {
+	for ( XMP_Uns16 i = 0; i < tagCount1; ++i, ifdPtr += 12 ) {
 
 		RawIFDEntry* rawTag = (RawIFDEntry*)ifdPtr;
 		XMP_Uns16    tagType = this->GetUns16 ( &rawTag->type );

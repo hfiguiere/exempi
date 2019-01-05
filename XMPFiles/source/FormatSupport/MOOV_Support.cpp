@@ -186,9 +186,9 @@ XMP_Uns32 MOOV_Manager::GetHeaderSize ( BoxRef ref ) const
 // Parse the fullSubtree data, building the BoxNode tree for the stuff that we care about. Tolerate
 // errors like content ending too soon, make a best effoert to parse what we can.
 
-void MOOV_Manager::ParseMemoryTree ( XMP_Uns8 fileMode )
+void MOOV_Manager::ParseMemoryTree ( XMP_Uns8 fileMode1 )
 {
-	this->fileMode = fileMode;
+	this->fileMode = fileMode1;
 	
 	this->moovNode.offset = this->moovNode.boxType = 0;
 	this->moovNode.headerSize = this->moovNode.contentSize = 0;
@@ -214,7 +214,7 @@ void MOOV_Manager::ParseMemoryTree ( XMP_Uns8 fileMode )
 	this->moovNode.headerSize = moovInfo.headerSize;
 	this->moovNode.contentSize = (XMP_Uns32)moovInfo.contentSize;
 
-	bool ignoreMetaBoxes = (fileMode == kFileIsTraditionalQT);	// ! Don't want, these don't follow ISO spec.
+	bool ignoreMetaBoxes = (fileMode1 == kFileIsTraditionalQT);	// ! Don't want, these don't follow ISO spec.
 	#if TraceParseMoovTree
 		fprintf ( stderr, "Parsing 'moov' subtree, moovNode @ 0x%X, ignoreMetaBoxes = %d\n",
 				  &this->moovNode, ignoreMetaBoxes );

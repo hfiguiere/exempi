@@ -1172,11 +1172,11 @@ static bool DoOpenFile( XMPFiles* thiz,
 
 bool
 XMPFiles::OpenFile ( XMP_StringPtr  clientPath,
-	                 XMP_FileFormat format /* = kXMP_UnknownFile */,
-	                 XMP_OptionBits openFlags /* = 0 */ )
+	                 XMP_FileFormat format1 /* = kXMP_UnknownFile */,
+	                 XMP_OptionBits openFlags1 /* = 0 */ )
 {
 	XMP_FILES_START
-	return DoOpenFile ( this, 0, clientPath, format, openFlags );
+	return DoOpenFile ( this, 0, clientPath, format1, openFlags1 );
 	XMP_FILES_END2 ( clientPath, kXMPErrSev_FileFatal )
 	return false;
 }
@@ -1187,12 +1187,12 @@ XMPFiles::OpenFile ( XMP_StringPtr  clientPath,
 
 bool
 XMPFiles::OpenFile ( XMP_IO*        clientIO,
-	                 XMP_FileFormat format /* = kXMP_UnknownFile */,
-	                 XMP_OptionBits openFlags /* = 0 */ )
+	                 XMP_FileFormat format1 /* = kXMP_UnknownFile */,
+	                 XMP_OptionBits openFlags1 /* = 0 */ )
 {
 	XMP_FILES_START
 	this->progressTracker = 0;	// Progress tracking is not supported for client-managed I/O.
-	return DoOpenFile ( this, clientIO, "", format, openFlags );
+	return DoOpenFile ( this, clientIO, "", format1, openFlags1 );
 	XMP_FILES_END1 ( kXMPErrSev_FileFatal )
 	return false;
 
@@ -1200,11 +1200,11 @@ XMPFiles::OpenFile ( XMP_IO*        clientIO,
 
 bool XMPFiles::OpenFile ( const Common::XMPFileHandlerInfo&	hdlInfo,
 						 XMP_IO*							clientIO,
-						 XMP_OptionBits						openFlags /*= 0*/ )
+						 XMP_OptionBits						openFlags1 /*= 0*/ )
 {
 	XMP_FILES_START
 	this->progressTracker = 0;	// Progress tracking is not supported for client-managed I/O.
-	return DoOpenFile ( this, hdlInfo, clientIO, NULL, openFlags );
+	return DoOpenFile ( this, hdlInfo, clientIO, NULL, openFlags1 );
 	XMP_FILES_END1 ( kXMPErrSev_FileFatal )
 	return false;
 
@@ -1215,12 +1215,12 @@ bool XMPFiles::OpenFile ( const Common::XMPFileHandlerInfo&	hdlInfo,
 // =================================================================================================
 
 bool XMPFiles::OpenFile ( const Common::XMPFileHandlerInfo&	hdlInfo,
-						 XMP_StringPtr						filePath,
-						 XMP_OptionBits						openFlags /*= 0*/ )
+						 XMP_StringPtr						filePath1,
+						 XMP_OptionBits						openFlags1 /*= 0*/ )
 {
 	XMP_FILES_START
-	return DoOpenFile ( this, hdlInfo, NULL, filePath, openFlags );
-	XMP_FILES_END2 (filePath, kXMPErrSev_FileFatal )
+	return DoOpenFile ( this, hdlInfo, NULL, filePath1, openFlags1 );
+	XMP_FILES_END2 (filePath1, kXMPErrSev_FileFatal )
 	return false;
 }
 
@@ -1387,26 +1387,26 @@ XMPFiles::CloseFile ( XMP_OptionBits closeFlags /* = 0 */ )
 // =================================================================================================
 
 bool
-XMPFiles::GetFileInfo ( XMP_StringPtr *  filePath /* = 0 */,
+XMPFiles::GetFileInfo ( XMP_StringPtr *  filePath1 /* = 0 */,
                         XMP_StringLen *  pathLen /* = 0 */,
-	                    XMP_OptionBits * openFlags /* = 0 */,
-	                    XMP_FileFormat * format /* = 0 */,
+	                    XMP_OptionBits * openFlags1 /* = 0 */,
+	                    XMP_FileFormat * format1 /* = 0 */,
 	                    XMP_OptionBits * handlerFlags /* = 0 */ ) const
 {
 	XMP_FILES_START
 	if ( this->handler == 0 ) return false;
 	/*XMPFileHandler * handler = this->handler;*/
 
-	if ( filePath == 0 ) filePath = &voidStringPtr;
+	if ( filePath1 == 0 ) filePath1 = &voidStringPtr;
 	if ( pathLen == 0 ) pathLen = &voidStringLen;
-	if ( openFlags == 0 ) openFlags = &voidOptionBits;
-	if ( format == 0 ) format = &voidFileFormat;
+	if ( openFlags1 == 0 ) openFlags1 = &voidOptionBits;
+	if ( format1 == 0 ) format1 = &voidFileFormat;
 	if ( handlerFlags == 0 ) handlerFlags = &voidOptionBits;
 
-	*filePath     = this->filePath.c_str();
+	*filePath1    = this->filePath.c_str();
 	*pathLen      = (XMP_StringLen) this->filePath.size();
-	*openFlags    = this->openFlags;
-	*format       = this->format;
+	*openFlags1   = this->openFlags;
+	*format1      = this->format;
 	*handlerFlags = this->handler->handlerFlags;
 	XMP_FILES_END1 ( kXMPErrSev_FileFatal )
 	return true;
@@ -1416,14 +1416,14 @@ XMPFiles::GetFileInfo ( XMP_StringPtr *  filePath /* = 0 */,
 // =================================================================================================
 
 void
-XMPFiles::SetAbortProc ( XMP_AbortProc abortProc,
-						 void *        abortArg )
+XMPFiles::SetAbortProc ( XMP_AbortProc abortProc1,
+						 void *        abortArg1 )
 {
 	XMP_FILES_START
-	this->abortProc = abortProc;
-	this->abortArg  = abortArg;
+	this->abortProc = abortProc1;
+	this->abortArg  = abortArg1;
 
-	XMP_Assert ( (abortProc != (XMP_AbortProc)0) || (abortArg != (void*)(unsigned long long)0xDEADBEEFULL) );	// Hack to test the assert callback.
+	XMP_Assert ( (abortProc1 != (XMP_AbortProc)0) || (abortArg1 != (void*)(unsigned long long)0xDEADBEEFULL) );	// Hack to test the assert callback.
 	XMP_FILES_END1 ( kXMPErrSev_OperationFatal )
 }	// XMPFiles::SetAbortProc
 
@@ -1771,13 +1771,13 @@ bool
 // This is const just to be usable from const XMPMeta functions.
 
 bool
-	XMPFiles::ErrorCallbackInfo::ClientCallbackWrapper ( XMP_StringPtr filePath,
+	XMPFiles::ErrorCallbackInfo::ClientCallbackWrapper ( XMP_StringPtr filePath1,
 														 XMP_ErrorSeverity severity,
 														 XMP_Int32 cause,
 														 XMP_StringPtr messsage ) const
 {
 	
-	XMP_StringPtr filePathPtr = filePath;
+	XMP_StringPtr filePathPtr = filePath1;
 	if ( filePathPtr == 0 ) {
 		filePathPtr = this->filePath.c_str();
 	}

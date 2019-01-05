@@ -240,16 +240,16 @@ PluginManager::PluginManager( const std::string& pluginDir, const std::string& p
 		mExtensions.push_back ( std::string ( kLibraryExtensions[i] ) );
 	}
 
-	size_t pos = std::string::npos;
+	size_t pos1 = std::string::npos;
 
 	#if XMP_WinBuild
 		// convert to Win kDirChar
-		while ( (pos = mPluginDir.find ('/')) != string::npos ) {
-			mPluginDir.replace (pos, 1, "\\");
+		while ( (pos1 = mPluginDir.find ('/')) != string::npos ) {
+			mPluginDir.replace (pos1, 1, "\\");
 		}
 	#else
-		while ( (pos = mPluginDir.find ('\\')) != string::npos ) {
-			mPluginDir.replace (pos, 1, "/");
+		while ( (pos1 = mPluginDir.find ('\\')) != string::npos ) {
+			mPluginDir.replace (pos1, 1, "/");
 		}
 	#endif
 

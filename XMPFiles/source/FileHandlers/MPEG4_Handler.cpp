@@ -1444,7 +1444,7 @@ struct Cr8rBoxContent {
 static bool ImportCr8rItems ( const MOOV_Manager & moovMgr, SXMPMeta * xmp )
 {
 	bool haveXMP = false;
-	std::string fieldPath;
+	std::string fieldPath1;
 
 	MOOV_Manager::BoxInfo infoPrmL, infoCr8r;
 	MOOV_Manager::BoxRef  refPrmL = moovMgr.GetBox ( "moov/udta/PrmL", &infoPrmL );
@@ -1468,16 +1468,16 @@ static bool ImportCr8rItems ( const MOOV_Manager & moovMgr, SXMPMeta * xmp )
 			if ( rawPrmL.filePath[0] == '/' ) {
 				haveXMP = true;
 				SXMPUtils::ComposeStructFieldPath ( kXMP_NS_CreatorAtom, "macAtom",
-												    kXMP_NS_CreatorAtom, "posixProjectPath", &fieldPath );
-				if ( ! xmp->DoesPropertyExist ( kXMP_NS_CreatorAtom, fieldPath.c_str() ) ) {
-					xmp->SetProperty ( kXMP_NS_CreatorAtom, fieldPath.c_str(), rawPrmL.filePath );
+												    kXMP_NS_CreatorAtom, "posixProjectPath", &fieldPath1 );
+				if ( ! xmp->DoesPropertyExist ( kXMP_NS_CreatorAtom, fieldPath1.c_str() ) ) {
+					xmp->SetProperty ( kXMP_NS_CreatorAtom, fieldPath1.c_str(), rawPrmL.filePath );
 				}
 			} else if ( XMP_LitNMatch ( rawPrmL.filePath, "\\\\?\\", 4 ) ) {
 				haveXMP = true;
 				SXMPUtils::ComposeStructFieldPath ( kXMP_NS_CreatorAtom, "windowsAtom",
-												    kXMP_NS_CreatorAtom, "uncProjectPath", &fieldPath );
-				if ( ! xmp->DoesPropertyExist ( kXMP_NS_CreatorAtom, fieldPath.c_str() ) ) {
-					xmp->SetProperty ( kXMP_NS_CreatorAtom, fieldPath.c_str(), rawPrmL.filePath );
+												    kXMP_NS_CreatorAtom, "uncProjectPath", &fieldPath1 );
+				if ( ! xmp->DoesPropertyExist ( kXMP_NS_CreatorAtom, fieldPath1.c_str() ) ) {
+					xmp->SetProperty ( kXMP_NS_CreatorAtom, fieldPath1.c_str(), rawPrmL.filePath );
 				}
 			}
 		}
@@ -1491,9 +1491,9 @@ static bool ImportCr8rItems ( const MOOV_Manager & moovMgr, SXMPMeta * xmp )
 		}
 		if ( exportStr != 0 ) {
 			haveXMP = true;
-			SXMPUtils::ComposeStructFieldPath ( kXMP_NS_DM, "projectRef", kXMP_NS_DM, "type", &fieldPath );
-			if ( ! xmp->DoesPropertyExist ( kXMP_NS_DM, fieldPath.c_str() ) ) {
-				xmp->SetProperty ( kXMP_NS_DM, fieldPath.c_str(), exportStr );
+			SXMPUtils::ComposeStructFieldPath ( kXMP_NS_DM, "projectRef", kXMP_NS_DM, "type", &fieldPath1 );
+			if ( ! xmp->DoesPropertyExist ( kXMP_NS_DM, fieldPath1.c_str() ) ) {
+				xmp->SetProperty ( kXMP_NS_DM, fieldPath1.c_str(), exportStr );
 			}
 		}
 
@@ -2650,7 +2650,7 @@ void MPEG4_MetaHandler::OptimizeFileLayout()
 	/*const bool    checkAbort = (abortProc != 0);*/
 
 	XMP_Uns64 currPos, nextPos;
-	ISOMedia::BoxInfo currBox;
+	ISOMedia::BoxInfo currBox1;
 
 	size_t boxCount = 0;
 	size_t moovIndex = 0, xmpIndex = 0;
@@ -2663,26 +2663,26 @@ void MPEG4_MetaHandler::OptimizeFileLayout()
 
 	for ( currPos = 0; currPos < originalSize; currPos = nextPos ) {
 
-		nextPos = ISOMedia::GetBoxInfo ( originalFile, currPos, originalSize, &currBox );
-		if ( (currBox.boxType == ISOMedia::k_free) ||
-			 (currBox.boxType == ISOMedia::k_skip) ||
-			 (currBox.boxType == ISOMedia::k_wide) ) continue;
+		nextPos = ISOMedia::GetBoxInfo ( originalFile, currPos, originalSize, &currBox1 );
+		if ( (currBox1.boxType == ISOMedia::k_free) ||
+			 (currBox1.boxType == ISOMedia::k_skip) ||
+			 (currBox1.boxType == ISOMedia::k_wide) ) continue;
 
 		++boxCount;	// ! Must be counted for all, continue statements below skip an end of loop increment.
 
-		if ( currBox.boxType == ISOMedia::k_mdat ) {
+		if ( currBox1.boxType == ISOMedia::k_mdat ) {
 
 			mdatFound = true;
 			XMP_Assert ( (! moovFound) | (! xmpFound) );	// The other cases should be exiting.
 
-		} else if ( currBox.boxType == ISOMedia::k_moov ) {
+		} else if ( currBox1.boxType == ISOMedia::k_moov ) {
 
 			moovFound = true;
 			moovIndex = boxCount-1;	// Need later for optimization.
 			needsOptimization = mdatFound;
 			if ( xmpFound ) break;	// Don't need to look further.
 
-		} else if ( currBox.boxType == ISOMedia::k_uuid && ( memcmp( currBox.idUUID, ISOMedia::k_xmpUUID, 16 ) == 0 ) ) {
+		} else if ( currBox1.boxType == ISOMedia::k_uuid && ( memcmp( currBox1.idUUID, ISOMedia::k_xmpUUID, 16 ) == 0 ) ) {
 
 			xmpFound = true;
 			xmpIndex = boxCount-1;	// Need later for optimization.
@@ -2739,12 +2739,12 @@ void MPEG4_MetaHandler::OptimizeFileLayout()
 	LayoutMap optLayout;
 
 	for ( currPos = 0; currPos < originalSize; currPos = nextPos ) {
-		nextPos = ISOMedia::GetBoxInfo ( originalFile, currPos, originalSize, &currBox );
-		if ( (currBox.boxType == ISOMedia::k_free) ||
-			 (currBox.boxType == ISOMedia::k_skip) ||
-			 (currBox.boxType == ISOMedia::k_wide) ) continue;
+		nextPos = ISOMedia::GetBoxInfo ( originalFile, currPos, originalSize, &currBox1 );
+		if ( (currBox1.boxType == ISOMedia::k_free) ||
+			 (currBox1.boxType == ISOMedia::k_skip) ||
+			 (currBox1.boxType == ISOMedia::k_wide) ) continue;
 		--boxCount;	// For sanity check below.
-		fileBoxes.push_back ( LayoutInfo ( currBox.boxType, (currBox.headerSize + currBox.contentSize), currPos ) );
+		fileBoxes.push_back ( LayoutInfo ( currBox1.boxType, (currBox1.headerSize + currBox1.contentSize), currPos ) );
 	}
 
 	XMP_Assert ( boxCount == 0 );	// Must get the same count in both loops.
@@ -2752,7 +2752,7 @@ void MPEG4_MetaHandler::OptimizeFileLayout()
 	XMP_Assert ( (!moovFound) || (fileBoxes[moovIndex].boxType == ISOMedia::k_moov) );
 	XMP_Assert ( (!xmpFound) || (fileBoxes[xmpIndex].boxType == ISOMedia::k_uuid) );
 
-	size_t currIndex = 0, limit = fileBoxes.size();
+	size_t currIndex = 0, limit1 = fileBoxes.size();
 	XMP_Uns64 newSize = 0;
 
 	if ( fileBoxes[0].boxType == ISOMedia::k_ftyp ) {
@@ -2773,7 +2773,7 @@ void MPEG4_MetaHandler::OptimizeFileLayout()
 		newSize += fileBoxes[xmpIndex].boxSize;
 	}
 
-	for ( ; currIndex < limit; ++currIndex ) {	// Add all of the other non-'mdat' boxes to the map.
+	for ( ; currIndex < limit1; ++currIndex ) {	// Add all of the other non-'mdat' boxes to the map.
 		if ( moovFound && (currIndex == moovIndex) ) continue;
 		if ( xmpFound && (currIndex == xmpIndex) ) continue;
 		if ( fileBoxes[currIndex].boxType == ISOMedia::k_mdat ) continue;
@@ -2782,7 +2782,7 @@ void MPEG4_MetaHandler::OptimizeFileLayout()
 		newSize += fileBoxes[currIndex].boxSize;
 	}
 
-	for ( currIndex = 0; currIndex < limit; ++currIndex ) {	// Add all of the 'mdat' boxes to the map.
+	for ( currIndex = 0; currIndex < limit1; ++currIndex ) {	// Add all of the 'mdat' boxes to the map.
 		if ( fileBoxes[currIndex].boxType != ISOMedia::k_mdat ) continue;
 		optLayout.insert ( optLayout.end(), LayoutMap::value_type ( newSize, &fileBoxes[currIndex] ) );
 		fileBoxes[currIndex].newOffset = newSize;
@@ -2829,9 +2829,9 @@ void MPEG4_MetaHandler::OptimizeFileLayout()
 	moovRef = this->moovMgr.GetBox ( "moov", &boxInfo );
 	XMP_Enforce ( moovRef != 0 );
 
-	for ( size_t i = 0, limit = boxInfo.childCount; i < limit; ++i ) {
+	for ( size_t i1 = 0, limit = boxInfo.childCount; i1 < limit; ++i1 ) {
 
-		trakRef = this->moovMgr.GetNthChild ( moovRef, i, &boxInfo );
+		trakRef = this->moovMgr.GetNthChild ( moovRef, i1, &boxInfo );
 		if ( boxInfo.boxType != ISOMedia::k_trak ) continue;
 
 		tempRef = this->moovMgr.GetTypeChild ( trakRef, ISOMedia::k_mdia, 0 );
