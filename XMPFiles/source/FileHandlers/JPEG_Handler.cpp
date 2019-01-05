@@ -451,8 +451,6 @@ void JPEG_MetaHandler::CacheFileData()
 // temporary read-only parse of the Exif APP1 contents, determine the highest used offset, trim the
 // padding if all zero bytes.
 
-static const char * IFDNames[] = { "Primary", "TNail", "Exif", "GPS", "Interop", };
-
 static void TrimFullExifAPP1 ( std::string * exifContents )
 {
 	TIFF_MemoryReader tempMgr;
