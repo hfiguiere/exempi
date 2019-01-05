@@ -480,20 +480,6 @@ XMPIterator::XMPIterator ( const XMPMeta & xmpObj,
 }	// XMPIterator for XMPMeta objects
 
 // -------------------------------------------------------------------------------------------------
-// XMPIterator
-// -----------
-//
-// Constructor for iterations over global tables such as registered namespaces or aliases.
-
-XMPIterator::XMPIterator ( XMP_StringPtr  /*schemaNS*/,
-                             XMP_StringPtr  /*propName*/,
-						   XMP_OptionBits options ) : clientRefs(0), info(IterInfo(options,0))
-{
-	XMP_Throw("Unimplemented XMPIterator constructor for global tables", kXMPErr_Unimplemented);
-
-}	// XMPIterator for global tables
-
-// -------------------------------------------------------------------------------------------------
 // ~XMPIterator
 // -----------
 

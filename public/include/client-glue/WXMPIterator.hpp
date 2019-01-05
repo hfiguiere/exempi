@@ -40,12 +40,6 @@ XMP_PUBLIC WXMPIterator_PropCTor_1 ( XMPMetaRef     xmpRef,
                           WXMP_Result *  wResult );
 
 extern void
-XMP_PUBLIC WXMPIterator_TableCTor_1 ( XMP_StringPtr  schemaNS,
-                           XMP_StringPtr  propName,
-                           XMP_OptionBits options,
-                           WXMP_Result *  wResult );
-
-extern void
 XMP_PUBLIC WXMPIterator_IncrementRefCount_1 ( XMPIteratorRef iterRef );
 
 extern void

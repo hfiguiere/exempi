@@ -102,10 +102,6 @@ public:
 				  XMP_StringPtr	  propName,
 				  XMP_OptionBits  options );
 
-	XMPIterator	( XMP_StringPtr	 schemaNS,	// Construct a table iterator.
-				  XMP_StringPtr	 propName,
-				  XMP_OptionBits options );
-
 	virtual ~XMPIterator() RELEASE_NO_THROW;
 
 	virtual bool

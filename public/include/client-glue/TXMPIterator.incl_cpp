@@ -73,12 +73,6 @@
 
 // -------------------------------------------------------------------------------------------------
 
-#define TableIterCTor(schemaNS,propName,options)													\
-	WrapCheckIterRef ( newRef, zXMPIterator_TableCTor_1 ( schemaNS, propName, options ) );	\
-	this->iterRef = newRef
-
-// -------------------------------------------------------------------------------------------------
-
 XMP_MethodIntro(TXMPIterator,void)::
 SetClientString ( void * clientPtr, XMP_StringPtr valuePtr, XMP_StringLen valueLen )
 {
@@ -170,20 +164,6 @@ TXMPIterator ( const TXMPMeta<tStringObj> & xmpObj,
 	#if XMP_TraceCTorDTor
 		XIPeek* xiPtr = (XIPeek*)this->iterRef;
 		printf ( "Construct tree TXMPIterator @ %.8X, ref = %.8X, count = %d\n", this, xiPtr, xiPtr->clientRefs );
-	#endif
-}
-
-// -------------------------------------------------------------------------------------------------
-
-XMP_CTorDTorIntro(TXMPIterator)::
-TXMPIterator ( XMP_StringPtr  schemaNS,
-			   XMP_StringPtr  propName,
-			   XMP_OptionBits options ) : iterRef(0)
-{
-	TableIterCTor ( schemaNS, propName, options );
-	#if XMP_TraceCTorDTor
-		XIPeek* xiPtr = (XIPeek*)this->iterRef;
-		printf ( "Construct table TXMPIterator @ %.8X, ref = %.8X, count = %d\n", this, xiPtr, xiPtr->clientRefs );
 	#endif
 }
 

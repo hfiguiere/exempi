@@ -60,27 +60,6 @@ WXMPIterator_PropCTor_1 ( XMPMetaRef     xmpRef,
 // -------------------------------------------------------------------------------------------------
 
 void
-WXMPIterator_TableCTor_1 ( XMP_StringPtr  schemaNS,
-                           XMP_StringPtr  propName,
-                           XMP_OptionBits options,
-                           WXMP_Result *  wResult )
-{
-    XMP_ENTER_Static ( "WXMPIterator_TableCTor_1" )	// No lib object yet, use the static entry.
-
-		if ( schemaNS == 0 ) schemaNS = "";
-		if ( propName == 0 ) propName = "";
-
-		XMPIterator * iter = new XMPIterator ( schemaNS, propName, options );
-		++iter->clientRefs;
-		XMP_Assert ( iter->clientRefs == 1 );
-		wResult->ptrResult = XMPIteratorRef ( iter );
-
-    XMP_EXIT
-}
-
-// -------------------------------------------------------------------------------------------------
-
-void
 WXMPIterator_IncrementRefCount_1 ( XMPIteratorRef xmpObjRef )
 {
 	WXMP_Result * wResult = &void_wResult;	// ! Needed to "fool" the EnterWrapper macro.
