@@ -411,10 +411,8 @@ public:
 private:
   
 	// ! These are hidden on purpose:
-	XMPMeta ( const XMPMeta & /* original */ ) : clientRefs(0), tree(XMP_Node(0,"",0)), xmlParser(0)
-		{ XMP_Throw ( "Call to hidden constructor", kXMPErr_InternalFailure ); };
-	void operator= ( const XMPMeta & /* rhs */ )  
-		{ XMP_Throw ( "Call to hidden operator=", kXMPErr_InternalFailure ); };
+	XMPMeta ( const XMPMeta & /* original */ ) = delete;
+	void operator= ( const XMPMeta & /* rhs */ ) = delete;
 
 	// Special support routines for parsing, here to be able to access the errorCallback.
 	void ProcessXMLTree ( XMP_OptionBits options );

@@ -111,9 +111,7 @@ namespace ID3_Support {
 		ID3v2Frame();
 		ID3v2Frame ( XMP_Uns32 id );
 		
-		ID3v2Frame ( const ID3v2Frame& /*orig*/ ) {
-			XMP_Throw ( "ID3v2Frame copy constructor not implemented", kXMPErr_InternalFailure );
-		}
+		ID3v2Frame ( const ID3v2Frame& /*orig*/ ) = delete;
 		
 		~ID3v2Frame() { this->release(); }
 

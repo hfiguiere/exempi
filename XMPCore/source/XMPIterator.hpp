@@ -130,13 +130,9 @@ public:
 private:
 
 	// ! These are hidden on purpose:
-	XMPIterator() : clientRefs(0)
-		{ XMP_Throw ( "Call to hidden constructor", kXMPErr_InternalFailure ); };
-	XMPIterator ( const XMPIterator & /* original */ ) : clientRefs(0)
-		{ XMP_Throw ( "Call to hidden constructor", kXMPErr_InternalFailure ); };
-	void operator= ( const XMPIterator & /* rhs */ )
-		{ XMP_Throw ( "Call to hidden operator=", kXMPErr_InternalFailure ); };
-
+	XMPIterator() = delete;
+	XMPIterator ( const XMPIterator & /* original */ ) = delete;
+	void operator= ( const XMPIterator & /* rhs */ ) = delete;
 };
 
 // =================================================================================================

@@ -156,7 +156,7 @@ class ChunkController
 		 * Hidden on purpose. Must not be used!
 		 * A Controller must have a behavior!
 		 */
-		ChunkController() { XMP_Throw("Ctor hidden", kXMPErr_InternalFailure); }
+		ChunkController() = delete;
 
 		/**
 		 * The function Parses all the sibling chunks. For every chunk it either caches the chunk,
