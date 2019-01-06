@@ -1,4 +1,4 @@
-2.5.0
+2.5.0 - 2019/01/06
 
 - Upgrade XMPCore to Adobe XMP SDK CC 2016.07
   - Support for iOS in XMPFiles
@@ -17,19 +17,21 @@
     array instead of simple property.
   - Lot of bug fixes in XMPFiles and XMPCore.
 - Removed Exempi provided support for GIF in favour of Adobe's.
+
 - New: API NS_XML constant
-- Bug #5: Restrict the exported symbols.
+
+- Bug #5: Restrict the exported symbols. Only the symbols marked with API_EXPORT
+  are exported by the shared library as to not allow another library to import the XMP
+  SDK symbols.
   https://gitlab.freedesktop.org/libopenraw/exempi/issues/5
+- Bug #105580: Access memory aligned on ARM.
+  https://bugs.freedesktop.org/show_bug.cgi?id=105580
 
 Internal:
 
 - Added tests for Adobe SDK.
 - Fixed warnings and other issues and Adobe SDK.
 - Compile with much more warnings enabled.
-
-2.4.6
-
-- Bug #105580: Access memory aligned on ARM.
 
 2.4.5 - 2018/03/07
 
