@@ -67,6 +67,8 @@ int test_main(int argc, char* argv[])
   buffer = (char*)malloc(len + 1);
   size_t rlen = fread(buffer, 1, len, f);
 
+  fclose(f);
+
   BOOST_CHECK(rlen == len);
   BOOST_CHECK(len != 0);
 
