@@ -317,7 +317,11 @@ void MP3_MetaHandler::ProcessXMP()
 			//get the frame ID to look for
 			XMP_Uns32 logicalID = GetUns32BE ( reconProps[r].mainID );
 			XMP_Uns32 storedID = logicalID;
-			if ( this->majorVersion == 2 ) storedID = GetUns32BE ( reconProps[r].v22ID );
+			// if the v22ID is empty, skip this.
+                        // See https://gitlab.freedesktop.org/libopenraw/exempi/issues/14
+			if ( this->majorVersion == 2 && reconProps[r].v22ID[0] ) {
+				storedID = GetUns32BE ( reconProps[r].v22ID );
+			}
 
 			// deal with each such frame in the frameVector
 			// (since there might be several, some of them not applicable, i.e. COMM)
