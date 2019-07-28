@@ -120,10 +120,16 @@ VP8XChunk::VP8XChunk(Container* parent_)
     this->data.assign(this->size, 0);
     XMP_Uns8* bitstream =
         (XMP_Uns8*)parent->chunks[WEBP_CHUNK_IMAGE][0]->data.data();
+    XMP_Uns32 width = 0;
+    XMP_Uns32 height = 0;
     // See bug https://bugs.freedesktop.org/show_bug.cgi?id=105247
     // bitstream could be NULL.
-    XMP_Uns32 width = bitstream ? ((bitstream[7] << 8) | bitstream[6]) & 0x3fff : 0;
-    XMP_Uns32 height = bitstream ? ((bitstream[9] << 8) | bitstream[8]) & 0x3fff : 0;
+    // See bug https://gitlab.freedesktop.org/libopenraw/exempi/issues/12
+    // image chunk data could be too short (must be 10)
+    if (parent->chunks[WEBP_CHUNK_IMAGE][0]->data.size() >= 10 && bitstream) {
+      width = ((bitstream[7] << 8) | bitstream[6]) & 0x3fff;
+      height = ((bitstream[9] << 8) | bitstream[8]) & 0x3fff;
+    }
     this->width(width);
     this->height(height);
     parent_->vp8x = this;
