@@ -1,6 +1,8 @@
 2.5.1
 
-- Bug #12: Invalid WebP cause a memory overflow.
+- Bug #9: [CVE-2018-12648] Fix null-pointer-dereference in WEBP.
+  https://gitlab.freedesktop.org/libopenraw/exempi/issues/9
+- Bug #12: Invalid WEBP cause a memory overflow.
   https://gitlab.freedesktop.org/libopenraw/exempi/issues/12
 - Bug #14: Invalid MP3 cause a memory overflow.
   https://gitlab.freedesktop.org/libopenraw/exempi/issues/14
