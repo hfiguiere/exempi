@@ -1,6 +1,9 @@
 2.5.1
 
-
+- Bug #12: Invalid WebP cause a memory overflow.
+  https://gitlab.freedesktop.org/libopenraw/exempi/issues/12
+- Bug #14: Invalid MP3 cause a memory overflow.
+  https://gitlab.freedesktop.org/libopenraw/exempi/issues/14
 
 2.5.0 - 2019/01/06
 
