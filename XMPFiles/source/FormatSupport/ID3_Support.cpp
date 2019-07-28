@@ -682,6 +682,10 @@ bool ID3v2Frame::getFrameValue ( XMP_Uns8 /*majorVersion*/, XMP_Uns32 logicalID,
 			std::string tmp ( this->content, this->contentSize );
 			bool bigEndian = true;	// assume for now (if no BOM follows)
 
+			if (pos + 2 > this->contentSize) {
+				// No enough for the string
+				break;
+			}
 			if ( GetUns16BE ( &this->content[pos] ) == 0xFEFF ) {
 				pos += 2;
 				bigEndian = true;
@@ -699,6 +703,10 @@ bool ID3v2Frame::getFrameValue ( XMP_Uns8 /*majorVersion*/, XMP_Uns32 logicalID,
 		{
 			if ( commMode && (! advancePastCOMMDescriptor ( pos )) ) return false; // not a frame of interest!
 		
+			if (pos + 4 > this->contentSize) {
+				// No enough for the string
+				break;
+			}
 			if ( (GetUns32BE ( &this->content[pos]) & 0xFFFFFF00 ) == 0xEFBBBF00 ) {
 				pos += 3;	// swallow any BOM, just in case
 			}
