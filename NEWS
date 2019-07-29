@@ -1,9 +1,11 @@
-2.5.1
+2.5.1 - 2019/07/28
 
 - Bug #9: [CVE-2018-12648] Fix null-pointer-dereference in WEBP.
   https://gitlab.freedesktop.org/libopenraw/exempi/issues/9
 - Bug #12: Invalid WEBP cause a memory overflow.
   https://gitlab.freedesktop.org/libopenraw/exempi/issues/12
+- Bug #13: Fix a buffer a overflow in ID3 support on invalid MP3.
+  https://gitlab.freedesktop.org/libopenraw/exempi/issues/13
 - Bug #14: Invalid MP3 cause a memory overflow.
   https://gitlab.freedesktop.org/libopenraw/exempi/issues/14
 
