@@ -1,3 +1,5 @@
+2.5.2 -
+
 2.5.1 - 2019/07/28
 
 - Bug #9: [CVE-2018-12648] Fix null-pointer-dereference in WEBP.
