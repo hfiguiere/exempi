@@ -10,8 +10,8 @@ if [ -z $srcdir ] ; then
 fi
 
 SAMPLES="BlueSquare.ai  BlueSquare.eps BlueSquare.gif  BlueSquare.jpg  BlueSquare.mp3  BlueSquare.png  BlueSquare.tif BlueSquare.avi  BlueSquare.indd BlueSquare.pdf  BlueSquare.psd  BlueSquare.wav"
-SAMPLES_DIR=$srcdir/../../samples/testfiles
-DUMPMAINXMP_PROG=../../samples/source/dumpmainxmp
+SAMPLES_DIR=$srcdir/../samples/testfiles
+DUMPMAINXMP_PROG=../samples/source/dumpmainxmp
 
 if [ ! -x $DUMPMAINXMP_PROG ] ; then
     echo "$DUMPMAINXMP_PROG not executable."
