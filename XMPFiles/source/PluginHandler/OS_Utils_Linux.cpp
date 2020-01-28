@@ -28,7 +28,7 @@ typedef std::map<OS_ModuleRef, std::string>			ResourceFileToPathMap;
 static ResourceFileToPathMap						sMapResourceFileToPath;
 static XMP_ReadWriteLock							sMapModuleRWLock;
 
-typedef std::tr1::shared_ptr<int>					FilePtr;
+typedef std::shared_ptr<int>						FilePtr;
 
 static std::string GetModulePath( OS_ModuleRef inOSModule );
 /** ************************************************************************************************************************

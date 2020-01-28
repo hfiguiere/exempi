@@ -19,7 +19,7 @@ typedef HMODULE OS_ModuleRef;
 #include <memory>
 typedef CFBundleRef OS_ModuleRef;
 #elif XMP_UNIXBuild
-#include <tr1/memory>
+#include <memory>
 typedef void* OS_ModuleRef;
 #else
 #error	Unsupported operating system
