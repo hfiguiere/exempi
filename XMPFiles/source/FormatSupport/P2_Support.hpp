@@ -79,7 +79,7 @@ private:
 }; // class P2_Clip
 struct P2SpannedClip_Order
 {
-	bool operator()( P2_Clip* lhs,  P2_Clip* rhs)   
+	bool operator()( P2_Clip* lhs,  P2_Clip* rhs) const
 	{  
 		return lhs->GetOffsetInShot() < rhs->GetOffsetInShot();
 	}
