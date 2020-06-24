@@ -30,6 +30,7 @@ var dir_8223d5ea7844a33492dce354418ea45e =
     [ "IMetadata.h", "IMetadata_8h.html", [
       [ "IMetadata_v1", "classAdobeXMPCore_1_1IMetadata__v1.html", "classAdobeXMPCore_1_1IMetadata__v1" ]
     ] ],
+    [ "IMetadataConverterUtils.h", "IMetadataConverterUtils_8h.html", "IMetadataConverterUtils_8h" ],
     [ "INameSpacePrefixMap.h", "INameSpacePrefixMap_8h.html", [
       [ "INameSpacePrefixMap_v1", "classAdobeXMPCore_1_1INameSpacePrefixMap__v1.html", "classAdobeXMPCore_1_1INameSpacePrefixMap__v1" ]
     ] ],

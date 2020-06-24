@@ -6,12 +6,14 @@
 #endif
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2002 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2002 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 // =================================================================================================
@@ -207,7 +209,6 @@ public:
     ///   \li \c #kXMPFiles_OpenUsePacketScanning
     ///   \li \c #kXMPFiles_OpenLimitedScanning
     ///
-    /// @return The new \c TXMPFiles object.
 
     TXMPFiles ( XMP_StringPtr  filePath,
                 XMP_FileFormat format = kXMP_UnknownFile,
@@ -231,7 +232,6 @@ public:
     ///
     /// @param original The existing \c TXMPFiles object to copy.
     ///
-    /// @return The new \c TXMPFiles object.
 
     TXMPFiles ( const TXMPFiles<tStringObj> & original );
 
@@ -254,7 +254,7 @@ public:
     /// @param xmpFilesObj The underlying reference object, obtained from some other XMP object
     /// with \c TXMPFiles::GetInternalRef().
     ///
-    /// @return The new object.
+
 
     TXMPFiles ( XMPFilesRef xmpFilesObj );
 

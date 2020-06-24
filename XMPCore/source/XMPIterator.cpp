@@ -1,18 +1,21 @@
 // =================================================================================================
-// Copyright 2003 Adobe Systems Incorporated
+// Copyright 2003 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include!
-#include "XMPCore/source/XMPCore_Impl.hpp"
-
-#include "XMPCore/source/XMPIterator.hpp"
 
 #include <string>
 #include <stdio.h>	// For snprintf.
+
+#include "XMPCore/source/XMPCore_Impl.hpp"
+
+#include "XMPCore/source/XMPIterator.hpp"
 
 #if XMP_WinBuild
 	#pragma warning ( disable : 4702 )	// unreachable code
@@ -114,7 +117,7 @@ AddNodeOffspring ( IterInfo & info, IterNode & iterParent, const XMP_Node * xmpP
 				currPath += xmpChild->name;
 			} else {
 				char buffer [32];	// AUDIT: Using sizeof(buffer) below for snprintf length is safe.
-				snprintf ( buffer, sizeof(buffer), "[%lu]", childNum+1 );	// ! XPath indices are one-based.
+				snprintf ( buffer, sizeof(buffer), "[%lu]", (unsigned long)childNum+1 );	// ! XPath indices are one-based.
 				currPath += buffer;
 			}
 			iterParent.children.push_back ( IterNode ( xmpChild->options, currPath, leafOffset ) );

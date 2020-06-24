@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2006 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -699,9 +701,9 @@ XMP_Uns32 TIFF_FileWriter::ProcessMemoryIFD ( XMP_Uns32 ifdOffset, XMP_Uns8 ifd 
 		if ( (tagType < kTIFF_ByteType) || (tagType > kTIFF_LastType) ) continue;	// Bad type, skip this tag.
 
 		XMP_Uns16 tagID    = this->GetUns16 ( &rawTag->id );
-		XMP_Uns32 tagCount = this->GetUns32 ( &rawTag->count );
+		XMP_Uns32 tagCnt = this->GetUns32 ( &rawTag->count );
 
-		InternalTagMap::value_type mapValue ( tagID, InternalTagInfo ( tagID, tagType, tagCount, kIsMemoryBased ) );
+		InternalTagMap::value_type mapValue ( tagID, InternalTagInfo ( tagID, tagType, tagCnt, kIsMemoryBased ) );
 		InternalTagMap::iterator newPos = ifdInfo.tagMap.insert ( ifdInfo.tagMap.end(), mapValue );
 		InternalTagInfo& mapTag = newPos->second;
 
@@ -894,9 +896,9 @@ XMP_Uns32 TIFF_FileWriter::ProcessFileIFD ( XMP_Uns8 ifd, XMP_Uns32 ifdOffset, X
 		if ( (tagType < kTIFF_ByteType) || (tagType > kTIFF_LastType) ) continue;	// Bad type, skip this tag.
 
 		XMP_Uns16 tagID    = this->GetUns16 ( &rawTag->id );
-		XMP_Uns32 tagCount = this->GetUns32 ( &rawTag->count );
+		XMP_Uns32 tagCnt = this->GetUns32 ( &rawTag->count );
 
-		InternalTagMap::value_type mapValue ( tagID, InternalTagInfo ( tagID, tagType, tagCount, kIsFileBased ) );
+		InternalTagMap::value_type mapValue ( tagID, InternalTagInfo ( tagID, tagType, tagCnt, kIsFileBased ) );
 		InternalTagMap::iterator newPos = ifdInfo.tagMap.insert ( ifdInfo.tagMap.end(), mapValue );
 		InternalTagInfo& mapTag = newPos->second;
 
@@ -1541,7 +1543,7 @@ void TIFF_FileWriter::UpdateMemByAppend ( XMP_Uns8** newStream_out, XMP_Uns32* n
 		}
 
 		if ( appendedIFDs[kTIFF_TNailIFD] ) {
-			size_t primaryTagCount = this->containedIFDs[kTIFF_PrimaryIFD].tagMap.size();
+			XMP_Uns32 primaryTagCount = (XMP_Uns32)(this->containedIFDs[kTIFF_PrimaryIFD].tagMap.size());
 			if ( primaryTagCount > 0 ) {
 				XMP_Uns32 tnailLinkOffset = newIFDOffsets[kTIFF_PrimaryIFD] + 2 + (12 * primaryTagCount);
 				this->PutUns32 ( newIFDOffsets[kTIFF_TNailIFD], (newStream + tnailLinkOffset) );

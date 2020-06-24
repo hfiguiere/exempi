@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2010 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2010 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -111,21 +113,21 @@ const ChunkIdentifier AIFF_MetaHandler::kAIFFXMP[2] = { { kChunk_FORM, kType_AIF
 // FORM:AIFC/APPL:XMP
 const ChunkIdentifier AIFF_MetaHandler::kAIFCXMP[2] = { { kChunk_FORM, kType_AIFC }, { kChunk_APPL, kType_XMP } };
 // FORM:AIFF/NAME
-const ChunkIdentifier AIFF_MetaHandler::kAIFFName[2] = { { kChunk_FORM, kType_AIFF }, { kChunk_NAME, kType_NONE } };
+const ChunkIdentifier AIFF_MetaHandler::kAIFFName[2] = { { static_cast<XMP_Uns32>(kChunk_FORM), static_cast<XMP_Uns32>(kType_AIFF) }, { static_cast<XMP_Uns32>(kChunk_NAME), static_cast<XMP_Uns32>(kType_NONE) } };
 // FORM:AIFC/NAME
-const ChunkIdentifier AIFF_MetaHandler::kAIFCName[2] = { { kChunk_FORM, kType_AIFC }, { kChunk_NAME, kType_NONE } };
+const ChunkIdentifier AIFF_MetaHandler::kAIFCName[2] = { { static_cast<XMP_Uns32>(kChunk_FORM), static_cast<XMP_Uns32>(kType_AIFC) }, { static_cast<XMP_Uns32>(kChunk_NAME), static_cast<XMP_Uns32>(kType_NONE) } };
 // FORM:AIFF/AUTH
-const ChunkIdentifier AIFF_MetaHandler::kAIFFAuth[2] = { { kChunk_FORM, kType_AIFF }, { kChunk_AUTH, kType_NONE } };
+const ChunkIdentifier AIFF_MetaHandler::kAIFFAuth[2] = { { static_cast<XMP_Uns32>(kChunk_FORM), static_cast<XMP_Uns32>(kType_AIFF) }, { static_cast<XMP_Uns32>(kChunk_AUTH), static_cast<XMP_Uns32>(kType_NONE) } };
 // FORM:AIFC/AUTH
-const ChunkIdentifier AIFF_MetaHandler::kAIFCAuth[2] = { { kChunk_FORM, kType_AIFC }, { kChunk_AUTH, kType_NONE } };
+const ChunkIdentifier AIFF_MetaHandler::kAIFCAuth[2] = { { static_cast<XMP_Uns32>(kChunk_FORM), static_cast<XMP_Uns32>(kType_AIFC) }, { static_cast<XMP_Uns32>(kChunk_AUTH), static_cast<XMP_Uns32>(kType_NONE) } };
 // FORM:AIFF/(c)
-const ChunkIdentifier AIFF_MetaHandler::kAIFFCpr[2] = { { kChunk_FORM, kType_AIFF }, { kChunk_CPR, kType_NONE } };
+const ChunkIdentifier AIFF_MetaHandler::kAIFFCpr[2] = { { static_cast<XMP_Uns32>(kChunk_FORM), static_cast<XMP_Uns32>(kType_AIFF) }, { static_cast<XMP_Uns32>(kChunk_CPR), static_cast<XMP_Uns32>(kType_NONE) } };
 // FORM:AIFC/(c)
-const ChunkIdentifier AIFF_MetaHandler::kAIFCCpr[2] = { { kChunk_FORM, kType_AIFC }, { kChunk_CPR, kType_NONE } };
+const ChunkIdentifier AIFF_MetaHandler::kAIFCCpr[2] = { { static_cast<XMP_Uns32>(kChunk_FORM), static_cast<XMP_Uns32>(kType_AIFC) }, { static_cast<XMP_Uns32>(kChunk_CPR), static_cast<XMP_Uns32>(kType_NONE) } };
 // FORM:AIFF/ANNO
-const ChunkIdentifier AIFF_MetaHandler::kAIFFAnno[2] = { { kChunk_FORM, kType_AIFF }, { kChunk_ANNO, kType_NONE } };
+const ChunkIdentifier AIFF_MetaHandler::kAIFFAnno[2] = { { static_cast<XMP_Uns32>(kChunk_FORM), static_cast<XMP_Uns32>(kType_AIFF) }, { static_cast<XMP_Uns32>(kChunk_ANNO), static_cast<XMP_Uns32>(kType_NONE) } };
 // FORM:AIFC/ANNO
-const ChunkIdentifier AIFF_MetaHandler::kAIFCAnno[2] = { { kChunk_FORM, kType_AIFC }, { kChunk_ANNO, kType_NONE } };
+const ChunkIdentifier AIFF_MetaHandler::kAIFCAnno[2] = { { static_cast<XMP_Uns32>(kChunk_FORM), static_cast<XMP_Uns32>(kType_AIFC) }, { static_cast<XMP_Uns32>(kChunk_ANNO), static_cast<XMP_Uns32>(kType_NONE) } };
 
 // =================================================================================================
 // AIFF_MetaHandler::AIFF_MetaHandler

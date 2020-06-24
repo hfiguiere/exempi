@@ -9,7 +9,12 @@
 
 # ==============================================================================
 # define minimum cmake version
-cmake_minimum_required(VERSION 3.5.2)
+# For Android always build with make 3.6
+if(ANDROID)
+	cmake_minimum_required(VERSION 3.5.2)
+else(ANDROID)
+	cmake_minimum_required(VERSION 3.15.5)
+endif(ANDROID)
 
 # ==============================================================================
 # Shared config for XMP Samples
@@ -34,7 +39,11 @@ if(UNIX)
 	add_definitions(-DMAC_ENV=1)	
 	if(CMAKE_CL_64)
 		set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architectures for OSX" FORCE)
-		set(PLATFORM_FOLDER "macintosh/intel_64")
+		if(CMAKE_LIBCPP)
+			set(PLATFORM_FOLDER "macintosh/intel_64_libcpp")
+		else()
+			set(PLATFORM_FOLDER "macintosh/intel_64")
+		endif()	
 		add_definitions(-DXMP_64=1)
 	else(CMAKE_CL_64)
 		set(CMAKE_OSX_ARCHITECTURES "i386" CACHE STRING "Build architectures for OSX" FORCE)
@@ -94,12 +103,12 @@ else(UNIX)
   
 	# Windows -------------------------------------------
 	if(STATIC)
-		set(BUILD_FOLDER "vc14")	
+		set(BUILD_FOLDER "vc15")
 		set(XMPCORE_LIB "XMPCore")
 		set(XMPFILES_LIB "XMPFiles")
 		set(LIB_EXT ".lib")
 	else(STATIC)
-		set(BUILD_FOLDER "vc14")	
+		set(BUILD_FOLDER "vc15")
 		set(XMPCORE_LIB "XMPCore")
 		set(XMPFILES_LIB "XMPFiles")
 		set(LIB_EXT ".lib")

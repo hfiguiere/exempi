@@ -1,9 +1,11 @@
 // =================================================================================================
-// Copyright 2004 Adobe Systems Incorporated
+// Copyright 2004 Adobe
 // All Rights Reserved.
 //
 // NOTICE:	Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include!
@@ -40,6 +42,7 @@ extern "C" {
 /* class static */ void
 WXMPMeta_GetVersionInfo_1 ( XMP_VersionInfo * info )
 {
+	WXMP_Result void_wResult;
 	WXMP_Result * wResult = &void_wResult;	// ! Needed to "fool" the EnterWrapper macro.
 	XMP_ENTER_NoLock ( "WXMPMeta_GetVersionInfo_1" )
 
@@ -64,6 +67,7 @@ WXMPMeta_Initialize_1 ( WXMP_Result * wResult )
 /* class static */ void
 WXMPMeta_Terminate_1()
 {
+	WXMP_Result void_wResult;
 	WXMP_Result * wResult = &void_wResult;	// ! Needed to "fool" the EnterWrapper macro.
 	XMP_ENTER_NoLock ( "WXMPMeta_Terminate_1" )
 
@@ -106,6 +110,7 @@ WXMPMeta_CTor_1 ( WXMP_Result * wResult )
 void
 WXMPMeta_IncrementRefCount_1 ( XMPMetaRef xmpObjRef )
 {
+	WXMP_Result void_wResult;
 	WXMP_Result * wResult = &void_wResult;	// ! Needed to "fool" the EnterWrapper macro.
 	XMP_ENTER_ObjWrite ( XMPMeta, "WXMPMeta_IncrementRefCount_1" )
 
@@ -120,6 +125,7 @@ WXMPMeta_IncrementRefCount_1 ( XMPMetaRef xmpObjRef )
 void
 WXMPMeta_DecrementRefCount_1 ( XMPMetaRef xmpObjRef )
 {
+	WXMP_Result void_wResult;
 	WXMP_Result * wResult = &void_wResult;	// ! Needed to "fool" the EnterWrapper macro.
 	XMP_ENTER_ObjWrite ( XMPMeta, "WXMPMeta_DecrementRefCount_1" )
 
@@ -283,6 +289,8 @@ WXMPMeta_GetProperty_1 ( XMPMetaRef		  xmpObjRef,
 		
 		XMP_StringPtr valuePtr = 0;
 		XMP_StringLen valueSize = 0;
+
+		XMP_OptionBits voidOptionBits = 0;
 		if ( options == 0 ) options = &voidOptionBits;
 
 		bool found = thiz.GetProperty ( schemaNS, propName, &valuePtr, &valueSize, options );
@@ -312,6 +320,8 @@ WXMPMeta_GetArrayItem_1 ( XMPMetaRef	   xmpObjRef,
 		
 		XMP_StringPtr valuePtr = 0;
 		XMP_StringLen valueSize = 0;
+
+		XMP_OptionBits voidOptionBits = 0;
 		if ( options == 0 ) options = &voidOptionBits;
 
 		bool found = thiz.GetArrayItem ( schemaNS, arrayName, itemIndex, &valuePtr, &valueSize, options );
@@ -344,6 +354,8 @@ WXMPMeta_GetStructField_1 ( XMPMetaRef		 xmpObjRef,
 		
 		XMP_StringPtr valuePtr = 0;
 		XMP_StringLen valueSize = 0;
+
+		XMP_OptionBits voidOptionBits = 0;
 		if ( options == 0 ) options = &voidOptionBits;
 
 		bool found = thiz.GetStructField ( schemaNS, structName, fieldNS, fieldName, &valuePtr, &valueSize, options );
@@ -376,6 +388,8 @@ WXMPMeta_GetQualifier_1 ( XMPMetaRef	   xmpObjRef,
 		
 		XMP_StringPtr valuePtr = 0;
 		XMP_StringLen valueSize = 0;
+
+		XMP_OptionBits voidOptionBits = 0;
 		if ( options == 0 ) options = &voidOptionBits;
 
 		bool found = thiz.GetQualifier ( schemaNS, propName, qualNS, qualName, &valuePtr, &valueSize, options );
@@ -687,6 +701,8 @@ WXMPMeta_GetLocalizedText_1 ( XMPMetaRef	   xmpObjRef,
 		XMP_StringLen langSize = 0;
 		XMP_StringPtr valuePtr = 0;
 		XMP_StringLen valueSize = 0;
+
+		XMP_OptionBits voidOptionBits = 0;
 		if ( options == 0 ) options = &voidOptionBits;
 
 		bool found = thiz.GetLocalizedText ( schemaNS, arrayName, genericLang, specificLang,
@@ -762,6 +778,9 @@ WXMPMeta_GetProperty_Bool_1 ( XMPMetaRef	   xmpObjRef,
 		if ( (schemaNS == 0) || (*schemaNS == 0) ) XMP_Throw ( "Empty schema namespace URI", kXMPErr_BadSchema );
 		if ( (propName == 0) || (*propName == 0) ) XMP_Throw ( "Empty property name", kXMPErr_BadXPath );
 
+		XMP_Bool voidByte = 0; //in case prop value is NULL, inserting dummy object address here, so inner calls does not need to check for NULL.
+		XMP_OptionBits voidOptionBits = 0;
+
 		if ( propValue == 0 ) propValue = &voidByte;
 		if ( options == 0 ) options = &voidOptionBits;
 
@@ -788,6 +807,9 @@ WXMPMeta_GetProperty_Int_1 ( XMPMetaRef		  xmpObjRef,
 		if ( (schemaNS == 0) || (*schemaNS == 0) ) XMP_Throw ( "Empty schema namespace URI", kXMPErr_BadSchema );
 		if ( (propName == 0) || (*propName == 0) ) XMP_Throw ( "Empty property name", kXMPErr_BadXPath );
 
+		XMP_Int32 voidInt32 = 0; //in case prop value is NULL, inserting dummy object address here, so inner calls does not need to check for NULL.
+		XMP_OptionBits voidOptionBits = 0;
+
 		if ( propValue == 0 ) propValue = &voidInt32;
 		if ( options == 0 ) options = &voidOptionBits;
 
@@ -811,6 +833,9 @@ WXMPMeta_GetProperty_Int64_1 ( XMPMetaRef		xmpObjRef,
 		
 		if ( (schemaNS == 0) || (*schemaNS == 0) ) XMP_Throw ( "Empty schema namespace URI", kXMPErr_BadSchema );
 		if ( (propName == 0) || (*propName == 0) ) XMP_Throw ( "Empty property name", kXMPErr_BadXPath );
+
+		XMP_Int64 voidInt64 = 0; //in case prop value is NULL, inserting dummy object address here, so inner calls does not need to check for NULL.
+		XMP_OptionBits voidOptionBits = 0;
 
 		if ( propValue == 0 ) propValue = &voidInt64;
 		if ( options == 0 ) options = &voidOptionBits;
@@ -836,6 +861,9 @@ WXMPMeta_GetProperty_Float_1 ( XMPMetaRef		xmpObjRef,
 		if ( (schemaNS == 0) || (*schemaNS == 0) ) XMP_Throw ( "Empty schema namespace URI", kXMPErr_BadSchema );
 		if ( (propName == 0) || (*propName == 0) ) XMP_Throw ( "Empty property name", kXMPErr_BadXPath );
 
+		double voidDouble = 0.0; //in case prop value is NULL, inserting dummy object address here, so inner calls does not need to check for NULL.
+		XMP_OptionBits voidOptionBits = 0;
+
 		if ( propValue == 0 ) propValue = &voidDouble;
 		if ( options == 0 ) options = &voidOptionBits;
 
@@ -859,6 +887,9 @@ WXMPMeta_GetProperty_Date_1 ( XMPMetaRef	   xmpObjRef,
 		
 		if ( (schemaNS == 0) || (*schemaNS == 0) ) XMP_Throw ( "Empty schema namespace URI", kXMPErr_BadSchema );
 		if ( (propName == 0) || (*propName == 0) ) XMP_Throw ( "Empty property name", kXMPErr_BadXPath );
+
+		XMP_DateTime voidDateTime; //in case prop value is NULL, inserting dummy object address here, so inner calls does not need to check for NULL.
+		XMP_OptionBits voidOptionBits = 0;
 
 		if ( propValue == 0 ) propValue = &voidDateTime;
 		if ( options == 0 ) options = &voidOptionBits;
@@ -1246,6 +1277,7 @@ WXMPMeta_ResetErrorCallbackLimit_1 ( XMPMetaRef    xmpObjRef,
 	XMP_EXIT
 }
 
+
 void WXMPMeta_Use_CPP_DOM_APIs_1(XMP_Bool useNewCoreAPIs,
 								 WXMP_Result * wResult )
 {
@@ -1257,6 +1289,7 @@ void WXMPMeta_Use_CPP_DOM_APIs_1(XMP_Bool useNewCoreAPIs,
 
 }
 // =================================================================================================
+
 #if __cplusplus
 } /* extern "C" */
 #endif

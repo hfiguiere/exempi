@@ -2,12 +2,14 @@
 #define __iXMLMetadata_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -31,26 +33,29 @@ namespace IFF_RIFF {
 
 		class TrackListInfo {
 		public:
-			TrackListInfo() : mChannelIndex( 0 ) {}
+			TrackListInfo() {}
 
-			TrackListInfo( XMP_Uns64 channelIndex, const std::string & name, const std::string & function )
-				: mChannelIndex( channelIndex )
-				, mName( name )
-				, mFunction( function ) {}
+			TrackListInfo(const std::string & channelIndex, const std::string & name, const std::string & function, const std::string & interleaveIndex)
+				: mChannelIndex(channelIndex)
+				, mName(name)
+				, mFunction(function)
+				, mInterleaveIndex(interleaveIndex) {}
 
-			bool operator == ( const TrackListInfo & other ) const {
-				return mChannelIndex == other.mChannelIndex &&
-					mName.compare( other.mName ) == 0 &&
-					mFunction.compare( other.mFunction ) == 0;
+			bool operator == (const TrackListInfo & other) const {
+				return mChannelIndex.compare(other.mChannelIndex) == 0 &&
+					mName.compare(other.mName) == 0 &&
+					mFunction.compare(other.mFunction) == 0 &&
+					mInterleaveIndex.compare(other.mInterleaveIndex) == 0;
 			}
 
 			bool operator != ( const TrackListInfo & other ) const {
 				return !( this->operator==( other ) );
 			}
 
-			XMP_Uns64			mChannelIndex;
+			std::string			mChannelIndex;
 			std::string			mName;
 			std::string			mFunction;
+			std::string			mInterleaveIndex;
 		};
 
 		enum
@@ -80,6 +85,7 @@ namespace IFF_RIFF {
 			kTimeStampSampleSinceMidnightLow,	// XMP_Uns32
 			kTimeStampSampleSinceMidnightHigh,	// XMP_Uns32
 			kTrackList,							// std::vector< TrackListInfo >
+			kNativeTrackCount,
 			kLastEntry
 		};
 

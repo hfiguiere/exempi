@@ -1,9 +1,11 @@
 // =================================================================================================
-// Copyright 2008 Adobe Systems Incorporated
+// Copyright 2008 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 /**
@@ -148,8 +150,8 @@ void displayPropertyValues(AdobeXMPCore::spIMetadata metaNode)
 	AdobeXMPCore::spIArrayNode subjectArray = metaNode->GetArrayNode(kXMP_NS_DC, AdobeXMPCommon::npos, "subject", AdobeXMPCommon::npos);
 	if (subjectArray != NULL)
 	{
-		int arraySize = subjectArray->ChildCount();
-		for (int i = 1; i <= arraySize; i++)
+		sizet arraySize = subjectArray->ChildCount();
+		for (sizet i = 1; i <= arraySize; i++)
 		{
 			AdobeXMPCore::spISimpleNode subjectChild = subjectArray->GetSimpleNodeAtIndex(i);
 			if (subjectChild != NULL)
@@ -169,8 +171,11 @@ void displayPropertyValues(AdobeXMPCore::spIMetadata metaNode)
 
 	// Get dc:MetadataDate
 	AdobeXMPCore::spISimpleNode dateNode = metaNode->GetSimpleNode(kXMP_NS_XMP, AdobeXMPCommon::npos, "MetadataDate", AdobeXMPCommon::npos);
-	string date = dateNode->GetValue()->c_str();
-	cout << "meta:MetadataDate = " << date << endl;
+	if(dateNode != NULL)
+	{
+		string date = dateNode->GetValue()->c_str();
+		cout << "meta:MetadataDate = " << date << endl;
+	}
 
 
 	// See if the flash struct exists and see if it was used
@@ -334,7 +339,8 @@ int main(int argc, const char * argv[])
 				string  date;
 				SXMPUtils::ConvertFromDate(dt, &date);
 				AdobeXMPCore::spISimpleNode dateNode = metaNode->GetSimpleNode(kXMP_NS_XMP, AdobeXMPCommon::npos, "MetadataDate", AdobeXMPCommon::npos);
-				dateNode->SetValue(date.c_str(), AdobeXMPCommon::npos);
+				if(dateNode != NULL)
+					dateNode->SetValue(date.c_str(), AdobeXMPCommon::npos);
 
 				// Add an item onto the dc:creator array
 				AdobeXMPCore::spIArrayNode arrayNode = metaNode->GetArrayNode(kXMP_NS_DC, AdobeXMPCommon::npos, "creator", AdobeXMPCommon::npos);
@@ -366,7 +372,7 @@ int main(int argc, const char * argv[])
 				AdobeXMPCore:: spcINameSpacePrefixMap defaultMap = AdobeXMPCore::INameSpacePrefixMap::GetDefaultNameSpacePrefixMap();
 				std::string serializedPacket = serializer->Serialize(metaNode, defaultMap)->c_str();
 				SXMPMeta fileMeta;
-				fileMeta.ParseFromBuffer(serializedPacket.c_str(), serializedPacket.length());
+				fileMeta.ParseFromBuffer(serializedPacket.c_str(), (XMP_StringLen)serializedPacket.length());
 
 				// Create a new XMP object from an RDF string
 				SXMPMeta rdfMeta = createXMPFromRDF();

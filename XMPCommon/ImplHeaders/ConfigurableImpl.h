@@ -2,12 +2,14 @@
 #define ConfigurableImpl_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #if !(IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED)
@@ -45,13 +47,16 @@ namespace XMP_COMPONENT_INT_NAMESPACE {
 		virtual std::vector< uint64 > APICALL GetAllParameters() const;
 		virtual sizet APICALL Size() const __NOTHROW__;
 		virtual eDataType APICALL GetDataType( const uint64 & key ) const;
-		virtual eConfigurableErrorCode APICALL ValidateValue( const uint64 & key, eDataType type, CombinedDataValue value ) const;
-
+        
+        virtual eConfigurableErrorCode APICALL ValidateValue( const uint64 & key, eDataType type, const CombinedDataValue & value ) const;
+        
+        
 		virtual void APICALL TreatKeyAsCaseInsensitive( bool flag = true );
 		virtual void APICALL AllowDifferentValueTypesForExistingEntries( bool flag = true );
 
 		void APICALL SetAllowedKeys( uint64 * keysTable, sizet sizeOfTable );
 		void APICALL SetAllowedValueTypesForKeys( KeyValueTypePair * keyValueTypePairTable, sizet sizeOfTable );
+       
 
 		virtual ~ConfigurableImpl() __NOTHROW__;
 

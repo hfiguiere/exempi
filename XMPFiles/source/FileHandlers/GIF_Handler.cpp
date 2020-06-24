@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2008 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2008 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // 
 // This file includes implementation of GIF file metadata, according to GIF89a Specification. 
 // https://www.w3.org/Graphics/GIF/spec-gif89a.txt
@@ -244,8 +246,11 @@ bool GIF_MetaHandler::ParseGIFBlocks( XMP_IO* fileRef )
 					this->SeekFile( fileRef, subBlockSize, kXMP_SeekFromCurrent );
 					fileRef->Read( &subBlockSize, 1 );
 				}
-				if ( IsXMPExists )
-					XMPPacketLength = static_cast< XMP_Uns32 >( fileRef->Offset() - XMPPacketOffset - MAGIC_TRAILER_LEN );
+				if ( IsXMPExists ) {
+					XMP_Int64 packetLength = fileRef->Offset() - XMPPacketOffset - MAGIC_TRAILER_LEN;
+					if( packetLength < 0 ) throw XMP_Error(kXMPErr_BadFileFormat, "corrupt GIF File.");
+					XMPPacketLength = static_cast< XMP_Uns32 >( packetLength );
+				}
 			}
 			else
 			{

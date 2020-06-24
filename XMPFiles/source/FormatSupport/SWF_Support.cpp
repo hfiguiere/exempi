@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2007 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2007 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -38,7 +40,7 @@ XMP_Uns32 SWF_IO::FileHeaderSize ( XMP_Uns8 rectBits ) {
 bool SWF_IO::GetTagInfo ( const RawDataBlock & swfStream, XMP_Uns32 tagOffset, SWF_IO::TagInfo * info ) {
 
 	if ( tagOffset >= swfStream.size() ) return false;
-	XMP_Uns32 spaceLeft = swfStream.size() - tagOffset;
+	XMP_Uns32 spaceLeft = (XMP_Uns32)swfStream.size() - tagOffset;
 	XMP_Uns8 headerSize = 2;
 	if ( spaceLeft < headerSize ) return false;	// The minimum empty tag is a 2 byte header.
 	
@@ -228,13 +230,13 @@ XMP_Int64 SWF_IO::CompressMemoryToFile ( const RawDataBlock & dataIn, XMP_IO*  f
 	
 	PutUns32LE ( SWF_IO::CompressedSignature, &bufferOut[0] );
 	bufferOut[3] = dataIn[3];	// Copy the SWF version.
-	PutUns32LE ( lengthIn, &bufferOut[4] );
+	PutUns32LE ( (XMP_Uns32)lengthIn, &bufferOut[4] );
 	fileOut->Write ( bufferOut, SWF_IO::HeaderPrefixSize );
 	
 	// Feed the input to the compression engine in one step, write the output as available.
 
 	zipState.next_in   = (Bytef*)&dataIn[SWF_IO::HeaderPrefixSize];
-	zipState.avail_in  = lengthIn - SWF_IO::HeaderPrefixSize;
+	zipState.avail_in  = (XMP_Uns32)lengthIn - SWF_IO::HeaderPrefixSize;
 	zipState.next_out  = &bufferOut[0];
 	zipState.avail_out = bufferSize;
 	

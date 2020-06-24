@@ -1,14 +1,16 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #define IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED 1
-	#include "XMPCommon/ImplHeaders/ConfigurableImpl.h"
+#include "XMPCommon/ImplHeaders/ConfigurableImpl.h"
 #undef IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED
 
 #include "XMPCommon/Interfaces/IErrorNotifier_I.h"
@@ -80,7 +82,10 @@ namespace XMP_COMPONENT_INT_NAMESPACE {
 		}
 	}
 
-	void NotifyError( const char * errorMsg, const uint64 & key, eConfigurableErrorCode errorCode,
+    
+    
+    
+    static void NotifyError( const char * errorMsg, const uint64 & key, eConfigurableErrorCode errorCode,
 		IConfigurable::eDataType type, const IConfigurable::CombinedDataValue & value,
 		IConfigurable::eDataType oldType, const IConfigurable::CombinedDataValue & oldValue )
 	{
@@ -133,8 +138,8 @@ namespace XMP_COMPONENT_INT_NAMESPACE {
 				if ( it == mKeysSet->end() )
 					NotifyError( "Key is not supported", key, kCECKeyNotSupported, type, value, oldType, oldValue );
 			}
-
-			eConfigurableErrorCode validValue = ValidateValue( key, type, value );
+            
+            eConfigurableErrorCode validValue = ValidateValue( key, type, value );
 
 			if ( validValue == kCECNone && mKeyValueTypeMap ) {
 				auto it = mKeyValueTypeMap->find( key );
@@ -226,8 +231,9 @@ namespace XMP_COMPONENT_INT_NAMESPACE {
 		else
 			return it->second.first;
 	}
-
-	eConfigurableErrorCode ConfigurableImpl::ValidateValue( const uint64 & key, eDataType type, CombinedDataValue value ) const {
+    //using IConfigurable_I::ValidateValue;
+    
+	eConfigurableErrorCode ConfigurableImpl::ValidateValue( const uint64 & key, eDataType type, const CombinedDataValue & value ) const {
 		return kCECNone;
 	}
 

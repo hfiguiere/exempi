@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2010 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2010 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include.
@@ -125,8 +127,19 @@ bool Host_IO::Create ( const char* filePath )
 	}
 
 	Host_IO::FileRef fileHandle;
+#ifdef WIN_UNIVERSAL_ENV
+	CREATEFILE2_EXTENDED_PARAMETERS params;
+	params.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
+	params.dwFileAttributes = (FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS);
+	params.lpSecurityAttributes = 0;
+	params.hTemplateFile = 0;
+	params.dwFileFlags = 0;
+	params.dwSecurityQosFlags = 0;
+	fileHandle = CreateFile2((LPCWSTR)wideName.data(), (GENERIC_READ | GENERIC_WRITE), 0, CREATE_ALWAYS, &params);
+#else
 	fileHandle = CreateFileW ( (LPCWSTR)wideName.data(), (GENERIC_READ | GENERIC_WRITE), 0, 0, CREATE_ALWAYS,
-							   (FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS), 0 );
+ 							   (FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS), 0 );
+#endif
 	if ( fileHandle == INVALID_HANDLE_VALUE ) XMP_Throw ( "Host_IO::Create, cannot create file", kXMPErr_InternalFailure );;
 
 	CloseHandle ( fileHandle );
@@ -305,11 +318,13 @@ void Host_IO::Rename ( const char* oldPath, const char* newPath )
 
 	if ( ::Exists ( wideNewPath ) ) XMP_Throw ( "Host_IO::Rename, new path exists", kXMPErr_InternalFailure );
 
-	
-
-	BOOL ok = MoveFileW ( (LPCWSTR)wideOldPath.data(), (LPCWSTR)wideNewPath.data() );
-	if ( ! ok ) XMP_Throw ( "Host_IO::Rename, MoveFileW failure", kXMPErr_ExternalFailure );
-
+#if XMP_UWP
+	BOOL ok = MoveFileExW((LPCWSTR)wideOldPath.data(), (LPCWSTR)wideNewPath.data(), MOVEFILE_REPLACE_EXISTING);
+	if (!ok) XMP_Throw("Host_IO::Rename, MoveFileExW failure", kXMPErr_ExternalFailure);
+#else
+	BOOL ok = MoveFileW((LPCWSTR)wideOldPath.data(), (LPCWSTR)wideNewPath.data());
+	if (!ok) XMP_Throw("Host_IO::Rename, MoveFileW failure", kXMPErr_ExternalFailure);
+#endif
 }	// Host_IO::Rename
 
 // =================================================================================================
@@ -490,7 +505,11 @@ Host_IO::FolderRef Host_IO::OpenFolder ( const char* folderPath )
 			std::string utf16;	// FindFirstFile wants native UTF-16.
 			if ( !GetWidePath ( findPath.c_str(), utf16 ) )
 				XMP_Throw ( "Host_IO::OpenFolder, GetWidePath failure", kXMPErr_ExternalFailure );
+#if XMP_UWP
+			Host_IO::FolderRef folder = FindFirstFileExW((LPCWSTR)utf16.c_str(), FindExInfoStandard,&childInfo, FindExSearchNameMatch,NULL, FIND_FIRST_EX_CASE_SENSITIVE);
+#else
 			Host_IO::FolderRef folder = FindFirstFileW ( (LPCWSTR) utf16.c_str(), &childInfo );
+#endif
 			if ( folder == noFolderRef ) XMP_Throw ( "Host_IO::OpenFolder - FindFirstFileW failed", kXMPErr_ExternalFailure );
 			// The first child should be ".", which we want to ignore anyway.
 			XMP_Assert ( (folder == noFolderRef) || (childInfo.cFileName[0] == '.') );
@@ -626,7 +645,16 @@ std::string & CorrectSlashes ( std::string & path ) {
 
 bool Exists ( const std::string & widePath )
 {
-	DWORD attrs = GetFileAttributesW ( (LPCWSTR)widePath.data() );
+	DWORD attrs = INVALID_FILE_ATTRIBUTES;
+#if XMP_UWP
+	_WIN32_FILE_ATTRIBUTE_DATA fileDataAttr;
+	fileDataAttr.dwFileAttributes = INVALID_FILE_ATTRIBUTES;
+	if(GetFileAttributesExW((LPCWSTR)widePath.data(), GetFileExInfoStandard, &fileDataAttr))
+		attrs = fileDataAttr.dwFileAttributes;
+#else
+	attrs = GetFileAttributesW ( (LPCWSTR)widePath.data() );
+#endif 
+
 	return ( attrs != INVALID_FILE_ATTRIBUTES);
 }
 
@@ -634,7 +662,14 @@ bool Exists ( const std::string & widePath )
 Host_IO::FileMode GetFileMode ( const std::string & widePath )
 {
 	// ! A shortcut is seen as a file, we would need extra code to recognize it and find the target.
-	DWORD fileAttrs = GetFileAttributesW ( (LPCWSTR) widePath.c_str() );
+	DWORD fileAttrs = INVALID_FILE_ATTRIBUTES;
+#if XMP_UWP
+	_WIN32_FILE_ATTRIBUTE_DATA fileDataAttr;
+	if(GetFileAttributesExW((LPCWSTR)widePath.data(), GetFileExInfoStandard, &fileDataAttr))
+		fileAttrs = fileDataAttr.dwFileAttributes;
+#else
+	fileAttrs =  GetFileAttributesW ( (LPCWSTR) widePath.c_str() );
+#endif
 	if ( fileAttrs == INVALID_FILE_ATTRIBUTES ) return Host_IO::kFMode_DoesNotExist;	// ! Any failure turns into does-not-exist.
 
 	if ( fileAttrs & FILE_ATTRIBUTE_DIRECTORY ) return Host_IO::kFMode_IsFolder;
@@ -654,8 +689,21 @@ Host_IO::FileRef Open ( const std::string & widePath, bool readOnly )
 	}
 
 	Host_IO::FileRef fileHandle;
+
+#if XMP_UWP
+	CREATEFILE2_EXTENDED_PARAMETERS params;
+	params.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
+	params.dwFileAttributes = (FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS);
+	params.lpSecurityAttributes = 0;
+	params.hTemplateFile = 0;
+	params.dwFileFlags = 0;
+	params.dwSecurityQosFlags = 0;
+	fileHandle = CreateFile2((LPCWSTR)widePath.data(), access, share, OPEN_EXISTING, &params);
+#else
 	fileHandle = CreateFileW ( (LPCWSTR)widePath.data(), access, share, 0, OPEN_EXISTING,
 		(FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS), 0 );
+#endif
+
 	if ( fileHandle == INVALID_HANDLE_VALUE ) {
 		DWORD osCode = GetLastError();
 		if ( (osCode == ERROR_FILE_NOT_FOUND) || (osCode == ERROR_PATH_NOT_FOUND) || (osCode == ERROR_FILE_OFFLINE) ) {
@@ -680,8 +728,20 @@ Host_IO::FileRef OpenWithWriteShare ( const std::string & widePath, bool readOnl
 	}
 
 	Host_IO::FileRef fileHandle;
+
+#if WIN_UNIVERSAL_ENV
+	CREATEFILE2_EXTENDED_PARAMETERS params;
+	params.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
+	params.dwFileAttributes = (FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS);
+	params.lpSecurityAttributes = 0;
+	params.hTemplateFile = 0;
+	params.dwFileFlags = 0;
+	params.dwSecurityQosFlags = 0;
+	fileHandle = CreateFile2((LPCWSTR)widePath.data(), access, share, OPEN_EXISTING, &params);
+#else
 	fileHandle = CreateFileW ( (LPCWSTR)widePath.data(), access, share, 0, OPEN_EXISTING,
 		(FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS), 0 );
+#endif
 	if ( fileHandle == INVALID_HANDLE_VALUE ) {
 		DWORD osCode = GetLastError();
 		if ( (osCode == ERROR_FILE_NOT_FOUND) || (osCode == ERROR_PATH_NOT_FOUND) || (osCode == ERROR_FILE_OFFLINE) ) {
@@ -746,14 +806,18 @@ static std::string ConstructPreservedPath( const std::string& inputPath )
 			std::string partialPath=utfPath.substr(0,newpos);
 			if ( ! GetWidePath(partialPath.c_str(), widePath) || widePath.length() == 0)
 				XMP_Throw ( "Host_IO::GetCasePresevedLeafName, cannot convert path", kXMPErr_ExternalFailure );
-			searchNext = ::FindFirstFileW ( (LPCWSTR) widePath.c_str(), &fileInfo );
+#if XMP_UWP
+			searchNext = FindFirstFileExW((LPCWSTR)widePath.c_str(), FindExInfoStandard, &fileInfo, FindExSearchNameMatch, NULL, FIND_FIRST_EX_CASE_SENSITIVE);
+#else
+			searchNext = ::FindFirstFileW((LPCWSTR)widePath.c_str(), &fileInfo);
+#endif
 			if( searchNext == INVALID_HANDLE_VALUE || ! ::FindClose(searchNext) )
 				XMP_Throw ( "Host_IO::GetCasePresevedLeafName, cannot convert path", kXMPErr_ExternalFailure );
 			
 			allocate_size=::WideCharToMultiByte(CP_UTF8,0,fileInfo.cFileName,-1,NULL,0,NULL,NULL);
 			leafname.reserve(allocate_size);
 			leafname.assign ( allocate_size , 0 );
-			retValue=::WideCharToMultiByte(CP_UTF8,0,fileInfo.cFileName,-1,(LPSTR)leafname.data(),leafname.length(),NULL,NULL);
+			retValue=::WideCharToMultiByte(CP_UTF8,0,fileInfo.cFileName,-1,(LPSTR)leafname.data(),(int)(leafname.length()),NULL,NULL);
 			if ( ! retValue )
 				XMP_Throw ( "Host_IO::GetCasePresevedLeafName, cannot convert path", kXMPErr_ExternalFailure );
 		}
@@ -781,6 +845,7 @@ static bool ContainsNonASCIICodePoints( const std::string & value )
 // =============================
 std::string Host_IO::GetCasePreservedName( const std::string& inputPath )
 {
+#ifndef XMP_UWP
 	if ( ! ContainsNonASCIICodePoints( inputPath ) )
 	{
 		DWORD allocate_size,retValue;
@@ -812,6 +877,7 @@ std::string Host_IO::GetCasePreservedName( const std::string& inputPath )
 		return systempath.c_str();
 	}
 	else
+#endif
 	{
 		 return ConstructPreservedPath( inputPath );
 	}

@@ -4,12 +4,14 @@
 
 //
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2015 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2015 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 //
 
@@ -56,6 +58,7 @@ namespace AdobeXMPCommon {
 		XMP_PRIVATE AdobeXMPCommon_Int::pcIThreadSafe_I GetIThreadSafe_I() const __NOTHROW__ {
 			return const_cast< IThreadSafe * >( this )->GetIThreadSafe_I();
 		}
+        virtual ~IThreadSafe(){}
 		//! \endcond
 		//! @}
 

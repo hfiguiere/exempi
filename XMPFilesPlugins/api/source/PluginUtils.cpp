@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "XMP_Const.h"
@@ -25,13 +27,13 @@ namespace XMP_PLUGIN
 	// =================================================================================================
 	// ErrorCallbackInfo::ClientCallbackWrapper()
 	// ====================================
-	bool ErrorCallbackInfo::ClientCallbackWrapper ( XMP_StringPtr filePath,
+	bool ErrorCallbackInfo::ClientCallbackWrapper ( XMP_StringPtr _filePath,
 															 XMP_ErrorSeverity severity,
 															 XMP_Int32 cause,
 															 XMP_StringPtr messsage ) const
 	{
 	
-		XMP_StringPtr filePathPtr = filePath;
+		XMP_StringPtr filePathPtr = _filePath;
 		if ( filePathPtr == 0 ) {
 			filePathPtr = this->filePath.c_str();
 		}

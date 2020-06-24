@@ -2,12 +2,14 @@
 #define __XMPFiles_Impl_hpp__	1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2004 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2004 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! Must be the first #include!
@@ -76,7 +78,7 @@ extern bool ignoreLocalText;
 #endif
 
 #ifndef EnablePluginManager
-	#if XMP_iOSBuild
+	#if (XMP_iOSBuild) || (XMP_UWP)
 		#define EnablePluginManager 0
 	#else
 		#define EnablePluginManager 1
@@ -142,12 +144,15 @@ extern XMP_Int32 sXMPFilesInitCount;
 
 #endif
 
-extern XMP_FileFormat voidFileFormat;	// Used as sink for unwanted output parameters.
-extern XMP_PacketInfo voidPacketInfo;
-extern void *         voidVoidPtr;
-extern XMP_StringPtr  voidStringPtr;
-extern XMP_StringLen  voidStringLen;
-extern XMP_OptionBits voidOptionBits;
+// **** See CTECHXMP-4169947 *****
+
+//extern XMP_FileFormat voidFileFormat;	// Used as sink for unwanted output parameters.
+//extern XMP_PacketInfo voidPacketInfo;
+//extern void *         voidVoidPtr;
+//extern XMP_StringPtr  voidStringPtr;
+//extern XMP_StringLen  voidStringLen;
+//extern XMP_OptionBits voidOptionBits;
+
 
 static const XMP_Uns8 * kUTF8_PacketStart = (const XMP_Uns8 *) "<?xpacket begin=";
 static const XMP_Uns8 * kUTF8_PacketID    = (const XMP_Uns8 *) "W5M0MpCehiHzreSzNTczkc9d";

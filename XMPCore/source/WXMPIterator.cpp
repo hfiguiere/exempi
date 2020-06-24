@@ -1,9 +1,11 @@
 // =================================================================================================
-// Copyright 2004 Adobe Systems Incorporated
+// Copyright 2004 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include!
@@ -83,6 +85,7 @@ WXMPIterator_TableCTor_1 ( XMP_StringPtr  schemaNS,
 void
 WXMPIterator_IncrementRefCount_1 ( XMPIteratorRef xmpObjRef )
 {
+	WXMP_Result void_wResult;
 	WXMP_Result * wResult = &void_wResult;	// ! Needed to "fool" the EnterWrapper macro.
 	XMP_ENTER_ObjWrite ( XMPIterator, "WXMPIterator_IncrementRefCount_1" )
 
@@ -97,6 +100,7 @@ WXMPIterator_IncrementRefCount_1 ( XMPIteratorRef xmpObjRef )
 void
 WXMPIterator_DecrementRefCount_1 ( XMPIteratorRef xmpObjRef )
 {
+	WXMP_Result void_wResult;
 	WXMP_Result * wResult = &void_wResult;	// ! Needed to "fool" the EnterWrapper macro.
 	XMP_ENTER_ObjWrite ( XMPIterator, "WXMPIterator_DecrementRefCount_1" )
 
@@ -132,6 +136,7 @@ WXMPIterator_Next_1 ( XMPIteratorRef   xmpObjRef,
 		XMP_StringPtr valuePtr = 0;
 		XMP_StringLen valueLen = 0;
 		
+		XMP_OptionBits voidOptionBits = 0;
 		if ( propOptions == 0 ) propOptions = &voidOptionBits;
 
 		XMP_Assert( thiz->info.xmpObj != NULL );

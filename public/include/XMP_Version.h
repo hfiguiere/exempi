@@ -7,11 +7,13 @@
 
 /*
 // =================================================================================================
-// Copyright 2002 Adobe Systems Incorporated
+// Copyright 2002 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 */
 
@@ -33,19 +35,19 @@ versions.
 */
 /* ============================================================================================= */
 
-#define XMPCORE_API_VERSION_MAJOR  5
-#define XMPCORE_API_VERSION_MINOR  6
+#define XMPCORE_API_VERSION_MAJOR  6
+#define XMPCORE_API_VERSION_MINOR  0
 #define XMPCORE_API_VERSION_MICRO  0
 
-#define XMPCORE_API_VERSION 5.6.0
-#define XMPCORE_API_VERSION_STRING "5.6.0"
+#define XMPCORE_API_VERSION 6.0.0
+#define XMPCORE_API_VERSION_STRING "6.0.0"
 
-#define XMPFILES_API_VERSION_MAJOR  5
-#define XMPFILES_API_VERSION_MINOR  7
+#define XMPFILES_API_VERSION_MAJOR  6
+#define XMPFILES_API_VERSION_MINOR  0
 #define XMPFILES_API_VERSION_MICRO  0
 
-#define XMPFILES_API_VERSION 5.7.0
-#define XMPFILES_API_VERSION_STRING "5.7.0"
+#define XMPFILES_API_VERSION 6.0.0
+#define XMPFILES_API_VERSION_STRING "6.0.0"
 
 /* ============================================================================================= */
 

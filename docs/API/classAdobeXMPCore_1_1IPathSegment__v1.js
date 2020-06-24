@@ -14,8 +14,8 @@ var classAdobeXMPCore_1_1IPathSegment__v1 =
     [ "CreateQualifierPathSegment", "classAdobeXMPCore_1_1IPathSegment__v1.html#a49da0c0bed14c7afb07d263570f09221", null ],
     [ "CreateQualifierSelectorPathSegment", "classAdobeXMPCore_1_1IPathSegment__v1.html#a854506c44a7acfc0246709a6cd74638d", null ],
     [ "GetIndex", "classAdobeXMPCore_1_1IPathSegment__v1.html#a6552774db8039b1ddc02491fc82b2699", null ],
-    [ "GetName", "classAdobeXMPCore_1_1IPathSegment__v1.html#a9c7e02cccca4d74467483ab442871376", null ],
-    [ "GetNameSpace", "classAdobeXMPCore_1_1IPathSegment__v1.html#ae6726749b73c1c99caa05e65138f9a64", null ],
-    [ "GetType", "classAdobeXMPCore_1_1IPathSegment__v1.html#a0febe9ac58c1a2a3e0a573f1bb9c25c3", null ],
-    [ "GetValue", "classAdobeXMPCore_1_1IPathSegment__v1.html#abc957b6cdedc2b4feb8943b42d2d3fe9", null ]
+    [ "GetName", "classAdobeXMPCore_1_1IPathSegment__v1.html#a84866bc4b4d4193e27a41816021fcc3e", null ],
+    [ "GetNameSpace", "classAdobeXMPCore_1_1IPathSegment__v1.html#a7e77bac3c1b1081cc77292fa5f3dbb21", null ],
+    [ "GetType", "classAdobeXMPCore_1_1IPathSegment__v1.html#aed5bc45db24ed6f31660349a4514fbe8", null ],
+    [ "GetValue", "classAdobeXMPCore_1_1IPathSegment__v1.html#aa6cd8e0f0aa9e9e0ffebf3a63a778fdf", null ]
 ];

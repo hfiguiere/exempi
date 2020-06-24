@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2006 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -84,34 +86,30 @@ PNG_MetaHandler::~PNG_MetaHandler()
 
 void PNG_MetaHandler::CacheFileData()
 {
-
 	this->containsXMP = false;
 
 	XMP_IO* fileRef ( this->parent->ioRef );
 	if ( fileRef == 0) return;
 
-	PNG_Support::ChunkState chunkState;
-	long numChunks = PNG_Support::OpenPNG ( fileRef, chunkState );
-	if ( numChunks == 0 ) return;
+    /*
+     CacheFileData is not using OpenPNG API to find the XMP packet because OpenPNG required
+     multiple file read calls which is very expensive in case of file present on n/w.
+     see bug [CTECHXMP-4169872].
 
-	if (chunkState.xmpLen != 0)
-	{
-		// XMP present
-
-		this->xmpPacket.reserve(chunkState.xmpLen);
-		this->xmpPacket.assign(chunkState.xmpLen, ' ');
-
-		if (PNG_Support::ReadBuffer ( fileRef, chunkState.xmpPos, chunkState.xmpLen, const_cast<char *>(this->xmpPacket.data()) ))
-		{
-			this->packetInfo.offset = chunkState.xmpPos;
-			this->packetInfo.length = chunkState.xmpLen;
-			this->containsXMP = true;
-		}
-	}
-	else
-	{
-		// no XMP
-	}
+	 if PNG is opened with kXMPFiles_OpenForRead, it will not read chunks after IEND chunk 
+	 encounters but if it opened with kXMPFiles_OpenForUpdate, then it will throw exception if
+	 garbage data present after IEND chunk.
+	 see bug [CTAIDS-4119487]
+    */
+    if(PNG_Support::FindAndReadXMPChunk ( fileRef, this->xmpPacket, this->packetInfo.offset, XMP_OptionIsSet(this->parent->openFlags, kXMPFiles_OpenForRead)))
+    {
+        this->packetInfo.length = static_cast<XMP_Int32>(this->xmpPacket.size());
+        this->containsXMP = true;
+    }
+    else
+    {
+        // no XMP
+    }
 
 }	// PNG_MetaHandler::CacheFileData
 
@@ -214,7 +212,9 @@ void PNG_MetaHandler::WriteTempFile ( XMP_IO* tempRef )
 			continue;
 
 		// copy any other chunk
-		PNG_Support::CopyChunk(originalRef, tempRef, chunk);
+		bool ret = PNG_Support::CopyChunk(originalRef, tempRef, chunk);
+		if(!ret)
+			XMP_Throw("PNG chunk copy failed.", kXMPErr_InternalFailure);
 
 		// place XMP chunk immediately after IHDR-chunk
 		if (PNG_Support::CheckIHDRChunkHeader(chunk))

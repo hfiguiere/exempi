@@ -1,9 +1,11 @@
 // =================================================================================================
-// Copyright 2015 Adobe Systems Incorporated
+// Copyright 2015 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 //
 // This file includes implementation of SVG metadata, according to Scalable Vector Graphics (SVG) 1.1 Specification. 
 // "https://www.w3.org/TR/2003/REC-SVG11-20030114/"
@@ -300,6 +302,9 @@ static void StartElementHandler( void * userData, XMP_StringPtr name, XMP_String
 	if ( iterator == thiz->mOffsetsMap.end() && localName != "svg" )
 		return;
 		
+	if( thiz->depth > 2  && ( localName == "metadata" || localName == "title" || localName == "desc" ) )
+		return;
+
 	XML_Node * parentNode = thiz->parseStack.back();
 	XML_Node * elemNode = new XML_Node( parentNode, "", kElemNode );
 
@@ -315,7 +320,7 @@ static void StartElementHandler( void * userData, XMP_StringPtr name, XMP_String
 		elemNode->ns = NS;
 		elemNode->nsPrefixLen = prefixLen;	// ! Includes the ':'.
 
-		if ( strcmp( prefix, "_dflt_:" ) == 0 )
+		if ( strcmp( prefix, "_dflt_:" ) == 0 || ( (localName == "svg" || localName == "metadata") && NS == kURI_SVG) )
 		{
 			elemNode->name = localName;
 			elemNode->nsPrefixLen = 0;
@@ -360,6 +365,9 @@ static void EndElementHandler( void * userData, XMP_StringPtr name )
 
 	string NS, localName;
 	ParseFullNS( name, NS, localName );
+
+	if(thiz->depth > 1 && ( localName == "metadata" || localName == "title" || localName == "desc" ))
+		return;
 
 	IteratorStringOffsetStruct iterator = thiz->mOffsetsMap.find( localName );
 	if ( iterator != thiz->mOffsetsMap.end() )
@@ -408,7 +416,14 @@ static void ProcessingInstructionHandler( void * userData, XMP_StringPtr target,
 		return;	// Ignore all PIs except the XMP packet wrapper.
 	SVG_Adapter * thiz = ( SVG_Adapter* ) userData;
 	XML_Node * parentNode = thiz->parseStack.back();
-	if ( parentNode->name != "metadata" )
+	
+	XMP_VarString nsURI = parentNode->ns;
+	XMP_VarString elementName = parentNode->name;
+	//remove prefix from name if any
+	size_t colonPos = elementName.find ( ':' );
+	XMP_VarString parentNodeName ( elementName.substr ( colonPos + 1 , elementName.size() - colonPos ) );
+
+	if ( nsURI != kURI_SVG || parentNodeName != "metadata" )
 		return;
 	IteratorStringXMP_Int64 iterator = thiz->mPIWithOffsetMap.find( target );
 	if ( iterator != thiz->mPIWithOffsetMap.end() )

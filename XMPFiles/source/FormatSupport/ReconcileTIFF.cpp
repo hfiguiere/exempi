@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2006 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -314,7 +316,8 @@ size_t PhotoDataUtils::GetNativeInfo ( const IPTC_Manager & iptc, XMP_Uns8 id, i
 		IPTC_Manager::DataSetInfo tmpInfo;
 		for ( i = 0; i < iptcCount; ++i ) {
 			(void) iptc.GetDataSet ( id, &tmpInfo, i );
-			if ( ReconcileUtils::IsASCII ( tmpInfo.dataPtr, tmpInfo.dataLen ) ) break;
+			if (tmpInfo.dataLen == 0 || tmpInfo.dataPtr == NULL 
+				|| ReconcileUtils::IsASCII(tmpInfo.dataPtr, tmpInfo.dataLen)) break;
 		}
 		if ( i == iptcCount ) iptcCount = 0;	// Return 0 if value(s) should be ignored.
 	}
@@ -360,7 +363,8 @@ bool PhotoDataUtils::IsValueDifferent ( const IPTC_Manager & newIPTC, const IPTC
 
 		if ( ignoreLocalText & (! newIPTC.UsingUTF8()) ) {	// Check to see if the new value should be ignored.
 			(void) newIPTC.GetDataSet ( id, &newInfo, newCount );
-			if ( ! ReconcileUtils::IsASCII ( newInfo.dataPtr, newInfo.dataLen ) ) continue;
+			if (newInfo.dataLen == 0 || newInfo.dataPtr == NULL
+				|| ! ReconcileUtils::IsASCII ( newInfo.dataPtr, newInfo.dataLen ) ) continue;
 		}
 
 		(void) newIPTC.GetDataSet_UTF8 ( id, &newStr, newCount );
@@ -467,12 +471,12 @@ ImportSingleTIFF_SRational ( const TIFF_Manager::TagInfo & tagInfo, const bool n
 {
 	try {	// Don't let errors with one stop the others.
 
-#if SUNOS_SPARC || XMP_IOS_ARM
+#if SUNOS_SPARC || XMP_IOS_ARM || XMP_ANDROID_ARM
         XMP_Uns32  binPtr[2];
         memcpy(&binPtr, tagInfo.dataPtr, sizeof(XMP_Uns32)*2);
 #else
 	XMP_Uns32 * binPtr = (XMP_Uns32*)tagInfo.dataPtr;
-#endif //#if SUNOS_SPARC || XMP_IOS_ARM
+#endif //#if SUNOS_SPARC || XMP_IOS_ARM || XMP_ANDROID_ARM
 		XMP_Int32 binNum   = GetUns32AsIs ( &binPtr[0] );
 		XMP_Int32 binDenom = GetUns32AsIs ( &binPtr[1] );
 		if ( ! nativeEndian ) {
@@ -2036,7 +2040,7 @@ PhotoDataUtils::Import2WayExif ( const TIFF_Manager & exif, SXMPMeta * xmp, int 
 			size_t count = (size_t) xmp->CountArrayItems ( kXMP_NS_ExifEX, "LensSpecification" );
 			if ( count > 0 ) {
 				(void) xmp->GetArrayItem ( kXMP_NS_ExifEX, "LensSpecification", 1, &fullStr, 0 );
-				for ( size_t i = 2; i <= count; ++i ) {
+				for ( XMP_Index i = 2; i <= (XMP_Index)count; ++i ) {
 					fullStr += ' ';
 					(void) xmp->GetArrayItem ( kXMP_NS_ExifEX, "LensSpecification", i, &oneItem, 0 );
 					fullStr += oneItem;
@@ -2345,67 +2349,87 @@ void PhotoDataUtils::Import3WayItems ( const TIFF_Manager & exif, const IPTC_Man
 	TIFF_Manager::TagInfo exifInfo;
 	IPTC_Manager::DataSetInfo iptcInfo;
 
-	IPTC_Writer oldIPTC;
-	if ( iptcDigestState == kDigestDiffers ) {
-		PhotoDataUtils::ExportIPTC ( *xmp, &oldIPTC );	// Predict old IPTC DataSets based on the existing XMP.
-	}
 	
+
+	IPTC_Writer oldIPTC;
+	if (iptcDigestState == kDigestDiffers) {
+		PhotoDataUtils::ExportIPTC(*xmp, &oldIPTC);	// Predict old IPTC DataSets based on the existing XMP.
+	}
+
 	// ---------------------------------------------------------------------------------
 	// Process the copyright. Replace internal nuls in the Exif to "merge" the portions.
-	
-	// Get the basic info about available values.
-	haveXMP   = xmp->GetLocalizedText ( kXMP_NS_DC, "rights", "", "x-default", 0, &xmpValue, 0 );
-	iptcCount = PhotoDataUtils::GetNativeInfo ( iptc, kIPTC_CopyrightNotice, iptcDigestState, haveXMP, &iptcInfo );
-	haveIPTC  = (iptcCount > 0);
-	haveExif  = (! haveXMP) && (! haveIPTC) && PhotoDataUtils::GetNativeInfo ( exif, kTIFF_PrimaryIFD, kTIFF_Copyright, &exifInfo );
-	XMP_Assert ( (! (haveExif & haveXMP)) & (! (haveExif & haveIPTC)) );
 
-	if ( haveExif && (exifInfo.dataLen > 1) ) {	// Replace internal nul characters with linefeed.
-		for ( XMP_Uns32 i = 0; i < exifInfo.dataLen-1; ++i ) {
-			if ( ((char*)exifInfo.dataPtr)[i] == 0 ) ((char*)exifInfo.dataPtr)[i] = 0x0A;
+	// Get the basic info about available values.
+	haveXMP = xmp->GetLocalizedText(kXMP_NS_DC, "rights", "", "x-default", 0, &xmpValue, 0);
+	iptcCount = PhotoDataUtils::GetNativeInfo(iptc, kIPTC_CopyrightNotice, iptcDigestState, haveXMP, &iptcInfo);
+	haveIPTC = (iptcCount > 0);
+	haveExif = (!haveXMP) && (!haveIPTC) && PhotoDataUtils::GetNativeInfo(exif, kTIFF_PrimaryIFD, kTIFF_Copyright, &exifInfo);
+	XMP_Assert((!(haveExif & haveXMP)) & (!(haveExif & haveIPTC)));
+
+	if (haveExif && (exifInfo.dataLen > 1)) {	// Replace internal nul characters with linefeed.
+		for (XMP_Uns32 i = 0; i < exifInfo.dataLen - 1; ++i) {
+			if (((char*)exifInfo.dataPtr)[i] == 0) ((char*)exifInfo.dataPtr)[i] = 0x0A;
 		}
 	}
-	
-	if ( haveIPTC  && ((iptcDigestState == kDigestDiffers) || (!haveXMP && !haveExif)) ) {
-		PhotoDataUtils::ImportIPTC_LangAlt ( iptc, xmp, kIPTC_CopyrightNotice, kXMP_NS_DC, "rights" );
-	} else if ( haveExif && PhotoDataUtils::IsValueDifferent ( exifInfo, xmpValue, &exifValue ) ) {
-		xmp->SetLocalizedText ( kXMP_NS_DC, "rights", "", "x-default", exifValue.c_str() );
+	try {
+		if (haveIPTC && ((iptcDigestState == kDigestDiffers) || (!haveXMP && !haveExif))) {
+			PhotoDataUtils::ImportIPTC_LangAlt(iptc, xmp, kIPTC_CopyrightNotice, kXMP_NS_DC, "rights");
+		}
+		else if (haveExif && PhotoDataUtils::IsValueDifferent(exifInfo, xmpValue, &exifValue)) {
+			xmp->SetLocalizedText(kXMP_NS_DC, "rights", "", "x-default", exifValue.c_str());
+		}
 	}
-	
+	catch (...) {
+	}
+
+
 	// ------------------------
 	// Process the description.
-	
+
 	// Get the basic info about available values.
-	haveXMP   = xmp->GetLocalizedText ( kXMP_NS_DC, "description", "", "x-default", 0, &xmpValue, 0 );
-	iptcCount = PhotoDataUtils::GetNativeInfo ( iptc, kIPTC_Description, iptcDigestState, haveXMP, &iptcInfo );
-	haveIPTC  = (iptcCount > 0);
-	haveExif  = (! haveXMP) && (! haveIPTC) && PhotoDataUtils::GetNativeInfo ( exif, kTIFF_PrimaryIFD, kTIFF_ImageDescription, &exifInfo );
-	XMP_Assert ( (! (haveExif & haveXMP)) & (! (haveExif & haveIPTC)) );
-	
-	if ( haveIPTC && ((iptcDigestState == kDigestDiffers) || (!haveXMP && !haveExif)) )  {
-		PhotoDataUtils::ImportIPTC_LangAlt ( iptc, xmp, kIPTC_Description, kXMP_NS_DC, "description" );
-	} else if ( haveExif && PhotoDataUtils::IsValueDifferent ( exifInfo, xmpValue, &exifValue ) ) {
-		xmp->SetLocalizedText ( kXMP_NS_DC, "description", "", "x-default", exifValue.c_str() );
+	haveXMP = xmp->GetLocalizedText(kXMP_NS_DC, "description", "", "x-default", 0, &xmpValue, 0);
+	iptcCount = PhotoDataUtils::GetNativeInfo(iptc, kIPTC_Description, iptcDigestState, haveXMP, &iptcInfo);
+	haveIPTC = (iptcCount > 0);
+	haveExif = (!haveXMP) && (!haveIPTC) && PhotoDataUtils::GetNativeInfo(exif, kTIFF_PrimaryIFD, kTIFF_ImageDescription, &exifInfo);
+	XMP_Assert((!(haveExif & haveXMP)) & (!(haveExif & haveIPTC)));
+
+	try {
+		if (haveIPTC && ((iptcDigestState == kDigestDiffers) || (!haveXMP && !haveExif))) {
+			PhotoDataUtils::ImportIPTC_LangAlt(iptc, xmp, kIPTC_Description, kXMP_NS_DC, "description");
+		}
+		else if (haveExif && PhotoDataUtils::IsValueDifferent(exifInfo, xmpValue, &exifValue)) {
+			xmp->SetLocalizedText(kXMP_NS_DC, "description", "", "x-default", exifValue.c_str());
+		}
+	}
+	catch (...) {
+
 	}
 
 	// -------------------------------------------------------------------------------------------
 	// Process the creator. The XMP and IPTC are arrays, the Exif is a semicolon separated string.
-	
-	// Get the basic info about available values.
-	haveXMP   = xmp->DoesPropertyExist ( kXMP_NS_DC, "creator" );
-	haveExif  = PhotoDataUtils::GetNativeInfo ( exif, kTIFF_PrimaryIFD, kTIFF_Artist, &exifInfo );
-	iptcCount = PhotoDataUtils::GetNativeInfo ( iptc, kIPTC_Creator, iptcDigestState, haveXMP, &iptcInfo );
-	haveIPTC  = (iptcCount > 0);
-	haveExif  = (! haveXMP) && (! haveIPTC) && PhotoDataUtils::GetNativeInfo ( exif, kTIFF_PrimaryIFD, kTIFF_Artist, &exifInfo );
-	XMP_Assert ( (! (haveExif & haveXMP)) & (! (haveExif & haveIPTC)) );
 
-	if ( haveIPTC && ((iptcDigestState == kDigestDiffers) || (!haveXMP && !haveExif)) )  {
-		PhotoDataUtils::ImportIPTC_Array ( iptc, xmp, kIPTC_Creator, kXMP_NS_DC, "creator" );
-	} else if ( haveExif && PhotoDataUtils::IsValueDifferent ( exifInfo, xmpValue, &exifValue ) ) {
-		SXMPUtils::SeparateArrayItems ( xmp, kXMP_NS_DC, "creator",
-										(kXMP_PropArrayIsOrdered | kXMPUtil_AllowCommas), exifValue );
+	// Get the basic info about available values.
+		
+	haveXMP = xmp->DoesPropertyExist(kXMP_NS_DC, "creator");
+	haveExif = PhotoDataUtils::GetNativeInfo(exif, kTIFF_PrimaryIFD, kTIFF_Artist, &exifInfo);
+	iptcCount = PhotoDataUtils::GetNativeInfo(iptc, kIPTC_Creator, iptcDigestState, haveXMP, &iptcInfo);
+	haveIPTC = (iptcCount > 0);
+	haveExif = (!haveXMP) && (!haveIPTC) && PhotoDataUtils::GetNativeInfo(exif, kTIFF_PrimaryIFD, kTIFF_Artist, &exifInfo);
+	XMP_Assert((!(haveExif & haveXMP)) & (!(haveExif & haveIPTC)));
+
+	try {
+		if (haveIPTC && ((iptcDigestState == kDigestDiffers) || (!haveXMP && !haveExif))) {
+			PhotoDataUtils::ImportIPTC_Array(iptc, xmp, kIPTC_Creator, kXMP_NS_DC, "creator");
+		}
+		else if (haveExif && PhotoDataUtils::IsValueDifferent(exifInfo, xmpValue, &exifValue)) {
+			SXMPUtils::SeparateArrayItems(xmp, kXMP_NS_DC, "creator",
+				(kXMP_PropArrayIsOrdered | kXMPUtil_AllowCommas), exifValue);
+		}
 	}
-	
+	catch (...) {
+
+	}
+
 	// ------------------------------------------------------------------------------
 	// Process DateTimeDigitized; DateTimeOriginal and DateTime are 2-way.
 	// ***   Exif DateTimeOriginal <-> XMP exif:DateTimeOriginal
@@ -2413,7 +2437,8 @@ void PhotoDataUtils::Import3WayItems ( const TIFF_Manager & exif, const IPTC_Man
 	// ***   Exif DateTimeDigitized <-> IPTC DigitalCreateDate <-> XMP xmp:CreateDate
 	// ***   TIFF DateTime <-> XMP xmp:ModifyDate
 
-	Import3WayDateTime ( kTIFF_DateTimeDigitized, exif, iptc, xmp, iptcDigestState, oldIPTC );
+	Import3WayDateTime(kTIFF_DateTimeDigitized, exif, iptc, xmp, iptcDigestState, oldIPTC);
+	
 
 }	// PhotoDataUtils::Import3WayItems
 
@@ -3023,7 +3048,7 @@ ExportTIFF_GPSTimeStamp ( const SXMPMeta & xmp, const char * xmpNS, const char *
 				XMP_Uns32 oldDenom = tiff->GetUns32 ( &(((XMP_Uns32*)oldInfo.dataPtr)[5]) );
 				if ( oldDenom != 1 ) denom = oldDenom;
 			}
-			fSec *= denom;
+			fSec = fSec * denom + 0.5;
 			while ( fSec > mMaxSec ) { fSec /= 10; denom /= 10; }
 			tiff->PutUns32 ( (XMP_Uns32)fSec, &exifTime[4] );
 			tiff->PutUns32 ( denom, &exifTime[5] );

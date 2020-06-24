@@ -2,12 +2,14 @@
 #define __UTF8String_Impl_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #if !(IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED)
@@ -32,11 +34,23 @@ namespace XMP_COMPONENT_INT_NAMESPACE {
 		: public virtual IUTF8String_I
 		, public virtual SharedObjectImpl
 		, public virtual MemoryManagedObject
-		, public virtual enable_shared_from_this< UTF8StringImpl >
+		, public enable_shared_from_this< UTF8StringImpl >
 	{
 	public:
 		UTF8StringImpl() {}
-
+        using IUTF8String_I::append;
+        using IUTF8String_I::assign;
+        using IUTF8String_I::insert;
+        using IUTF8String_I::erase;
+        using IUTF8String_I::resize;
+        using IUTF8String_I::replace;
+        using IUTF8String_I::copy;
+        using IUTF8String_I::find;
+        using IUTF8String_I::rfind;
+        using IUTF8String_I::compare;
+        using IUTF8String_I::substr;
+        using IUTF8String_I::empty;
+        
 		virtual spIUTF8String APICALL append( const char * buf, sizet count );
 		virtual spIUTF8String APICALL append( const spcIUTF8String & src, sizet srcPos, sizet count );
 		virtual spIUTF8String APICALL assign( const char * buf, sizet count );

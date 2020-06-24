@@ -2,12 +2,14 @@
 #define __ICompositeNode_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "XMPCore/Interfaces/INode.h"
@@ -232,7 +234,7 @@ namespace AdobeXMPCore {
 		//!
 		XMP_PRIVATE static spICompositeNode MakeShared( pICompositeNode_base ptr );
 		XMP_PRIVATE static spcICompositeNode MakeShared( pcICompositeNode_base ptr ) {
-			return const_cast< ICompositeNode_v1 * >( ptr )->MakeShared( ptr );
+			return const_cast< ICompositeNode_v1 * >( ptr )->MakeShared( const_cast<pICompositeNode_base>(ptr) );
 		}
 		//!
 		//! @}

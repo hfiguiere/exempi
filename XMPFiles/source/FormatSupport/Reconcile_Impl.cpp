@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2006 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include.
@@ -175,6 +177,10 @@ bool ReconcileUtils::IsUTF8 ( const void * textPtr, size_t textLen )
 
 	// ! Does not exist, must not be called, for Generic UNIX builds.
 
+#elif XMP_AndroidBuild
+
+	// Not Implemented for Android, as(for now) Not possible to identify locale from native side of Android
+
 #endif
 
 // =================================================================================================
@@ -203,13 +209,17 @@ void ReconcileUtils::UTF8ToLocal ( const void * _utf8Ptr, size_t utf8Len, std::s
 	#elif XMP_UNIXBuild
 	
 		XMP_Throw ( "Generic UNIX does not have conversions between local and Unicode", kXMPErr_Unavailable );
+
+	#elif XMP_AndroidBuild
+
+		XMP_Throw ( "Conversions between local and Unicode not implemented for Android", kXMPErr_Unavailable );
     
     #elif XMP_iOSBuild
     
         IOSConvertEncoding(kCFStringEncodingUTF8, CFStringGetSystemEncoding(), utf8Ptr, utf8Len, local);
 
     
-    
+	
 	
 	#endif
 
@@ -352,6 +362,10 @@ void ReconcileUtils::UTF8ToLatin1 ( const void * _utf8Ptr, size_t utf8Len, std::
 
 	// ! Does not exist, must not be called, for Generic UNIX builds.
 
+#elif XMP_AndroidBuild
+
+	// Not to be called for Android. Keep Android only UTF8
+
 #endif
 
 // =================================================================================================
@@ -361,6 +375,8 @@ void ReconcileUtils::UTF8ToLatin1 ( const void * _utf8Ptr, size_t utf8Len, std::
 void ReconcileUtils::LocalToUTF8 ( const void * _localPtr, size_t localLen, std::string * utf8 )
 {
 	const XMP_Uns8* localPtr = (XMP_Uns8*)_localPtr;
+    const char* localPtr1 = (const char*)_localPtr;
+    const wchar_t * lptr=(const wchar_t *)_localPtr;
 
 	utf8->erase();
 	
@@ -380,6 +396,10 @@ void ReconcileUtils::LocalToUTF8 ( const void * _localPtr, size_t localLen, std:
 	#elif XMP_UNIXBuild
 	
 		XMP_Throw ( "Generic UNIX does not have conversions between local and Unicode", kXMPErr_Unavailable );
+
+	#elif XMP_AndroidBuild
+
+		XMP_Throw ( "Conversions between local and Unicode not implemented for Android", kXMPErr_Unavailable );
     
     #elif XMP_iOSBuild
     

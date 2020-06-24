@@ -11,11 +11,9 @@ cls
 
 ECHO Enter your choice:
 ECHO 1. Clean All
-ECHO 2. Generate XMPSDKToolkit Dynamic Win32
-ECHO 3. Generate XMPSDKToolkit Static  Win32
-ECHO 4. Generate XMPSDKToolkit Dynamic   x64
-ECHO 5. Generate XMPSDKToolkit Static    x64
-ECHO 6. Generate All
+ECHO 2. Generate XMPSDKToolkit Dynamic   x64
+ECHO 3. Generate XMPSDKToolkit Static    x64
+ECHO 4. Generate All
 
 
 ECHO
@@ -27,11 +25,9 @@ set GENERATE_ALL=Off
 set NEXT_LABEL=ok
 
 IF "%choice%"=="1" GOTO CLEANALL
-IF "%choice%"=="2" GOTO 32DLL
-IF "%choice%"=="3" GOTO 32LIB
-IF "%choice%"=="4" GOTO 64DLL
-IF "%choice%"=="5" GOTO 64LIB
-IF "%choice%"=="6" GOTO GENALL
+IF "%choice%"=="2" GOTO 64DLL
+IF "%choice%"=="3" GOTO 64LIB
+IF "%choice%"=="4" GOTO GENALL
 
 ECHO Invalid Choice, Exiting
 exit /B 0
@@ -41,7 +37,7 @@ set GENERATE_ALL=On
 
 :32DLL
 echo "Generating XMPSDKToolkit Dynamic Win32"
-set VS_VERSION=2015
+set VS_VERSION=2017
 set BUILD_TYPE=Dynamic
 set BITS=32
 IF "%GENERATE_ALL%"=="On" (
@@ -52,7 +48,7 @@ GOTO GenerateNow
 
 :32LIB
 echo "Generating XMPSDKToolkit Static Win32"
-set VS_VERSION=2015
+set VS_VERSION=2017
 set BUILD_TYPE=Static
 set BITS=32
 IF "%GENERATE_ALL%"=="On" (
@@ -62,7 +58,7 @@ GOTO GenerateNow
 
 :64DLL
 echo "Generating XMPSDKToolkit Dynamic x64"
-set VS_VERSION=2015
+set VS_VERSION=2017
 set BUILD_TYPE=Dynamic
 set BITS=64
 IF "%GENERATE_ALL%"=="On" (
@@ -72,7 +68,7 @@ GOTO GenerateNow
 
 :64LIB
 echo "Generating XMPSDKToolkit Static x64"
-set VS_VERSION=2015
+set VS_VERSION=2017
 set BUILD_TYPE=Static
 set BITS=64
 IF "%GENERATE_ALL%"=="On" (
@@ -98,9 +94,9 @@ exit /B 0
 
 :CLEANALL
 echo "Cleaning..."
-if exist vc14 rmdir /S /Q vc14
-if exist ..\XMPCore\build\vc14 rmdir /S /Q ..\XMPCore\build\vc14
-if exist ..\XMPFiles\build\vc14 rmdir /S /Q ..\XMPFiles\build\vc14
+if exist vc15 rmdir /S /Q vc15
+if exist ..\XMPCore\build\vc15 rmdir /S /Q ..\XMPCore\build\vc15
+if exist ..\XMPFiles\build\vc15 rmdir /S /Q ..\XMPFiles\build\vc15
 if exist ..\public\libraries\windows rmdir /S /Q ..\public\libraries\windows
 if exist ..\public\libraries\windows_x64 rmdir /S /Q ..\public\libraries\windows_x64
 echo "Done"

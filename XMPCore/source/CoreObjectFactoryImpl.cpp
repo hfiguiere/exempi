@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #define IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED 1
@@ -21,11 +23,13 @@
 #include "XMPCore/Interfaces/INameSpacePrefixMap_I.h"
 #include "XMPCore/Interfaces/ISimpleNode_I.h"
 #include "XMPCore/Interfaces/IArrayNode_I.h"
+#include "XMPCore/Interfaces/IMetadataConverterUtils_I.h"
 #include "XMPCore/Interfaces/IStructureNode_I.h"
 #include "XMPCore/Interfaces/IMetadata_I.h"
 #include "XMPCore/Interfaces/IDOMImplementationRegistry_I.h"
 #include "XMPCore/Interfaces/ICoreConfigurationManager_I.h"
 #include "XMPCommon/Utilities/TWrapperFunctions_I.h"
+#include "XMPCore/XMPCoreFwdDeclarations.h"
 
 #if ENABLE_CPP_DOM_MODEL
 
@@ -52,9 +56,12 @@ namespace AdobeXMPCore_Int {
 			return ReturnRawPointerFromSharedPointer< IArrayNode, pIArrayNode_base >(
 				&IArrayNode::CreateAlternativeArrayNode, error, __FILE__, __LINE__, nameSpace, nameSpaceLength, name, nameLength );
 			break;
+        default:
+                return NULL;
+                break;
 
 		}
-		return NULL;
+		
 	}
 
 	pIMetadata_base APICALL CoreObjectFactoryImpl::CreateMetadata( pcIError_base & error ) __NOTHROW__ {
@@ -96,7 +103,7 @@ namespace AdobeXMPCore_Int {
 		return ReturnRawPointerFromSharedPointer< IStructureNode, pIStructureNode_base >(
 			&IStructureNode::CreateStructureNode, error, __FILE__, __LINE__, nameSpace, nameSpaceLength, name, nameLength );
 	}
-
+    
 	pICoreConfigurationManager_base APICALL CoreObjectFactoryImpl::GetCoreConfigurationManager( pcIError_base & error ) __NOTHROW__ {
 		return ReturnRawPointerFromSharedPointer< ICoreConfigurationManager, pICoreConfigurationManager_base >(
 			&ICoreConfigurationManager::GetCoreConfigurationManager, error, __FILE__, __LINE__ );
@@ -131,6 +138,46 @@ namespace AdobeXMPCore_Int {
 		static CoreObjectFactoryImpl coreObjectFactoryImplObj;
 		return &coreObjectFactoryImplObj;
 	}
+    
+    pIMetadata_base CoreObjectFactoryImpl::ConvertXMPMetatoIMetadata( XMPMetaRef xmpref, pcIError_base & error ) __NOTHROW__
+    {
+		XMPMeta* meta = (XMPMeta*)xmpref;
+		error = NULL;
+		try {
+			auto sp = IMetadataConverterUtils_I::convertXMPMetatoIMetadata(meta);
+			sp->GetISharedObject_I()->AcquireInternal();
+			return sp.get();
+		}
+		catch (spcIError err) {
+			error = err->GetActualIError();
+			error->GetISharedObject_I()->AcquireInternal();
+		}
+		catch (...) {
+			pIError_I err = IError_I::CreateUnknownExceptionCaughtError(IError_v1::kESOperationFatal, __FILE__, __LINE__).get();
+			err->AcquireInternal();
+			error = err;
+		}
+		return NULL;
+      /*  return ReturnRawPointerFromSharedPointer< IMetadata, pIMetadata_base, XMPMeta* >
+			(&IMetadataConverterUtils_I::convertXMPMetatoIMetadata, error, __FILE__, (sizet)__LINE__, meta);*/
+    }
+    
+    XMPMetaRef CoreObjectFactoryImpl::ConvertIMetadatatoXMPMeta( pIMetadata iMeta, pcIError_base & error ) __NOTHROW__
+    {
+        try {
+            XMPMetaRef ref = IMetadataConverterUtils_I::convertIMetadatatoXMPMeta(iMeta);
+            return ref;
+        } catch ( spcIError err ) {
+            error = err->GetActualIError();
+            error->GetISharedObject_I()->AcquireInternal();
+        } catch ( ... ) {
+            pIError_I err = IError_I::CreateUnknownExceptionCaughtError( IError_v1::kESOperationFatal, __FILE__, __LINE__ ).get();
+            err->AcquireInternal();
+            error = err;
+        }
+        return NULL;
+
+    }
 
 }
 

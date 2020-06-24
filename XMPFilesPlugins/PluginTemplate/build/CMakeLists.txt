@@ -9,7 +9,12 @@
 
 # ==============================================================================
 # define minimum cmake version
-cmake_minimum_required(VERSION 3.5.2)
+# For Android always build with make 3.6
+if(ANDROID)
+	cmake_minimum_required(VERSION 3.5.2)
+else(ANDROID)
+	cmake_minimum_required(VERSION 3.15.5)
+endif(ANDROID)
 
 SET(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Configurations" FORCE)
 # Enable folder grouping of projects in IDEs
@@ -139,7 +144,7 @@ AddMacFramework(${TARGET_NAME} FRAMEWORK_LIST)
 SetWinLinkFlags(${TARGET_NAME} "" "${TARGET_NAME}")
 
 if(APPLE)
-	set_target_properties(${TARGET_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH ON INSTALL_NAME_DIR "@executable_path/../Frameworks")
+	set_target_properties(${TARGET_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH ON BUILD_WITH_INSTALL_NAME_DIR ON INSTALL_NAME_DIR "@executable_path/../Frameworks")
 endif()
 
 set(DEPEND_LIBS "")
@@ -175,6 +180,10 @@ if (UNIX)
 			COMMENT "Copy resource")
 	endif()
 endif()
+
+#disable cmake warning "Manually-specified variables were not used by the project"
+set(ignore "${XMP_CMAKEFOLDER_NAME}") 
+
 # ==============================================================================
 # configuration feedback
 # ==============================================================================

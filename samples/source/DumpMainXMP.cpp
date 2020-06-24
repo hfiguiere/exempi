@@ -1,9 +1,11 @@
 // =================================================================================================
-// Copyright 2002 Adobe Systems Incorporated
+// Copyright 2002 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 /**
@@ -84,7 +86,7 @@ ProcessFile ( const char * fileName  )
 	ok = xmpFile.GetFileInfo ( 0, &openFlags, &format, &handlerFlags );
 	if ( ! ok ) return;
 
-	fprintf ( sLogFile, "File info : format = \"%.4s\", handler flags = %.8X\n", &format, handlerFlags );
+	fprintf ( sLogFile, "File info : format = %.8X, handler flags = %.8X\n", format, handlerFlags );
 	fflush ( sLogFile );
 
 	ok = xmpFile.GetXMP ( &xmpMeta, 0, &xmpPacket );

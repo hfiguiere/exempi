@@ -2,11 +2,13 @@
 #define __TAtomicTypes_h__ 1
 
 // =================================================================================================
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright 2014 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 
@@ -26,6 +28,8 @@
 		#include "XMPCommon/Utilities/TAtomicTypes_Mac.h"
 	#elif XMP_UNIXBuild
 		#include "XMPCommon/Utilities/TAtomicTypes_Linux.h"
+    #elif XMP_AndroidBuild
+    	#include "XMPCommon/Utilities/TAtomicTypes_Android.h"
 	#endif
 
 	#ifndef NOT_DEFINED_ATOMIC_SIZE_T

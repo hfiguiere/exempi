@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2004 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2004 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! Must be the first #include!
@@ -375,7 +377,7 @@ static inline void CloseLocalFile ( XMPFiles* thiz )
 
 // =================================================================================================
 
-XMPFiles::~XMPFiles()
+XMPFiles::~XMPFiles() NO_EXCEPT_FALSE
 {
 	XMP_FILES_START
 	XMP_Assert ( this->clientRefs <= 0 );
@@ -1083,7 +1085,7 @@ DoOpenFile ( XMPFiles *     thiz,
 
 	if ( handler->containsXMP ) FillPacketInfo ( handler->xmpPacket, &handler->packetInfo );
 
-	if ( (! (openFlags & kXMPFiles_OpenForUpdate)) && (! (handlerFlags & kXMPFiles_HandlerOwnsFile)) ) {
+	if ( (! (openFlags & kXMPFiles_OpenForUpdate)) && (! (handlerFlags & kXMPFiles_HandlerOwnsFile)) && (!(handlerFlags &  kXMPFiles_NeedsLocalFileOpened)) ){
 		// Close the disk file now if opened for read-only access.
 		CloseLocalFile ( thiz );
 	}
@@ -1146,7 +1148,7 @@ static bool DoOpenFile( XMPFiles* thiz,
 			FillPacketInfo( handler->xmpPacket, &handler->packetInfo );
 		}
 
-		if( (! (openFlags & kXMPFiles_OpenForUpdate)) && (! (handlerFlags & kXMPFiles_HandlerOwnsFile)) ) 
+		if( (! (openFlags & kXMPFiles_OpenForUpdate)) && (! (handlerFlags & kXMPFiles_HandlerOwnsFile)) && (!(handlerFlags &  kXMPFiles_NeedsLocalFileOpened)) )
 		{
 			// Close the disk file now if opened for read-only access.
 			CloseLocalFile ( thiz );
@@ -1172,11 +1174,11 @@ static bool DoOpenFile( XMPFiles* thiz,
 
 bool
 XMPFiles::OpenFile ( XMP_StringPtr  clientPath,
-	                 XMP_FileFormat format /* = kXMP_UnknownFile */,
-	                 XMP_OptionBits openFlags /* = 0 */ )
+	                 XMP_FileFormat _format /* = kXMP_UnknownFile */,
+	                 XMP_OptionBits _openFlags /* = 0 */ )
 {
 	XMP_FILES_START
-	return DoOpenFile ( this, 0, clientPath, format, openFlags );
+	return DoOpenFile ( this, 0, clientPath, _format, _openFlags );
 	XMP_FILES_END2 ( clientPath, kXMPErrSev_FileFatal )
 	return false;
 }
@@ -1187,12 +1189,12 @@ XMPFiles::OpenFile ( XMP_StringPtr  clientPath,
 
 bool
 XMPFiles::OpenFile ( XMP_IO*        clientIO,
-	                 XMP_FileFormat format /* = kXMP_UnknownFile */,
-	                 XMP_OptionBits openFlags /* = 0 */ )
+	                 XMP_FileFormat _format /* = kXMP_UnknownFile */,
+	                 XMP_OptionBits _openFlags /* = 0 */ )
 {
 	XMP_FILES_START
 	this->progressTracker = 0;	// Progress tracking is not supported for client-managed I/O.
-	return DoOpenFile ( this, clientIO, "", format, openFlags );
+	return DoOpenFile ( this, clientIO, "", _format, _openFlags );
 	XMP_FILES_END1 ( kXMPErrSev_FileFatal )
 	return false;
 
@@ -1200,11 +1202,11 @@ XMPFiles::OpenFile ( XMP_IO*        clientIO,
 
 bool XMPFiles::OpenFile ( const Common::XMPFileHandlerInfo&	hdlInfo,
 						 XMP_IO*							clientIO,
-						 XMP_OptionBits						openFlags /*= 0*/ )
+						 XMP_OptionBits						_openFlags /*= 0*/ )
 {
 	XMP_FILES_START
 	this->progressTracker = 0;	// Progress tracking is not supported for client-managed I/O.
-	return DoOpenFile ( this, hdlInfo, clientIO, NULL, openFlags );
+	return DoOpenFile ( this, hdlInfo, clientIO, NULL, _openFlags );
 	XMP_FILES_END1 ( kXMPErrSev_FileFatal )
 	return false;
 
@@ -1215,12 +1217,12 @@ bool XMPFiles::OpenFile ( const Common::XMPFileHandlerInfo&	hdlInfo,
 // =================================================================================================
 
 bool XMPFiles::OpenFile ( const Common::XMPFileHandlerInfo&	hdlInfo,
-						 XMP_StringPtr						filePath,
-						 XMP_OptionBits						openFlags /*= 0*/ )
+						 XMP_StringPtr						_filePath,
+						 XMP_OptionBits						_openFlags /*= 0*/ )
 {
 	XMP_FILES_START
-	return DoOpenFile ( this, hdlInfo, NULL, filePath, openFlags );
-	XMP_FILES_END2 (filePath, kXMPErrSev_FileFatal )
+	return DoOpenFile ( this, hdlInfo, NULL, _filePath, _openFlags );
+	XMP_FILES_END2 (_filePath, kXMPErrSev_FileFatal )
 	return false;
 }
 
@@ -1387,26 +1389,31 @@ XMPFiles::CloseFile ( XMP_OptionBits closeFlags /* = 0 */ )
 // =================================================================================================
 
 bool
-XMPFiles::GetFileInfo ( XMP_StringPtr *  filePath /* = 0 */,
+XMPFiles::GetFileInfo ( XMP_StringPtr *  _filePath /* = 0 */,
                         XMP_StringLen *  pathLen /* = 0 */,
-	                    XMP_OptionBits * openFlags /* = 0 */,
-	                    XMP_FileFormat * format /* = 0 */,
+	                    XMP_OptionBits * _openFlags /* = 0 */,
+	                    XMP_FileFormat * _format /* = 0 */,
 	                    XMP_OptionBits * handlerFlags /* = 0 */ ) const
 {
 	XMP_FILES_START
 	if ( this->handler == 0 ) return false;
-	XMPFileHandler * handler = this->handler;
+	//XMPFileHandler * handler = this->handler;
 
-	if ( filePath == 0 ) filePath = &voidStringPtr;
+	XMP_StringPtr  voidStringPtr = 0;
+	XMP_StringLen  voidStringLen = 0;
+	XMP_OptionBits voidOptionBits = 0;
+	XMP_FileFormat voidFileFormat = 0;
+
+	if ( _filePath == 0 ) _filePath = &voidStringPtr;
 	if ( pathLen == 0 ) pathLen = &voidStringLen;
-	if ( openFlags == 0 ) openFlags = &voidOptionBits;
-	if ( format == 0 ) format = &voidFileFormat;
+	if ( _openFlags == 0 ) _openFlags = &voidOptionBits;
+	if ( _format == 0 ) _format = &voidFileFormat;
 	if ( handlerFlags == 0 ) handlerFlags = &voidOptionBits;
 
-	*filePath     = this->filePath.c_str();
+	*_filePath     = this->filePath.c_str();
 	*pathLen      = (XMP_StringLen) this->filePath.size();
-	*openFlags    = this->openFlags;
-	*format       = this->format;
+	*_openFlags    = this->openFlags;
+	*_format       = this->format;
 	*handlerFlags = this->handler->handlerFlags;
 	XMP_FILES_END1 ( kXMPErrSev_FileFatal )
 	return true;
@@ -1416,14 +1423,14 @@ XMPFiles::GetFileInfo ( XMP_StringPtr *  filePath /* = 0 */,
 // =================================================================================================
 
 void
-XMPFiles::SetAbortProc ( XMP_AbortProc abortProc,
-						 void *        abortArg )
+XMPFiles::SetAbortProc ( XMP_AbortProc _abortProc,
+						 void *        _abortArg )
 {
 	XMP_FILES_START
-	this->abortProc = abortProc;
-	this->abortArg  = abortArg;
+	this->abortProc = _abortProc;
+	this->abortArg  = _abortArg;
 
-	XMP_Assert ( (abortProc != (XMP_AbortProc)0) || (abortArg != (void*)(unsigned long long)0xDEADBEEFULL) );	// Hack to test the assert callback.
+	XMP_Assert ( (_abortProc != (XMP_AbortProc)0) || (_abortArg != (void*)(unsigned long long)0xDEADBEEFULL) );	// Hack to test the assert callback.
 	XMP_FILES_END1 ( kXMPErrSev_OperationFatal )
 }	// XMPFiles::SetAbortProc
 
@@ -1464,6 +1471,23 @@ XMPFiles::GetXMP ( SXMPMeta *       xmpObj /* = 0 */,
 	XMP_FILES_START
 	if ( this->handler == 0 ) XMP_Throw ( "XMPFiles::GetXMP - No open file", kXMPErr_BadObject );
 
+	/*
+	 Sometimes XMP can be very huge See : CTECHXMP-4170126
+	 Client needs to know the length of XMP packet in file, so they can
+	 decide whether they want to process XMP packet or not.
+	
+	 This is possible, if format knows the length of XMP packet in file during CacheFileData.
+	 So, if client pass only XMP_PacketInfo and does not pass meta object and xmp packet length is
+	 known during CacheFileData, we can provide this info to client without processing xmp.
+	 */
+	
+	if(! this->handler->processedXMP && !xmpObj && !(this->handler->xmpPacket.empty()) && packetInfo)
+	{
+		SetClientPacketInfo(packetInfo, this->handler->packetInfo,
+			this->handler->xmpPacket, this->handler->needsUpdate );
+		return true;
+	}
+	
 	XMP_OptionBits applyTemplateFlags = kXMPTemplate_AddNewProperties | kXMPTemplate_IncludeInternalProperties;
 
 	if ( ! this->handler->processedXMP ) {
@@ -1481,6 +1505,9 @@ XMPFiles::GetXMP ( SXMPMeta *       xmpObj /* = 0 */,
 			SetClientPacketInfo ( packetInfo, this->handler->packetInfo,
 								  this->handler->xmpPacket, this->handler->needsUpdate );
 			throw;
+		}
+		if ((this->handler->handlerFlags &  kXMPFiles_NeedsLocalFileOpened) && !(this->openFlags & kXMPFiles_OpenForUpdate)) {
+			CloseLocalFile(this);
 		}
 	}
 
@@ -1771,13 +1798,13 @@ bool
 // This is const just to be usable from const XMPMeta functions.
 
 bool
-	XMPFiles::ErrorCallbackInfo::ClientCallbackWrapper ( XMP_StringPtr filePath,
+	XMPFiles::ErrorCallbackInfo::ClientCallbackWrapper ( XMP_StringPtr _filePath,
 														 XMP_ErrorSeverity severity,
 														 XMP_Int32 cause,
 														 XMP_StringPtr messsage ) const
 {
 	
-	XMP_StringPtr filePathPtr = filePath;
+	XMP_StringPtr filePathPtr = _filePath;
 	if ( filePathPtr == 0 ) {
 		filePathPtr = this->filePath.c_str();
 	}

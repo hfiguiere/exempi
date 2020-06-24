@@ -9,7 +9,12 @@
 
 # ==============================================================================
 # define minimum cmake version
-cmake_minimum_required(VERSION 3.5.2)
+# For Android always build with make 3.6
+if(ANDROID)
+	cmake_minimum_required(VERSION 3.5.2)
+else(ANDROID)
+	cmake_minimum_required(VERSION 3.15.5)
+endif(ANDROID)
 
 #add definition specific to XMP and shared by all projects
 add_definitions(-DXML_STATIC=1 -DHAVE_EXPAT_CONFIG_H=1 )
@@ -390,7 +395,7 @@ function(SetupXMPForApp appname outputDir)
 								${ignoreCommandOnOSX} mkdir -p ${BUILT_PRODUCTS_DIR}/Resources/XMP/Plug-ins
 								${ignoreCommandOnOSX}  cp -fpR ${XMPLIBRARIES_DIR}/Plug-ins/ ${BUILT_PRODUCTS_DIR}/Resources/XMP/Plug-ins
 								)
-		else(APPLE)
+		else(APPLE AND NOT ANDROID)
 			# Do not copy FFMpeg libs if they don't exist 
 			if(NOT EXISTS ${PROJECT_SOURCE_DIR}/${XMP_THIS_PROJECT_RELATIVEPATH}/toolkit/public/SDK/bin/MediaAccess/${XMP_PLATFORM_FOLDER}/${XMP_BUILDMODE_DIR}/FFMpegWrapper.mediaaccess)
 				set(ignoreCommand "#")

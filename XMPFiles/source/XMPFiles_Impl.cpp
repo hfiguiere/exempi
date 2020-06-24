@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2004 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2004 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -19,7 +21,7 @@
 
 using namespace std;
 
-// Internal code should be using #if with XMP_MacBuild, XMP_WinBuild, or XMP_UNIXBuild.
+// Internal code should be using #if with XMP_MacBuild, XMP_WinBuild, XMP_AndroidBuild, or XMP_UNIXBuild.
 // This is a sanity check in case of accidental use of *_ENV. Some clients use the poor
 // practice of defining the *_ENV macro with an empty value.
 #if defined ( MAC_ENV )
@@ -34,6 +36,10 @@ using namespace std;
 	#if ! UNIX_ENV
 		#error "UNIX_ENV must be defined so that \"#if UNIX_ENV\" is true"
 	#endif
+#elif defined ( ANDROID_ENV )
+	#if ! ANDROID_ENV
+		#error "ANDROID_ENV must be defined so that \"#if ANDROID_ENV\" is true"
+	#endif
 #endif
 
 // =================================================================================================
@@ -43,10 +49,7 @@ using namespace std;
 /// This file ...
 ///
 // =================================================================================================
-
-#if ! XMP_StaticBuild
-	#include "public/include/XMP.incl_cpp"
-#endif
+#include "public/include/XMP.incl_cpp"
 
 #if XMP_WinBuild
 	#pragma warning ( disable : 4290 )	// C++ exception specification ignored except to indicate a function is not __declspec(nothrow)
@@ -57,13 +60,15 @@ bool ignoreLocalText = false;
 
 XMP_FileFormat voidFileFormat = 0;	// Used as sink for unwanted output parameters.
 
-#if ! XMP_StaticBuild
-	XMP_PacketInfo voidPacketInfo;
-	void *         voidVoidPtr    = 0;
-	XMP_StringPtr  voidStringPtr  = 0;
-	XMP_StringLen  voidStringLen  = 0;
-	XMP_OptionBits voidOptionBits = 0;
-#endif
+//***** see CTECHXMP-4169947 *****
+
+//#if ! XMP_StaticBuild
+//	XMP_PacketInfo voidPacketInfo;
+//	void *         voidVoidPtr    = 0;
+//	XMP_StringPtr  voidStringPtr  = 0;
+//	XMP_StringLen  voidStringLen  = 0;
+//	XMP_OptionBits voidOptionBits = 0;
+//#endif
 
 // =================================================================================================
 
@@ -99,6 +104,7 @@ const FileExtMapping kFileExtMap[] =
 	  { "f4v",  kXMP_MPEG4File },
 	  { "3gp",  kXMP_MPEG4File },
 	  { "3g2",  kXMP_MPEG4File },
+	  { "crm",  kXMP_MPEG4File },
 	  { "ses",  kXMP_SESFile },
 	  { "cel",  kXMP_CELFile },
 	  { "wma",  kXMP_WMAVFile },
@@ -120,6 +126,9 @@ const FileExtMapping kFileExtMap[] =
 	  { "vob",  kXMP_MPEGFile },
 	  { "ms-pvr", kXMP_MPEGFile },
 	  { "dvr-ms", kXMP_MPEGFile },
+	  { "heic", kXMP_HEIFFile }, 
+	  { "heif", kXMP_HEIFFile },
+	  { "avc1", kXMP_HEIFFile },
 
 	  { "html", kXMP_HTMLFile },
 	  { "xml",  kXMP_XMLFile },

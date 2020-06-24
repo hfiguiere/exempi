@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2010 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2010 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -491,7 +493,7 @@ XMP_Bool WAVEReconcile::exportFromXMP( MetadataSet& outMetaData, SXMPMeta& inXMP
 					// if the XMP property doesn't contain a valid hex string then
 					// keep the existing value in the umid BEXT field
 					//
-					bextMeta->setArray<XMP_Uns8>(BEXTMetadata::kUMID, reinterpret_cast<const XMP_Uns8*>(umid.data()), umid.length());
+					bextMeta->setArray<XMP_Uns8>(BEXTMetadata::kUMID, reinterpret_cast<const XMP_Uns8*>(umid.data()),((XMP_Uns32)umid.length()));
 				}
 			}
 			else
@@ -1000,27 +1002,38 @@ void IFF_RIFF::WAVEReconcile::exportSpecialXMPToiXML( SXMPMeta & inXMP, IMetadat
 		if ( inXMP.DoesPropertyExist( kXMP_NS_iXML, kIXML_trackList ) ) {
 			XMP_OptionBits options( 0 );
 			if ( inXMP.GetProperty( kXMP_NS_iXML, kIXML_trackList, NULL, &options ) &&
-				XMP_OptionIsSet( options, kXMP_PropArrayIsOrdered ) )
+				XMP_OptionIsSet( options, kXMP_PropArrayIsUnordered ) )
 			{
 				XMP_Index count = inXMP.CountArrayItems( kXMP_NS_iXML, kIXML_trackList );
-				std::vector< iXMLMetadata::TrackListInfo > trackListInfo( count );
+				std::vector< iXMLMetadata::TrackListInfo > trackListInfo;
+				XMP_Index size = count;
 				for ( XMP_Index i = 0; i < count; i++ ) {
-					iXMLMetadata::TrackListInfo & trackRef = trackListInfo[i];
 					std::string trackPath;
 					SXMPUtils::ComposeArrayItemPath( kXMP_NS_iXML, kIXML_trackList, i + 1, &trackPath );
-					std::string fieldPath;
+					std::string fieldPath, channelIndex, interleaveIndex, name, function;
 					SXMPUtils::ComposeStructFieldPath( kXMP_NS_iXML, trackPath.c_str(), kXMP_NS_iXML, kIXML_channelIndex, &fieldPath );
-					XMP_Int64 int64Value;
-					inXMP.GetProperty_Int64( kXMP_NS_iXML, fieldPath.c_str(), &int64Value, &options );
-					trackRef.mChannelIndex = int64Value;
-					inXMP.GetStructField( kXMP_NS_iXML, trackPath.c_str(), kXMP_NS_iXML, kIXML_Name, &trackRef.mName, &options );
-					inXMP.GetStructField( kXMP_NS_iXML, trackPath.c_str(), kXMP_NS_iXML, kIXML_Function, &trackRef.mFunction, &options );
+					//XMP_Int64 int64Value;
+					
+					inXMP.GetStructField( kXMP_NS_iXML, trackPath.c_str(), kXMP_NS_iXML, kIXML_channelIndex, &channelIndex, &options );
+					inXMP.GetStructField(kXMP_NS_iXML, trackPath.c_str(), kXMP_NS_iXML, kIXML_interleaveIndex, &interleaveIndex, &options);
+					inXMP.GetStructField(kXMP_NS_iXML, trackPath.c_str(), kXMP_NS_iXML, kIXML_Name, &name, &options);
+					inXMP.GetStructField( kXMP_NS_iXML, trackPath.c_str(), kXMP_NS_iXML, kIXML_Function, &function, &options );
+					
+					if (channelIndex.size() > 0 || interleaveIndex.size() > 0 || name.size() > 0 || function.size() > 0)
+					{
+						iXMLMetadata::TrackListInfo trackRef(channelIndex, name, function, interleaveIndex);
+						trackListInfo.push_back(trackRef);
+					}
+					else
+						size--;
 				}
-				outNativeMeta.setArray< iXMLMetadata::TrackListInfo >( iXMLMetadata::kTrackList, trackListInfo.data(), count );
+				outNativeMeta.setArray< iXMLMetadata::TrackListInfo >( iXMLMetadata::kTrackList, trackListInfo.data(), size );
+				outNativeMeta.setValue<XMP_Uns64>(iXMLMetadata::kNativeTrackCount, (XMP_Uns64)size);
 				inXMP.DeleteProperty( kXMP_NS_iXML, kIXML_trackList );
 			}
 		} else {
 			outNativeMeta.deleteValue( iXMLMetadata::kTrackList );
+			outNativeMeta.deleteValue(iXMLMetadata::kNativeTrackCount);
 		}
 	} catch( ... ) {
 		// do nothing
@@ -1111,17 +1124,19 @@ bool IFF_RIFF::WAVEReconcile::exportSpecialiXMLToXMP( IMetadata & inNativeMeta, 
 			inNativeMeta.getArray< iXMLMetadata::TrackListInfo >( iXMLMetadata::kTrackList, countOfTracks );
 		if ( countOfTracks > 0 && trackInfoArray != NULL ) {
 			outXMP.DeleteProperty( kXMP_NS_iXML, kIXML_trackList );
-			outXMP.SetProperty( kXMP_NS_iXML, kIXML_trackList, 0, kXMP_PropArrayIsOrdered );
+			outXMP.SetProperty( kXMP_NS_iXML, kIXML_trackList, 0, kXMP_PropArrayIsUnordered);
 			for ( XMP_Uns32 i = 0; i < countOfTracks; i++ ) {
 				std::string trackPath;
 				SXMPUtils::ComposeArrayItemPath( kXMP_NS_iXML, kIXML_trackList, i + 1, &trackPath );
 				const iXMLMetadata::TrackListInfo & ref = trackInfoArray[i];
 				std::string value;
-				SXMPUtils::ConvertFromInt64( ref.mChannelIndex, "%llu", &value );
-				outXMP.SetStructField( kXMP_NS_iXML, trackPath.c_str(), kXMP_NS_iXML, kIXML_channelIndex, value );
-				if ( ref.mName.size() > 0 )
+				if(ref.mChannelIndex.size()>0)
+					outXMP.SetStructField( kXMP_NS_iXML, trackPath.c_str(), kXMP_NS_iXML, kIXML_channelIndex, ref.mChannelIndex);
+				if (ref.mInterleaveIndex.size()>0)
+					outXMP.SetStructField(kXMP_NS_iXML, trackPath.c_str(), kXMP_NS_iXML, kIXML_interleaveIndex, ref.mInterleaveIndex);
+				if (ref.mName.size()>0)
 					outXMP.SetStructField( kXMP_NS_iXML, trackPath.c_str(), kXMP_NS_iXML, kIXML_Name, ref.mName );
-				if ( ref.mFunction.size() > 0 )
+				if (ref.mFunction.size()>0)
 					outXMP.SetStructField( kXMP_NS_iXML, trackPath.c_str(), kXMP_NS_iXML, kIXML_Function, ref.mFunction );
 			}
 			changed = true;

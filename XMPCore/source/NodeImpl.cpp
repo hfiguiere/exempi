@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #define IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED 1
@@ -199,10 +201,7 @@ namespace AdobeXMPCore_Int {
 
 		while ( node != NULL ) {
 			pcINode_I node_I = node->GetINode_I();
-			if ( node_I->IsQualifierNode() ) {
-				node = node_I->GetRawParentPointer();
-				continue;
-			}
+		
 			pathToParent.push_back( node );
 			node = node_I->GetRawParentPointer();
 		}

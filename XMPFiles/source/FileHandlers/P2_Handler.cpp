@@ -1,13 +1,18 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2007 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2007 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
+
+#include <cmath>
+#include <sstream>
 
 #include "public/include/XMP_Const.h"
 #include "public/include/XMP_IO.hpp"
@@ -20,9 +25,6 @@
 #include "XMPFiles/source/FileHandlers/P2_Handler.hpp"
 #include "XMPFiles/source/FormatSupport/P2_Support.hpp"
 #include "XMPFiles/source/FormatSupport/PackageFormat_Support.hpp"
-
-#include <cmath>
-#include <sstream>
 
 using namespace std;
 
@@ -923,6 +925,7 @@ void P2_MetaHandler::SetAltitudeFromLegacyXML  ( XML_NodePtr legacyLocationConte
 XML_Node * P2_MetaHandler::ForceChildElement ( XML_Node * parent, XMP_StringPtr localName, XMP_Int32 indent , XMP_Bool insertAtFront  )
 {
 	XML_Node * wsNodeBefore, * wsNodeAfter;
+	wsNodeBefore = wsNodeAfter = NULL;
 	P2_Clip* p2Clip = this->p2ClipManager.GetManagedClip() ;
 	XMP_StringPtr p2NS = p2Clip->GetP2RootNode()->ns.c_str();
 	XML_Node * childNode = parent->GetNamedElement ( p2NS, localName );
@@ -1027,9 +1030,9 @@ void P2_MetaHandler::FillAssociatedResources ( std::vector<std::string> * resour
 	std::vector<std::string>  clipNameList;
 	p2SpanClip->GetAllClipNames ( clipNameList );
 	std::vector<std::string>::iterator iter = clipNameList.begin();
-	for(; iter!=clipNameList.end(); iter++)
+	XMP_StringVector regExpStringVecAudio, regExpStringVecVoice;
+	for (; iter != clipNameList.end(); iter++)
 	{
-
 		std::string clipPathNoExt = contentsPath + "CLIP" + kDirChar + *iter;
 		// Get the files present inside CLIP folder.
 		path = clipPathNoExt + ".XML";
@@ -1041,20 +1044,21 @@ void P2_MetaHandler::FillAssociatedResources ( std::vector<std::string> * resour
 		path = contentsPath + "VIDEO" + kDirChar + *iter + ".MXF";
 		PackageFormat_Support::AddResourceIfExists(resourceList, path);
 
-		// Get the files present inside AUDIO folder.
+		// Gather Regex exp for Audio resources of all spanned clip.
 		path = contentsPath + "AUDIO" + kDirChar;
 		XMP_VarString regExp;
 		regExp = "^" + *iter + "\\d\\d.MXF$";
-		IOUtils::GetMatchingChildren ( *resourceList, path, regExp, false, true, true );
+		regExpStringVecAudio.push_back(regExp);
 
 		// Get the files present inside ICON folder.
 		path = contentsPath + "ICON" + kDirChar + *iter + ".BMP";
 		PackageFormat_Support::AddResourceIfExists(resourceList, path);
 
-		// Get the files present inside VOICE folder.
+		// Gather Regex exp for Audio resources of all spanned clip.
 		path = contentsPath + "VOICE" + kDirChar;
 		regExp = "^" + *iter + "\\d\\d.WAV$";
-		IOUtils::GetMatchingChildren ( *resourceList, path, regExp, false, true, true );
+		//IOUtils::GetMatchingChildren ( *resourceList, path, regExp, false, true, true );
+		regExpStringVecVoice.push_back(regExp);;
 
 		// Get the files present inside PROXY folder.
 		std::string proxyPathNoExt = contentsPath + "PROXY" + kDirChar + *iter;
@@ -1064,6 +1068,11 @@ void P2_MetaHandler::FillAssociatedResources ( std::vector<std::string> * resour
 		path = proxyPathNoExt + ".BIN";
 		PackageFormat_Support::AddResourceIfExists(resourceList, path);
 	}
+	// Get the files present inside AUDIO folder.
+	IOUtils::GetMatchingChildren(*resourceList, contentsPath + "AUDIO" + kDirChar, regExpStringVecAudio, false, true, true);
+	// Get the files present inside VOICE folder.
+	IOUtils::GetMatchingChildren(*resourceList, contentsPath + "VOICE" + kDirChar, regExpStringVecVoice, false, true, true);
+
 }	// P2_MetaHandler::FillAssociatedResources
 
 // =================================================================================================

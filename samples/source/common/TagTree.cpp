@@ -158,13 +158,15 @@ void TagTree::digest(LFA_FileRef file,const std::string key /*=NULL*/,
 										// require all == false => leave the throwing to this routine
 	if (numOfBytes != LFA_Read ( file, value, numOfBytes, false))	// saying 1,4 guarantes read as ordered (4,1 would not)
 		Log::error("could not read %d number of files (End of File reached?)",numOfBytes);
-#if !IOS_ENV
+#if !IOS_ENV && !WIN_UNIVERSAL_ENV
 	char* out=new char[2 + numOfBytes*3 + 5]; //'0x12 34 45 78 '   length formula: 2 ("0x") + numOfBytes x 3 + 5 (padding)
 	if (!key.empty()) {
 		snprintf(out,3,"0x");
 		XMP_Int64 i; // *)
-		for (i=0; i < numOfBytes; i++)
-			snprintf(&out[2+i*3],4,"%.2X ",value[i]); //always must allow that extra 0-byte on mac (overwritten again and again)
+		for (i = 0; i < numOfBytes; i++)
+		{
+			snprintf(&out[2 + i * 3], 4, "%.2X ", value[i]); //always must allow that extra 0-byte on mac (overwritten again and again)
+		}
 		snprintf(&out[2+i*3],1,"%c",'\0'); // *) using i one more time (needed while bug 1613297 regarding snprintf not fixed)
 		setKeyValue(key,out);
 	}
@@ -180,7 +182,7 @@ void TagTree::digest(LFA_FileRef file,const std::string key /*=NULL*/,
 	}
 
 #endif
-    delete out;
+    delete[] out;
 	if (!returnValue) delete value; //if we own it, we delete it
 }
 
@@ -245,7 +247,7 @@ XMP_Int32 TagTree::digest32s(LFA_FileRef file,const std::string key /* ="" */ , 
 	if ( ((kBigEndianHost==1) &&  !BigEndian ) ||  ((kBigEndianHost==0) && BigEndian ))  // "XOR"
 		Flip4(&r);
 	if (!key.empty()) {
-		char out[15]; //longest signed int is "–2147483648", 11 chars 	
+		char out[15]; //longest signed int is "-2147483648", 11 chars 	
 		snprintf(out,14,"%d",r); //signed, mind the trailing \0 on Mac btw
 		setKeyValue(key,out);
 	}
@@ -278,7 +280,7 @@ XMP_Int16 TagTree::digest16s(LFA_FileRef file,const std::string key /* ="" */ , 
 	if ( ((kBigEndianHost==1) &&  !BigEndian ) ||  ((kBigEndianHost==0) && BigEndian ))  // "XOR"
 		Flip2(&r);
 	if (!key.empty()) {
-		char out[10]; //longest signed int is "–32768", 6 chars 	
+		char out[10]; //longest signed int is "ï¿½32768", 6 chars 	
 		snprintf(out,9,"%d",r);
 		setKeyValue(key,out);
 	}
@@ -511,6 +513,8 @@ void TagTree::addOffset(LFA_FileRef file)
 	// 3 points for doing it here: shortness, convenience, 64bit forks needed 
 	#if WIN_ENV
 		addComment( "offset: 0x%I64X", LFA_Tell( file ) );
+    #elif ANDROID_ENV
+		addComment( "offset: 0x%llX", LFA_Tell( file ) );
 	#else
 		addComment( "offset: 0x%ll.16X", LFA_Tell( file ) );
 	#endif

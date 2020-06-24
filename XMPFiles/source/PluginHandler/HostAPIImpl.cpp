@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2011 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2011 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "HostAPI.h"
@@ -13,6 +15,7 @@
 #include "source/XIO.hpp"
 #include "XMPFiles/source/HandlerRegistry.h"
 
+#if EnablePluginManager
 using namespace Common;
 
 namespace XMP_PLUGIN
@@ -1128,3 +1131,4 @@ void PluginManager::SetupHostAPI_V4( HostAPIRef hostAPI )
 }
 
 } //namespace XMP_PLUGIN
+#endif

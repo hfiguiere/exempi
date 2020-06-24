@@ -9,13 +9,44 @@
 
 # ==============================================================================
 # define minimum cmake version
-cmake_minimum_required(VERSION 3.5.2)
+# For Android always build with make 3.6
+if(ANDROID)
+	cmake_minimum_required(VERSION 3.5.2)
+else(ANDROID)
+	cmake_minimum_required(VERSION 3.15.5)
+endif(ANDROID)
 
 # ==============================================================================
 # Shared config for iOS
 # ==============================================================================
 
+set(${COMPONENT}_PLATFORM_SHORT "mac")
 
+if(${COMPONENT}_USE_SIMULATOR) # defined in the toolchain file
+	if(XMP_BUILD_STATIC)
+		set(CMAKE_OSX_ARCHITECTURES "$(ARCHS_STANDARD_INCLUDING_64_BIT)")
+	else()
+		set(CMAKE_OSX_ARCHITECTURES "$(ARCHS_STANDARD_64_BIT)")
+	endif()
+else()
+#	set(CMAKE_SYSTEM_PROCESSOR "arm")
+#	set(CMAKE_OSX_ARCHITECTURES "$(ARCHS_UNIVERSAL_IPHONE_OS)")
+	if(XMP_BUILD_STATIC)
+		set(CMAKE_OSX_ARCHITECTURES "$(ARCHS_STANDARD_INCLUDING_64_BIT)")
+	else()
+		set(CMAKE_OSX_ARCHITECTURES "$(ARCHS_STANDARD_64_BIT)")
+	endif()
+endif()
+
+add_definitions(-DIOS_ENV=1)
+# ${COMPONENT}_PLATFORM_FOLDER is used in OUTPUT_DIR and Debug/Release get automatically added for VS/XCode projects
+set(${COMPONENT}_PLATFORM_FOLDER "ios/${${COMPONENT}_CPU_FOLDERNAME}")
+set(${COMPONENT}_ENABLE_SECURE_SETTINGS "ON")
+
+# shared flags
+set(${COMPONENT}_SHARED_COMPILE_FLAGS "${${COMPONENT}_SHARED_COMPILE_FLAGS}  ${${COMPONENT}_EXTRA_COMPILE_FLAGS}")
+set(${COMPONENT}_SHARED_COMPILE_DEBUG_FLAGS "-O0 -DDEBUG=1 -D_DEBUG=1")
+set(${COMPONENT}_SHARED_COMPILE_RELEASE_FLAGS "-Os -DNDEBUG=1 -D_NDEBUG=1")
 
 set(CMAKE_C_FLAGS "${${COMPONENT}_SHARED_COMPILE_FLAGS} ${${COMPONENT}_EXTRA_C_COMPILE_FLAGS}")
 set(CMAKE_C_FLAGS_DEBUG "${${COMPONENT}_SHARED_COMPILE_DEBUG_FLAGS}")
@@ -30,6 +61,16 @@ if(${COMPONENT}_ENABLE_SECURE_SETTINGS)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstack-protector")
 endif()
 
+set(${COMPONENT}_PLATFORM_BEGIN_WHOLE_ARCHIVE "")
+set(${COMPONENT}_PLATFORM_END_WHOLE_ARCHIVE "")
+set(COMMON_DYLIBEXTENSION	"dylib")
+
+if(NOT XMP_BUILD_STATIC)
+	find_program(GCCTOOL gcc HINTS "/usr/bin" "${OSX_DEVELOPER_ROOT}/usr/bin")
+	if (${GCCTOOL} STREQUAL "GCCTOOL-NOTFOUND")
+		message(SEND_ERROR "Can't find gcc in ${OSX_DEVELOPER_ROOT}/usr/bin")
+	endif()
+endif()
 
 # set compiler flags
 SetupCompilerFlags()
@@ -75,8 +116,13 @@ endfunction(AddMacFramework)
 function(SetPlatformLinkFlags target linkflags)
 	# set additional XCode attribute for iOS
 	#set_target_properties(${target} PROPERTIES XCODE_TARGETED_DEVICE_FAMILY "1,2 ")
+
 	if (CMAKE_INSTALLED_XCODE_VERSION GREATER 4.4.9)
-		set(linkflags "${linkflags} -Xlinker -no_data_in_code_info")
+	# For iOS frameworks, -no_data_in_code_info and ENABLE_BITCODE=YES cannot be used together. 
+	#By default ENABLE_BITCODE is yes in iOS, therefore this flag is not added.
+		if(XMP_BUILD_STATIC)
+			set(linkflags "${linkflags} -Xlinker -no_data_in_code_info")
+		endif()
 	endif()
 	set_property(TARGET ${target} APPEND_STRING PROPERTY LINK_FLAGS " ${linkflags}")
 
@@ -96,8 +142,18 @@ function(SetPlatformLinkFlags target linkflags)
 	set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_GCC_WARN_SIGN_COMPARE "YES")
 	set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_GCC_WARN_UNKNOWN_PRAGMAS "YES")
 	set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_GCC_WARN_UNUSED_VALUE "NO")
-	set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH "YES")
-	set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "7.0")
+	set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH "NO")
+	set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "10.0")
+	set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2")
+	set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_ENABLE_BITCODE "NO")
+    set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_LIBRARY_SEARCH_PATHS "")
+    set(CMAKE_C_IMPLICIT_LINK_DIRECTORIES "")
+    set(CMAKE_C_IMPLICIT_LINK_FRAMEWORK_DIRECTORIES "")
+
+	if(NOT XMP_BUILD_STATIC)
+		set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Developer")
+        set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH "YES")
+	endif()
 endfunction(SetPlatformLinkFlags)
 
 # ==============================================================================
@@ -107,7 +163,7 @@ endfunction(SetPlatformLinkFlags)
 #
 function(SetOutputPath2 path targetName targetType)
 	# remove last path item if not makefile
-	if(NOT XMP_IS_MAKEFILE_BUILD)
+	if(NOT ${COMPONENT}_IS_MAKEFILE_BUILD)
 		get_filename_component(correctedPath ${path} PATH)
 		#message("SetOutputPath: ${path} to ${correctedPath}")
 	else()
@@ -165,7 +221,7 @@ function(AddBoostLib libname resultName resultNameDebug)
     if(ARGV3)
 		set(boostDir ${ARGV3})
     else()
-        set(boostDir "${XMPROOT_DIR}/../resources/third_party/${XMP_BOOST_VERSIONNAME}/libraries/${XMP_PLATFORM_FOLDER}")
+        set(boostDir "${${COMPONENT}ROOT_DIR}/../resources/third_party/${${COMPONENT}_BOOST_VERSIONNAME}/libraries/${${COMPONENT}_PLATFORM_FOLDER}")
     endif()
 
 	set(libExtension	"a")
@@ -190,7 +246,7 @@ endfunction(AddTbbLib)
 # Function: Make an OSX bundle
 # ==============================================================================
 # 	Optional parameter (!!)
-#	${ARGV3} = Name of Info.plist located in ${RESOURCE_ROOT}/${XMP_PLATFORM_SHORT}
+#	${ARGV3} = Name of Info.plist located in ${RESOURCE_ROOT}/${${COMPONENT}_PLATFORM_SHORT}
 #	${ARGV4} = Name of header file to use to generate Info.plist
 #
 function(MakeBundle appname extension outputDir)
@@ -214,9 +270,9 @@ function(MakeBundle appname extension outputDir)
 		# env OTHER_CFLAGS contains proper debug/release preprocessor defines
 		add_custom_command (TARGET ${appname} PRE_BUILD 
 								COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}
-								COMMAND ${GCCTOOL} -E -P -x c ${RESOURCE_ROOT}/${XMP_PLATFORM_SHORT}/${infoPlist}
+								COMMAND ${GCCTOOL} -E -P -x c ${RESOURCE_ROOT}/${${COMPONENT}_PLATFORM_SHORT}/${infoPlist}
 								-F${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/ -DPRODUCT_NAME=${appname} "$(OTHER_CFLAGS)"
-								-include ${RESOURCE_ROOT}/${XMP_PLATFORM_SHORT}/${infoPlistHeader} -o ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/Info.plist
+								-include ${RESOURCE_ROOT}/${${COMPONENT}_PLATFORM_SHORT}/${infoPlistHeader} -o ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/Info.plist
 								COMMENT "Preprocessing Info-plist")
 	
 		# define extra command
@@ -226,7 +282,7 @@ function(MakeBundle appname extension outputDir)
 	# make bundle
 	add_custom_command (TARGET ${appname} POST_BUILD 
 						COMMAND mkdir -p ${outputDir}/${appname}.${extension}/Contents/MacOS
-						COMMAND cp -f ${PROJECT_SOURCE_DIR}/${XMP_THIS_PROJECT_RELATIVEPATH}/toolkit/build/mac/PkgInfo ${outputDir}/${appname}.${extension}/Contents/PkgInfo
+						COMMAND cp -f ${PROJECT_SOURCE_DIR}/${${COMPONENT}_THIS_PROJECT_RELATIVEPATH}/toolkit/build/mac/PkgInfo ${outputDir}/${appname}.${extension}/Contents/PkgInfo
 						COMMAND ${extraCmd}
 						COMMAND cp -f ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${appname} ${outputDir}/${appname}.${extension}/Contents/MacOS/${appname}
 						COMMAND cp -rf ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${appname}.dSYM ${outputDir}/${appname}.${extension}.dSYM

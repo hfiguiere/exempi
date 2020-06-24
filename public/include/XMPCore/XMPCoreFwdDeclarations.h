@@ -2,12 +2,14 @@
 #define XMPCoreFwdDeclarations_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 
@@ -214,6 +216,18 @@ namespace AdobeXMPCore {
 	typedef shared_ptr< const ICoreConfigurationManager >								spcICoreConfigurationManager;	
 	static const uint64 kICoreConfigurationManagerID									( 0x63436f6e664d6772 /* cConfMgr */ );
 
+    // IMetadataConverterUtils
+    class IMetadataConverterUtils_v1;
+    typedef IMetadataConverterUtils_v1	IMetadataConverterUtils_base;
+    typedef IMetadataConverterUtils_v1 *																pIMetadataConverterUtils_base;
+    typedef const IMetadataConverterUtils_v1 *														pcIMetadataConverterUtils_base;
+    typedef BASE_CLASS( IMetadataConverterUtils, IMETADATACONVERTERUTILS_VERSION )									IMetadataConverterUtils;
+    typedef IMetadataConverterUtils *																	pIMetadataConverterUtils;
+    typedef const IMetadataConverterUtils *															pcIMetadataConverterUtils;
+    typedef shared_ptr< IMetadataConverterUtils >														spIMetadataConverterUtils;
+    typedef shared_ptr< const IMetadataConverterUtils >												spcIMetadataConverterUtils;
+    static const uint64 kIMetadataConverterUtilsID													( 0x63436F6E5574696C /* cConUtil */ );
+
 }
 
 namespace AdobeXMPCore_Int {
@@ -302,6 +316,11 @@ namespace AdobeXMPCore_Int {
 	class ICoreConfigurationManager_I;
 	typedef ICoreConfigurationManager_I *												pICoreConfigurationManager_I;
 	typedef const ICoreConfigurationManager_I *											pcICoreConfigurationManager_I;
+    
+    // IMetadataConverterUtils_I
+    class IMetadataConverterUtils_I;
+    typedef IMetadataConverterUtils_I *																pIMetadataConverterUtils_I;
+    typedef const IMetadataConverterUtils_I *															pcIMetadataConverterUtils_I;
 }
 
 #endif // XMPCoreFwdDeclarations_h__

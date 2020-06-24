@@ -1,9 +1,11 @@
 // =================================================================================================
-// Copyright 2004 Adobe Systems Incorporated
+// Copyright 2004 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 //
 // Adobe patent application tracking #P435, entitled 'Unique markers to simplify embedding data of
 // one format in a file with a different format', inventors: Sean Parent, Greg Gilley.
@@ -226,7 +228,7 @@ XMPScanner::PacketMachine::MatchString ( PacketMachine * ths, const char * liter
 {
 	const int			bytesPerChar	= ths->fBytesPerChar;
 	const char *		litPtr			= literal + ths->fPosition;
-	const XMP_Int32		charsToGo		= (XMP_Int32) strlen ( literal ) - ths->fPosition;
+	const XMP_Int32		charsToGo		= (XMP_Int32) (strlen ( literal ) - ths->fPosition);
 	int					charsDone		= 0;
 
 	while ( (charsDone < charsToGo) && (ths->fBufferPtr < ths->fBufferLimit) ) {
@@ -662,7 +664,7 @@ XMPScanner::PacketMachine::RecordHeadAttr ( PacketMachine * ths, const char * /*
 
 	} else if ( ths->fAttrName == "bytes" ) {
 
-		long	value	= 0;
+		XMP_Int32	value	= 0;
 		int		count	= (int) ths->fAttrValue.size();
 		int		i;
 

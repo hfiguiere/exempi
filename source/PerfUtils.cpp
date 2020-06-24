@@ -1,9 +1,11 @@
 // =================================================================================================
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright 2006 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"
@@ -75,7 +77,7 @@ double PerfUtils::GetElapsedSeconds ( PerfUtils::MomentValue start, PerfUtils::M
 
 // =================================================================================================
 
-#if XMP_UNIXBuild
+#if XMP_UNIXBuild | XMP_AndroidBuild
 
 const char * PerfUtils::GetTimerInfo()
 {

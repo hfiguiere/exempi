@@ -2,11 +2,13 @@
 #define IMemoryAllocator_h__ 1
 
 // =================================================================================================
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright 2014 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "XMPCommon/Interfaces/BaseInterfaces/IVersionable.h"
@@ -51,6 +53,7 @@ namespace AdobeXMPCommon {
 		//!  preserved.
 		//!
 		virtual void * APICALL reallocate( void * ptr, sizet size ) __NOTHROW__ = 0;
+        virtual ~IMemoryAllocator_v1(){}
 
 	protected:
 

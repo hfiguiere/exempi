@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2015 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2015 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 namespace AdobeXMPCore_Int {
@@ -30,14 +32,14 @@ namespace AdobeXMPCore_Int {
 		: mpClientParser( parser )
 	{
 		if ( parser ) {
-			pcIError_base error( NULL );
+			pcIError_base pError( NULL );
 			uint32 unknownExceptionCaught( 0 );
-			TreatKeyAsCaseInsensitive( parser->areKeysCaseSensitive( error, unknownExceptionCaught ) == 0 );
-			if ( !error && unknownExceptionCaught == 0 )
-				parser->initialize( this, error, unknownExceptionCaught );
-			if ( error ) {
-				auto spError = IError::MakeShared( error );
-				error->Release();
+			TreatKeyAsCaseInsensitive( parser->areKeysCaseSensitive( pError, unknownExceptionCaught ) == 0 );
+			if ( !pError && unknownExceptionCaught == 0 )
+				parser->initialize( this, pError, unknownExceptionCaught );
+			if ( pError ) {
+				auto spError = IError::MakeShared( pError );
+				pError->Release();
 				throw spError;
 			}
 			if ( unknownExceptionCaught )
@@ -46,12 +48,12 @@ namespace AdobeXMPCore_Int {
 	}
 
 	spINode APICALL ClientDOMParserWrapperImpl::ParseAsNode( const char * buffer, sizet bufferLength ) {
-		pcIError_base error( NULL );
+		pcIError_base pError( NULL );
 		uint32 unknownExceptionCaught( 0 );
-		auto pnode = mpClientParser->parse( buffer, bufferLength, this, &ReportErrorAndContinueABISafe, error, unknownExceptionCaught );
-		if ( error ) {
-			auto spError = IError::MakeShared( error );
-			error->Release();
+		auto pnode = mpClientParser->parse( buffer, bufferLength, this, &ReportErrorAndContinueABISafe, pError, unknownExceptionCaught );
+		if ( pError ) {
+			auto spError = IError::MakeShared( pError );
+			pError->Release();
 			throw spError;
 		}
 		if ( unknownExceptionCaught )
@@ -67,12 +69,12 @@ namespace AdobeXMPCore_Int {
 	}
 
 	eConfigurableErrorCode APICALL ClientDOMParserWrapperImpl::ValidateValue( const uint64 & key, eDataType type, const CombinedDataValue & value ) const {
-		pcIError_base error( NULL );
+		pcIError_base pError( NULL );
 		uint32 unknownExceptionCaught( 0 );
-		auto retValue = mpClientParser->validate( key, static_cast< uint32 >( type ), value, error, unknownExceptionCaught );
-		if ( error ) {
-			auto spError = IError::MakeShared( error );
-			error->Release();
+		auto retValue = mpClientParser->validate( key, static_cast< uint32 >( type ), value, pError, unknownExceptionCaught );
+		if ( pError ) {
+			auto spError = IError::MakeShared( pError );
+			pError->Release();
 			throw spError;
 		}
 		if ( unknownExceptionCaught )

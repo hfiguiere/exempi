@@ -9,7 +9,12 @@
 
 # ==============================================================================
 # define minimum cmake version
-cmake_minimum_required(VERSION 3.5.2)
+# For Android always build with make 3.6
+if(ANDROID)
+	cmake_minimum_required(VERSION 3.5.2)
+else(ANDROID)
+	cmake_minimum_required(VERSION 3.15.5)
+endif(ANDROID)
 
 # ==============================================================================
 # Function: architecture related settings
@@ -20,10 +25,18 @@ function(SetupTargetArchitecture)
 	else()
 		if(CMAKE_CL_64)
 			set(${COMPONENT}_BITDEPTH		"64" PARENT_SCOPE)
-			set(${COMPONENT}_CPU_FOLDERNAME	"intel_64" PARENT_SCOPE)
+			if(CMAKE_LIBCPP)
+				set(${COMPONENT}_CPU_FOLDERNAME	"intel_64_libcpp" PARENT_SCOPE)
+			else()
+				set(${COMPONENT}_CPU_FOLDERNAME	"intel_64" PARENT_SCOPE)
+			endif()	
 		else()
 			set(${COMPONENT}_BITDEPTH		"32" PARENT_SCOPE)
-			set(${COMPONENT}_CPU_FOLDERNAME	"intel" PARENT_SCOPE)
+			if(CMAKE_LIBCPP)
+				set(${COMPONENT}_CPU_FOLDERNAME	"intel_libcpp" PARENT_SCOPE)
+			else()
+				set(${COMPONENT}_CPU_FOLDERNAME	"intel" PARENT_SCOPE)
+			endif()	
 		endif()
 	endif()
 endfunction(SetupTargetArchitecture)
@@ -111,8 +124,13 @@ function(SetupGeneralDirectories)
 	# In this case Debug/Release is added to the OUTPUT_DIR when used for LIBRARY_OUTPUT_PATH.
 	
 	string(TOLOWER ${${COMPONENT}_BUILDMODE_DIR} LOWERCASE_${COMPONENT}_BUILDMODE_DIR)
-	set(OUTPUT_DIR ${PROJECT_SOURCE_DIR}/${${COMPONENT}_THIS_PROJECT_RELATIVEPATH}/public/libraries/${${COMPONENT}_PLATFORM_FOLDER}/${LOWERCASE_${COMPONENT}_BUILDMODE_DIR} PARENT_SCOPE)
+	if(ANDROID)
+		set(OUTPUT_DIR ${PROJECT_SOURCE_DIR}/${${COMPONENT}_THIS_PROJECT_RELATIVEPATH}/public/libraries/${${COMPONENT}_PLATFORM_FOLDER}/${ANDROID_ABI}/${LOWERCASE_${COMPONENT}_BUILDMODE_DIR} PARENT_SCOPE)
 
+		set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/${${COMPONENT}_THIS_PROJECT_RELATIVEPATH}/public/libraries/${${COMPONENT}_PLATFORM_FOLDER}/${ANDROID_ABI}/${LOWERCASE_${COMPONENT}_BUILDMODE_DIR} PARENT_SCOPE)
+	else()
+		set(OUTPUT_DIR ${PROJECT_SOURCE_DIR}/${${COMPONENT}_THIS_PROJECT_RELATIVEPATH}/public/libraries/${${COMPONENT}_PLATFORM_FOLDER}/${LOWERCASE_${COMPONENT}_BUILDMODE_DIR} PARENT_SCOPE)
+	endif()
 	# ${COMPONENT} lib locations constructed with ${${COMPONENT}_PLATFORM_FOLDER}/${${COMPONENT}_BUILDMODE_DIR}, since the target folder (Debug/Release) isn't added automatically
 	set(${COMPONENT}ROOT_DIR ${PROJECT_SOURCE_DIR}/${${COMPONENT}_THIS_PROJECT_RELATIVEPATH}/ PARENT_SCOPE)
 	set(${COMPONENT}LIBRARIES_DIR ${PROJECT_SOURCE_DIR}/${${COMPONENT}_THIS_PROJECT_RELATIVEPATH}/public/libraries/${${COMPONENT}_PLATFORM_FOLDER}/${LOWERCASE_${COMPONENT}_BUILDMODE_DIR} PARENT_SCOPE)
@@ -146,7 +164,7 @@ function(DetectXCodeVersion)
 			  OUTPUT_VARIABLE CMAKE_INSTALLED_XCODE_VERSION
 			  OUTPUT_STRIP_TRAILING_WHITESPACE
 	)
-	string(REGEX MATCH "Xcode ([3-9].[0-9][.]?[0-9]?)" matches ${CMAKE_INSTALLED_XCODE_VERSION})
+	string(REGEX MATCH "Xcode ([1-9][0-9].[0-9][.]?[0-9]?)" matches ${CMAKE_INSTALLED_XCODE_VERSION})
 	#message("Matches1: ${CMAKE_MATCH_1}")
 	set(CMAKE_INSTALLED_XCODE_VERSION ${CMAKE_MATCH_1} PARENT_SCOPE)
 	#message("CMAKE_INSTALLED_XCODE_VERSION :${CMAKE_INSTALLED_XCODE_VERSION}")

@@ -1,9 +1,11 @@
 // =================================================================================================
-// Copyright 2002 Adobe Systems Incorporated
+// Copyright 2002 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 /**
@@ -81,8 +83,8 @@ static XMP_Status DumpToString ( void * refCon, XMP_StringPtr outStr, XMP_String
 	format = kXMP_ ## fmt ## File;											\
 	flags = 0;																\
 	ok = SXMPFiles::GetFormatInfo ( format, &flags );						\
-	fprintf ( sLogFile, "kXMP_" #fmt "File = \"%.4s\", %s, flags = 0x%X\n",	\
-			  &format, (ok ? "smart" : "dumb"), flags );
+	fprintf ( sLogFile, "kXMP_" #fmt "File = %.8X, %s, flags = 0x%X\n",		\
+			  format, (ok ? "smart" : "dumb"), flags );
 
 static void DumpHandlerInfo()
 {
@@ -158,8 +160,8 @@ static void OpenTestFile ( const char * fileName, XMP_OptionBits rwMode, SXMPMet
 	ok = xmpFile->GetFileInfo ( 0, &openFlags, &format, &handlerFlags );
 	if ( ! ok ) return;
 
-	fprintf ( sLogFile, "File info : format = \"%.4s\", handler flags = 0x%X, open flags = 0x%X (%s)\n",
-			  &format, handlerFlags, openFlags, (isUpdate ? "update" : "read-only") );
+	fprintf ( sLogFile, "File info : format = %.8X, handler flags = 0x%X, open flags = 0x%X (%s)\n",
+			  format, handlerFlags, openFlags, (isUpdate ? "update" : "read-only") );
 
 	ok = xmpFile->GetXMP ( xmpMeta, 0, &xmpPacket );
 	if ( ! ok ) {

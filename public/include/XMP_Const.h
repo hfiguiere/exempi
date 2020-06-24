@@ -2,11 +2,13 @@
 #define __XMP_Const_h__ 1
 
 // =================================================================================================
-// Copyright 2002 Adobe Systems Incorporated
+// Copyright 2002 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "XMP_Environment.h"
@@ -16,12 +18,19 @@
 #if XMP_MacBuild | XMP_iOSBuild	// ! No stdint.h on Windows and some UNIXes.
     #include <stdint.h>
 #endif
-#if XMP_UNIXBuild		// hopefully an inttypes.h on all UNIXes...
+//Android has both inttypes and stdint. But inttypes includes stdint plus other functions
+#if XMP_UNIXBuild | XMP_AndroidBuild		// hopefully an inttypes.h on all UNIXes...
 		#include <inttypes.h>
 #endif
 
 #ifndef XMP_MARKER_EXTENSIBILITY_BACKWARD_COMPATIBILITY
 	#define XMP_MARKER_EXTENSIBILITY_BACKWARD_COMPATIBILITY 1
+#endif
+
+#if XMP_iOSBuild
+    #define __AVAILABILITY_INTERNAL_DEPRECATED_XMP __AVAILABILITY_INTERNAL_DEPRECATED
+#else
+    #define __AVAILABILITY_INTERNAL_DEPRECATED_XMP
 #endif
 
 #if __cplusplus
@@ -65,7 +74,7 @@ extern "C" {
     typedef unsigned long XMP_Uns32;
     typedef unsigned long long XMP_Uns64;
 
-#elif XMP_UNIXBuild
+#elif XMP_UNIXBuild | XMP_AndroidBuild
 
 	#if ! XMP_64
 
@@ -95,7 +104,7 @@ extern "C" {
 
 #else
 
-	#error "XMP environment error - must define one of XMP_MacBuild, XMP_WinBuild, XMP_UNIXBuild or XMP_iOSBuild"
+	#error "XMP environment error - must define one of XMP_MacBuild, XMP_WinBuild, XMP_UNIXBuild, XMP_AndroidBuild or XMP_iOSBuild"
 
 #endif
 
@@ -929,6 +938,10 @@ enum {
     kXMP_AIFFFile            = 0x41494646UL,
 	/// Public file format constant:  'RED ', RED file format
     kXMP_REDFile            = 0x52454420UL,
+    /// Public file format constant:  'ARRI', ARRI file format
+    kXMP_ARRIFile           = 0x41525249UL,
+	/// Public file format constant:  'HEIF', HEIF file format
+	kXMP_HEIFFile = 0x48454946UL,
 	/// Public file format constant:  'P2  ', a collection not really a single file
     kXMP_P2File              = 0x50322020UL,
 	/// Public file format constant:  'XDCF', a collection not really a single file
@@ -1151,6 +1164,9 @@ enum {
 	/// The plugin handler is not capable for delay loading
 	kXMPFiles_NeedsPreloading      = 0x00004000,
 
+	/// The format needs file during Process XMP even if it's Read Only Operation.
+	/// So that file is not closed after OpenFile operation when kXMPFiles_OpenForUpdate not passed
+	kXMPFiles_NeedsLocalFileOpened = 0x00010000
 };
 
 /// @brief Option bit flags for \c TXMPFiles::OpenFile().
@@ -1234,7 +1250,7 @@ enum {
     /// Recovery is not possible, an exception will be thrown, the file is corrupt and possibly unusable.
     kXMPErrSev_FileFatal      = 2,
     /// Recovery is not possible, an exception will be thrown, the entire process should be aborted.
-    kXMPErrSev_ProcessFatal   = 3
+	kXMPErrSev_ProcessFatal = 3
 };
 
 // -------------------------------------------------------------------------------------------------
@@ -1425,8 +1441,8 @@ enum {
     kXMPErr_BadBlockFormat   = 116,
     /// File Path is not a file
     kXMPErr_FilePathNotAFile = 117,
-    /// Rejected File extension
-    kXMPErr_RejectedFileExtension = 118,
+	/// Rejected File extension
+	kXMPErr_RejectedFileExtension = 118,
 
 	// -----------------------------------------------
     // File format and internal structure error codes.
@@ -1452,7 +1468,11 @@ enum {
 	/// IPTC format error
     kXMPErr_BadIPTC          = 210,
 	/// MPEG format error
-    kXMPErr_BadMPEG          = 211
+    kXMPErr_BadMPEG          = 211,
+	/// HEIF format: Modify Operation is not supported for Construction Method 1 or 2
+	kXMPErr_HEIFConstructionMethodNotSupported = 212,
+	/// PNG format error
+	kXMPErr_BadPNG			= 213
 
 };
 

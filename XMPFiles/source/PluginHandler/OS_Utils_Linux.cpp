@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2011 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2011 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "ModuleUtils.h"
@@ -28,7 +30,12 @@ typedef std::map<OS_ModuleRef, std::string>			ResourceFileToPathMap;
 static ResourceFileToPathMap						sMapResourceFileToPath;
 static XMP_ReadWriteLock							sMapModuleRWLock;
 
+# if __clang__
+typedef std::shared_ptr<int>						FilePtr;
+#else
 typedef std::tr1::shared_ptr<int>					FilePtr;
+#endif
+
 
 static std::string GetModulePath( OS_ModuleRef inOSModule );
 /** ************************************************************************************************************************

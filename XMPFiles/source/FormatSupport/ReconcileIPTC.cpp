@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2006 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -151,7 +153,7 @@ void PhotoDataUtils::ImportIPTC_Array ( const IPTC_Manager & iptc, SXMPMeta * xm
 	if ( XMP_LitMatch ( xmpNS, kXMP_NS_DC ) && XMP_LitMatch ( xmpProp, "creator" ) ) arrayForm = kXMP_PropArrayIsOrdered;
 
 	for ( size_t ds = 0; ds < count; ++ds ) {
-		(void) iptc.GetDataSet_UTF8 ( id, &utf8Str, ds );
+		if (!iptc.GetDataSet_UTF8(id, &utf8Str, ds)) continue;
 		NormalizeToLF ( &utf8Str );
 		xmp->AppendArrayItem ( xmpNS, xmpProp, arrayForm, utf8Str.c_str() );
 	}
@@ -193,7 +195,7 @@ void PhotoDataUtils::ImportIPTC_Date ( XMP_Uns8 dateID, const IPTC_Manager & ipt
 
 	IPTC_Manager::DataSetInfo dsInfo;
 	size_t count = iptc.GetDataSet ( dateID, &dsInfo );
-	if ( count == 0 || dsInfo.dataLen == 0 ) return;
+	if ( count == 0 || dsInfo.dataLen == 0 || dsInfo.dataPtr == NULL) return;
 
 	size_t chPos, digits;
 	XMP_DateTime xmpDate;
@@ -227,7 +229,7 @@ void PhotoDataUtils::ImportIPTC_Date ( XMP_Uns8 dateID, const IPTC_Manager & ipt
 	// Now add the time portion if present.
 
 	count = iptc.GetDataSet ( timeID, &dsInfo );
-	if ( count != 0 && dsInfo.dataLen > 0 ) {
+	if ( count != 0 && dsInfo.dataLen > 0  && dsInfo.dataPtr != NULL) {
 
 		chPos = 0;
 		for ( digits = 0; digits < 2; ++digits, ++chPos ) {

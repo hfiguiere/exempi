@@ -2,12 +2,14 @@
 #define __TIFF_Support_hpp__	1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2006 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include.
@@ -25,11 +27,11 @@
 
 #include "source/Endian.h"
 
-#if SUNOS_SPARC || XMP_IOS_ARM
+#if SUNOS_SPARC || XMP_IOS_ARM || XMP_ANDROID_ARM
         static const IEndian &IE = BigEndian::getInstance();
 #else
         static const IEndian &IE = LittleEndian::getInstance();
-#endif //#if SUNOS_SPARC || XMP_IOS_ARM
+#endif //#if SUNOS_SPARC || XMP_IOS_ARM || XMP_ANDROID_ARM
 
 // =================================================================================================
 /// \file TIFF_Support.hpp

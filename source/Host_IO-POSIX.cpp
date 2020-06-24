@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2010 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2010 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include.
@@ -22,7 +24,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#if (SUNOS_SPARC || SUNOS_X86 || XMP_IOS_ARM)
+#if (SUNOS_SPARC || SUNOS_X86 || XMP_IOS_ARM || XMP_ANDROID_ARM)
 	#include <limits.h>
 #endif
 
@@ -30,8 +32,8 @@
 // Host_IO implementations for POSIX
 // =================================
 
-#if (! XMP_MacBuild) & (! XMP_UNIXBuild) & (! XMP_iOSBuild)
-	#error "This is the POSIX implementation of Host_IO for Mac, iOS and general UNIX."
+#if (! XMP_MacBuild) & (! XMP_UNIXBuild) & (! XMP_iOSBuild) & (! XMP_AndroidBuild)
+	#error "This is the POSIX implementation of Host_IO for Mac, iOS , Android and general UNIX."
 #endif
 
 // =================================================================================================
@@ -39,7 +41,9 @@
 // =================================================================================================
 
 // Make sure off_t is 64 bits and signed.
-static char check_off_t_size [ (sizeof(off_t) == 8) ? 1 : -1 ];
+// Due to bug in NDK r12b size of off_t at 32 bit systems is 32 bit despite giving  _FILE_OFFSET_BITS=64 flag. So only for Android off64_t is used
+static char check_off_t_size [ (sizeof(Host_IO::XMP_off_t) == 8) ? 1 : -1 ];
+
 // *** No std::numeric_limits?  static char check_off_t_sign [ std::numeric_limits<off_t>::is_signed ? -1 : 1 ];
 
 static bool HaveWriteAccess( const std::string & path );
@@ -387,8 +391,8 @@ void Host_IO::Write ( Host_IO::FileRef refNum, const void * buffer, XMP_Uns32 co
 
 XMP_Int64 Host_IO::Length ( Host_IO::FileRef refNum )
 {
-	off_t currPos = lseek ( refNum, 0, kXMP_SeekFromCurrent );
-	off_t length  = lseek ( refNum, 0, kXMP_SeekFromEnd );
+	Host_IO::XMP_off_t currPos = lseek ( refNum, 0, kXMP_SeekFromCurrent );
+	Host_IO::XMP_off_t length  = lseek ( refNum, 0, kXMP_SeekFromEnd );
 	if ( (currPos == -1) || (length == -1) ) XMP_Throw ( "Host_IO::Length, lseek failure", kXMPErr_ExternalFailure );
 	(void) lseek ( refNum, currPos, kXMP_SeekFromStart );
 
@@ -491,7 +495,7 @@ void Host_IO::CloseFolder ( Host_IO::FolderRef folder )
 // Host_IO::GetNextChild
 // =====================
 
-#if (SUNOS_SPARC || SUNOS_X86 || XMP_IOS_ARM)
+#if (SUNOS_SPARC || SUNOS_X86 || XMP_IOS_ARM || XMP_ANDROID_ARM)
 	class SafeMalloc {
 	public:
 		void* pointer;
@@ -509,7 +513,7 @@ bool Host_IO::GetNextChild ( Host_IO::FolderRef folder, std::string* childName )
 
 	if ( folder == Host_IO::noFolderRef ) return false;
 	
-	#if ! (SUNOS_SPARC || SUNOS_X86 || XMP_IOS_ARM)
+	#if ! (SUNOS_SPARC || SUNOS_X86 || XMP_IOS_ARM || XMP_ANDROID_ARM)
 		struct dirent _childInfo;
 		struct dirent* childInfo = &_childInfo;
 	#else

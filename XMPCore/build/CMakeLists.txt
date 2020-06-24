@@ -9,10 +9,17 @@
 
 # ==============================================================================
 # define minimum cmake version
-cmake_minimum_required(VERSION 3.5.2)
+# For Android always build with make 3.6
+if(ANDROID)
+	cmake_minimum_required(VERSION 3.5.2)
+else(ANDROID)
+	cmake_minimum_required(VERSION 3.15.5)
+endif(ANDROID)
 
 # Enable folder grouping of projects in IDEs
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set(CMAKE_C_IMPLICIT_LINK_DIRECTORIES "")
+set(CMAKE_C_IMPLICIT_LINK_FRAMEWORK_DIRECTORIES "")
 
 # ==============================================================================
 # This project

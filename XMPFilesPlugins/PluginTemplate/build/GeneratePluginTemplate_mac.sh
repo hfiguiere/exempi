@@ -31,8 +31,8 @@ mkdir -p "$cmakedir"
 fi 
 cd "$cmakedir"
 CMAKE="$scriptFolder/../../../tools/cmake/bin/CMake.app/Contents/bin/cmake"
-echo "$CMAKE  ../../ -G Xcode -DCMAKE_CL_64=$cmake_buildbitdepth -DXMP_CMAKEFOLDER_NAME=$cmakedir -DXMP_BUILD_STATIC=Off -DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN "
-"$CMAKE"  ../../ -G"Xcode" -DCMAKE_CL_64="$cmake_buildbitdepth" -DXMP_CMAKEFOLDER_NAME="$cmakedir" -DXMP_BUILD_STATIC="Off" -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" 
+echo "$CMAKE  ../../ -G Xcode -DCMAKE_CL_64=$cmake_buildbitdepth -DXMP_CMAKEFOLDER_NAME=$cmakedir -DXMP_BUILD_STATIC=Off -DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN -DCMAKE_LIBCPP=On "
+"$CMAKE"  ../../ -G"Xcode" -DCMAKE_CL_64="$cmake_buildbitdepth" -DXMP_CMAKEFOLDER_NAME="$cmakedir" -DXMP_BUILD_STATIC="Off" -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" -DCMAKE_LIBCPP="On"
 if [  $? -ne 0 ]
 then
 echo "ERROR: CMAKE tool failed"
@@ -46,7 +46,7 @@ PLuginTemplate32()
 {
 #create 32bit Xcode Project
 cmake_buildbitdepth='Off'
-cmakedir="xcode/intel"
+cmakedir="xcode/intel_libcpp"
 BITS="32"
 TOOLCHAIN="$scriptFolder/../../../build/shared/ToolchainLLVM.cmake"
 Generate
@@ -55,7 +55,7 @@ PLuginTemplate64()
 {
 #create 64bit Xcode Project
 cmake_buildbitdepth='On'
-cmakedir="xcode/intel_64"
+cmakedir="xcode/intel_64_libcpp"
 BITS="64"
 TOOLCHAIN="$scriptFolder/../../../build/shared/ToolchainLLVM.cmake"
 Generate

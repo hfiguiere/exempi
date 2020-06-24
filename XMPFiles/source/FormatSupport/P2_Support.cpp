@@ -1,14 +1,18 @@
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
+
+#include <sstream>
 
 #include "public/include/XMP_Const.h"
 #include "public/include/XMP_IO.hpp"
@@ -22,23 +26,33 @@
 
 #include "XMPFiles/source/FormatSupport/P2_Support.hpp"
 #include "third-party/zuid/interfaces/MD5.h"
-#include <sstream>
 
 P2_Clip::P2_Clip(const std::string & p2ClipMetadataFilePath)
-	try :p2XMLParser(0),p2Root(0),headContentCached(false)
-	,p2ClipContent(0),filePath(p2ClipMetadataFilePath)
+	:p2XMLParser(0), p2Root(0), headContentCached(false)
+	, p2ClipContent(0), filePath(p2ClipMetadataFilePath)
 {
-	Host_IO::FileRef hostRef = Host_IO::Open ( p2ClipMetadataFilePath.c_str(), Host_IO::openReadOnly );
-	XMPFiles_IO xmlFile ( hostRef, p2ClipMetadataFilePath.c_str(), Host_IO::openReadOnly );
-	CreateExpatParser(xmlFile);
-	xmlFile.Close();
-}
-catch(...)
-{
-	DestroyExpatParser();
-	throw;
+	PrepareForExpatParser(p2ClipMetadataFilePath);
 }
 
+
+
+void P2_Clip::PrepareForExpatParser(const std::string &p2ClipMetadataFilePath)
+{
+	try {
+
+
+		Host_IO::FileRef hostRef = Host_IO::Open(p2ClipMetadataFilePath.c_str(), Host_IO::openReadOnly);
+		XMPFiles_IO xmlFile(hostRef, p2ClipMetadataFilePath.c_str(), Host_IO::openReadOnly);
+		CreateExpatParser(xmlFile);
+		xmlFile.Close();
+	}
+	catch (...)
+	{
+		DestroyExpatParser();
+		throw;
+	}
+
+}
 P2_Clip::~P2_Clip()
 {
 	DestroyExpatParser();
@@ -301,28 +315,35 @@ bool P2_SpannedClip::AddIfRelated(P2_Clip* newClip)
 	return false;
 }
 
-bool P2_SpannedClip::IsComplete() const
+void P2_SpannedClip::checkSpannedClipIsComplete()
 {
-	RelatedP2ClipList::iterator iter=spannedP2Clip.begin();
-	if (! (*iter)->IsTopClip() ) return false;
-	std::string* next=(*iter)->GetNextClipId();
-	while(++iter != spannedP2Clip.end() &&
+	RelatedP2ClipList::iterator iter = spannedP2Clip.begin();
+	if (!(*iter)->IsTopClip()) 
+		completeSpannedClip = false;
+		
+	std::string* next = (*iter)->GetNextClipId();
+	while (++iter != spannedP2Clip.end() &&
 		next != 0 && (*iter)->IsValidClip() &&
-		*next == *( (*iter)->GetClipId() ) 
-	)
-		next = (*iter)->GetNextClipId();
-	if ( iter != spannedP2Clip.end() || next != 0 )
-	{
-		iter=spannedP2Clip.begin();
-		std::string* prev= (*iter)->GetClipId();
-		while(++iter != spannedP2Clip.end() &&
-			prev != 0 &&  (*iter)->GetPreviousClipId() !=0 &&
-			*prev == *( (*iter)->GetPreviousClipId() ) 
+		*next == *((*iter)->GetClipId())
 		)
-			prev= (*iter)->GetClipId();
-		if ( iter != spannedP2Clip.end() ) return false;
+		next = (*iter)->GetNextClipId();
+	if (iter != spannedP2Clip.end() || next != 0)
+	{
+		iter = spannedP2Clip.begin();
+		std::string* prev = (*iter)->GetClipId();
+		while (++iter != spannedP2Clip.end() &&
+			prev != 0 && (*iter)->GetPreviousClipId() != 0 &&
+			*prev == *((*iter)->GetPreviousClipId())
+			)
+			prev = (*iter)->GetClipId();
+		if (iter != spannedP2Clip.end()) completeSpannedClip = false;
 	}
-	return true;
+	completeSpannedClip = true;
+}
+
+bool P2_SpannedClip::IsComplete()
+{
+	return completeSpannedClip;
 }
 
 std::string P2_SpannedClip::GetXMPFilePath()
@@ -542,10 +563,7 @@ void P2_Manager::ProcessClip(std::string & clipPath)
 			if ( ! spannedClips->AddIfRelated(tempClip) )
 				delete tempClip;
 		}
-		if(spannedClips->IsComplete())
-		{
-			return;
-		}
+		spannedClips->checkSpannedClipIsComplete();
 	}
 }
 

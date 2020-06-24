@@ -1,9 +1,11 @@
 // =================================================================================================
-// Copyright 2002 Adobe Systems Incorporated
+// Copyright 2002 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 /**
@@ -386,7 +388,7 @@ static void VerifyNewlines ( FILE * log, std::string xmp, const char * newline )
 	for ( size_t i = 0; i < xmp.size(); ++i ) {
 		if ( (xmp[i] == '\x0A') || (xmp[i] == '\x0D') ) {
 			if ( strncmp ( &xmp[i], newline, strlen(newline) ) != 0 ) {
-				fprintf ( log, "** Wrong newline at offset %d\n", i );
+				fprintf ( log, "** Wrong newline at offset %zd\n", i );
 			}
 			if ( strlen(newline) == 2 ) ++i;
 		}
@@ -1089,27 +1091,27 @@ static void DoXMPCoreCoverage ( FILE * log )
 		tmpStr2.erase();
 		meta.SerializeToBuffer ( &tmpStr1 );
 		meta.SerializeToBuffer ( &tmpStr2, kXMP_IncludeThumbnailPad );
-		fprintf ( log, "Thumbnailpad adds %d bytes\n", tmpStr2.size()-tmpStr1.size() );
+		fprintf ( log, "Thumbnailpad adds %zd bytes\n", tmpStr2.size()-tmpStr1.size() );
 		
 		tmpStr1.erase();
 		meta.SerializeToBuffer ( &tmpStr1, kXMP_ReadOnlyPacket );
 		size_t minSize = tmpStr1.size();
-		fprintf ( log, "Minimum packet size is %d bytes\n", minSize );
+		fprintf ( log, "Minimum packet size is %zd bytes\n", minSize );
 		
 		tmpStr1.erase();
 		meta.SerializeToBuffer ( &tmpStr1, kXMP_ExactPacketLength, minSize+1234 );
-		fprintf ( log, "Minimum+1234 packet size is %d bytes\n", tmpStr1.size() );
+		fprintf ( log, "Minimum+1234 packet size is %zd bytes\n", tmpStr1.size() );
 		if ( tmpStr1.size() != (minSize + 1234) ) fprintf ( log, "** Bad packet length **\n" );
 		
 		tmpStr1.erase();
 		meta.SerializeToBuffer ( &tmpStr1, kXMP_ExactPacketLength, minSize );
-		fprintf ( log, "Minimum+0 packet size is %d bytes\n", tmpStr1.size() );
+		fprintf ( log, "Minimum+0 packet size is %zd bytes\n", tmpStr1.size() );
 		if ( tmpStr1.size() != minSize ) fprintf ( log, "** Bad packet length **\n" );
 
 		try {
 			tmpStr1.erase();
 			meta.SerializeToBuffer ( &tmpStr1, kXMP_ExactPacketLength, minSize-1 );
-			fprintf ( log, "#ERROR: No exception for minimum-1, size is %d bytes **\n", tmpStr1.size() );
+			fprintf ( log, "#ERROR: No exception for minimum-1, size is %zd bytes **\n", tmpStr1.size() );
 		} catch ( XMP_Error & excep ) {
 			fprintf ( log, "Serialize in minimum-1 - threw XMP_Error #%d : %s\n", excep.GetID(), excep.GetErrMsg() );
 		} catch ( ... ) {
@@ -1536,19 +1538,19 @@ static void DoXMPCoreCoverage ( FILE * log )
 
 	tmpStr1 = "0";
 	int1 = SXMPUtils::ConvertToInt ( tmpStr1 );
-	fprintf ( log, "ConvertToInt 0 : %d\n", int1 );
+	fprintf ( log, "ConvertToInt 0 : %ld\n", int1 );
 	int1 = SXMPUtils::ConvertToInt ( "42" );
-	fprintf ( log, "ConvertToInt 42 : %d\n", int1 );
+	fprintf ( log, "ConvertToInt 42 : %ld\n", int1 );
 	int1 = SXMPUtils::ConvertToInt ( "-42" );
-	fprintf ( log, "ConvertToInt -42 : %d\n", int1 );
+	fprintf ( log, "ConvertToInt -42 : %ld\n", int1 );
 	int1 = SXMPUtils::ConvertToInt ( "0x7FFFFFFF" );
-	fprintf ( log, "ConvertToInt 0x7FFFFFFF : %d\n", int1 );
+	fprintf ( log, "ConvertToInt 0x7FFFFFFF : %ld\n", int1 );
 	int1 = SXMPUtils::ConvertToInt ( "0x80000000" );
-	fprintf ( log, "ConvertToInt 0x80000000 : %d\n", int1 );
+	fprintf ( log, "ConvertToInt 0x80000000 : %ld\n", int1 );
 	int1 = SXMPUtils::ConvertToInt ( "0x7FFFFFFF" );
-	fprintf ( log, "ConvertToInt 0x7FFFFFFF as hex : %X\n", int1 );
+	fprintf ( log, "ConvertToInt 0x7FFFFFFF as hex : %lX\n", int1 );
 	int1 = SXMPUtils::ConvertToInt ( "0x80000000" );
-	fprintf ( log, "ConvertToInt 0x80000000 as hex : %X\n", int1 );
+	fprintf ( log, "ConvertToInt 0x80000000 as hex : %lX\n", int1 );
 
 	fprintf ( log, "\n" );
 

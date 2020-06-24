@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2010 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2010 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -106,34 +108,34 @@ XMP_Uns32 WAVE_MetaHandler::whatRIFFFormat( XMP_Uns8* buffer )
 
 // ChunkIdentifier
 // RIFF:WAVE/PMX_
-const ChunkIdentifier WAVE_MetaHandler::kRIFFXMP[2] = { { kChunk_RIFF, kType_WAVE }, { kChunk_XMP, kType_NONE} };
+const ChunkIdentifier WAVE_MetaHandler::kRIFFXMP[2] = { { (static_cast<XMP_Uns32>(kChunk_RIFF)), (static_cast<XMP_Uns32>(kType_WAVE)) }, { (static_cast<XMP_Uns32>(kChunk_XMP)),(static_cast<XMP_Uns32>(kType_NONE))} };
 // RIFF:WAVE/LIST:INFO
-const ChunkIdentifier WAVE_MetaHandler::kRIFFInfo[2] = { { kChunk_RIFF, kType_WAVE }, { kChunk_LIST, kType_INFO } };
+const ChunkIdentifier WAVE_MetaHandler::kRIFFInfo[2] = { { static_cast<XMP_Uns32>(kChunk_RIFF), static_cast<XMP_Uns32>(kType_WAVE) }, { static_cast<XMP_Uns32>(kChunk_LIST), static_cast<XMP_Uns32>(kType_INFO) } };
 // RIFF:WAVE/DISP
-const ChunkIdentifier WAVE_MetaHandler::kRIFFDisp[2] = { { kChunk_RIFF, kType_WAVE }, { kChunk_DISP, kType_NONE } };
+const ChunkIdentifier WAVE_MetaHandler::kRIFFDisp[2] = { { static_cast<XMP_Uns32>(kChunk_RIFF), static_cast<XMP_Uns32>(kType_WAVE) }, { static_cast<XMP_Uns32>(kChunk_DISP), (static_cast<XMP_Uns32>(kType_NONE)) } };
 // RIFF:WAVE/BEXT
-const ChunkIdentifier WAVE_MetaHandler::kRIFFBext[2] = { { kChunk_RIFF, kType_WAVE }, { kChunk_bext, kType_NONE } };
+const ChunkIdentifier WAVE_MetaHandler::kRIFFBext[2] = { { static_cast<XMP_Uns32>(kChunk_RIFF), static_cast<XMP_Uns32>(kType_WAVE) }, { static_cast<XMP_Uns32>(kChunk_bext), (static_cast<XMP_Uns32>(kType_NONE)) } };
 // RIFF:WAVE/cart
-const ChunkIdentifier WAVE_MetaHandler::kRIFFCart[2] = { { kChunk_RIFF, kType_WAVE }, { kChunk_cart, kType_NONE } };
+const ChunkIdentifier WAVE_MetaHandler::kRIFFCart[2] = { { static_cast<XMP_Uns32>(kChunk_RIFF), static_cast<XMP_Uns32>(kType_WAVE) }, { static_cast<XMP_Uns32>(kChunk_cart), (static_cast<XMP_Uns32>(kType_NONE)) } };
 // cr8r is not yet required for WAVE
 // RIFF:WAVE/Cr8r
 // const ChunkIdentifier WAVE_MetaHandler::kWAVECr8r[2] = { { kChunk_RIFF, kType_WAVE }, { kChunk_Cr8r, kType_NONE } };
 // RIFF:WAVE/iXML
-const ChunkIdentifier WAVE_MetaHandler::kRIFFiXML[2] = { { kChunk_RIFF, kType_WAVE }, { kChunk_iXML, kType_NONE } };
+const ChunkIdentifier WAVE_MetaHandler::kRIFFiXML[2] = { { static_cast<XMP_Uns32>(kChunk_RIFF), static_cast<XMP_Uns32>(kType_WAVE) }, { static_cast<XMP_Uns32>(kChunk_iXML), (static_cast<XMP_Uns32>(kType_NONE)) } };
 // RF64:WAVE/PMX_
-const ChunkIdentifier WAVE_MetaHandler::kRF64XMP[2] = { { kChunk_RF64, kType_WAVE }, { kChunk_XMP, kType_NONE} };
+const ChunkIdentifier WAVE_MetaHandler::kRF64XMP[2] = { { static_cast<XMP_Uns32>(kChunk_RF64), static_cast<XMP_Uns32>(kType_WAVE) }, { static_cast<XMP_Uns32>(kChunk_XMP), (static_cast<XMP_Uns32>(kType_NONE)) } };
 // RF64:WAVE/LIST:INFO
-const ChunkIdentifier WAVE_MetaHandler::kRF64Info[2] = { { kChunk_RF64, kType_WAVE }, { kChunk_LIST, kType_INFO } };
+const ChunkIdentifier WAVE_MetaHandler::kRF64Info[2] = { { static_cast<XMP_Uns32>(kChunk_RF64), static_cast<XMP_Uns32>(kType_WAVE) }, { static_cast<XMP_Uns32>(kChunk_LIST), static_cast<XMP_Uns32>(kType_INFO) } };
 // RF64:WAVE/DISP
-const ChunkIdentifier WAVE_MetaHandler::kRF64Disp[2] = { { kChunk_RF64, kType_WAVE }, { kChunk_DISP, kType_NONE } };
+const ChunkIdentifier WAVE_MetaHandler::kRF64Disp[2] = { { static_cast<XMP_Uns32>(kChunk_RF64), static_cast<XMP_Uns32>(kType_WAVE) }, { static_cast<XMP_Uns32>(kChunk_DISP), (static_cast<XMP_Uns32>(kType_NONE)) } };
 // RF64:WAVE/BEXT
-const ChunkIdentifier WAVE_MetaHandler::kRF64Bext[2] = { { kChunk_RF64, kType_WAVE }, { kChunk_bext, kType_NONE } };
+const ChunkIdentifier WAVE_MetaHandler::kRF64Bext[2] = { { static_cast<XMP_Uns32>(kChunk_RF64), static_cast<XMP_Uns32>(kType_WAVE) }, { static_cast<XMP_Uns32>(kChunk_bext), (static_cast<XMP_Uns32>(kType_NONE)) } };
 // RF64:WAVE/cart
-const ChunkIdentifier WAVE_MetaHandler::kRF64Cart[2] = { { kChunk_RF64, kType_WAVE }, { kChunk_cart, kType_NONE } };
+const ChunkIdentifier WAVE_MetaHandler::kRF64Cart[2] = { { static_cast<XMP_Uns32>(kChunk_RF64), static_cast<XMP_Uns32>(kType_WAVE) }, { static_cast<XMP_Uns32>(kChunk_cart), (static_cast<XMP_Uns32>(kType_NONE)) } };
 // cr8r is not yet required for WAVE
 // RF64:WAVE/Cr8r
 // const ChunkIdentifier WAVE_MetaHandler::kRF64Cr8r[2] = { { kChunk_RF64, kType_WAVE }, { kChunk_Cr8r, kType_NONE } };
-const ChunkIdentifier WAVE_MetaHandler::kRF64iXML[2] = { { kChunk_RF64, kType_WAVE }, { kChunk_iXML, kType_NONE } };
+const ChunkIdentifier WAVE_MetaHandler::kRF64iXML[2] = { { static_cast<XMP_Uns32>(kChunk_RF64), static_cast<XMP_Uns32>(kType_WAVE) }, { static_cast<XMP_Uns32>(kChunk_iXML), static_cast<XMP_Uns32>(kType_NONE) } };
 
 // =================================================================================================
 // WAVE_MetaHandler::WAVE_MetaHandler

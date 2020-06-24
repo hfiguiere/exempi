@@ -2,12 +2,14 @@
 #define __RIFF_hpp__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2009 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2009 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -175,11 +177,11 @@ namespace RIFF {
 	// =================================================================================================
 	// ImportCr8rItems
 	// ===============
-#if SUNOS_SPARC || SUNOS_X86
+#if SUNOS_SPARC || SUNOS_X86 || XMP_ANDROID_ARM
 	#pragma pack ( 1 )
 #else
 	#pragma pack ( push, 1 )
-#endif //#if SUNOS_SPARC || SUNOS_X86
+#endif //#if SUNOS_SPARC || SUNOS_X86 || XMP_ANDROID_ARM
 	struct PrmLBoxContent {
 		XMP_Uns32 magic;
 		XMP_Uns32 size;
@@ -204,7 +206,7 @@ namespace RIFF {
 		char appOptions[16];
 		char appName[32];
 	};
-#if SUNOS_SPARC || SUNOS_X86
+#if SUNOS_SPARC || SUNOS_X86 || XMP_AndroidBuild
 	#pragma pack (  )
 #else
 	#pragma pack ( pop )

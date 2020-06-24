@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2007 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2007 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -604,10 +606,10 @@ static void RemoveTimeStampFromClipName(std::string &clipName)
 // SonyHDV_MetaHandler::MakeIndexFilePath
 // ======================================
 
-bool SonyHDV_MetaHandler::MakeIndexFilePath ( std::string& idxPath, const std::string& rootPath, const std::string& leafName )
+bool SonyHDV_MetaHandler::MakeIndexFilePath ( std::string& idxPath, const std::string& _rootPath, const std::string& leafName )
 {
 	std::string tempPath;
-	tempPath = rootPath;
+	tempPath = _rootPath;
 	tempPath += kDirChar;
 	tempPath += "VIDEO";
 	tempPath += kDirChar;
@@ -626,8 +628,8 @@ bool SonyHDV_MetaHandler::MakeIndexFilePath ( std::string& idxPath, const std::s
 	// Scanning code taken from SonyHDV_CheckFormat
 	// Can be isolated to a separate function.
 
-	std::string clipName = leafName;
-	RemoveTimeStampFromClipName(clipName);
+	std::string clipNameStr = leafName;
+	RemoveTimeStampFromClipName(clipNameStr);
 
 	Host_IO::AutoFolder aFolder;
 	std::string childName;
@@ -639,10 +641,10 @@ bool SonyHDV_MetaHandler::MakeIndexFilePath ( std::string& idxPath, const std::s
 		if ( childLen < 4 ) continue;
 		MakeUpperCase ( &childName );
 		if ( childName.compare ( childLen-4, 4, ".IDX" ) != 0 ) continue;
-		if ( childName.compare ( 0, clipName.size(), clipName ) == 0 ) {
+		if ( childName.compare ( 0, clipNameStr.size(), clipNameStr ) == 0 ) {
 			found = true;
-			clipName = childName;
-			clipName.erase ( childLen-4 );
+			clipNameStr = childName;
+			clipNameStr.erase ( childLen-4 );
 		}
 	}
 	aFolder.Close();
@@ -650,7 +652,7 @@ bool SonyHDV_MetaHandler::MakeIndexFilePath ( std::string& idxPath, const std::s
 
 	idxPath = tempPath;
 	idxPath += kDirChar;
-	idxPath += clipName;
+	idxPath += clipNameStr;
 	idxPath += ".IDX";
 
 	return true;

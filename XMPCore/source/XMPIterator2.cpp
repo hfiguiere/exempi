@@ -1,9 +1,11 @@
 // =================================================================================================
-// Copyright 2003 Adobe Systems Incorporated
+// Copyright 2003 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 
@@ -43,7 +45,7 @@
 #endif
 
 
-XMP_VarString GetNameSpace( const AdobeXMPCommon::spcIUTF8String & nameSpace )
+static XMP_VarString GetNameSpace( const AdobeXMPCommon::spcIUTF8String & nameSpace )
 {
 	auto defaultMap = AdobeXMPCore::INameSpacePrefixMap::GetDefaultNameSpacePrefixMap()->GetINameSpacePrefixMap_I();
 	auto prefix = defaultMap->GetPrefix( nameSpace );
@@ -51,7 +53,7 @@ XMP_VarString GetNameSpace( const AdobeXMPCommon::spcIUTF8String & nameSpace )
 }
 
 
-XMP_VarString NodeFullName( const AdobeXMPCore::spcINode & node )
+static XMP_VarString NodeFullName( const AdobeXMPCore::spcINode & node )
 {
 	XMP_VarString name = GetNameSpace(node->GetNameSpace()) + ":" + node->GetName()->c_str();
 	return name;
@@ -456,13 +458,13 @@ XMPIterator2::Next ( XMP_StringPtr * schemaNS,
 		while (isSchemaNode || ( xmpNode && XMPUtils::GetNodeChildCount(xmpNode)))  {
 			info.currPos->visitStage = kIter_VisitQualifiers;	// Skip to this node's children.
 			xmpNode = GetNextNode(isSchemaNode);
-			if (xmpNode == 0 && !isSchemaNode) return false;
+			if (xmpNode == libcppNULL && !isSchemaNode) return false;
 			isSchemaNode = XMP_NodeIsSchema(info.currPos->options);
 		}
 	}
 
 	*schemaNS = info.currSchema.c_str();
-	*nsSize = info.currSchema.size();
+	*nsSize = (XMP_Uns32)info.currSchema.size();
 	
 
 	*propOptions = info.currPos->options;
@@ -475,14 +477,14 @@ XMPIterator2::Next ( XMP_StringPtr * schemaNS,
 	if (!(*propOptions & kXMP_SchemaNode)) {
 
 		*propPath = info.currPos->fullPath.c_str();
-		*pathSize = info.currPos->fullPath.size();
+		*pathSize = (XMP_Uns32)info.currPos->fullPath.size();
 
 		if (info.options & kXMP_IterJustLeafName) {
 			*propPath += info.currPos->leafOffset;
 			*pathSize -= info.currPos->leafOffset;
 			if (! xmpNode->IsArrayItem()) {
 				*schemaNS = xmpNode->GetNameSpace()->c_str();
-				*nsSize = xmpNode->GetNameSpace()->size();
+				*nsSize = (XMP_Uns32)xmpNode->GetNameSpace()->size();
 			}
 			else {
 				*schemaNS = "";
@@ -494,7 +496,7 @@ XMPIterator2::Next ( XMP_StringPtr * schemaNS,
 		if (!(*propOptions & kXMP_PropCompositeMask)) {
 			spcIUTF8String nodeValue = xmpNode->ConvertToSimpleNode()->GetValue();
 			*propValue = nodeValue->c_str();
-			*valueSize = nodeValue->size();
+			*valueSize = (XMP_Uns32)nodeValue->size();
 		}
 
 	}

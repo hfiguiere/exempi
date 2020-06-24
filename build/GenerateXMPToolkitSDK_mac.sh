@@ -41,7 +41,7 @@ clean()
 Generate()
 {
 cd "`dirname \"$abspath\"`" >/dev/null
-./cmake.command $BITS $BUILD_TYPE WarningAsError $TOOLCHAIN
+./cmake.command $BITS $BUILD_TYPE $CPP_LIB WarningAsError $TOOLCHAIN
 if [  $? -ne 0 ]
 then
 echo "ERROR: CMAKE tool failed"
@@ -56,6 +56,7 @@ SDKDynamic32()
 #create dynamic 32bit Xcode Project
 BUILD_TYPE="Dynamic"
 BITS="32"
+CPP_LIB="libcpp"
 TOOLCHAIN="ToolchainLLVM.cmake"
 Generate
 }
@@ -64,6 +65,7 @@ SDKStatic32()
 #create static 32bit Xcode Project
 BUILD_TYPE="Static"
 BITS="32"
+CPP_LIB="libcpp"
 TOOLCHAIN="ToolchainLLVM.cmake"
 Generate
 }
@@ -72,6 +74,7 @@ SDKDynamic64()
 #create dynamic 64bit Xcode Project
 BUILD_TYPE="Dynamic"
 BITS="64"
+CPP_LIB="libcpp"
 TOOLCHAIN="ToolchainLLVM.cmake"
 Generate
 }
@@ -80,6 +83,7 @@ SDKStatic64()
 #create static 64bit Xcode Project
 BUILD_TYPE="Static"
 BITS="64"
+CPP_LIB="libcpp"
 TOOLCHAIN="ToolchainLLVM.cmake"
 Generate
 }
@@ -88,6 +92,16 @@ SDKStaticIos()
 #create static ios Xcode Project
 BUILD_TYPE="Static"
 BITS="32"
+CPP_LIB="libcpp"
+TOOLCHAIN="Toolchain_ios.cmake"
+Generate
+}
+SDKDynamicIos()
+{
+#create dynamic ios Xcode Project
+BUILD_TYPE="Dynamic"
+BITS="32"
+CPP_LIB="libcpp"
 TOOLCHAIN="Toolchain_ios.cmake"
 Generate
 }
@@ -96,7 +110,8 @@ echo "1. Clean All"
 echo "2. Generate XMPToolkitSDK Dynamic 64"
 echo "3. Generate XMPToolkitSDK Static  64"
 echo "4. Generate XMPToolkitSDK Static iOS"
-echo "5. Generate All"
+echo "5. Generate XMPToolkitSDK Dynamic iOS"
+echo "6. Generate All"
 
 read -p "Enter your choice: " choice
 case $choice in
@@ -104,7 +119,8 @@ case $choice in
   2) SDKDynamic64;;
   3) SDKStatic64;;
   4) SDKStaticIos;;
-  5) SDKDynamic64; SDKStatic64; SDKStaticIos;;
+  5) SDKDynamicIos;;
+  6) SDKDynamic64; SDKStatic64; SDKStaticIos; SDKDynamicIos;;
   *) echo "ERROR: Invalid Choice, Exiting"; exit 1;;
 esac
 

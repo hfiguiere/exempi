@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2006 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -504,7 +506,7 @@ static bool ImportMVHDItems ( MOOV_Manager::BoxInfo mvhdInfo, SXMPMeta * xmp )
 // ExportMVHDItems
 // ===============
 
-static void ExportMVHDItems ( const SXMPMeta & xmp, MOOV_Manager * moovMgr )
+static void ExportMVHDItems ( const SXMPMeta & xmp, MOOV_Manager * moovMgr , bool haveISOFile)
 {
 	XMP_DateTime xmpDate;
 	bool createFound, modifyFound;
@@ -532,7 +534,7 @@ static void ExportMVHDItems ( const SXMPMeta & xmp, MOOV_Manager * moovMgr )
 		XMP_Uns64 oldCreate = GetUns64BE ( mvhdInfo.content + 4 );
 		XMP_Uns64 oldModify = GetUns64BE ( mvhdInfo.content + 12 );
 
-		if ( createFound ) {
+		if ( createFound && haveISOFile) {
 			if ( createSeconds != oldCreate ) PutUns64BE ( createSeconds, ((XMP_Uns8*)mvhdInfo.content + 4) );
 			moovMgr->NoteChange();
 		}
@@ -550,7 +552,7 @@ static void ExportMVHDItems ( const SXMPMeta & xmp, MOOV_Manager * moovMgr )
 		XMP_Uns32 oldCreate = GetUns32BE ( mvhdInfo.content + 4 );
 		XMP_Uns32 oldModify = GetUns32BE ( mvhdInfo.content + 8 );
 
-		if ( createFound ) {
+		if ( createFound && haveISOFile) {
 			if ( (XMP_Uns32)createSeconds != oldCreate ) PutUns32BE ( (XMP_Uns32)createSeconds, ((XMP_Uns8*)mvhdInfo.content + 4) );
 			moovMgr->NoteChange();
 		}
@@ -589,14 +591,14 @@ static void ExportMVHDItems ( const SXMPMeta & xmp, MOOV_Manager * moovMgr )
 		XMP_Uns64 temp64;
 
 		temp64 = (XMP_Uns64) GetUns32BE ( &mvhdV0->creationTime );
-		if ( createFound ) temp64 = createSeconds;
+		if ( createFound && haveISOFile) temp64 = createSeconds;
 		mvhdV1.creationTime = MakeUns64BE ( temp64 );
 
 		temp64 = (XMP_Uns64) GetUns32BE ( &mvhdV0->modificationTime );
 		if ( modifyFound ) temp64 = modifySeconds;
 		mvhdV1.modificationTime = MakeUns64BE ( temp64 );
 
-		moovMgr->SetBox ( mvhdRef, &mvhdV1, sizeof ( MOOV_Manager::Content_mvhd_1 ) );
+		moovMgr->ISOBaseMedia_Manager::SetBox( mvhdRef, &mvhdV1, sizeof ( MOOV_Manager::Content_mvhd_1 ) );
 
 	}
 
@@ -712,7 +714,7 @@ static void ExportISOCopyrights ( const SXMPMeta & xmp, MOOV_Manager * moovMgr )
 				std::string newContent = "vfffll";
 				newContent += xmpValue;
 				memcpy ( (char*)newContent.c_str(), cprtInfo.content, 6 ); // Keep old version, flags, and language.
-				moovMgr->SetBox ( cprtRef, newContent.c_str(), (XMP_Uns32)(newContent.size() + 1) );
+				moovMgr->ISOBaseMedia_Manager::SetBox( cprtRef, newContent.c_str(), (XMP_Uns32)(newContent.size() + 1) );
 			}
 
 		}
@@ -803,7 +805,7 @@ static void ExportISOCopyrights ( const SXMPMeta & xmp, MOOV_Manager * moovMgr )
 					std::string newContent = "vfffll";
 					newContent += xmpValue;
 					memcpy ( (char*)newContent.c_str(), cprtInfo.content, 6 ); // Keep old version, flags, and language.
-					moovMgr->SetBox ( cprtRef, newContent.c_str(), (XMP_Uns32)(newContent.size() + 1) );
+					moovMgr->ISOBaseMedia_Manager::SetBox( cprtRef, newContent.c_str(), (XMP_Uns32)(newContent.size() + 1) );
 				}
 
 			}
@@ -833,6 +835,20 @@ static void ExportQuickTimeItems ( const SXMPMeta & xmp, TradQT_Manager * qtMgr,
 	qtMgr->UpdateChangedBoxes ( moovMgr );
 
 }	// ExportQuickTimeItems
+
+#if 0
+static bool ExportQTMetaBoxItems(const SXMPMeta & xmp, TradQT_Manager * qtMgr, MOOV_Manager * moovMgr)
+{
+	MOOV_Manager::BoxInfo moovMetaInfo;
+	MOOV_Manager::BoxRef  moovMetaRef = moovMgr->GetBox("moov/meta", &moovMetaInfo);
+
+	if (moovMetaRef == 0 ) return false;
+		qtMgr->ExportLocationMetaAtom(xmp, moovMgr);
+		qtMgr->ExportCreateDateMetaAtom(xmp, moovMgr);
+	return true;
+
+}	// ExportQTMetaBoxItems
+#endif
 
 // =================================================================================================
 // SelectTimeFormat
@@ -965,11 +981,11 @@ static bool ComposeTimecode ( const MPEG4_MetaHandler::TimecodeTrackInfo & tmcdI
 
 	// Do some drop-frame corrections at this point: If this is drop-frame and the units of minutes
 	// is non-zero, and the seconds are zero, and the frames are zero or one, the time is illegal.
-	// Perform correction by subtracting 1 from the units of minutes and adding 1798 to the frames. 
+	// Perform correction by subtracting 1 from the units of minutes and adding 1798 to the frames.
 	// For example, 1:00:00 becomes 59:28, and 1:00:01 becomes 59:29. A special case can occur for
 	// when the frameCount just before the minHigh calculation is less than framesPerTenMinutes but
 	// more than 10*framesPerMinute. This happens because of roundoff, and will result in a minHigh
-	// of 0 and a minLow of 10. The drop frame correction must also be performed for this case.
+	// of 0 and a minLow of 10.The drop frame correction mustalso be performed for this case.
 
 	if ( tmcdInfo.isDropFrame ) {
 		if ( (minLow == 10) || ((minLow != 0) && (frameCount < dropLimit)) ) {
@@ -1055,7 +1071,7 @@ static MOOV_Manager::BoxRef FindTimecode_trak ( const MOOV_Manager & moovMgr )
 	XMP_Assert ( moovRef != 0 );
 
 	MOOV_Manager::BoxInfo trakInfo;
-	MOOV_Manager::BoxRef  trakRef;
+	MOOV_Manager::BoxRef  trakRef = NULL;
 
 	size_t i = 0;
 	for ( ; i < moovInfo.childCount; ++i ) {
@@ -1174,7 +1190,7 @@ static bool ImportTimecodeItems ( const MPEG4_MetaHandler::TimecodeTrackInfo & t
 	bool haveItem;
 	bool haveImports = false;
 
-	// The QT user data item '©REL' goes into xmpDM:tapeName, and the 'name' box at the end of the
+	// The QT user data item 'REL' goes into xmpDM:tapeName, and the 'name' box at the end of the
 	// timecode sample description goes into xmpDM:altTapeName.
 	haveImports |= qtInfo.ImportSimpleXMP ( kQTilst_Reel, xmp, kXMP_NS_DM, "tapeName" );
 	if ( ! tmcdInfo.macName.empty() ) {
@@ -1185,7 +1201,7 @@ static bool ImportTimecodeItems ( const MPEG4_MetaHandler::TimecodeTrackInfo & t
 		}
 	}
 
-	// The QT user data item '©TSC' goes into xmpDM:startTimeScale. If that isn't present, then
+	// The QT user data item 'TSC' goes into xmpDM:startTimeScale. If that isn't present, then
 	// the timecode sample description's timeScale is used.
 	haveItem = qtInfo.ImportSimpleXMP ( kQTilst_TimeScale, xmp, kXMP_NS_DM, "startTimeScale" );
 	if ( tmcdInfo.stsdBoxFound & (! haveItem) ) {
@@ -1194,7 +1210,7 @@ static bool ImportTimecodeItems ( const MPEG4_MetaHandler::TimecodeTrackInfo & t
 	}
 	haveImports |= haveItem;
 
-	// The QT user data item '©TSZ' goes into xmpDM:startTimeSampleSize. If that isn't present, then
+	// The QT user data item 'TSZ' goes into xmpDM:startTimeSampleSize. If that isn't present, then
 	// the timecode sample description's frameDuration is used.
 	haveItem = qtInfo.ImportSimpleXMP ( kQTilst_TimeSize, xmp, kXMP_NS_DM, "startTimeSampleSize" );
 	if ( tmcdInfo.stsdBoxFound & (! haveItem) ) {
@@ -1208,7 +1224,7 @@ static bool ImportTimecodeItems ( const MPEG4_MetaHandler::TimecodeTrackInfo & t
 	// The Timecode struct type is used for xmpDM:startTimecode and xmpDM:altTimecode. For both, only
 	// the xmpDM:timeValue and xmpDM:timeFormat fields are set.
 
-	// The QT user data item '©TIM' goes into xmpDM:startTimecode/xmpDM:timeValue. This is an already
+	// The QT user data item 'TIM' goes into xmpDM:startTimecode/xmpDM:timeValue. This is an already
 	// formatted timecode string. The XMP values of xmpDM:startTimeScale, xmpDM:startTimeSampleSize,
 	// and xmpDM:startTimecode/xmpDM:timeValue are used to select the timeFormat value.
 	haveImports |= qtInfo.ImportSimpleXMP ( kQTilst_Timecode, xmp, kXMP_NS_DM, "startTimecode/xmpDM:timeValue" );
@@ -1392,7 +1408,7 @@ static void ExportTimecodeItems ( const SXMPMeta & xmp, MPEG4_MetaHandler::Timec
 			memcpy ( &stsdNewContent[stsdPrefixSize+12], tmcdInfo->macName.c_str(), tmcdInfo->macName.size() );
 		}
 
-		moovMgr->SetBox ( stsdRef, &stsdNewContent[0], stsdNewContentSize );
+		moovMgr->ISOBaseMedia_Manager::SetBox( stsdRef, &stsdNewContent[0], stsdNewContentSize );
 
 	}
 
@@ -1512,32 +1528,32 @@ static bool ImportCr8rItems ( const MOOV_Manager & moovMgr, SXMPMeta * xmp )
 			Flip4 ( &rawCr8r.appleEvent );
 		}
 
-		std::string fieldPath;
+		std::string fieldPathStr;
 
-		SXMPUtils::ComposeStructFieldPath ( kXMP_NS_CreatorAtom, "macAtom", kXMP_NS_CreatorAtom, "applicationCode", &fieldPath );
-		if ( (rawCr8r.creatorCode != 0) && (! xmp->DoesPropertyExist ( kXMP_NS_CreatorAtom, fieldPath.c_str() )) ) {
+		SXMPUtils::ComposeStructFieldPath ( kXMP_NS_CreatorAtom, "macAtom", kXMP_NS_CreatorAtom, "applicationCode", &fieldPathStr );
+		if ( (rawCr8r.creatorCode != 0) && (! xmp->DoesPropertyExist ( kXMP_NS_CreatorAtom, fieldPathStr.c_str() )) ) {
 			haveXMP = true;
-			xmp->SetProperty_Int64 ( kXMP_NS_CreatorAtom, fieldPath.c_str(), (XMP_Int64)rawCr8r.creatorCode );	// ! Unsigned trickery.
+			xmp->SetProperty_Int64 ( kXMP_NS_CreatorAtom, fieldPathStr.c_str(), (XMP_Int64)rawCr8r.creatorCode );	// ! Unsigned trickery.
 		}
 
-		SXMPUtils::ComposeStructFieldPath ( kXMP_NS_CreatorAtom, "macAtom", kXMP_NS_CreatorAtom, "invocationAppleEvent", &fieldPath );
-		if ( (rawCr8r.appleEvent != 0) && (! xmp->DoesPropertyExist ( kXMP_NS_CreatorAtom, fieldPath.c_str() )) ) {
+		SXMPUtils::ComposeStructFieldPath ( kXMP_NS_CreatorAtom, "macAtom", kXMP_NS_CreatorAtom, "invocationAppleEvent", &fieldPathStr );
+		if ( (rawCr8r.appleEvent != 0) && (! xmp->DoesPropertyExist ( kXMP_NS_CreatorAtom, fieldPathStr.c_str() )) ) {
 			haveXMP = true;
-			xmp->SetProperty_Int64 ( kXMP_NS_CreatorAtom, fieldPath.c_str(), (XMP_Int64)rawCr8r.appleEvent );	// ! Unsigned trickery.
+			xmp->SetProperty_Int64 ( kXMP_NS_CreatorAtom, fieldPathStr.c_str(), (XMP_Int64)rawCr8r.appleEvent );	// ! Unsigned trickery.
 		}
 
 		rawCr8r.fileExt[15] = 0;	// Ensure a terminating nul.
-		SXMPUtils::ComposeStructFieldPath ( kXMP_NS_CreatorAtom, "windowsAtom", kXMP_NS_CreatorAtom, "extension", &fieldPath );
-		if ( (rawCr8r.fileExt[0] != 0) && (! xmp->DoesPropertyExist ( kXMP_NS_CreatorAtom, fieldPath.c_str() )) ) {
+		SXMPUtils::ComposeStructFieldPath ( kXMP_NS_CreatorAtom, "windowsAtom", kXMP_NS_CreatorAtom, "extension", &fieldPathStr );
+		if ( (rawCr8r.fileExt[0] != 0) && (! xmp->DoesPropertyExist ( kXMP_NS_CreatorAtom, fieldPathStr.c_str() )) ) {
 			haveXMP = true;
-			xmp->SetProperty ( kXMP_NS_CreatorAtom, fieldPath.c_str(), rawCr8r.fileExt );
+			xmp->SetProperty ( kXMP_NS_CreatorAtom, fieldPathStr.c_str(), rawCr8r.fileExt );
 		}
 
 		rawCr8r.appOptions[15] = 0;	// Ensure a terminating nul.
-		SXMPUtils::ComposeStructFieldPath ( kXMP_NS_CreatorAtom, "windowsAtom", kXMP_NS_CreatorAtom, "invocationFlags", &fieldPath );
-		if ( (rawCr8r.appOptions[0] != 0) && (! xmp->DoesPropertyExist ( kXMP_NS_CreatorAtom, fieldPath.c_str() )) ) {
+		SXMPUtils::ComposeStructFieldPath ( kXMP_NS_CreatorAtom, "windowsAtom", kXMP_NS_CreatorAtom, "invocationFlags", &fieldPathStr );
+		if ( (rawCr8r.appOptions[0] != 0) && (! xmp->DoesPropertyExist ( kXMP_NS_CreatorAtom, fieldPathStr.c_str() )) ) {
 			haveXMP = true;
-			xmp->SetProperty ( kXMP_NS_CreatorAtom, fieldPath.c_str(), rawCr8r.appOptions );
+			xmp->SetProperty ( kXMP_NS_CreatorAtom, fieldPathStr.c_str(), rawCr8r.appOptions );
 		}
 
 		rawCr8r.appName[31] = 0;	// Ensure a terminating nul.
@@ -1922,107 +1938,6 @@ static void CheckFinalBox ( XMP_IO* fileRef, XMP_AbortProc abortProc, void * abo
 
 }	// CheckFinalBox
 
-// =================================================================================================
-// WriteBoxHeader
-// ==============
-
-static void WriteBoxHeader ( XMP_IO* fileRef, XMP_Uns32 boxType, XMP_Uns64 boxSize )
-{
-	XMP_Uns32 u32;
-	XMP_Uns64 u64;
-	XMP_Enforce ( boxSize >= 8 );	// The size must be the full size, not just the content.
-
-	if ( boxSize <= 0xFFFFFFFF ) {
-
-		u32 = MakeUns32BE ( (XMP_Uns32)boxSize );
-		fileRef->Write ( &u32, 4 );
-		u32 = MakeUns32BE ( boxType );
-		fileRef->Write ( &u32, 4 );
-
-	} else {
-
-		u32 = MakeUns32BE ( 1 );
-		fileRef->Write ( &u32, 4 );
-		u32 = MakeUns32BE ( boxType );
-		fileRef->Write ( &u32, 4 );
-		u64 = MakeUns64BE ( boxSize );
-		fileRef->Write ( &u64, 8 );
-
-	}
-
-}	// WriteBoxHeader
-
-// =================================================================================================
-// WipeBoxFree
-// ===========
-//
-// Change the box's type to 'free' (or create a 'free' box) and zero the content.
-
-static XMP_Uns8 kZeroes [64*1024];	// C semantics guarantee zero initialization.
-
-static void WipeBoxFree ( XMP_IO* fileRef, XMP_Uns64 boxOffset, XMP_Uns32 boxSize )
-{
-	if ( boxSize == 0 ) return;
-	XMP_Enforce ( boxSize >= 8 );
-
-	fileRef->Seek ( boxOffset, kXMP_SeekFromStart );
-	XMP_Uns32 u32;
-	u32 = MakeUns32BE ( boxSize );	// ! The actual size should not change, but might have had a long header.
-	fileRef->Write ( &u32, 4 );
-	u32 = MakeUns32BE ( ISOMedia::k_free );
-	fileRef->Write ( &u32, 4 );
-
-	XMP_Uns32 ioCount = sizeof ( kZeroes );
-	for ( boxSize -= 8; boxSize > 0; boxSize -= ioCount ) {
-		if ( ioCount > boxSize ) ioCount = boxSize;
-		fileRef->Write ( &kZeroes[0], ioCount );
-	}
-
-}	// WipeBoxFree
-
-// =================================================================================================
-// CreateFreeSpaceList
-// ===================
-
-struct SpaceInfo {
-	XMP_Uns64 offset, size;
-	SpaceInfo() : offset(0), size(0) {};
-	SpaceInfo ( XMP_Uns64 _offset, XMP_Uns64 _size ) : offset(_offset), size(_size) {};
-};
-
-typedef std::vector<SpaceInfo> FreeSpaceList;
-
-static void CreateFreeSpaceList ( XMP_IO* fileRef, XMP_Uns64 fileSize,
-								  XMP_Uns64 oldOffset, XMP_Uns32 oldSize, FreeSpaceList * spaceList )
-{
-	XMP_Uns64 boxPos=0, boxNext=0, adjacentFree=0;
-	ISOMedia::BoxInfo currBox;
-
-	fileRef->Rewind();
-	spaceList->clear();
-
-	for ( boxPos = 0; boxPos < fileSize; boxPos = boxNext ) {
-
-		boxNext = ISOMedia::GetBoxInfo ( fileRef, boxPos, fileSize, &currBox, true /* throw errors */ );
-		XMP_Uns64 currSize = currBox.headerSize + currBox.contentSize;
-
-		if ( (currBox.boxType == ISOMedia::k_free) ||
-			 (currBox.boxType == ISOMedia::k_skip) ||
-			 ((boxPos == oldOffset) && (currSize == oldSize)) ) {
-
-			if ( spaceList->empty() || (boxPos != adjacentFree) ) {
-				spaceList->push_back ( SpaceInfo ( boxPos, currSize ) );
-				adjacentFree = boxPos + currSize;
-			} else {
-				SpaceInfo * lastSpace = &spaceList->back();
-				lastSpace->size += currSize;
-			}
-
-		}
-
-	}
-
-}	// CreateFreeSpaceList
 
 // =================================================================================================
 // MPEG4_MetaHandler::CacheFileData
@@ -2068,6 +1983,7 @@ void MPEG4_MetaHandler::CacheFileData()
 	bool xmpUuidFound = (! haveISOFile);			// Ignore the XMP 'uuid' box for QuickTime files.
 	bool moovIgnored = (xmpOnly & haveISOFile);	// Ignore the 'moov' box for XMP-only ISO files.
 	bool moovFound = moovIgnored;
+	bool metaFound = !haveISOFile;         // Ignore the file level 'meta' box for QuickTime files.
 
 	for ( boxPos = 0; boxPos < fileSize; boxPos = boxNext ) {
 
@@ -2081,7 +1997,7 @@ void MPEG4_MetaHandler::CacheFileData()
 		if ( (! moovFound) && (currBox.boxType == ISOMedia::k_moov) ) {
 
 			XMP_Uns64 fullMoovSize = currBox.headerSize + currBox.contentSize;
-			if ( fullMoovSize > moovBoxSizeLimit ) {	// From here on we know 32-bit offsets are safe.
+			if ( fullMoovSize > TopBoxSizeLimit) {	// From here on we know 32-bit offsets are safe.
 				XMP_Throw ( "Oversize 'moov' box", kXMPErr_EnforceFailure );
 			}
 
@@ -2092,12 +2008,13 @@ void MPEG4_MetaHandler::CacheFileData()
 			this->moovBoxPos = boxPos;
 			this->moovBoxSize = (XMP_Uns32)fullMoovSize;
 			moovFound = true;
-			if ( xmpUuidFound ) break;	// Exit the loop when both are found.
+			if ( xmpUuidFound && metaFound ) break;	// Exit the loop when both are found.
 
-		} else if ( (! xmpUuidFound) && (currBox.boxType == ISOMedia::k_uuid) && ( memcmp( currBox.idUUID, ISOMedia::k_xmpUUID, 16 ) == 0 ) ) {
+		} 
+		else if ( (! xmpUuidFound) && (currBox.boxType == ISOMedia::k_uuid) && ( memcmp( currBox.idUUID, ISOMedia::k_xmpUUID, 16 ) == 0 ) ) {
 
 			XMP_Uns64 fullUuidSize = currBox.headerSize + currBox.contentSize;
-			if ( fullUuidSize > moovBoxSizeLimit ) {	// From here on we know 32-bit offsets are safe.
+			if ( fullUuidSize > TopBoxSizeLimit) {	// From here on we know 32-bit offsets are safe.
 				XMP_Throw ( "Oversize XMP 'uuid' box", kXMPErr_EnforceFailure );
 			}
 
@@ -2110,7 +2027,7 @@ void MPEG4_MetaHandler::CacheFileData()
 			this->xmpBoxPos = boxPos;
 			this->xmpBoxSize = (XMP_Uns32)fullUuidSize;
 			xmpUuidFound = true;
-			if ( moovFound ) break;	// Exit the loop when both are found.
+			if ( moovFound && metaFound ) break;	// Exit the loop when both are found.
 
 		}
 
@@ -2161,7 +2078,6 @@ void MPEG4_MetaHandler::ProcessXMP()
 		XMPFileHandler::NotifyClient(&parent->errorCallback, kXMPErrSev_FileFatal, error);
 	}
 	this->moovMgr.ParseMemoryTree ( this->fileMode );
-
 	if ( (this->xmpBoxPos == 0) || (! haveISOFile) ) {
 
 		// Look for the QuickTime moov/uuid/XMP_ box.
@@ -2198,7 +2114,6 @@ void MPEG4_MetaHandler::ProcessXMP()
 	MOOV_Manager::BoxInfo udtaInfo;
 	MOOV_Manager::BoxRef  udtaRef = this->moovMgr.GetBox ( "moov/udta", &udtaInfo );
 	std::vector<MOOV_Manager::BoxInfo> cprtBoxes;
-
 	if ( udtaRef != 0 ) {
 		for ( XMP_Uns32 i = 0; i < udtaInfo.childCount; ++i ) {
 			MOOV_Manager::BoxInfo currInfo;
@@ -2209,8 +2124,10 @@ void MPEG4_MetaHandler::ProcessXMP()
 		}
 	}
 	bool cprtFound = (! cprtBoxes.empty());
+	
 
 	bool tradQTFound = this->tradQTMgr.ParseCachedBoxes ( this->moovMgr );
+
 	bool tmcdFound = this->ParseTimecodeTrack();
 
 	if ( this->fileMode == MOOV_Manager::kFileIsNormalISO ) {
@@ -2223,14 +2140,13 @@ void MPEG4_MetaHandler::ProcessXMP()
 		if ( mvhdFound )   this->containsXMP |= ImportMVHDItems ( mvhdInfo, &this->xmpObj );
 		if ( cprtFound )   this->containsXMP |= ImportISOCopyrights ( cprtBoxes, &this->xmpObj );
 		if ( tmcdFound | tradQTFound ) {
-			// Some of the timecode items are in the .../udta/©... set but handled by ImportTimecodeItems.
+			// Some of the timecode items are in the .../udta/... set but handled by ImportTimecodeItems.
 			this->containsXMP |= ImportTimecodeItems ( this->tmcdInfo, this->tradQTMgr, &this->xmpObj );
 		}
 
 		this->containsXMP |= ImportCr8rItems ( this->moovMgr, &this->xmpObj );
-
 	}
-
+    
 }	// MPEG4_MetaHandler::ProcessXMP
 
 // =================================================================================================
@@ -2459,6 +2375,8 @@ bool MPEG4_MetaHandler::ParseTimecodeTrack()
 // MPEG4_MetaHandler::UpdateTopLevelBox
 // ====================================
 
+static XMP_Uns8 kZeroes[64 * 1024];	// C semantics guarantee zero initialization.
+
 void MPEG4_MetaHandler::UpdateTopLevelBox ( XMP_Uns64 oldOffset, XMP_Uns32 oldSize,
 											const XMP_Uns8 * newBox, XMP_Uns32 newSize )
 {
@@ -2488,7 +2406,7 @@ void MPEG4_MetaHandler::UpdateTopLevelBox ( XMP_Uns64 oldOffset, XMP_Uns32 oldSi
 		// The new size is smaller and there is enough room to create a free box.
 		fileRef->Seek ( oldOffset, kXMP_SeekFromStart );
 		fileRef->Write ( newBox, newSize );
-		WipeBoxFree ( fileRef, (oldOffset + newSize), (oldSize - newSize) );
+		this->moovMgr.WipeBoxFree ( fileRef, (oldOffset + newSize), (oldSize - newSize) );
 
 	} else {
 
@@ -2511,7 +2429,7 @@ void MPEG4_MetaHandler::UpdateTopLevelBox ( XMP_Uns64 oldOffset, XMP_Uns32 oldSi
 
 			if ( newSize < totalRoom ) {
 				// Don't wipe, at most 7 old bytes left, it will be covered by the free header.
-				WriteBoxHeader ( fileRef, ISOMedia::k_free, (totalRoom - newSize) );
+				this->moovMgr.WriteBoxHeader ( fileRef, ISOMedia::k_free, (totalRoom - newSize) );
 			}
 
 		} else {
@@ -2519,8 +2437,12 @@ void MPEG4_MetaHandler::UpdateTopLevelBox ( XMP_Uns64 oldOffset, XMP_Uns32 oldSi
 			// Create a list of all top level free space, including the old space as free. Use the
 			// earliest space that fits. If none, append.
 
-			FreeSpaceList spaceList;
-			CreateFreeSpaceList ( fileRef, oldFileSize, oldOffset, oldSize, &spaceList );
+			/*FreeSpaceList spaceList;
+			CreateFreeSpaceList ( fileRef, oldFileSize, oldOffset, oldSize, &spaceList );*/
+
+			ISOBaseMedia_Manager::SpaceList spaceList;
+
+			this->moovMgr.CreateFreeSpaceList(fileRef, oldFileSize, oldOffset, oldSize, &spaceList);
 
 			size_t freeSlot, limit;
 			for ( freeSlot = 0, limit = spaceList.size(); freeSlot < limit; ++freeSlot ) {
@@ -2534,14 +2456,14 @@ void MPEG4_MetaHandler::UpdateTopLevelBox ( XMP_Uns64 oldOffset, XMP_Uns32 oldSi
 				CheckFinalBox ( fileRef, abortProc, abortArg );
 				fileRef->ToEOF();
 				fileRef->Write ( newBox, newSize );
-				WipeBoxFree ( fileRef, oldOffset, oldSize );
+				this->moovMgr.WipeBoxFree ( fileRef, oldOffset, oldSize );
 
 			} else {
 
 				// Use the available free space. Wipe non-overlapping parts of the old box. The old
 				// box is either included in the new space, or is fully disjoint.
 
-				SpaceInfo & newSpace = spaceList[freeSlot];
+				ISOBaseMedia_Manager::SpaceInfo & newSpace = spaceList[freeSlot];
 
 				bool oldIsDisjoint = ((oldOffset + oldSize) <= newSpace.offset) ||		// Old is in front.
 									 ((newSpace.offset + newSpace.size) <= oldOffset);	// Old is behind.
@@ -2559,11 +2481,11 @@ void MPEG4_MetaHandler::UpdateTopLevelBox ( XMP_Uns64 oldOffset, XMP_Uns32 oldSi
 				fileRef->Seek ( newSpace.offset, kXMP_SeekFromStart );
 				fileRef->Write ( newBox, newSize );
 
-				if ( newFreeSize > 0 ) WriteBoxHeader ( fileRef, ISOMedia::k_free, newFreeSize );
+				if ( newFreeSize > 0 ) this->moovMgr.WriteBoxHeader ( fileRef, ISOMedia::k_free, newFreeSize );
 
 				if ( oldIsDisjoint ) {
 
-					WipeBoxFree ( fileRef, oldOffset, oldSize );
+					this->moovMgr.WipeBoxFree ( fileRef, oldOffset, oldSize );
 
 				} else {
 
@@ -2808,17 +2730,17 @@ void MPEG4_MetaHandler::OptimizeFileLayout()
 	LayoutMap::iterator layoutEnd = optLayout.end();
 
 	for ( ; layoutPos != layoutEnd; ++layoutPos ) {
-		LayoutInfo * currBox = layoutPos->second;
-		XMP_Assert ( (XMP_Int64)currBox->newOffset == tempFile->Length() );
-		originalFile->Seek ( currBox->oldOffset, kXMP_SeekFromStart );
-		XIO::Copy ( originalFile, tempFile, currBox->boxSize, abortProc, abortArg );
+		LayoutInfo * pCurrBox = layoutPos->second;
+		XMP_Assert ( (XMP_Int64)pCurrBox->newOffset == tempFile->Length() );
+		originalFile->Seek ( pCurrBox->oldOffset, kXMP_SeekFromStart );
+		XIO::Copy ( originalFile, tempFile, pCurrBox->boxSize, abortProc, abortArg );
 	}
 
 	// Update the offset tables in the temp file. Create a layout map ordered by the last actual
 	// offset of the old box's content to enable fast lookup within AdjustOffset.
 
 	LayoutMap oldEndMap;
-	for ( size_t i = 0, limit = fileBoxes.size(); i < limit; ++i ) {
+	for ( size_t i = 0, nlimit = fileBoxes.size(); i < nlimit; ++i ) {
 		XMP_Uns64 oldEnd = fileBoxes[i].oldOffset + fileBoxes[i].boxSize - 1;	// ! Want the last actual offset!
 		oldEndMap.insert ( oldEndMap.end(), LayoutMap::value_type ( oldEnd, &fileBoxes[i] ) );
 	}
@@ -2829,7 +2751,7 @@ void MPEG4_MetaHandler::OptimizeFileLayout()
 	moovRef = this->moovMgr.GetBox ( "moov", &boxInfo );
 	XMP_Enforce ( moovRef != 0 );
 
-	for ( size_t i = 0, limit = boxInfo.childCount; i < limit; ++i ) {
+	for ( size_t i = 0, nlimit = boxInfo.childCount; i < nlimit; ++i ) {
 
 		trakRef = this->moovMgr.GetNthChild ( moovRef, i, &boxInfo );
 		if ( boxInfo.boxType != ISOMedia::k_trak ) continue;
@@ -2864,7 +2786,7 @@ void MPEG4_MetaHandler::OptimizeFileLayout()
 			tempFile->Seek ( stcoTableOffset, kXMP_SeekFromStart );
 
 			XMP_Uns32 * rawOldU32 = (XMP_Uns32*) (boxInfo.content + 4+4);
-			for ( XMP_Uns32 i = 0; i < offsetCount; ++i, ++rawOldU32 ) {
+			for ( XMP_Uns32 j = 0; j < offsetCount; ++j, ++rawOldU32 ) {
 				XMP_Uns64 newOffset = AdjustOffset ( (XMP_Uns64)GetUns32BE(rawOldU32), oldEndMap,&parent->errorCallback );
 				XMP_Uns32 u32 = MakeUns32BE ( (XMP_Uns32)newOffset );
 				tempFile->Write ( &u32, 4 );
@@ -2878,7 +2800,7 @@ void MPEG4_MetaHandler::OptimizeFileLayout()
 			tempFile->Seek ( co64TableOffset, kXMP_SeekFromStart );
 
 			XMP_Uns64 * rawOldU64 = (XMP_Uns64*) (boxInfo.content + 4+4);
-			for ( XMP_Uns32 i = 0; i < offsetCount; ++i, ++rawOldU64 ) {
+			for ( XMP_Uns32 j = 0; j < offsetCount; ++j, ++rawOldU64 ) {
 				XMP_Uns64 newOffset = AdjustOffset ( GetUns64BE(rawOldU64), oldEndMap,&parent->errorCallback );
 				XMP_Uns64 u64 = MakeUns64BE ( newOffset );
 				tempFile->Write ( &u64, 8 );
@@ -2933,16 +2855,55 @@ void MPEG4_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 	// Update the 'moov' subtree with exports from the XMP, but not the XMP itself (for QT files).
 
-	ExportMVHDItems ( this->xmpObj, &this->moovMgr );
+	ExportMVHDItems ( this->xmpObj, &this->moovMgr , haveISOFile);
 	ExportISOCopyrights ( this->xmpObj, &this->moovMgr );
 	ExportQuickTimeItems ( this->xmpObj, &this->tradQTMgr, &this->moovMgr );
-	ExportTimecodeItems ( this->xmpObj, &this->tmcdInfo, &this->tradQTMgr, &this->moovMgr );
+#if 0
+	ExportQTMetaBoxItems (this->xmpObj, &this->tradQTMgr, &this->moovMgr); //to export metadata present in moov/meta box(currently on CreationDate)
+#endif
+	ExportTimecodeItems  ( this->xmpObj, &this->tmcdInfo, &this->tradQTMgr, &this->moovMgr );
 
 	if ( ! haveISOFile ) ExportCr8rItems ( this->xmpObj, &this->moovMgr );
 
+	bool updateXMPPacket = false;
+
+	if (!haveISOFile) {
+		std::string propValue;		
+
+		MOOV_Manager::BoxInfo mvhdInfo;
+		MOOV_Manager::BoxRef  mvhdRef = this->moovMgr.GetBox("moov/mvhd", &mvhdInfo);
+		bool mvhdFound = ((mvhdRef != 0) && (mvhdInfo.contentSize >= 4));
+
+		if (mvhdFound) {
+			this->xmpObj.DeleteProperty(kXMP_NS_XMP, "CreateDate");
+			updateXMPPacket = true;
+		}
+
+	}
+	else {
+	}
+
+	if (updateXMPPacket) {
+		XMP_Int32 oldPacketLength = this->packetInfo.length;
+		XMP_Int64 oldPacketOffset = this->packetInfo.offset;
+
+		if (oldPacketOffset == kXMPFiles_UnknownOffset) oldPacketOffset = 0;
+		if (oldPacketLength == kXMPFiles_UnknownLength) oldPacketLength = 0;
+
+		bool fileHadXMP = ((oldPacketOffset != 0) && (oldPacketLength != 0));
+
+		try {
+			XMP_OptionBits options = kXMP_UseCompactFormat;
+			if (fileHadXMP) options |= kXMP_ExactPacketLength;
+			this->xmpObj.SerializeToBuffer(&this->xmpPacket, options, oldPacketLength);
+		}
+		catch (...) {
+			this->xmpObj.SerializeToBuffer(&this->xmpPacket, kXMP_UseCompactFormat);
+		}
+	}
+
 	// Set up progress tracking if necessary. At this point just include the XMP size, we don't
 	// know the 'moov' box size until later.
-
 	bool localProgressTracking = false;
 	XMP_ProgressTracker* progressTracker = this->parent->progressTracker;
 	if ( progressTracker != 0 ) {
@@ -2980,7 +2941,7 @@ void MPEG4_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 		// Don't leave an old uuid XMP around (if we know about it).
 		if ( (! havePreferredXMP) && (this->xmpBoxSize != 0) ) {
-			WipeBoxFree ( fileRef, this->xmpBoxPos, this->xmpBoxSize );
+			this->moovMgr.WipeBoxFree ( fileRef, this->xmpBoxPos, this->xmpBoxSize );
 		}
 
 		// The udta form of XMP has just the XMP packet.

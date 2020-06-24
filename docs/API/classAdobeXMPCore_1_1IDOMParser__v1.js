@@ -9,7 +9,7 @@ var classAdobeXMPCore_1_1IDOMParser__v1 =
       [ "kATReplace", "classAdobeXMPCore_1_1IDOMParser__v1.html#a9f311215532a5fa1d15a491fc7e71345a2adb910039a572f5e73dbb94f680ed18", null ]
     ] ],
     [ "~IDOMParser_v1", "classAdobeXMPCore_1_1IDOMParser__v1.html#a8cbde9bf86ebb4ef4a6968e39b601670", null ],
-    [ "Clone", "classAdobeXMPCore_1_1IDOMParser__v1.html#a0d771fa042d5c5b3cf015f567f8aea9f", null ],
+    [ "Clone", "classAdobeXMPCore_1_1IDOMParser__v1.html#aaaf363c4973c2ee1d86a019837bf1cb3", null ],
     [ "Parse", "classAdobeXMPCore_1_1IDOMParser__v1.html#adc690f22fbc146bebb91366de7a8739e", null ],
     [ "ParseWithSpecificAction", "classAdobeXMPCore_1_1IDOMParser__v1.html#ad57596496a555684497ea918569df7d2", null ]
 ];

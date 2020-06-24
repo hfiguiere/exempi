@@ -141,16 +141,19 @@ file (GLOB SOURCEFILES_FORMATSUPPORT ${SOURCE_ROOT}/FormatSupport/*.cpp)
 
 source_group("Source Files\\Format Support" FILES ${SOURCEFILES_FORMATSUPPORT})
 
-if (NOT APPLE_IOS)
+if (NOT APPLE_IOS AND NOT CMAKE_WINUNIVERSAL )
 	file (GLOB SOURCEFILES_PLUGINHANDLER ${SOURCE_ROOT}/PluginHandler/*.cpp)
 	list (REMOVE_ITEM SOURCEFILES_PLUGINHANDLER
 		${SOURCE_ROOT}/PluginHandler/OS_Utils_Linux.cpp
 		${SOURCE_ROOT}/PluginHandler/OS_Utils_WIN.cpp
 		${SOURCE_ROOT}/PluginHandler/OS_Utils_Mac.cpp
+		${SOURCE_ROOT}/PluginHandler/OS_Utils_Android.cpp
 		)
 	if (UNIX)
 		if (APPLE)
 			list (APPEND SOURCEFILES_PLUGINHANDLER ${SOURCE_ROOT}/PluginHandler/OS_Utils_Mac.cpp)
+		elseif(ANDROID)
+			list (APPEND SOURCEFILES_PLUGINHANDLER ${SOURCE_ROOT}/PluginHandler/OS_Utils_ANDROID.cpp)
 		else()
 			list (APPEND SOURCEFILES_PLUGINHANDLER ${SOURCE_ROOT}/PluginHandler/OS_Utils_Linux.cpp)
 		endif()
@@ -162,12 +165,15 @@ if (NOT APPLE_IOS)
 endif()
 
 #Core & Common public source files
+#if(NOT ANDROID)
+if (INCLUDE_CPP_DOM_SOURCE)
 file (GLOB PUBLIC_XMPCOMMON_CLIENTGLUE_FILES ${XMPROOT_DIR}/public/include/XMPCommon/source/*.*)
 source_group("Source Files\\Public\\XMPCommon" FILES ${PUBLIC_XMPCOMMON_CLIENTGLUE_FILES})
 
 file (GLOB PUBLIC_XMPCORE_CLIENTGLUE_FILES ${XMPROOT_DIR}/public/include/XMPCore/source/*.*)
 source_group("Source Files\\Public\\XMPCore" FILES ${PUBLIC_XMPCORE_CLIENTGLUE_FILES})
-
+endif()
+#endif()
 list (APPEND HEADERFILES_THIRDPARTY_ZLIB
 	${XMPROOT_DIR}/third-party/zlib/adler32.c
 	${XMPROOT_DIR}/third-party/zlib/compress.c
@@ -214,6 +220,8 @@ list(APPEND SOURCE_FILES
 # include directories
 include_directories(${XMPROOT_DIR})
 include_directories(${XMPROOT_DIR}/public/include)
+include_directories(${XMPROOT_DIR}/public/include/client-glue)
+
 include_directories(${TP_EXPAT_PATH})
 include_directories(${XMPROOT_DIR}/third-party/expat/public/lib)
 include_directories(${XMPROOT_DIR}/XMPFilesPlugins/api/source)
@@ -269,6 +277,9 @@ if (UNIX AND APPLE AND NOT ${XMP_BUILD_STATIC})
 	endif()
 	set(DEPENDENCY_LIST "ALL:${TARGET_NAME}InfoPlist" "DLL:XMPCore")
 else ()
+	if(CMAKE_WINUNIVERSAL )
+		add_definitions(-DWIN_UNIVERSAL_ENV -DWIN_ENV)
+	endif()
 	set(DEPENDENCY_LIST "DLL:XMPCore")
 endif()
 
@@ -287,7 +298,7 @@ else(WIN32)
 	if(UNIX AND NOT APPLE)
 		target_link_libraries(
 			${TARGET_NAME}
-			${LIB_ADOBEXMP}
+            ${LIB_ADOBEXMP}
 		)
 	endif()
 endif()
@@ -302,8 +313,12 @@ if(UNIX)
 		if(APPLE_IOS AND NOT XMP_BUILD_STATIC)
 			set_target_properties(${TARGET_NAME} PROPERTIES XCODE_ATTRIBUTE_DYLIB_INSTALL_NAME_BASE "@rpath")
 			set_target_properties(${TARGET_NAME} PROPERTIES XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.adobe.Adobe${TARGET_NAME}")
+			set_target_properties(${TARGET_NAME} PROPERTIES XCODE_ATTRIBUTE_INSTALL_PATH "@rpath")
 		endif()
-		set_target_properties(${TARGET_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH ON INSTALL_NAME_DIR "@executable_path/../Frameworks")
+		if(XMP_BUILD_STATIC AND NOT APPLE_IOS)
+			set_target_properties(${TARGET_NAME} PROPERTIES XCODE_ATTRIBUTE_GCC_SYMBOLS_PRIVATE_EXTERN "YES")
+		endif()
+		set_target_properties(${TARGET_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH ON BUILD_WITH_INSTALL_NAME_DIR ON INSTALL_NAME_DIR "@executable_path/../Frameworks")
 		SetPlatformLinkFlags(${TARGET_NAME} "-exported_symbols_list \"${RESOURCE_ROOT}/${XMP_PLATFORM_SHORT}/${TARGET_NAME}.exp\"" "${XMPFILES_LIB}")
 	endif()
 else()
@@ -320,7 +335,7 @@ SetOutputPath(${OUTPUT_DIR} 0)
 # Post build
 # ==============================================================================
 
-if(UNIX)
+if(UNIX AND NOT ANDROID)
 	#hack for unix to rename the output static library. cmake add lib and extenstion as .a, rename it
 	if (NOT APPLE)
 		if (${XMP_BUILD_STATIC})
@@ -342,6 +357,8 @@ if(UNIX)
 				)
 			endif()
 		endif()
+
+	
 	endif()
 
 	

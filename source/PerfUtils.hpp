@@ -2,11 +2,13 @@
 #define __PerfUtils_hpp__ 1
 
 // =================================================================================================
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright 2006 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"
@@ -15,7 +17,7 @@
 	#include <CoreServices/CoreServices.h>
 #elif XMP_WinBuild
 	#include <Windows.h>
-#elif XMP_UNIXBuild | XMP_iOSBuild
+#elif XMP_UNIXBuild | XMP_iOSBuild | XMP_AndroidBuild
 	#include <time.h>
 #endif
 
@@ -25,7 +27,7 @@ namespace PerfUtils {
 //		typedef LARGE_INTEGER MomentValue;
 		typedef LONGLONG MomentValue;
 		static const MomentValue kZeroMoment = 0;
-	#elif XMP_UNIXBuild
+	#elif XMP_UNIXBuild | XMP_AndroidBuild
 		typedef struct timespec MomentValue;
 		static const MomentValue kZeroMoment = {0, 0};
 	#elif XMP_iOSBuild | XMP_MacBuild

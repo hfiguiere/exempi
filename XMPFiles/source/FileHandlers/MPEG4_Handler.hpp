@@ -2,18 +2,22 @@
 #define __MPEG4_Handler_hpp__	1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2006 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "XMPFiles/source/XMPFiles_Impl.hpp"
 
 #include "XMPFiles/source/FormatSupport/MOOV_Support.hpp"
 #include "XMPFiles/source/FormatSupport/QuickTime_Support.hpp"
+#include "XMPFiles/source/FormatSupport/META_Support.hpp"
+
 
 //  ================================================================================================
 /// \file MPEG4_Handler.hpp
@@ -72,10 +76,10 @@ public:
 private:
 
 	MPEG4_MetaHandler() : fileMode(0), havePreferredXMP(false),
-						  xmpBoxPos(0), moovBoxPos(0), xmpBoxSize(0), moovBoxSize(0) {};	// Hidden on purpose.
+						  xmpBoxPos(0), moovBoxPos(0), xmpBoxSize(0), moovBoxSize(0)
+	{};	// Hidden on purpose.
 
 	bool ParseTimecodeTrack();
-
 	void UpdateTopLevelBox ( XMP_Uns64 oldOffset, XMP_Uns32 oldSize, const XMP_Uns8 * newBox, XMP_Uns32 newSize );
 
 	void OptimizeFileLayout();
@@ -85,8 +89,9 @@ private:
 	XMP_Uns64 xmpBoxPos;	// The file offset of the XMP box (the size field, not the content).
 	XMP_Uns64 moovBoxPos;	// The file offset of the 'moov' box (the size field, not the content).
 	XMP_Uns32 xmpBoxSize, moovBoxSize;	// The full size of the boxes, not just the content.
-
+	
 	MOOV_Manager moovMgr;
+
 	TradQT_Manager tradQTMgr;
 
 	TimecodeTrackInfo tmcdInfo;

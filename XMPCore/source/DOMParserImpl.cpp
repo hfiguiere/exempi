@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2015 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2015 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #define IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED 1
@@ -69,9 +71,9 @@ namespace AdobeXMPCore_Int {
 					if ( meta ) {
 						return MakeUncheckedSharedPointer( meta, __FILE__, __LINE__ );
 					} else {
-						spIMetadata meta = IMetadata::CreateMetadata();
-						meta->AppendNode( node );
-						return meta;
+						spIMetadata spMeta = IMetadata::CreateMetadata();
+						spMeta->AppendNode( node );
+						return spMeta;
 					}
 				}
 				break;
@@ -166,7 +168,12 @@ namespace AdobeXMPCore_Int {
 		case INode::kNTStructure:
 			ReplaceChildren( contextNode->GetInterfacePointer< IStructureNode >(), parsedNode );
 			break;
+        default:
+                NOTIFY_ERROR( IError::kEDParser, kPECContextNodeIsNonComposite, "Context Node is non composite", IError::kESOperationFatal,true, static_cast< sizet >( contextNodeType ) );
+                break;
+                
 		}
+        
 	}
 
 	static void AppendOrReplaceChildren( pIStructureNode contextStructureNode, const spINode & parsedNode ) {
@@ -210,7 +217,12 @@ namespace AdobeXMPCore_Int {
 		case INode::kNTStructure:
 			AppendOrReplaceChildren( contextNode->GetInterfacePointer< IStructureNode >(), parsedNode );
 			break;
+        default:
+                NOTIFY_ERROR( IError::kEDParser, kPECContextNodeIsNonComposite, "Context Node is non composite", IError::kESOperationFatal,
+                             true, static_cast< sizet >( contextNodeType ) );
+                break;
 		}
+        
 	}
 
 	static void InsertBefore( const spINode & contextNode, const spINode & parsedNode ) {

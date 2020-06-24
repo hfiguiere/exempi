@@ -1,10 +1,12 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2006 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -334,7 +336,7 @@ bool ASF_Support::WriteHeaderObject ( XMP_IO* sourceRef, XMP_IO* destRef, const 
 			sourceRef->Seek ( pos, kXMP_SeekFromStart );
 			objectBase.size = GetUns64LE ( &objectBase.size );
 
-			int headerStartPos = header.size();
+			int headerStartPos = (int)header.size();
 
 			// save position of filesize-information
 			if ( IsEqualGUID ( ASF_File_Properties_Object, objectBase.guid ) ) {
@@ -429,7 +431,7 @@ bool ASF_Support::WriteHeaderObject ( XMP_IO* sourceRef, XMP_IO* destRef, const 
 				header.append ( buffer, 0, length );
 
 				// copyright URL
-				length = _legacyManager.GetField ( ASF_LegacyManager::fieldCopyrightURL).size( );
+				length = (XMP_Uns32)_legacyManager.GetField ( ASF_LegacyManager::fieldCopyrightURL).size( );
 				valueUns32LE = MakeUns32LE ( length );
 				header.append ( (const char*)&valueUns32LE, 4 );
 				header.append ( _legacyManager.GetField ( ASF_LegacyManager::fieldCopyrightURL ) );
@@ -518,7 +520,7 @@ bool ASF_Support::WriteHeaderObject ( XMP_IO* sourceRef, XMP_IO* destRef, const 
 
 			if ( newObjects & ASF_LegacyManager::objectContentDescription ) {
 
-				headerStartPos = header.size();
+				headerStartPos = (int)header.size();
 				newObjectBase.guid = ASF_Content_Description_Object;
 				newObjectBase.size = 0;
 
@@ -565,7 +567,7 @@ bool ASF_Support::WriteHeaderObject ( XMP_IO* sourceRef, XMP_IO* destRef, const 
 			
 			if ( newObjects & ASF_LegacyManager::objectContentBranding ) {
 
-				headerStartPos = header.size();
+				headerStartPos = (int)header.size();
 				newObjectBase.guid = ASF_Content_Branding_Object;
 				newObjectBase.size = 0;
 
@@ -576,7 +578,7 @@ bool ASF_Support::WriteHeaderObject ( XMP_IO* sourceRef, XMP_IO* destRef, const 
 				header.append ( 12, '\0' );
 
 				// copyright URL
-				length = _legacyManager.GetField ( ASF_LegacyManager::fieldCopyrightURL).size( );
+				length = (XMP_Uns32)_legacyManager.GetField ( ASF_LegacyManager::fieldCopyrightURL).size( );
 				valueUns32LE = MakeUns32LE ( length );
 				header.append ( (const char*)&valueUns32LE, 4 );
 				header.append ( _legacyManager.GetField ( ASF_LegacyManager::fieldCopyrightURL ) );
@@ -651,7 +653,7 @@ bool ASF_Support::WriteHeaderObject ( XMP_IO* sourceRef, XMP_IO* destRef, const 
 			this->progressTracker->AddTotalWork ( (float)header.size() );
 		}
 		// write header
-		destRef->Write ( header.c_str(), header.size() );
+		destRef->Write ( header.c_str(), (XMP_Uns32)header.size() );
 
 	} catch ( ... ) {
 
@@ -775,7 +777,7 @@ bool ASF_Support::WriteHeaderExtensionObject ( const std::string& buffer, std::s
 	if ( ! IsEqualGUID ( ASF_Header_Extension_Object, _objectBase.guid ) || (! header) || (buffer.size() < 46) ) return false;
 
 	const XMP_Uns64 offset = 46;
-	int startPos = header->size();
+	int startPos = (int)header->size();
 
 	// copy header base
 	header->append ( buffer, 0, offset );
@@ -805,7 +807,7 @@ bool ASF_Support::WriteHeaderExtensionObject ( const std::string& buffer, std::s
 	}
 
 	// update header extension data size
-	XMP_Uns32 valueUns32LE = MakeUns32LE ( header->size() - startPos - offset );
+	XMP_Uns32 valueUns32LE = MakeUns32LE ( (XMP_Uns32)header->size() - startPos - offset );
 	std::string newDataSize ( (const char*)&valueUns32LE, 4 );
 	ReplaceString ( *header, newDataSize, (startPos + 42), 4 );
 
@@ -1067,7 +1069,7 @@ void ASF_LegacyManager::ComputeDigest()
 		if (fields[type].size ( ) > 0 ) {
 			snprintf ( buffer, sizeof(buffer), "%d,", type );
 			digestStr.append ( buffer );
-			MD5Update ( &context, (XMP_Uns8*)fields[type].data(), fields[type].size() );
+			MD5Update ( &context, (XMP_Uns8*)fields[type].data(), (XMP_Uns32)fields[type].size() );
 		}
 
 	}
@@ -1254,7 +1256,7 @@ int ASF_LegacyManager::ExportLegacy ( const SXMPMeta& xmp )
 #endif
 
 	// find objects, that would need to be created on legacy export
-	int newObjects = (objectsToExport & !objectsExisting);
+	int newObjects = (objectsToExport & ~objectsExisting);
 
 	// calculate minimum storage for new objects, that might be created on export
 	if ( newObjects & objectContentDescription )

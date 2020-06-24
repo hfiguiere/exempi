@@ -1,13 +1,18 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2004 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2004 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include.
+
+#include <algorithm>
+
 #include "public/include/XMP_Const.h"
 #include "public/include/XMP_IO.hpp"
 
@@ -23,8 +28,6 @@
 #include "XMPFiles/source/FormatSupport/Reconcile_Impl.hpp"
 
 #include "third-party/zuid/interfaces/MD5.h"
-
-#include <algorithm>
 
 using namespace std;
 
@@ -337,7 +340,7 @@ void JPEG_MetaHandler::CacheFileData()
 
 				size_t psirLen = contentLen - kPSIRSignatureLength;
 				fileRef->Seek ( (contentOrigin + kPSIRSignatureLength), kXMP_SeekFromStart );
-				fileRef->ReadAll ( buffer, psirLen );
+				fileRef->ReadAll ( buffer, (XMP_Int32)psirLen );
 				this->psirContents.append( (char *) buffer, psirLen );
 				continue;	// Move on to the next marker.
 
@@ -358,7 +361,7 @@ void JPEG_MetaHandler::CacheFileData()
 
 				size_t exifLen = contentLen - kExifSignatureLength;
 				fileRef->Seek ( (contentOrigin + kExifSignatureLength), kXMP_SeekFromStart );
-				fileRef->ReadAll ( buffer, exifLen );
+				fileRef->ReadAll ( buffer, (XMP_Int32)exifLen );
 				this->exifContents.append ( (char*)buffer, exifLen );
 				continue;	// Move on to the next marker.
 
@@ -370,7 +373,7 @@ void JPEG_MetaHandler::CacheFileData()
 				this->containsXMP = true;	// Found the standard XMP packet.
 				size_t xmpLen = contentLen - kMainXMPSignatureLength;
 				fileRef->Seek ( (contentOrigin + kMainXMPSignatureLength), kXMP_SeekFromStart );
-				fileRef->ReadAll ( buffer, xmpLen );
+				fileRef->ReadAll ( buffer, (XMP_Int32)xmpLen );
 				this->xmpPacket.assign ( (char*)buffer, xmpLen );
 				this->packetInfo.offset = contentOrigin + kMainXMPSignatureLength;
 				this->packetInfo.length = (XMP_Int32)xmpLen;
@@ -484,8 +487,8 @@ static void TrimFullExifAPP1 ( std::string * exifContents )
 		TIFF_MemoryReader::TagInfoMap::const_iterator mapEnd = tagMap.end();
 
 		for ( ; mapPos != mapEnd; ++mapPos ) {
-			const TIFF_MemoryReader::TagInfo & tagInfo = mapPos->second;
-			XMP_Uns32 tagEnd = tempMgr.GetValueOffset ( ifd, tagInfo.id ) + tagInfo.dataLen;
+			const TIFF_MemoryReader::TagInfo & tagInfoRef = mapPos->second;
+			XMP_Uns32 tagEnd = tempMgr.GetValueOffset ( ifd, tagInfoRef.id ) + tagInfoRef.dataLen;
 			if ( tagEnd > padOffset ) padOffset = tagEnd;
 		}
 
@@ -514,7 +517,7 @@ static void TrimFullExifAPP1 ( std::string * exifContents )
 		size_t nzSize = lastNonZero - padOffset + 1;
 		size_t finalSize = (exifContents->size() - 1) - lastNonZero;
 		if ( (nzSize < 64) && (finalSize > 64) ) {
-			padOffset = lastNonZero + 64;
+			padOffset = (XMP_Int32)lastNonZero + 64;
 			assert ( padOffset < exifContents->size() );
 			ok = true;
 		}

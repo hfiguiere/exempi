@@ -23,6 +23,6 @@ var XMPCommonDefines_8h =
     [ "kIObjectFactoryID", "XMPCommonDefines_8h.html#a3eaf39cde126acb079462286763ca44a", null ],
     [ "kIUTF8StringID", "XMPCommonDefines_8h.html#a97f984a3b999db35dd915b17322c8c7f", null ],
     [ "kMaxEnumValue", "XMPCommonDefines_8h.html#a8ec7e2a77ea452c3d46bb7dbbc722574", null ],
-    [ "kMaxSize", "XMPCommonDefines_8h.html#a509d67aa4eb5b6a31db63f448d2a2343", null ],
+    [ "kMaxSize", "XMPCommonDefines_8h.html#a70450f8972a521a88b5bc4f6240b8090", null ],
     [ "npos", "XMPCommonDefines_8h.html#afc1bfa88991003b305ab5023b483d3f9", null ]
 ];

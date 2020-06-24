@@ -2,11 +2,13 @@
 #define __WXMPMeta_hpp__ 1
 
 // =================================================================================================
-// Copyright 2002 Adobe Systems Incorporated
+// Copyright 2002 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 // =================================================================================================
 
 #include "client-glue/WXMP_Common.hpp"
@@ -17,7 +19,7 @@ extern "C" {
 
 // =================================================================================================
 
-static XMP_Bool WrapErrorNotify ( XMPMeta_ErrorCallbackProc proc, void * context,
+static inline XMP_Bool WrapErrorNotify ( XMPMeta_ErrorCallbackProc proc, void * context,
 							  XMP_ErrorSeverity severity, XMP_Int32 cause, XMP_StringPtr message )
 {
 	bool ok;

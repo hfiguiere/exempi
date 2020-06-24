@@ -1,15 +1,22 @@
 // =================================================================================================
-// Copyright 2003 Adobe Systems Incorporated
+// Copyright 2003 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. If you have received this file from a source other 
+// than Adobe, then your use, modification, or distribution of it requires the prior written permission
+// of Adobe.
 //
 // Adobe patent application tracking #P435, entitled 'Unique markers to simplify embedding data of
 // one format in a file with a different format', inventors: Sean Parent, Greg Gilley.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include!
+
+#if XMP_DebugBuild
+	#include <iostream>
+#endif
+
 #include "XMPCore/source/XMPCore_Impl.hpp"
 
 #include "XMPCore/source/XMPMeta.hpp"
@@ -41,11 +48,6 @@
 #include "XMPCore/Interfaces/INode_I.h"
 #endif 
 
-
-#if XMP_DebugBuild
-	#include <iostream>
-#endif
-
 using namespace std;
 
 #if XMP_WinBuild
@@ -53,6 +55,7 @@ using namespace std;
 	#pragma warning ( disable : 4702 )	// unreachable code
 	#pragma warning ( disable : 4800 )	// forcing value to bool 'true' or 'false' (performance warning)
 #endif
+
 
 
 // *** Use the XMP_PropIsXyz (Schema, Simple, Struct, Array, ...) macros
@@ -68,7 +71,8 @@ typedef unsigned char XMP_CLTMatch;
 
 #if XMP_MARKER_EXTENSIBILITY_BACKWARD_COMPATIBILITY
 extern "C" {
-	void ReleaseXMP_Node(void * node) {
+    
+	 static void ReleaseXMP_Node(void * node) {
 		if (node) {
 			XMP_Node * ptr = (XMP_Node *)node;
 			delete ptr;
@@ -79,7 +83,8 @@ extern "C" {
 
 #if ENABLE_CPP_DOM_MODEL
 extern "C" {
-	void ReleaseIStructureNode(void * node) {
+    
+	static void ReleaseIStructureNode(void * node) {
 		if (node) {
 			AdobeXMPCore::pIStructureNode_base ptr = ( AdobeXMPCore::pIStructureNode_base )node;
 			ptr->Release();
@@ -119,16 +124,16 @@ static inline void
 	node->SetValue( value );
 }	//SetNodeValue
 
-void XMP_Node::SetValue( XMP_StringPtr value )
+void XMP_Node::SetValue( XMP_StringPtr _value )
 {
 
 	#if XMP_DebugBuild	// ! Hack to force an assert.
-		if ( (this->name == "xmp:TestAssertNotify") && XMP_LitMatch ( value, "DoIt!" ) ) {
+		if ( (this->name == "xmp:TestAssertNotify") && XMP_LitMatch ( _value, "DoIt!" ) ) {
 			XMP_Assert ( this->name != "xmp:TestAssertNotify" );
 		}
 	#endif
 	
-	std::string newValue = value;	// Need a local copy to tweak and not change node.value for errors.
+	std::string newValue = _value;	// Need a local copy to tweak and not change node.value for errors.
 	
 	XMP_Uns8* chPtr = (XMP_Uns8*) newValue.c_str();	// Check for valid UTF-8, replace ASCII controls with a space.
 	while ( *chPtr != 0 ) {
