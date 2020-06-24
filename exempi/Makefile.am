@@ -88,13 +88,13 @@ check_PROGRAMS = testexempicore testserialise \
 	testtiffleak testxmpfiles testxmpfileswrite \
 	testparse testiterator testinit testfdo18635\
 	testfdo83313 testcpp testwebp \
-	testadobesdk \
+	testadobesdk testxmpformat \
 	$(NULL)
 TESTS = tests/testcore.sh testinit testexempicore testserialise \
 	testwritenewprop \
 	testtiffleak testxmpfiles testxmpfileswrite \
 	testparse testiterator testfdo18635 testfdo83313 testcpp testwebp \
-	testadobesdk \
+	testadobesdk testxmpformat \
 	$(NULL)
 TESTS_ENVIRONMENT = TEST_DIR=$(srcdir)/tests BOOST_TEST_CATCH_SYSTEM_ERRORS=no VALGRIND="$(VALGRIND)"
 LOG_COMPILER = $(VALGRIND)
@@ -165,3 +165,7 @@ testwebp_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
 testadobesdk_SOURCES = tests/test-adobesdk.cpp
 testadobesdk_LDADD = libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
 testadobesdk_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
+
+testxmpformat_SOURCES = tests/test-xmpformat.cpp
+testxmpformat_LDADD = libexempi.la @BOOST_UNIT_TEST_FRAMEWORK_LIBS@
+testxmpformat_LDFLAGS = -static @BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS@
