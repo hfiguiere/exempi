@@ -3,7 +3,7 @@
 /*
  * exempi - exempi.cpp
  *
- * Copyright (C) 2011-2013 Hubert Figuiere
+ * Copyright (C) 2011-2020 Hubert Figuière
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -332,8 +332,6 @@ static void process_file(const char *filename, bool no_reconcile,
                          const std::string &prop_value,
                          const std::string &output)
 {
-    printf("processing file %s\n", filename);
-
     FILE *outio = stdout;
 
     bool needclose = false;
