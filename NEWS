@@ -1,5 +1,7 @@
-2.5.2 -
+2.5.2 - 2020/06/24
 
+- Bug #18: Remove an unnecessary message to stdout in the exempi tool.
+  https://gitlab.freedesktop.org/libopenraw/exempi/-/issues/18
 - Bug #20: Test file formats. This also change the GIF sample to GIF89a.
   https://gitlab.freedesktop.org/libopenraw/exempi/-/issues/20
 - Bug #17: `make check` should build more reliably now.
