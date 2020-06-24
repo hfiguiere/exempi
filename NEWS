@@ -1,5 +1,14 @@
 2.5.2 -
 
+- Bug #20: Test file formats. This also change the GIF sample to GIF89a.
+  https://gitlab.freedesktop.org/libopenraw/exempi/-/issues/20
+- Bug #17: `make check` should build more reliably now.
+  https://gitlab.freedesktop.org/libopenraw/exempi/issues/17
+- MR !1: Remove deprecated C++ to compile with C++17.
+  https://gitlab.freedesktop.org/libopenraw/exempi/merge_requests/1
+- MR !2: Fix a build failure with C++17.
+  https://gitlab.freedesktop.org/libopenraw/exempi/merge_requests/2
+
 2.5.1 - 2019/07/28
 
 - Bug #9: [CVE-2018-12648] Fix null-pointer-dereference in WEBP.
@@ -29,7 +38,7 @@
   - Modified the alias tiff:ImageDescription for dc:description as language alternative
     array instead of simple property.
   - Lot of bug fixes in XMPFiles and XMPCore.
-- Removed Exempi provided support for GIF in favour of Adobe's.
+- Removed Exempi provided support for GIF in favour of Adobe's. Only GIF89a is supported.
 
 - New: API NS_XML constant
 
