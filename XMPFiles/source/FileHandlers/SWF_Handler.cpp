@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2006 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -125,7 +125,7 @@ void SWF_MetaHandler::CacheFileData() {
 		// Expand the SWF file into memory.
 		this->expandedSWF.reserve ( this->expandedSize );	// Try to avoid reallocations.
 		SWF_IO::DecompressFileToMemory ( fileRef, &this->expandedSWF );
-		this->expandedSize = this->expandedSWF.size();	// Use the true length.
+		this->expandedSize = (XMP_Uns32)this->expandedSWF.size();	// Use the true length.
 	
 	} else {
 	
@@ -139,6 +139,7 @@ void SWF_MetaHandler::CacheFileData() {
 	
 	// Look for the FileAttributes and Metadata tags.
 	
+	if(this->expandedSize <= SWF_IO::HeaderPrefixSize ) return; // Throw?
 	this->firstTagOffset = SWF_IO::FileHeaderSize ( this->expandedSWF[SWF_IO::HeaderPrefixSize] );
 	
 	XMP_Uns32 currOffset = this->firstTagOffset;
@@ -235,6 +236,9 @@ void SWF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		PutUns16LE ( ((SWF_IO::FileAttributesTagID << 6) | 4), &buffer[0] );
 		PutUns32LE ( SWF_IO::HasMetadataMask, &buffer[2] );
 		
+		if(this->expandedSWF.size() < this->firstTagOffset ){
+                     XMP_Throw ( "Index not valid.Invalid SWF, can't update.", kXMPErr_BadIndex );
+                 }
 		this->expandedSWF.insert ( (this->expandedSWF.begin() + this->firstTagOffset), 6, 0 );
 		memcpy ( &this->expandedSWF[this->firstTagOffset], &buffer[0], 6 );
 
@@ -271,6 +275,9 @@ void SWF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 				this->metadataTag.tagOffset += attrTagLength;	// The FileAttributes tag will become in front.
 			}
 			
+			if(this->expandedSWF.size() < this->firstTagOffset ){
+                             XMP_Throw ( "Index not valid.Invalid SWF, can't update.", kXMPErr_BadIndex );
+                        }
 			this->expandedSWF.insert ( (this->expandedSWF.begin() + this->firstTagOffset), attrTagLength, 0 );
 			memcpy ( &this->expandedSWF[this->firstTagOffset], &attrTag[0], attrTagLength );
 			
@@ -298,9 +305,12 @@ void SWF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	this->metadataTag.hasLongHeader = true;
 	this->metadataTag.tagID = SWF_IO::MetadataTagID;
 	this->metadataTag.tagOffset = SWF_IO::NextTagOffset ( this->fileAttributesTag );
-	this->metadataTag.contentLength = this->xmpPacket.size();
+	this->metadataTag.contentLength = (XMP_Uns32)this->xmpPacket.size();
 
 	XMP_Uns32 newMetaLength = 6 + this->metadataTag.contentLength;	// Always use a long tag header.
+	if(this->expandedSWF.size() < this->metadataTag.tagOffset ){
+             XMP_Throw ( "Index not valid.Invalid SWF, can't update.", kXMPErr_BadIndex );
+	}
 	this->expandedSWF.insert ( (this->expandedSWF.begin() + this->metadataTag.tagOffset), newMetaLength, 0 );
 
 	PutUns16LE ( ((SWF_IO::MetadataTagID << 6) | SWF_IO::TagLengthMask), &this->expandedSWF[this->metadataTag.tagOffset] );
@@ -311,7 +321,7 @@ void SWF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	
 	// Update the uncompressed file length and rewrite the file.
 	
-	PutUns32LE ( this->expandedSWF.size(), &this->expandedSWF[4] );
+	PutUns32LE ( (XMP_Uns32)this->expandedSWF.size(), &this->expandedSWF[4] );
 
 	XMP_IO * fileRef = this->parent->ioRef;
 	fileRef->Rewind();
@@ -320,7 +330,7 @@ void SWF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	if ( this->isCompressed ) {
 		SWF_IO::CompressMemoryToFile ( this->expandedSWF, fileRef );
 	} else {
-		fileRef->Write ( &this->expandedSWF[0], this->expandedSWF.size() );
+		fileRef->Write ( &this->expandedSWF[0], (XMP_Uns32)this->expandedSWF.size() );
 	}
 
 }	// SWF_MetaHandler::UpdateFile

@@ -1,9 +1,9 @@
 // =================================================================================================
-// Copyright 2002 Adobe Systems Incorporated
+// Copyright 2002 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 /**
@@ -64,12 +64,12 @@ ProcessPacket ( const char * fileName,
 {
 	std::string xmlString;
 	xmlString.append ( length, ' ' );
-	fseek ( inFile, offset, SEEK_SET );
+	fseek ( inFile, (long)offset, SEEK_SET );
 	fread ( (void*)xmlString.data(), 1, length, inFile );
 	
 	char title [1000];
 	
-	sprintf ( title, "// Dumping raw input for \"%s\" (%lu..%lu)", fileName, offset, (offset + length - 1) );
+	sprintf ( title, "// Dumping raw input for \"%s\" (%zu..%zu)", fileName, offset, (offset + length - 1) );
 	printf ( "// " );
 	for ( size_t i = 3; i < strlen(title); ++i ) printf ( "=" );
 	printf ( "\n\n%s\n\n%.*s\n\n", title, (int)length, xmlString.c_str() );
@@ -77,7 +77,7 @@ ProcessPacket ( const char * fileName,
 	
 	SXMPMeta xmpObj;
 	try {
-		xmpObj.ParseFromBuffer ( xmlString.c_str(), length );
+		xmpObj.ParseFromBuffer ( xmlString.c_str(), (XMP_StringLen)length );
 	} catch ( ... ) {
 		printf ( "## Parse failed\n\n" );
 		return;
@@ -88,11 +88,11 @@ ProcessPacket ( const char * fileName,
 	
 	string xmpString;
 	xmpObj.SerializeToBuffer ( &xmpString, kXMP_OmitPacketWrapper );
-	printf ( "\nPretty serialization, %lu bytes :\n\n%s\n", xmpString.size(), xmpString.c_str() );
+	printf ( "\nPretty serialization, %zu bytes :\n\n%s\n", xmpString.size(), xmpString.c_str() );
 	fflush ( stdout );
 
 	xmpObj.SerializeToBuffer ( &xmpString, (kXMP_OmitPacketWrapper | kXMP_UseCompactFormat) );
-	printf ( "Compact serialization, %lu bytes :\n\n%s\n", xmpString.size(), xmpString.c_str() );
+	printf ( "Compact serialization, %zu bytes :\n\n%s\n", xmpString.size(), xmpString.c_str() );
 	fflush ( stdout );
 
 }	// ProcessPacket

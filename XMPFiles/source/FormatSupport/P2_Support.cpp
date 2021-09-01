@@ -1,14 +1,16 @@
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
+
+#include <sstream>
 
 #include "public/include/XMP_Const.h"
 #include "public/include/XMP_IO.hpp"
@@ -22,23 +24,33 @@
 
 #include "XMPFiles/source/FormatSupport/P2_Support.hpp"
 #include "third-party/zuid/interfaces/MD5.h"
-#include <sstream>
 
 P2_Clip::P2_Clip(const std::string & p2ClipMetadataFilePath)
-	try :headContentCached(false),p2XMLParser(0),p2Root(0)
-	,p2ClipContent(0),filePath(p2ClipMetadataFilePath)
+	:p2XMLParser(0), p2Root(0), headContentCached(false)
+	, p2ClipContent(0), filePath(p2ClipMetadataFilePath)
 {
-	Host_IO::FileRef hostRef = Host_IO::Open ( p2ClipMetadataFilePath.c_str(), Host_IO::openReadOnly );
-	XMPFiles_IO xmlFile ( hostRef, p2ClipMetadataFilePath.c_str(), Host_IO::openReadOnly );
-	CreateExpatParser(xmlFile);
-	xmlFile.Close();
-}
-catch(...)
-{
-	DestroyExpatParser();
-	throw;
+	PrepareForExpatParser(p2ClipMetadataFilePath);
 }
 
+
+
+void P2_Clip::PrepareForExpatParser(const std::string &p2ClipMetadataFilePath)
+{
+	try {
+
+
+		Host_IO::FileRef hostRef = Host_IO::Open(p2ClipMetadataFilePath.c_str(), Host_IO::openReadOnly);
+		XMPFiles_IO xmlFile(hostRef, p2ClipMetadataFilePath.c_str(), Host_IO::openReadOnly);
+		CreateExpatParser(xmlFile);
+		xmlFile.Close();
+	}
+	catch (...)
+	{
+		DestroyExpatParser();
+		throw;
+	}
+
+}
 P2_Clip::~P2_Clip()
 {
 	DestroyExpatParser();
@@ -108,7 +120,10 @@ void P2_Clip::CacheClipContent()
 {
 	if (headContentCached) return;
 	headContentCached = true;
-	XMP_StringPtr p2NameSpace=GetP2RootNode()->ns.c_str();
+	XML_NodePtr p2RootNode = GetP2RootNode();
+	if( p2RootNode == 0 ) return;
+	XMP_StringPtr p2NameSpace = p2RootNode->ns.c_str();
+
 	p2ClipContent = GetP2RootNode()->GetNamedElement ( p2NameSpace, "ClipContent" );
 	if ( p2ClipContent == 0 )  return;
 	XML_NodePtr  p2node;
@@ -136,7 +151,7 @@ void P2_Clip::CacheClipContent()
 		p2Offset= p2node->GetNamedElement ( p2NameSpace, "GlobalShotID" );
 		GetElementLocation(p2Offset,headContent.shotId );
 		XML_NodePtr p2connection= p2node->GetNamedElement ( p2NameSpace, "Connection" );
-		if ( p2node != 0 )
+		if ( p2connection != 0 )
 		{
 			p2node= p2connection->GetNamedElement ( p2NameSpace, "Top" );
 			if ( p2node != 0 )
@@ -301,28 +316,35 @@ bool P2_SpannedClip::AddIfRelated(P2_Clip* newClip)
 	return false;
 }
 
-bool P2_SpannedClip::IsComplete() const
+void P2_SpannedClip::checkSpannedClipIsComplete()
 {
-	RelatedP2ClipList::iterator iter=spannedP2Clip.begin();
-	if (! (*iter)->IsTopClip() ) return false;
-	std::string* next=(*iter)->GetNextClipId();
-	while(++iter != spannedP2Clip.end() &&
+	RelatedP2ClipList::iterator iter = spannedP2Clip.begin();
+	if (!(*iter)->IsTopClip()) 
+		completeSpannedClip = false;
+		
+	std::string* next = (*iter)->GetNextClipId();
+	while (++iter != spannedP2Clip.end() &&
 		next != 0 && (*iter)->IsValidClip() &&
-		*next == *( (*iter)->GetClipId() ) 
-	)
-		next = (*iter)->GetNextClipId();
-	if ( iter != spannedP2Clip.end() || next != 0 )
-	{
-		iter=spannedP2Clip.begin();
-		std::string* prev= (*iter)->GetClipId();
-		while(++iter != spannedP2Clip.end() &&
-			prev != 0 &&  (*iter)->GetPreviousClipId() !=0 &&
-			*prev == *( (*iter)->GetPreviousClipId() ) 
+		*next == *((*iter)->GetClipId())
 		)
-			prev= (*iter)->GetClipId();
-		if ( iter != spannedP2Clip.end() ) return false;
+		next = (*iter)->GetNextClipId();
+	if (iter != spannedP2Clip.end() || next != 0)
+	{
+		iter = spannedP2Clip.begin();
+		std::string* prev = (*iter)->GetClipId();
+		while (++iter != spannedP2Clip.end() &&
+			prev != 0 && (*iter)->GetPreviousClipId() != 0 &&
+			*prev == *((*iter)->GetPreviousClipId())
+			)
+			prev = (*iter)->GetClipId();
+		if (iter != spannedP2Clip.end()) completeSpannedClip = false;
 	}
-	return true;
+	completeSpannedClip = true;
+}
+
+bool P2_SpannedClip::IsComplete()
+{
+	return completeSpannedClip;
 }
 
 std::string P2_SpannedClip::GetXMPFilePath()
@@ -356,7 +378,9 @@ void P2_SpannedClip::CreateDigest ( std::string * digestStr )
 	digestStr->erase();
 	if ( this->headContent.clipMetadata == 0 ) return;	// Bail if we don't have any legacy XML.
 
-	XMP_StringPtr p2NS = this->GetP2RootNode()->ns.c_str();
+	XML_NodePtr p2RootNode = this->GetP2RootNode(); // Return if there is no root node.
+	if( p2RootNode == 0 ) return;
+	XMP_StringPtr p2NS = p2RootNode->ns.c_str();
 	XML_NodePtr legacyContext;
 	MD5_CTX    md5Context;
 	unsigned char digestBin [16];
@@ -542,10 +566,7 @@ void P2_Manager::ProcessClip(std::string & clipPath)
 			if ( ! spannedClips->AddIfRelated(tempClip) )
 				delete tempClip;
 		}
-		if(spannedClips->IsComplete())
-		{
-			return;
-		}
+		spannedClips->checkSpannedClipIsComplete();
 	}
 }
 

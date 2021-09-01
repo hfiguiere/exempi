@@ -1,9 +1,9 @@
 // =================================================================================================
-// Copyright 2009 Adobe Systems Incorporated
+// Copyright 2009 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"
@@ -42,11 +42,16 @@ XMP_ReadWriteLock::XMP_ReadWriteLock() : beingWritten(false)
 {
 	#if XMP_DebugBuild && HaveAtomicIncrDecr
 		this->lockCount = 0;
+	
+#if 0 //changing type of XMP_AtomicCounter from int32_t to std::atomic<int32_t>
+	
 		// Atomic counter must be 32 or 64 bits and naturally aligned.
 		size_t counterSize = sizeof ( XMP_AtomicCounter );
 		size_t counterOffset = XMP_OffsetOf ( XMP_ReadWriteLock, lockCount );
 		XMP_Assert ( (counterSize == 4) || (counterSize == 8) );	// Counter must be 32 or 64 bits.
 		XMP_Assert ( (counterOffset & (counterSize-1)) == 0 );		// Counter must be naturally aligned.
+#endif
+	
 	#endif
 	XMP_BasicRWLock_Initialize ( this->lock );
 	#if TraceThreadLocks
@@ -78,6 +83,7 @@ void XMP_ReadWriteLock::Acquire ( bool forWriting )
 
 	if ( forWriting ) {
 		XMP_BasicRWLock_AcquireForWrite ( this->lock );
+		this->beingWritten = forWriting;
 		#if XMP_DebugBuild && HaveAtomicIncrDecr
 			XMP_Assert ( this->lockCount == 0 );
 		#endif
@@ -88,7 +94,7 @@ void XMP_ReadWriteLock::Acquire ( bool forWriting )
 	#if XMP_DebugBuild && HaveAtomicIncrDecr
 		XMP_AtomicIncrement ( this->lockCount );
 	#endif
-	this->beingWritten = forWriting;
+	
 
 	#if TraceThreadLocks
 		fprintf ( stderr, "Acquired lock %.8X for %s, count %d%s\n",
@@ -109,9 +115,9 @@ void XMP_ReadWriteLock::Release()
 		XMP_AtomicDecrement ( this->lockCount );	// ! Do these before unlocking, that might release a waiting thread.
 	#endif
 	bool forWriting = this->beingWritten;
-	this->beingWritten = false;
 
 	if ( forWriting ) {
+		this->beingWritten = false;
 		XMP_BasicRWLock_ReleaseFromWrite ( this->lock );
 	} else {
 		XMP_BasicRWLock_ReleaseFromRead ( this->lock );
@@ -126,7 +132,7 @@ void XMP_ReadWriteLock::Release()
 
 #if UseHomeGrownLock
 
-	#if XMP_MacBuild | XMP_UNIXBuild | XMP_iOSBuild
+	#if XMP_MacBuild | XMP_UNIXBuild | XMP_iOSBuild | XMP_AndroidBuild
 
 		// -----------------------------------------------------------------------------------------
 
@@ -138,13 +144,13 @@ void XMP_ReadWriteLock::Release()
 		// until the condition is signaled. When the call returns, the mutex is locked again.
 
 		#define InitializeBasicMutex(mutex)	{ int err = pthread_mutex_init ( &mutex, 0 ); XMP_Enforce ( err == 0 ); }
-		#define TerminateBasicMutex(mutex)	{ int err = pthread_mutex_destroy ( &mutex ); XMP_Enforce ( err == 0 ); }
+		#define TerminateBasicMutex(mutex)	{ int err = pthread_mutex_destroy ( &mutex ); XMP_Enforce_NoThrow ( err == 0 ); }
 
 		#define AcquireBasicMutex(mutex)	{ int err = pthread_mutex_lock ( &mutex ); XMP_Enforce ( err == 0 ); }
 		#define ReleaseBasicMutex(mutex)	{ int err = pthread_mutex_unlock ( &mutex ); XMP_Enforce ( err == 0 ); }
 
 		#define InitializeBasicQueue(queue)	{ int err = pthread_cond_init ( &queue, 0 ); XMP_Enforce ( err == 0 ); }
-		#define TerminateBasicQueue(queue)	{ int err = pthread_cond_destroy ( &queue ); XMP_Enforce ( err == 0 ); }
+		#define TerminateBasicQueue(queue)	{ int err = pthread_cond_destroy ( &queue ); XMP_Enforce_NoThrow ( err == 0 ); }
 
 		#define WaitOnBasicQueue(queue,mutex)	{ int err = pthread_cond_wait ( &queue, &mutex ); XMP_Enforce ( err == 0 ); }
 		#define ReleaseOneBasicQueue(queue)		{ int err = pthread_cond_signal ( &queue ); XMP_Enforce ( err == 0 ); }

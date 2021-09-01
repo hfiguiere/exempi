@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2012 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2012 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "XMPFiles/source/FormatSupport/PostScript_Support.hpp"
@@ -1014,14 +1014,7 @@ std::string PostScript_Support::ConvertToDate(const char* inString)
 					if(itr!=tokenzs.end())
 					{
 						++itr;
-						if (itr == tokenzs.end())
-						{
-							// bug 101914 - corrupt file make us
-							// reach the end. -- Hub
-							// https://bugs.freedesktop.org/show_bug.cgi?id=101914
-							break;
-						}
-						if (itr->noOfDelimiter==0 && IsNumeric(itr->token[0]) )
+						if (itr<tokenzs.end() && itr->noOfDelimiter==0 && IsNumeric(itr->token[0]) )
 						{
 							const char * str=itr->token.c_str();
 							short day= GetNumber(&str);
@@ -1029,6 +1022,10 @@ std::string PostScript_Support::ConvertToDate(const char* inString)
 							{
 								date.day=day;
 							}
+						}
+						else if (itr == tokenzs.end())
+						{
+							break;
 						}
 					}
 				}

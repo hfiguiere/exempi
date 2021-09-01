@@ -21,6 +21,7 @@ var hierarchy =
       [ "AdobeXMPCore::IDOMImplementationRegistry_v1", "classAdobeXMPCore_1_1IDOMImplementationRegistry__v1.html", null ],
       [ "AdobeXMPCore::IDOMParser_v1", "classAdobeXMPCore_1_1IDOMParser__v1.html", null ],
       [ "AdobeXMPCore::IDOMSerializer_v1", "classAdobeXMPCore_1_1IDOMSerializer__v1.html", null ],
+      [ "AdobeXMPCore::IMetadataConverterUtils_v1", "classAdobeXMPCore_1_1IMetadataConverterUtils__v1.html", null ],
       [ "AdobeXMPCore::INameSpacePrefixMap_v1", "classAdobeXMPCore_1_1INameSpacePrefixMap__v1.html", null ],
       [ "AdobeXMPCore::INode_v1", "classAdobeXMPCore_1_1INode__v1.html", [
         [ "AdobeXMPCore::ICompositeNode_v1", "classAdobeXMPCore_1_1ICompositeNode__v1.html", [
@@ -49,6 +50,7 @@ var hierarchy =
       [ "AdobeXMPCore::IDOMImplementationRegistry_v1", "classAdobeXMPCore_1_1IDOMImplementationRegistry__v1.html", null ],
       [ "AdobeXMPCore::IDOMParser_v1", "classAdobeXMPCore_1_1IDOMParser__v1.html", null ],
       [ "AdobeXMPCore::IDOMSerializer_v1", "classAdobeXMPCore_1_1IDOMSerializer__v1.html", null ],
+      [ "AdobeXMPCore::IMetadataConverterUtils_v1", "classAdobeXMPCore_1_1IMetadataConverterUtils__v1.html", null ],
       [ "AdobeXMPCore::INameSpacePrefixMap_v1", "classAdobeXMPCore_1_1INameSpacePrefixMap__v1.html", null ],
       [ "AdobeXMPCore::INode_v1", "classAdobeXMPCore_1_1INode__v1.html", null ],
       [ "AdobeXMPCore::INodeIterator_v1", "classAdobeXMPCore_1_1INodeIterator__v1.html", null ],
@@ -59,7 +61,7 @@ var hierarchy =
     [ "TXMPFiles< tStringObj >", "classTXMPFiles.html", null ],
     [ "TXMPIterator< tStringObj >", "classTXMPIterator.html", null ],
     [ "TXMPMeta< tStringObj >", "classTXMPMeta.html", null ],
-    [ "TXMPUtils< tStringObj >", "classTXMPUtils.html", null ],
+    [ "TXMPUtils", "classTXMPUtils.html", null ],
     [ "WXMP_Result", "structWXMP__Result.html", null ],
     [ "XMP_DateTime", "structXMP__DateTime.html", null ],
     [ "XMP_Error", "classXMP__Error.html", null ],

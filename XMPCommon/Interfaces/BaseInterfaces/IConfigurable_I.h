@@ -2,12 +2,12 @@
 #define IConfigurable_I_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "XMPCommon/XMPCommonFwdDeclarations_I.h"
@@ -23,8 +23,8 @@ namespace XMP_COMPONENT_INT_NAMESPACE {
 	public:
 
 		typedef struct std::pair< eDataType, CombinedDataValue > TypeValuePair;
-		typedef std::pair< uint64, TypeValuePair >	KeyValuePair;
-		typedef std::pair< uint64, eDataType > KeyValueTypePair;
+		typedef std::pair< const uint64, TypeValuePair >	KeyValuePair;
+		typedef std::pair< const uint64, eDataType > KeyValueTypePair;
 
 		//!
 		//! Function to validate a key.
@@ -53,9 +53,11 @@ namespace XMP_COMPONENT_INT_NAMESPACE {
 		//! can hold, it can override this function for such operations. Returns an error code in case
 		//! of an error condition, otherwise return kCECNone.
 		//!
-		virtual eConfigurableErrorCode APICALL ValidateValue( const uint64 & key, eDataType type, const CombinedDataValue & value ) const = 0;
-
-		//!
+        
+        virtual eConfigurableErrorCode APICALL ValidateValue( const uint64 & key, eDataType type, const CombinedDataValue & value ) const=0;
+        
+       
+        //!
 		//! Allows keys to be treated as case insensitive.
 		//! \param[in] flag a boolean value if set to true makes key as case insensitive
 		//!

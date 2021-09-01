@@ -2,12 +2,12 @@
 #define DOMParserImpl_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2015 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2015 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #if !(IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED)
@@ -44,6 +44,7 @@ namespace AdobeXMPCore_Int {
 
 	protected:
 		virtual ~DOMParserImpl() __NOTHROW__ {}
+        using IDOMParser_I::clone;
 		virtual DOMParserImpl * APICALL clone() const = 0;
 
 		spISharedMutex				mSharedMutex;

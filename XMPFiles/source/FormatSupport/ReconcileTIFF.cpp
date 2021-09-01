@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2006 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -116,6 +116,9 @@ static const TIFF_MappingToXMP sExifIFDMappings[] = {
 	{ /* 40964 */ kTIFF_RelatedSoundFile,          kTIFF_ASCIIType,       kAnyCount, kExport_Always,     kXMP_NS_EXIF,  "RelatedSoundFile" },	// ! Exif spec says count of 13.
 	{ /* 36867 */ kTIFF_DateTimeOriginal,          kTIFF_ASCIIType,       20,        kExport_Always,     "", "" },	// ! Has a special mapping.
 	{ /* 36868 */ kTIFF_DateTimeDigitized,         kTIFF_ASCIIType,       20,        kExport_Always,     "", "" },	// ! Has a special mapping.
+	{ /* 36880 */ kTIFF_OffsetTime,                kTIFF_ASCIIType,       7,         kExport_Always,     "", "" },	// ! Has a special mapping.
+	{ /* 36881 */ kTIFF_OffsetTimeOriginal,        kTIFF_ASCIIType,       7,         kExport_Always,     "", "" },	// ! Has a special mapping.
+	{ /* 36882 */ kTIFF_OffsetTimeDigitized,       kTIFF_ASCIIType,       7,         kExport_Always,     "", "" },	// ! Has a special mapping.
 	{ /* 42016 */ kTIFF_ImageUniqueID,             kTIFF_ASCIIType,       33,        kExport_InjectOnly, kXMP_NS_EXIF,  "ImageUniqueID" },
 	{ /* 42032 */ kTIFF_CameraOwnerName,           kTIFF_ASCIIType,       kAnyCount, kExport_InjectOnly, kXMP_NS_ExifEX, "CameraOwnerName" },
 	{ /* 42033 */ kTIFF_BodySerialNumber,          kTIFF_ASCIIType,       kAnyCount, kExport_InjectOnly, kXMP_NS_ExifEX, "BodySerialNumber" },
@@ -314,7 +317,8 @@ size_t PhotoDataUtils::GetNativeInfo ( const IPTC_Manager & iptc, XMP_Uns8 id, i
 		IPTC_Manager::DataSetInfo tmpInfo;
 		for ( i = 0; i < iptcCount; ++i ) {
 			(void) iptc.GetDataSet ( id, &tmpInfo, i );
-			if ( ReconcileUtils::IsASCII ( tmpInfo.dataPtr, tmpInfo.dataLen ) ) break;
+			if (tmpInfo.dataLen == 0 || tmpInfo.dataPtr == NULL 
+				|| ReconcileUtils::IsASCII(tmpInfo.dataPtr, tmpInfo.dataLen)) break;
 		}
 		if ( i == iptcCount ) iptcCount = 0;	// Return 0 if value(s) should be ignored.
 	}
@@ -360,7 +364,8 @@ bool PhotoDataUtils::IsValueDifferent ( const IPTC_Manager & newIPTC, const IPTC
 
 		if ( ignoreLocalText & (! newIPTC.UsingUTF8()) ) {	// Check to see if the new value should be ignored.
 			(void) newIPTC.GetDataSet ( id, &newInfo, newCount );
-			if ( ! ReconcileUtils::IsASCII ( newInfo.dataPtr, newInfo.dataLen ) ) continue;
+			if (newInfo.dataLen == 0 || newInfo.dataPtr == NULL
+				|| ! ReconcileUtils::IsASCII ( newInfo.dataPtr, newInfo.dataLen ) ) continue;
 		}
 
 		(void) newIPTC.GetDataSet_UTF8 ( id, &newStr, newCount );
@@ -467,12 +472,12 @@ ImportSingleTIFF_SRational ( const TIFF_Manager::TagInfo & tagInfo, const bool n
 {
 	try {	// Don't let errors with one stop the others.
 
-#if SUNOS_SPARC || XMP_IOS_ARM
+#if SUNOS_SPARC || XMP_IOS_ARM || XMP_ANDROID_ARM
         XMP_Uns32  binPtr[2];
         memcpy(&binPtr, tagInfo.dataPtr, sizeof(XMP_Uns32)*2);
 #else
 	XMP_Uns32 * binPtr = (XMP_Uns32*)tagInfo.dataPtr;
-#endif //#if SUNOS_SPARC || XMP_IOS_ARM
+#endif //#if SUNOS_SPARC || XMP_IOS_ARM || XMP_ANDROID_ARM
 		XMP_Int32 binNum   = GetUns32AsIs ( &binPtr[0] );
 		XMP_Int32 binDenom = GetUns32AsIs ( &binPtr[1] );
 		if ( ! nativeEndian ) {
@@ -1248,6 +1253,14 @@ ImportTIFF_StandardMappings ( XMP_Uns8 ifd, const TIFF_Manager & tiff, SXMPMeta 
 			
 			bool found = tiff.GetTag ( ifd, mapInfo.id, &tagInfo );
 			if ( ! found ) continue;
+			/* tag length need to be checked in case of TIFF_MemoryReader, as a possible case
+             the data length value might be changed (flippig because of endianess) by next overlapping IFD leading to crash.
+             To avoid that, rechecking the datalen just before its access. Fixing CTECHXMP-4170409*/
+            if(tiff.IsCheckTagLength() &&
+               tagInfo.dataLen > tiff.GetTiffLength() - ((XMP_Uns8*)tagInfo.dataPtr - tiff.GetTiffStream())) {
+                    continue;    // Bad Tag
+                }
+            
 
 			XMP_Assert ( tagInfo.type != kTIFF_UndefinedType );	// These must have a special mapping.
 			if ( tagInfo.type == kTIFF_UndefinedType ) continue;
@@ -1277,7 +1290,7 @@ ImportTIFF_StandardMappings ( XMP_Uns8 ifd, const TIFF_Manager & tiff, SXMPMeta 
 // ImportTIFF_Date
 // ===============
 //
-// Convert an Exif 2.2 master date/time tag plus associated fractional seconds to an XMP date/time.
+// Convert an Exif 2.2 main date/time tag plus associated fractional seconds to an XMP date/time.
 // The Exif date/time part is a 20 byte ASCII value formatted as "YYYY:MM:DD HH:MM:SS" with a
 // terminating nul. Any of the numeric portions can be blanks if unknown. The fractional seconds
 // are a nul terminated ASCII string with possible space padding. They are literally the fractional
@@ -1287,11 +1300,14 @@ static void
 ImportTIFF_Date ( const TIFF_Manager & tiff, const TIFF_Manager::TagInfo & dateInfo,
 				  SXMPMeta * xmp, const char * xmpNS, const char * xmpProp )
 {
-	XMP_Uns16 secID = 0;
+	XMP_Uns16 secID = 0, offsetID = 0;
 	switch ( dateInfo.id ) {
-		case kTIFF_DateTime          : secID = kTIFF_SubSecTime;			break;
-		case kTIFF_DateTimeOriginal  : secID = kTIFF_SubSecTimeOriginal;	break;
-		case kTIFF_DateTimeDigitized : secID = kTIFF_SubSecTimeDigitized;	break;
+		case kTIFF_DateTime          : secID = kTIFF_SubSecTime;
+									    offsetID = kTIFF_OffsetTime; break;
+		case kTIFF_DateTimeOriginal  : secID = kTIFF_SubSecTimeOriginal;
+										offsetID = kTIFF_OffsetTimeOriginal; break;
+		case kTIFF_DateTimeDigitized : secID = kTIFF_SubSecTimeDigitized;
+										offsetID = kTIFF_OffsetTimeDigitized; break;
 	}
 	
 	try {	// Don't let errors with one stop the others.
@@ -1332,7 +1348,31 @@ ImportTIFF_Date ( const TIFF_Manager & tiff, const TIFF_Manager::TagInfo & dateI
 			for ( ; digits < 9; ++digits ) binValue.nanoSecond *= 10;
 			if ( binValue.nanoSecond != 0 ) binValue.hasTime = true;
 		}
+		// The offset time tags were added to EXIF spec 2.3.1., therefore we not
+		// supporting read/write in older versions
+		// We need EXIF spec version to figure out the same.
 
+		bool haveOldExif = true;    // Default to old Exif if no version tag.
+		TIFF_Manager::TagInfo tagInfo;
+		bool foundExif = tiff.GetTag ( kTIFF_ExifIFD, kTIFF_ExifVersion, &tagInfo );
+		if ( foundExif && (tagInfo.type == kTIFF_UndefinedType) && (tagInfo.count == 4) ) {
+			haveOldExif = (strncmp ( (char*)tagInfo.dataPtr, "0231", 4 ) < 0);
+		}
+
+		if (!haveOldExif)
+		{
+			TIFF_Manager::TagInfo timezoneInfo;
+			found = tiff.GetTag ( kTIFF_ExifIFD, offsetID, &timezoneInfo );
+			if ( found && (timezoneInfo.type == kTIFF_ASCIIType) && (timezoneInfo.count == 7) ) {
+				const char * timezoneStr = (const char *) timezoneInfo.dataPtr;
+				if ( (timezoneStr[0] == '+')  || (timezoneStr[0] == '-')  || (timezoneStr[3] == ':') ) {
+					binValue.tzSign     = (timezoneStr[0] == '-') ? -1 : 1;
+					binValue.tzHour      = GatherInt ( &timezoneStr[1], 2 );
+					binValue.tzMinute   = GatherInt ( &timezoneStr[4], 2 );
+					binValue.hasTimeZone = true;
+				}
+			}
+		}
 		xmp->SetProperty_Date ( xmpNS, xmpProp, binValue );
 
 	} catch ( ... ) {
@@ -2036,7 +2076,7 @@ PhotoDataUtils::Import2WayExif ( const TIFF_Manager & exif, SXMPMeta * xmp, int 
 			size_t count = (size_t) xmp->CountArrayItems ( kXMP_NS_ExifEX, "LensSpecification" );
 			if ( count > 0 ) {
 				(void) xmp->GetArrayItem ( kXMP_NS_ExifEX, "LensSpecification", 1, &fullStr, 0 );
-				for ( size_t i = 2; i <= count; ++i ) {
+				for ( XMP_Index i = 2; i <= (XMP_Index)count; ++i ) {
 					fullStr += ' ';
 					(void) xmp->GetArrayItem ( kXMP_NS_ExifEX, "LensSpecification", i, &oneItem, 0 );
 					fullStr += oneItem;
@@ -2205,13 +2245,13 @@ PhotoDataUtils::Import2WayExif ( const TIFF_Manager & exif, SXMPMeta * xmp, int 
 		xmp->SetProperty ( kXMP_NS_EXIF, "GPSVersionID", strOut );
 	}
 
-	// 2 GPSLatitude is a GPS coordinate master.
+	// 2 GPSLatitude is a GPS coordinate main.
 	found = exif.GetTag ( kTIFF_GPSInfoIFD, kTIFF_GPSLatitude, &tagInfo );
 	if ( found ) {
 		ImportTIFF_GPSCoordinate ( exif, tagInfo, xmp, kXMP_NS_EXIF, "GPSLatitude" );
 	}
 
-	// 4 GPSLongitude is a GPS coordinate master.
+	// 4 GPSLongitude is a GPS coordinate main.
 	found = exif.GetTag ( kTIFF_GPSInfoIFD, kTIFF_GPSLongitude, &tagInfo );
 	if ( found ) {
 		ImportTIFF_GPSCoordinate ( exif, tagInfo, xmp, kXMP_NS_EXIF, "GPSLongitude" );
@@ -2223,13 +2263,13 @@ PhotoDataUtils::Import2WayExif ( const TIFF_Manager & exif, SXMPMeta * xmp, int 
 		ImportTIFF_GPSTimeStamp ( exif, tagInfo, xmp, kXMP_NS_EXIF, "GPSTimeStamp" );
 	}
 
-	// 20 GPSDestLatitude is a GPS coordinate master.
+	// 20 GPSDestLatitude is a GPS coordinate main.
 	found = exif.GetTag ( kTIFF_GPSInfoIFD, kTIFF_GPSDestLatitude, &tagInfo );
 	if ( found ) {
 		ImportTIFF_GPSCoordinate ( exif, tagInfo, xmp, kXMP_NS_EXIF, "GPSDestLatitude" );
 	}
 
-	// 22 GPSDestLongitude is a GPS coordinate master.
+	// 22 GPSDestLongitude is a GPS coordinate main.
 	found = exif.GetTag ( kTIFF_GPSInfoIFD, kTIFF_GPSDestLongitude, &tagInfo );
 	if ( found ) {
 		ImportTIFF_GPSCoordinate ( exif, tagInfo, xmp, kXMP_NS_EXIF, "GPSDestLongitude" );
@@ -2345,67 +2385,87 @@ void PhotoDataUtils::Import3WayItems ( const TIFF_Manager & exif, const IPTC_Man
 	TIFF_Manager::TagInfo exifInfo;
 	IPTC_Manager::DataSetInfo iptcInfo;
 
-	IPTC_Writer oldIPTC;
-	if ( iptcDigestState == kDigestDiffers ) {
-		PhotoDataUtils::ExportIPTC ( *xmp, &oldIPTC );	// Predict old IPTC DataSets based on the existing XMP.
-	}
 	
+
+	IPTC_Writer oldIPTC;
+	if (iptcDigestState == kDigestDiffers) {
+		PhotoDataUtils::ExportIPTC(*xmp, &oldIPTC);	// Predict old IPTC DataSets based on the existing XMP.
+	}
+
 	// ---------------------------------------------------------------------------------
 	// Process the copyright. Replace internal nuls in the Exif to "merge" the portions.
-	
-	// Get the basic info about available values.
-	haveXMP   = xmp->GetLocalizedText ( kXMP_NS_DC, "rights", "", "x-default", 0, &xmpValue, 0 );
-	iptcCount = PhotoDataUtils::GetNativeInfo ( iptc, kIPTC_CopyrightNotice, iptcDigestState, haveXMP, &iptcInfo );
-	haveIPTC  = (iptcCount > 0);
-	haveExif  = (! haveXMP) && (! haveIPTC) && PhotoDataUtils::GetNativeInfo ( exif, kTIFF_PrimaryIFD, kTIFF_Copyright, &exifInfo );
-	XMP_Assert ( (! (haveExif & haveXMP)) & (! (haveExif & haveIPTC)) );
 
-	if ( haveExif && (exifInfo.dataLen > 1) ) {	// Replace internal nul characters with linefeed.
-		for ( XMP_Uns32 i = 0; i < exifInfo.dataLen-1; ++i ) {
-			if ( ((char*)exifInfo.dataPtr)[i] == 0 ) ((char*)exifInfo.dataPtr)[i] = 0x0A;
+	// Get the basic info about available values.
+	haveXMP = xmp->GetLocalizedText(kXMP_NS_DC, "rights", "", "x-default", 0, &xmpValue, 0);
+	iptcCount = PhotoDataUtils::GetNativeInfo(iptc, kIPTC_CopyrightNotice, iptcDigestState, haveXMP, &iptcInfo);
+	haveIPTC = (iptcCount > 0);
+	haveExif = (!haveXMP) && (!haveIPTC) && PhotoDataUtils::GetNativeInfo(exif, kTIFF_PrimaryIFD, kTIFF_Copyright, &exifInfo);
+	XMP_Assert((!(haveExif & haveXMP)) & (!(haveExif & haveIPTC)));
+
+	if (haveExif && (exifInfo.dataLen > 1)) {	// Replace internal nul characters with linefeed.
+		for (XMP_Uns32 i = 0; i < exifInfo.dataLen - 1; ++i) {
+			if (((char*)exifInfo.dataPtr)[i] == 0) ((char*)exifInfo.dataPtr)[i] = 0x0A;
 		}
 	}
-	
-	if ( haveIPTC  && ((iptcDigestState == kDigestDiffers) || (!haveXMP && !haveExif)) ) {
-		PhotoDataUtils::ImportIPTC_LangAlt ( iptc, xmp, kIPTC_CopyrightNotice, kXMP_NS_DC, "rights" );
-	} else if ( haveExif && PhotoDataUtils::IsValueDifferent ( exifInfo, xmpValue, &exifValue ) ) {
-		xmp->SetLocalizedText ( kXMP_NS_DC, "rights", "", "x-default", exifValue.c_str() );
+	try {
+		if (haveIPTC && ((iptcDigestState == kDigestDiffers) || (!haveXMP && !haveExif))) {
+			PhotoDataUtils::ImportIPTC_LangAlt(iptc, xmp, kIPTC_CopyrightNotice, kXMP_NS_DC, "rights");
+		}
+		else if (haveExif && PhotoDataUtils::IsValueDifferent(exifInfo, xmpValue, &exifValue)) {
+			xmp->SetLocalizedText(kXMP_NS_DC, "rights", "", "x-default", exifValue.c_str());
+		}
 	}
-	
+	catch (...) {
+	}
+
+
 	// ------------------------
 	// Process the description.
-	
+
 	// Get the basic info about available values.
-	haveXMP   = xmp->GetLocalizedText ( kXMP_NS_DC, "description", "", "x-default", 0, &xmpValue, 0 );
-	iptcCount = PhotoDataUtils::GetNativeInfo ( iptc, kIPTC_Description, iptcDigestState, haveXMP, &iptcInfo );
-	haveIPTC  = (iptcCount > 0);
-	haveExif  = (! haveXMP) && (! haveIPTC) && PhotoDataUtils::GetNativeInfo ( exif, kTIFF_PrimaryIFD, kTIFF_ImageDescription, &exifInfo );
-	XMP_Assert ( (! (haveExif & haveXMP)) & (! (haveExif & haveIPTC)) );
-	
-	if ( haveIPTC && ((iptcDigestState == kDigestDiffers) || (!haveXMP && !haveExif)) )  {
-		PhotoDataUtils::ImportIPTC_LangAlt ( iptc, xmp, kIPTC_Description, kXMP_NS_DC, "description" );
-	} else if ( haveExif && PhotoDataUtils::IsValueDifferent ( exifInfo, xmpValue, &exifValue ) ) {
-		xmp->SetLocalizedText ( kXMP_NS_DC, "description", "", "x-default", exifValue.c_str() );
+	haveXMP = xmp->GetLocalizedText(kXMP_NS_DC, "description", "", "x-default", 0, &xmpValue, 0);
+	iptcCount = PhotoDataUtils::GetNativeInfo(iptc, kIPTC_Description, iptcDigestState, haveXMP, &iptcInfo);
+	haveIPTC = (iptcCount > 0);
+	haveExif = (!haveXMP) && (!haveIPTC) && PhotoDataUtils::GetNativeInfo(exif, kTIFF_PrimaryIFD, kTIFF_ImageDescription, &exifInfo);
+	XMP_Assert((!(haveExif & haveXMP)) & (!(haveExif & haveIPTC)));
+
+	try {
+		if (haveIPTC && ((iptcDigestState == kDigestDiffers) || (!haveXMP && !haveExif))) {
+			PhotoDataUtils::ImportIPTC_LangAlt(iptc, xmp, kIPTC_Description, kXMP_NS_DC, "description");
+		}
+		else if (haveExif && PhotoDataUtils::IsValueDifferent(exifInfo, xmpValue, &exifValue)) {
+			xmp->SetLocalizedText(kXMP_NS_DC, "description", "", "x-default", exifValue.c_str());
+		}
+	}
+	catch (...) {
+
 	}
 
 	// -------------------------------------------------------------------------------------------
 	// Process the creator. The XMP and IPTC are arrays, the Exif is a semicolon separated string.
-	
-	// Get the basic info about available values.
-	haveXMP   = xmp->DoesPropertyExist ( kXMP_NS_DC, "creator" );
-	haveExif  = PhotoDataUtils::GetNativeInfo ( exif, kTIFF_PrimaryIFD, kTIFF_Artist, &exifInfo );
-	iptcCount = PhotoDataUtils::GetNativeInfo ( iptc, kIPTC_Creator, iptcDigestState, haveXMP, &iptcInfo );
-	haveIPTC  = (iptcCount > 0);
-	haveExif  = (! haveXMP) && (! haveIPTC) && PhotoDataUtils::GetNativeInfo ( exif, kTIFF_PrimaryIFD, kTIFF_Artist, &exifInfo );
-	XMP_Assert ( (! (haveExif & haveXMP)) & (! (haveExif & haveIPTC)) );
 
-	if ( haveIPTC && ((iptcDigestState == kDigestDiffers) || (!haveXMP && !haveExif)) )  {
-		PhotoDataUtils::ImportIPTC_Array ( iptc, xmp, kIPTC_Creator, kXMP_NS_DC, "creator" );
-	} else if ( haveExif && PhotoDataUtils::IsValueDifferent ( exifInfo, xmpValue, &exifValue ) ) {
-		SXMPUtils::SeparateArrayItems ( xmp, kXMP_NS_DC, "creator",
-										(kXMP_PropArrayIsOrdered | kXMPUtil_AllowCommas), exifValue );
+	// Get the basic info about available values.
+		
+	haveXMP = xmp->DoesPropertyExist(kXMP_NS_DC, "creator");
+	haveExif = PhotoDataUtils::GetNativeInfo(exif, kTIFF_PrimaryIFD, kTIFF_Artist, &exifInfo);
+	iptcCount = PhotoDataUtils::GetNativeInfo(iptc, kIPTC_Creator, iptcDigestState, haveXMP, &iptcInfo);
+	haveIPTC = (iptcCount > 0);
+	haveExif = (!haveXMP) && (!haveIPTC) && PhotoDataUtils::GetNativeInfo(exif, kTIFF_PrimaryIFD, kTIFF_Artist, &exifInfo);
+	XMP_Assert((!(haveExif & haveXMP)) & (!(haveExif & haveIPTC)));
+
+	try {
+		if (haveIPTC && ((iptcDigestState == kDigestDiffers) || (!haveXMP && !haveExif))) {
+			PhotoDataUtils::ImportIPTC_Array(iptc, xmp, kIPTC_Creator, kXMP_NS_DC, "creator");
+		}
+		else if (haveExif && PhotoDataUtils::IsValueDifferent(exifInfo, xmpValue, &exifValue)) {
+			SXMPUtils::SeparateArrayItems(xmp, kXMP_NS_DC, "creator",
+				(kXMP_PropArrayIsOrdered | kXMPUtil_AllowCommas), exifValue);
+		}
 	}
-	
+	catch (...) {
+
+	}
+
 	// ------------------------------------------------------------------------------
 	// Process DateTimeDigitized; DateTimeOriginal and DateTime are 2-way.
 	// ***   Exif DateTimeOriginal <-> XMP exif:DateTimeOriginal
@@ -2413,7 +2473,8 @@ void PhotoDataUtils::Import3WayItems ( const TIFF_Manager & exif, const IPTC_Man
 	// ***   Exif DateTimeDigitized <-> IPTC DigitalCreateDate <-> XMP xmp:CreateDate
 	// ***   TIFF DateTime <-> XMP xmp:ModifyDate
 
-	Import3WayDateTime ( kTIFF_DateTimeDigitized, exif, iptc, xmp, iptcDigestState, oldIPTC );
+	Import3WayDateTime(kTIFF_DateTimeDigitized, exif, iptc, xmp, iptcDigestState, oldIPTC);
+	
 
 }	// PhotoDataUtils::Import3WayItems
 
@@ -2665,7 +2726,7 @@ ExportTIFF_StandardMappings ( XMP_Uns8 ifd, TIFF_Manager * tiff, const SXMPMeta 
 // ExportTIFF_Date
 // ===============
 //
-// Convert  an XMP date/time to an Exif 2.2 master date/time tag plus associated fractional seconds.
+// Convert  an XMP date/time to an Exif 2.2 main date/time tag plus associated fractional seconds.
 // The Exif date/time part is a 20 byte ASCII value formatted as "YYYY:MM:DD HH:MM:SS" with a
 // terminating nul. The fractional seconds are a nul terminated ASCII string with possible space
 // padding. They are literally the fractional part, the digits that would be to the right of the
@@ -2676,10 +2737,18 @@ ExportTIFF_Date ( const SXMPMeta & xmp, const char * xmpNS, const char * xmpProp
 {
 	XMP_Uns8 mainIFD = kTIFF_ExifIFD;
 	XMP_Uns16 fracID=0;
+	XMP_Uns16 offsetID=0;
 	switch ( mainID ) {
-		case kTIFF_DateTime : mainIFD = kTIFF_PrimaryIFD; fracID = kTIFF_SubSecTime;	break;
-		case kTIFF_DateTimeOriginal  : fracID = kTIFF_SubSecTimeOriginal;	break;
-		case kTIFF_DateTimeDigitized : fracID = kTIFF_SubSecTimeDigitized;	break;
+		case kTIFF_DateTime : mainIFD = kTIFF_PrimaryIFD; 
+		                      fracID = kTIFF_SubSecTime; 
+		                      offsetID = kTIFF_OffsetTime; 
+							  break;
+		case kTIFF_DateTimeOriginal  : fracID = kTIFF_SubSecTimeOriginal; 
+		                               offsetID = kTIFF_OffsetTimeOriginal;	
+									   break;
+		case kTIFF_DateTimeDigitized : fracID = kTIFF_SubSecTimeDigitized; 
+		                               offsetID = kTIFF_OffsetTimeDigitized;	
+									   break;
 	}
 
 	try {	// Don't let errors with one stop the others.
@@ -2689,6 +2758,7 @@ ExportTIFF_Date ( const SXMPMeta & xmp, const char * xmpNS, const char * xmpProp
 		if ( ! foundXMP ) {
 			tiff->DeleteTag ( mainIFD, mainID );
 			tiff->DeleteTag ( kTIFF_ExifIFD, fracID );	// ! The subseconds are always in the Exif IFD.
+			tiff->DeleteTag ( kTIFF_ExifIFD, offsetID );// ! The offsetTime are always in the Exif IFD.
 			return;
 		}
 
@@ -2733,23 +2803,53 @@ ExportTIFF_Date ( const SXMPMeta & xmp, const char * xmpNS, const char * xmpProp
 		if ( xmpBin.nanoSecond == 0 ) {
 		
 			tiff->DeleteTag ( kTIFF_ExifIFD, fracID );
-		
-		} else {
-
-			snprintf ( buffer, sizeof(buffer), "%09d", xmpBin.nanoSecond );	// AUDIT: Use of sizeof(buffer) is safe.
-			for ( size_t i = strlen(buffer)-1; i > 0; --i ) {
-				if ( buffer[i] != '0' ) break;
-				buffer[i] = 0;	// Strip trailing zero digits.
+		}
+		else
+		{
+			snprintf(buffer, sizeof(buffer), "%09d", xmpBin.nanoSecond); // AUDIT: Use of sizeof(buffer) is safe.
+			for (size_t i = strlen(buffer) - 1; i > 0; --i)
+			{
+				if (buffer[i] != '0')
+					break;
+				buffer[i] = 0; // Strip trailing zero digits.
 			}
+			tiff->SetTag_ASCII(kTIFF_ExifIFD, fracID, buffer); // ! The subseconds are always in the Exif IFD.
+		}
 
-			tiff->SetTag_ASCII ( kTIFF_ExifIFD, fracID, buffer );	// ! The subseconds are always in the Exif IFD.
+		bool haveOldExif = true;    // Default to old Exif if no version tag.
+		TIFF_Manager::TagInfo tagInfo;
+		bool foundExif = tiff->GetTag ( kTIFF_ExifIFD, kTIFF_ExifVersion, &tagInfo );
+		if ( foundExif && (tagInfo.type == kTIFF_UndefinedType) && (tagInfo.count == 4) ) {
+			haveOldExif = (strncmp ( (char*)tagInfo.dataPtr, "0231", 4 ) < 0);
+		}
+		if (!haveOldExif)
+		{
+			// The offset time tags were added to EXIF spec 2.3.1., therefore we are not
+			// supporting read/write in older versions
+			// We need EXIF spec version to figure out the same.
 
+			if ( xmpBin.hasTimeZone == 0 || (xmpBin.tzSign != -1 && xmpBin.tzSign != 1) ){
+
+				tiff->DeleteTag ( kTIFF_ExifIFD, offsetID );
+
+			}else
+			{
+				char tzSign = '+';
+				if (xmpBin.tzSign == -1)
+					tzSign = '-';
+
+				char offsetBuffer[7];
+				snprintf(offsetBuffer, sizeof(offsetBuffer), "%c%02d:%02d", // AUDIT: Use of sizeof(offsetBuffer) is safe.
+						 tzSign, xmpBin.tzHour, xmpBin.tzMinute);
+
+				tiff->SetTag_ASCII(kTIFF_ExifIFD, offsetID, offsetBuffer); // ! The OffsetTime are always in the Exif IFD.
+			}
 		}
 
 	} catch ( ... ) {
 		// Do nothing, let other exports proceed.
 		// ? Notify client?
-	}
+	 }
 
 }	// ExportTIFF_Date
 
@@ -3023,7 +3123,7 @@ ExportTIFF_GPSTimeStamp ( const SXMPMeta & xmp, const char * xmpNS, const char *
 				XMP_Uns32 oldDenom = tiff->GetUns32 ( &(((XMP_Uns32*)oldInfo.dataPtr)[5]) );
 				if ( oldDenom != 1 ) denom = oldDenom;
 			}
-			fSec *= denom;
+			fSec = fSec * denom + 0.5;
 			while ( fSec > mMaxSec ) { fSec /= 10; denom /= 10; }
 			tiff->PutUns32 ( (XMP_Uns32)fSec, &exifTime[4] );
 			tiff->PutUns32 ( denom, &exifTime[5] );

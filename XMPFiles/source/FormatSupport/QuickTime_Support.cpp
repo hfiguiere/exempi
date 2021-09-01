@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2009 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2009 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -815,7 +815,7 @@ static inline bool IsMacLangKnown ( XMP_Uns16 macLang )
 	XMP_Uns16 macScript = GetMacScript ( macLang );
 	if ( macScript == kNoMacScript ) return false;
 
-	#if XMP_UNIXBuild
+	#if XMP_UNIXBuild | XMP_AndroidBuild
 		if ( macScript != smRoman ) return false;
 	#elif XMP_WinBuild
 		if ( GetWinCP(macLang) == 0 ) return false;
@@ -838,7 +838,7 @@ bool ConvertToMacLang ( const std::string & utf8Value, XMP_Uns16 macLang, std::s
 	#if XMP_MacBuild
 		XMP_Uns16 macScript = GetMacScript ( macLang );
 		ReconcileUtils::UTF8ToMacEncoding ( macScript, macLang, (XMP_Uns8*)utf8Value.c_str(), utf8Value.size(), macValue );
-	#elif XMP_UNIXBuild
+	#elif XMP_UNIXBuild | XMP_AndroidBuild
 		UTF8ToMacRoman ( utf8Value, macValue );
 	#elif XMP_WinBuild
 		UINT winCP = GetWinCP ( macLang );
@@ -864,7 +864,7 @@ bool ConvertFromMacLang ( const std::string & macValue, XMP_Uns16 macLang, std::
 	#if XMP_MacBuild
 		XMP_Uns16 macScript = GetMacScript ( macLang );
 		ReconcileUtils::MacEncodingToUTF8 ( macScript, macLang, (XMP_Uns8*)macValue.c_str(), macValue.size(), utf8Value );
-	#elif XMP_UNIXBuild
+	#elif XMP_UNIXBuild | XMP_AndroidBuild
 		MacRomanToUTF8 ( macValue, utf8Value );
 	#elif XMP_WinBuild
 		UINT winCP = GetWinCP ( macLang );
@@ -888,7 +888,7 @@ bool ConvertFromMacLang ( const std::string & macValue, XMP_Uns16 macLang, std::
 // TradQT_Manager::ParseCachedBoxes
 // ================================
 //
-// Parse the cached '©...' children of the 'moov'/'udta' box. The contents of each cached box are
+// Parse the cached 'Â©...' children of the 'moov'/'udta' box. The contents of each cached box are
 // a sequence of "mini boxes" analogous to XMP AltText arrays. Each mini box has a 16-bit size,
 // 16-bit language code, and text. The size is only the text size. The language codes are Macintosh
 // Script Manager langXyz codes. The text encoding is implicit in the language, see comments in
@@ -943,6 +943,19 @@ bool TradQT_Manager::ParseCachedBoxes ( const MOOV_Manager & moovMgr )
 
 }	// TradQT_Manager::ParseCachedBoxes
 
+/*Parsed the metadata present in moov/meta atom. The moov/meta box contains 3 mandatory child atoms namely 
+   - metadata handler atom 'hdlr*, 
+   - metadata item keys atom 'keys'
+   - metadata item list atom 'ilst'
+  hdlr atom contains information about the structure followed in meta atom, 
+  If the handler type is not mdta, meta atom does not follow specs according to QT and function will not parse moov/meta atom further
+  
+  'keys' atom  holds a list of the metadata keys that may be present in the meta atom. These keys are indexed starting from 1
+  
+  'ilst' atom  holds a list of actual metadata values that are present in the metadata atom. The metadata items are formatted as a list of items.
+  'ilst' atom contains child atoms whose atom type should be set equal to the index of the key from the metadata item keys atom. In addition, 
+   each child atom contains a Value Atom, to hold the value of the metadata item.. 
+*/
 // =================================================================================================
 // TradQT_Manager::ImportSimpleXMP
 // ===============================
@@ -1249,7 +1262,7 @@ void TradQT_Manager::UpdateChangedBoxes ( MOOV_Manager * moovMgr )
 	
 	if ( udtaRef != 0 ) {	// Might not have been a moov/udta box in the parse.
 
-		// First go through the moov/udta/©... children and delete those that are not in the map.
+		// First go through the moov/udta/Â©... children and delete those that are not in the map.
 	
 		for ( XMP_Uns32 ordinal = udtaInfo.childCount; ordinal > 0; --ordinal ) {	// ! Go backwards because of deletions.
 	
@@ -1318,7 +1331,7 @@ void TradQT_Manager::UpdateChangedBoxes ( MOOV_Manager * moovMgr )
 			MOOV_Manager::BoxRef  itemRef = moovMgr->GetTypeChild ( udtaRef, qtItem->id, &itemInfo );
 			
 			if ( itemRef != 0 ) {
-				moovMgr->SetBox ( itemRef, &fullValue[0], qtTotalSize );
+				moovMgr->ISOBaseMedia_Manager::SetBox( itemRef, &fullValue[0], qtTotalSize );
 			} else {
 				moovMgr->AddChildBox ( udtaRef, qtItem->id, &fullValue[0], qtTotalSize );
 			}

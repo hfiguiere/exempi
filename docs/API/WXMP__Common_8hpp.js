@@ -24,6 +24,6 @@ var WXMP__Common_8hpp =
     [ "XMP_MethodIntro", "WXMP__Common_8hpp.html#a9874672542b6adee728f1176b565c141", null ],
     [ "XMP_TraceClientCalls", "WXMP__Common_8hpp.html#a803c218d593737c645bbea4bf80dd815", null ],
     [ "XMP_TraceClientCallsToFile", "WXMP__Common_8hpp.html#aab5f92f08cddd67ae7c8bab22b4f0dd7", null ],
-    [ "SetClientStringProc", "WXMP__Common_8hpp.html#ae22e640b3404ce206ad1678841bcd11f", null ],
-    [ "SetClientStringVectorProc", "WXMP__Common_8hpp.html#a657cdd79947744b4c123bf9df9ac1b60", null ]
+    [ "SetClientStringProc", "WXMP__Common_8hpp.html#aab5145844b9ee7738d949e0137b51ebe", null ],
+    [ "SetClientStringVectorProc", "WXMP__Common_8hpp.html#aa3b42389be19af5529de6dca8f103698", null ]
 ];

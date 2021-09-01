@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2008 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2008 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -305,29 +305,29 @@ void XDCAMEX_MetaHandler::MakeLegacyDigest ( std::string * digestStr )
 	if ( this->clipMetadata == 0 ) return;	// Bail if we don't have any legacy XML.
 	XMP_Assert ( this->expat != 0 );
 
-	XMP_StringPtr xdcNS_ = this->xdcNS.c_str();
+	XMP_StringPtr xdcNSptr = this->xdcNS.c_str();
 	XML_NodePtr legacyContext, legacyProp;
 
-	legacyContext = this->clipMetadata->GetNamedElement ( xdcNS_, "Access" );
+	legacyContext = this->clipMetadata->GetNamedElement ( xdcNSptr, "Access" );
 	if ( legacyContext == 0 ) return;
 
 	MD5_CTX    context;
 	unsigned char digestBin [16];
 	MD5Init ( &context );
 
-	legacyProp = legacyContext->GetNamedElement ( xdcNS_, "Creator" );
+	legacyProp = legacyContext->GetNamedElement ( xdcNSptr, "Creator" );
 	if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() && (! legacyProp->content.empty()) ) {
 		const XML_Node * xmlValue = legacyProp->content[0];
 		MD5Update ( &context, (XMP_Uns8*)xmlValue->value.c_str(), (unsigned int)xmlValue->value.size() );
 	}
 
-	legacyProp = legacyContext->GetNamedElement ( xdcNS_, "CreationDate" );
+	legacyProp = legacyContext->GetNamedElement ( xdcNSptr, "CreationDate" );
 	if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() && (! legacyProp->content.empty()) ) {
 		const XML_Node * xmlValue = legacyProp->content[0];
 		MD5Update ( &context, (XMP_Uns8*)xmlValue->value.c_str(), (unsigned int)xmlValue->value.size() );
 	}
 
-	legacyProp = legacyContext->GetNamedElement ( xdcNS_, "LastUpdateDate" );
+	legacyProp = legacyContext->GetNamedElement ( xdcNSptr, "LastUpdateDate" );
 	if ( (legacyProp != 0) && legacyProp->IsLeafContentNode() && (! legacyProp->content.empty()) ) {
 		const XML_Node * xmlValue = legacyProp->content[0];
 		MD5Update ( &context, (XMP_Uns8*)xmlValue->value.c_str(), (unsigned int)xmlValue->value.size() );
@@ -700,14 +700,14 @@ void XDCAMEX_MetaHandler::GetTakeDuration ( const std::string & takeURI, std::st
 // ========================================
 
 bool XDCAMEX_MetaHandler::GetMediaProMetadata ( SXMPMeta * xmpObjPtr,
-											  	const std::string& clipUMID_,
+											  	const std::string& _clipUMID,
 											  	bool digestFound )
 {
 	// Build a directory string to the MEDIAPRO file.
 
 	std::string mediaproPath;
 	this->MakeMediaproPath ( &mediaproPath );
-	return XDCAM_Support::GetMediaProLegacyMetadata ( xmpObjPtr, clipUMID_, mediaproPath, digestFound );
+	return XDCAM_Support::GetMediaProLegacyMetadata ( xmpObjPtr, _clipUMID, mediaproPath, digestFound );
 
 }	// XDCAMEX_MetaHandler::GetMediaProMetadata
 
@@ -715,7 +715,7 @@ bool XDCAMEX_MetaHandler::GetMediaProMetadata ( SXMPMeta * xmpObjPtr,
 // XDCAMEX_MetaHandler::GetTakeUMID
 // ================================
 
-void XDCAMEX_MetaHandler::GetTakeUMID ( const std::string& clipUMID_,
+void XDCAMEX_MetaHandler::GetTakeUMID ( const std::string& _clipUMID,
 										std::string&	   takeUMID,
 										std::string&	   takeXMLURI )
 {
@@ -804,7 +804,7 @@ void XDCAMEX_MetaHandler::GetTakeUMID ( const std::string& clipUMID_,
 
 				XMP_StringPtr compUMID = componentElement->GetAttrValue ( "umid" );
 
-				if ( (compUMID != 0) && (compUMID == clipUMID_) ) {
+				if ( (compUMID != 0) && (compUMID == _clipUMID) ) {
 					takeUMID = umid;
 					takeXMLURI = uri;
 					break;
@@ -886,7 +886,7 @@ void XDCAMEX_MetaHandler::ProcessXMP()
 
 	// Check the legacy digest.
 
-	XMP_StringPtr legacyNS_ = this->legacyNS.c_str();
+	XMP_StringPtr legacyNSPtr = this->legacyNS.c_str();
 	this->clipMetadata = rootElem;	// ! Save the NonRealTimeMeta pointer for other use.
 
 	std::string oldDigest, newDigest;
@@ -899,7 +899,7 @@ void XDCAMEX_MetaHandler::ProcessXMP()
 	// If we get here we need find and import the actual legacy elements using the current namespace.
 	// Either there is no old digest in the XMP, or the digests differ. In the former case keep any
 	// existing XMP, in the latter case take new legacy values.
-	this->containsXMP = XDCAM_Support::GetLegacyMetadata ( &this->xmpObj, rootElem, legacyNS_, digestFound, thisUMID );
+	this->containsXMP = XDCAM_Support::GetLegacyMetadata ( &this->xmpObj, rootElem, legacyNSPtr, digestFound, thisUMID );
 
 	// If this clip is part of a take, add the take number to the relation field, and get the
 	// duration from the take metadata.

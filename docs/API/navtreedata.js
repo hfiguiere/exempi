@@ -1,18 +1,35 @@
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this file.
+
+Copyright (C) 1997-2019 by Dimitri van Heesch
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of version 2 of the GNU General Public License as published by
+the Free Software Foundation
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+@licend  The above is the entire license notice
+for the JavaScript code in this file
+*/
 var NAVTREE =
 [
-  [ "XMPToolkit", "index.html", [
-    [ "XMP Toolkit API Overview", "index.html", [
-      [ "Using of the XMP Toolkit API", "index.html#second-sec", null ],
-      [ "Overview of XMP Toolkit Internal Architecture.", "index.html#third-sec", [
-        [ "Implementation Call Chain", "index.html#callchain", null ]
-      ] ]
-    ] ],
-    [ "Namespaces", null, [
-      [ "Namespace List", "namespaces.html", "namespaces" ],
+  [ "XMP Toolkit SDK", "index.html", [
+    [ "Namespaces", "namespaces.html", [
+      [ "Namespace List", "namespaces.html", "namespaces_dup" ],
       [ "Namespace Members", "namespacemembers.html", [
         [ "All", "namespacemembers.html", "namespacemembers_dup" ],
         [ "Functions", "namespacemembers_func.html", null ],
-        [ "Typedefs", "namespacemembers_type.html", "namespacemembers_type" ],
+        [ "Variables", "namespacemembers_vars.html", null ],
+        [ "Typedefs", "namespacemembers_type.html", null ],
         [ "Enumerations", "namespacemembers_enum.html", null ],
         [ "Enumerator", "namespacemembers_eval.html", null ]
       ] ]
@@ -31,8 +48,8 @@ var NAVTREE =
         [ "Related Functions", "functions_rela.html", null ]
       ] ]
     ] ],
-    [ "Files", null, [
-      [ "File List", "files.html", "files" ],
+    [ "Files", "files.html", [
+      [ "File List", "files.html", "files_dup" ],
       [ "File Members", "globals.html", [
         [ "All", "globals.html", "globals_dup" ],
         [ "Functions", "globals_func.html", null ],
@@ -49,13 +66,13 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "IArrayNode_8h.html",
-"WXMPMeta_8hpp.html#afee2f3c13f8dcb9f72104dd36eff4d68",
-"XMPCoreErrorCodes_8h.html#ad4e9bcfc5d25760a93189c0ba2962c3ea199673856ea7c62993fb5850817b9181",
-"XMP__Const_8h.html#a285d88d6d95ce0bfed19bb41c5be485f",
-"XMP__Const_8h.html#adb49720dc49f7d4e4cf9adbf2948e409a31adb57da79b4fb1f1f5f999ec740010",
-"classAdobeXMPCommon_1_1IVersionable.html#ab93a940e2946c14a76ebbd9552cab070",
-"classTXMPFiles.html#a0de588c4b98086206b3a5d737012106d",
-"functions_vars.html"
+"WXMPMeta_8hpp.html#af9276110cbdeb3b3098b6bbdf620977f",
+"XMPCoreErrorCodes_8h.html#aacd1fd7f96affcf9707f45c272f08a00af8aa55dc3ffd9c4d4612463ed430b262",
+"XMP__Const_8h.html#a10828aa191aa666aa1166c27beead2a6",
+"XMP__Const_8h.html#ad031ed89ecef3f070682a51a4028cc31",
+"classAdobeXMPCommon_1_1IUTF8String__v1.html#a6873a42d7f1a747fc5461e2c653e97cb",
+"classAdobeXMPCore_1_1IPath__v1.html#a5e56d6856c8419a5e86f3815b38b482c",
+"functions_func_e.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

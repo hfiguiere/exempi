@@ -10,6 +10,7 @@ var namespaceAdobeXMPCore =
     [ "IDOMParser_v1", "classAdobeXMPCore_1_1IDOMParser__v1.html", "classAdobeXMPCore_1_1IDOMParser__v1" ],
     [ "IDOMSerializer_v1", "classAdobeXMPCore_1_1IDOMSerializer__v1.html", "classAdobeXMPCore_1_1IDOMSerializer__v1" ],
     [ "IMetadata_v1", "classAdobeXMPCore_1_1IMetadata__v1.html", "classAdobeXMPCore_1_1IMetadata__v1" ],
+    [ "IMetadataConverterUtils_v1", "classAdobeXMPCore_1_1IMetadataConverterUtils__v1.html", "classAdobeXMPCore_1_1IMetadataConverterUtils__v1" ],
     [ "INameSpacePrefixMap_v1", "classAdobeXMPCore_1_1INameSpacePrefixMap__v1.html", "classAdobeXMPCore_1_1INameSpacePrefixMap__v1" ],
     [ "INode_v1", "classAdobeXMPCore_1_1INode__v1.html", "classAdobeXMPCore_1_1INode__v1" ],
     [ "INodeIterator_v1", "classAdobeXMPCore_1_1INodeIterator__v1.html", "classAdobeXMPCore_1_1INodeIterator__v1" ],

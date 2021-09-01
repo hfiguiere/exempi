@@ -2,12 +2,12 @@
 #define RDFDOMParserImpl_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #if !(IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED)
@@ -33,6 +33,7 @@ namespace AdobeXMPCore_Int {
 			mGenericErrorCallbackPtr = NULL;
 		}
 		virtual spINode APICALL ParseAsNode( const char * buffer, sizet bufferLength );
+        
 		virtual eConfigurableErrorCode APICALL ValidateValue( const uint64 & key, eDataType type, const CombinedDataValue & value ) const;
 		void InitializeDefaultValues();
 		void SetErrorCallback(XMPMeta::ErrorCallbackInfo * ec);

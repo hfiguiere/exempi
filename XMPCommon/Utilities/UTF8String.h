@@ -2,18 +2,18 @@
 #define __UTF8String_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
-#include "XMPCommon/XMPCommonDefines_I.h"
-#include "XMPCommon/Utilities/TAllocator.h"
 #include <string>
 #include <sstream>
+#include "XMPCommon/XMPCommonDefines_I.h"
+#include "XMPCommon/Utilities/TAllocator.h"
 
 namespace XMP_COMPONENT_INT_NAMESPACE {
 

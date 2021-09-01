@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2010 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2010 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -174,7 +174,7 @@ bool AIFFBehavior::removeChunk( IChunkContainer& tree, Chunk& chunk )
 
 	XMP_Validate( (formChunk->getType() == kType_AIFF) || (formChunk->getType() == kType_AIFC), "Invalid type for AIFF/AIFC top level chunk (FORM)", kXMPErr_BadFileFormat);
 
-	XMP_Uns32 i = std::find( formChunk->firstChild(), formChunk->lastChild(), &chunk ) - formChunk->firstChild();
+	XMP_Uns32 i = (XMP_Uns32) (std::find( formChunk->firstChild(), formChunk->lastChild(), &chunk ) - formChunk->firstChild());
 
 	XMP_Validate( i < formChunk->numChildren(), "Invalid chunk in tree", kXMPErr_InternalFailure );
 

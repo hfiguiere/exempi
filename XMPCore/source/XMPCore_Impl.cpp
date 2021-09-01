@@ -1,9 +1,9 @@
 // =================================================================================================
-// Copyright 2004 Adobe Systems Incorporated
+// Copyright 2004 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include!
@@ -30,6 +30,11 @@ using namespace std;
 	#if ! MAC_ENV
 		#error "MAC_ENV must be defined so that \"#if MAC_ENV\" is true"
 	#endif
+	#if defined(IOS_ENV)
+		#if ! IOS_ENV
+			#error "IOS_ENV must be defined so that \"#if IOS_ENV\" is true"
+		#endif
+    #endif
 #elif defined ( WIN_ENV )
 	#if ! WIN_ENV
 		#error "WIN_ENV must be defined so that \"#if WIN_ENV\" is true"
@@ -41,6 +46,14 @@ using namespace std;
 #elif defined ( IOS_ENV )
     #if ! IOS_ENV
         #error "IOS_ENV must be defined so that \"#if IOS_ENV\" is true"
+    #endif
+#elif defined(WIN_UNIVERSAL_ENV)
+	#if !WIN_UNIVERSAL_ENV
+		#error "WIN_UNIVERSAL_ENV must be defined so that \"#if WIN_UNIVERSAL_ENV\" is true"
+	#endif
+#elif defined ( ANDROID_ENV )
+    #if ! ANDROID_ENV
+        #error "ANDROID_ENV must be defined so that \"#if ANDROID_ENV\" is true"
     #endif
 #endif
 
@@ -56,17 +69,22 @@ XMP_AliasMap * sRegisteredAliasMap = 0;
 
 XMP_ReadWriteLock * sDefaultNamespacePrefixMapLock = 0;
 
-void *              voidVoidPtr    = 0;	// Used to backfill null output parameters.
-XMP_StringPtr		voidStringPtr  = 0;
-XMP_StringLen		voidStringLen  = 0;
-XMP_OptionBits		voidOptionBits = 0;
-XMP_Uns8			voidByte       = 0;
-bool				voidBool       = 0;
-XMP_Int32			voidInt32      = 0;
-XMP_Int64			voidInt64      = 0;
-double				voidDouble     = 0.0;
-XMP_DateTime		voidDateTime;
-WXMP_Result 		void_wResult;
+
+// *** CTECHXMP-4169947 ***//
+
+//void *              voidVoidPtr    = 0;	// Used to backfill null output parameters.
+//XMP_StringPtr		voidStringPtr  = 0;
+//XMP_StringLen		voidStringLen  = 0;
+//XMP_OptionBits		voidOptionBits = 0;
+//XMP_Uns8			voidByte       = 0;
+//bool				voidBool       = 0;
+//XMP_Int32			voidInt32      = 0;
+//XMP_Int64			voidInt64      = 0;
+//double				voidDouble     = 0.0;
+//XMP_DateTime		voidDateTime;
+//WXMP_Result 		void_wResult;
+
+
 
 	#if ENABLE_CPP_DOM_MODEL
 		XMP_Bool         sUseNewCoreAPIs = false;
@@ -80,8 +98,12 @@ WXMP_Result 		void_wResult;
 
 		typedef void(*XMP_DeleteProc)   (void * ptr);
 
-		XMP_AllocateProc sXMP_MemAlloc = malloc;
-		XMP_DeleteProc   sXMP_MemFree  = free;
+	XMP_AllocateProc sXMP_MemAlloc = malloc;
+	XMP_DeleteProc   sXMP_MemFree  = free;
+
+
+//******* SEE : CTECHXMP-4169971 *************//
+#if 0
 		#define malloc(size) (*sXMP_MemAlloc) ( size )
 		#define free(addr)   (*sXMP_MemFree) ( addr )
 		
@@ -92,7 +114,7 @@ WXMP_Result 		void_wResult;
 			return mem;
 		}
 
-        void * operator new( std::size_t len, const std::nothrow_t & nothrow ) throw () {
+        void * operator new( std::size_t len, const std::nothrow_t & _nothrow ) throw () {
             void * mem = (*sXMP_MemAlloc) ( len );
             return mem;
         }
@@ -109,7 +131,7 @@ WXMP_Result 		void_wResult;
 			if ( ptr != 0 ) (*sXMP_MemFree) ( ptr );
 		}
 		
-		void operator delete ( void * ptr, const std::nothrow_t & nothrow ) throw ()
+		void operator delete ( void * ptr, const std::nothrow_t & _nothrow ) throw ()
 		{
 			return operator delete( ptr );
 		}
@@ -118,7 +140,8 @@ WXMP_Result 		void_wResult;
 		{
 			if ( ptr != 0 ) (*sXMP_MemFree) ( ptr );
 		}
-	
+#endif
+
 #endif
 
 

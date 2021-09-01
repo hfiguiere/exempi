@@ -1,9 +1,9 @@
 // =================================================================================================
-// Copyright 2004 Adobe Systems Incorporated
+// Copyright 2004 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Const.h"
@@ -13,7 +13,7 @@
 
 #include "source/UnicodeConversions.hpp"
 
-#if SUNOS_SPARC || XMP_IOS_ARM
+#if SUNOS_SPARC || XMP_IOS_ARM || XMP_ANDROID_ARM
 	#include "string.h"
 #endif
 
@@ -218,7 +218,7 @@ void InitializeUnicodeConversions()
 
 // =================================================================================================
 
-#if SUNOS_SPARC || XMP_IOS_ARM
+#if SUNOS_SPARC || XMP_IOS_ARM || XMP_ANDROID_ARM
 	#define DefineAndGetValue(type,inPtr) type inUnit; memcpy ( &inUnit, inPtr, sizeof(type) ); 
 #else
 	#define DefineAndGetValue(type,inPtr) type inUnit = *((type *)inPtr); 

@@ -12,6 +12,7 @@ var globals_defs =
     [ "q", "globals_defs_q.html", null ],
     [ "r", "globals_defs_r.html", null ],
     [ "s", "globals_defs_s.html", null ],
+    [ "t", "globals_defs_t.html", null ],
     [ "w", "globals_defs_w.html", null ],
     [ "x", "globals_defs_x.html", null ],
     [ "z", "globals_defs_z.html", null ]

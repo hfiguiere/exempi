@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2008 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2008 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include.
@@ -451,18 +451,18 @@ ID3v2Frame::ID3v2Frame() : frameDefaults
 
 // =================================================================================================
 
-ID3v2Frame::ID3v2Frame ( XMP_Uns32 id_ ) : frameDefaults
+ID3v2Frame::ID3v2Frame ( XMP_Uns32 _id ) : frameDefaults
 {
 	memset ( this->fields, 0, kV23_FrameHeaderSize );
-	this->id = id_;
-	PutUns32BE ( id_, &this->fields[o_id] );
+	this->id = _id;
+	PutUns32BE ( _id, &this->fields[o_id] );
 }
 
 // =================================================================================================
 
 void ID3v2Frame::release()
 {
-	if ( this->content != 0 ) delete [] this->content;
+	if ( this->content != 0 ) delete [] content;
 	this->content = 0;
 	this->contentSize = 0;
 }
@@ -627,7 +627,7 @@ bool ID3v2Frame::advancePastCOMMDescriptor ( XMP_Int32& pos )
 		}
 
 		if ( pos > 4 ) {
-			std::string descriptor = std::string ( &this->content[4], pos-1 );
+			std::string descriptor = std::string ( &this->content[4], pos-4 ); //changing pos-1 to pos-4, incorporating the size of .eng
 			if ( 0 == descriptor.substr(0,4).compare( "iTun" ) ) {	// begins with engiTun ?
 				return false; // leave alone, then
 			}
@@ -793,10 +793,10 @@ bool ID3v1Tag::read ( XMP_IO* file, SXMPMeta* meta )
 	if ( genreNo < numberedGenreCount ) {
 		meta->SetProperty ( kXMP_NS_DM, "genre", kNumberedGenres[genreNo].name );
 	} else {
-		char buffer[4];	// AUDIT: Big enough for UInt8.
-		snprintf ( buffer, 4, "%d", genreNo );
-		XMP_Assert ( strlen(buffer) == 3 );	// Should be in the range 126..255.
-		meta->SetProperty ( kXMP_NS_DM, "genre", buffer );
+		char lBuffer[4];	// AUDIT: Big enough for UInt8.
+		snprintf ( lBuffer, 4, "%d", genreNo );
+		XMP_Assert ( strlen(lBuffer) == 3 );	// Should be in the range 126..255.
+		meta->SetProperty ( kXMP_NS_DM, "genre", lBuffer );
 	}
 
 	return true; // ID3Tag found

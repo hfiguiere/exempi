@@ -9,7 +9,7 @@ var classXMP__IO =
     [ "DeriveTemp", "classXMP__IO.html#ac989de23f8fed2efcca71f5a3aa35695", null ],
     [ "Length", "classXMP__IO.html#af4fe442d5f7ea3d062bb5dfeadfa2335", null ],
     [ "Offset", "classXMP__IO.html#aa14274c6ed95da83a95e8786b7b1a91e", null ],
-    [ "operator=", "classXMP__IO.html#a18227546a6e759409dfd48a00b9a0748", null ],
+    [ "operator=", "classXMP__IO.html#a3a1c16d56b845392cef6fa1e2cd75635", null ],
     [ "Read", "classXMP__IO.html#a0a0db95509e567f29f34570d5042aa54", null ],
     [ "ReadAll", "classXMP__IO.html#a0d0b45799793c5fa3dc567556f93cceb", null ],
     [ "Rewind", "classXMP__IO.html#a456f92ca90a83095dbd90786a26b64e1", null ],

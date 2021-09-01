@@ -2,12 +2,12 @@
 #define DOMImplementationRegistryImpl_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #if !(IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED)
@@ -35,8 +35,8 @@ namespace AdobeXMPCore_Int {
 		, public virtual MemoryManagedObject
 	{
 	public:
-		typedef std::map< spcIUTF8String, spcIDOMParser, IUTF8StringComparator, TAllocator< spcIUTF8String > > ParserMap;
-		typedef std::map< spcIUTF8String, spcIDOMSerializer, IUTF8StringComparator, TAllocator< spcIUTF8String > > SerializerMap;
+		typedef std::map< spcIUTF8String, spcIDOMParser, IUTF8StringComparator, TAllocator< std::pair< const spcIUTF8String, spcIDOMParser > > > ParserMap;
+		typedef std::map< spcIUTF8String, spcIDOMSerializer, IUTF8StringComparator, TAllocator< std::pair< const spcIUTF8String, spcIDOMSerializer > > > SerializerMap;
 
 		DOMImplementationRegistryImpl() {}
 

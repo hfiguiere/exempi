@@ -2,12 +2,12 @@
 #define __XMP_IO_hpp__	1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2010 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2010 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -41,7 +41,7 @@
 
 class XMP_IO {
 public:
-
+    enum { kReadAll = true };
 	// ---------------------------------------------------------------------------------------------
 	/// @brief Read into a buffer, returning the number of bytes read.
 	///
@@ -55,8 +55,6 @@ public:
 	/// @param readAll True if reading less than the requested amount is a failure.
 	///
 	/// @return Returns the number of bytes read.
-
-	enum { kReadAll = true };
 
 	virtual XMP_Uns32 Read ( void* buffer, XMP_Uns32 count, bool readAll = false ) = 0;
 
@@ -164,7 +162,7 @@ private:
 	/// share state across multiple XMP_IO objects.
 
 	XMP_IO ( const XMP_IO & original );
-	XMP_IO& operator= ( const XMP_IO& in );
+	void operator= ( const XMP_IO& ) { /**this = in; *//* Avoid Win compile warnings. */ };
 
 };
 

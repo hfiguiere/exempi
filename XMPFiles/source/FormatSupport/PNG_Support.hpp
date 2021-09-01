@@ -2,12 +2,12 @@
 #define __PNG_Support_hpp__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2007 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2007 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -60,7 +60,7 @@ namespace PNG_Support
 
 	long OpenPNG ( XMP_IO* fileRef, ChunkState& inOutChunkState );
 
-	bool ReadChunk ( XMP_IO* fileRef, ChunkState& inOutChunkState, long* chunkType, XMP_Uns32* chunkLength, XMP_Uns64& inOutPosition );
+	bool ReadChunk ( XMP_IO* fileRef, ChunkState& inOutChunkState, long* chunkType, XMP_Uns32* chunkLength, XMP_Int64& inOutPosition );
 	bool WriteXMPChunk ( XMP_IO* fileRef, XMP_Uns32 len, const char* inBuffer );
 	bool CopyChunk ( XMP_IO* sourceRef, XMP_IO* destRef, ChunkData& chunk );
 	unsigned long UpdateChunkCRC( XMP_IO* fileRef, ChunkData& inOutChunkData );
@@ -72,6 +72,17 @@ namespace PNG_Support
 	bool WriteBuffer ( XMP_IO* fileRef, XMP_Uns64& pos, XMP_Uns32 len, const char* inBuffer );
 
 	unsigned long CalculateCRC( unsigned char* inBuffer, XMP_Uns32 len );
+    
+    
+    //These 2 functions are introduced to reduce the file read call which is required to find
+    //and process XMP in PNG file. Reading small data from file is an expensive operation
+    //if processed file is present on network.
+    //Instead of reading 8 bytes to identify each chunk type(see ReadChunk), FindAndReadXMPChunk will copy the file data in a buffer of 1 MB and then process it.
+    //see bug CTECHXMP-4169872.
+    //Now PNG_MetaHandler::CacheFileData is using this function instead of OpenPNG.
+    
+    bool FindAndReadXMPChunk ( XMP_IO* fileRef, std::string& outXMPPacket,XMP_Int64& xmpOffset, bool isOpenForRead );
+    bool ExtractXMPPacket(XMP_IO* fileRef, XMP_Uns32 chunkLength, XMP_Uns8* buffer, XMP_Int64 bytesInBuffer,XMP_Int64 filePosition, std::string& outXMPPacket,XMP_Int64& xmpOffset);
 
 } // namespace PNG_Support
 

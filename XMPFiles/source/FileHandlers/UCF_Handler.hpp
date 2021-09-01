@@ -2,12 +2,12 @@
 #define __UCF_Handler_hpp__	1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2007 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2007 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -710,6 +710,7 @@ private:
 	XMP_StringLen uncomprPacketLen;
 	XMP_StringPtr finalPacketStr;
 	XMP_StringLen finalPacketLen;
+	std::string compressedPacket;
 	std::vector<CDFileHeader> cdEntries;
 	EndOfCD endOfCD;
 	void writeOut( XMP_IO* sourceFile, XMP_IO* targetFile, bool isRewrite, bool isInPlace);

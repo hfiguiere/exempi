@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include!
@@ -29,7 +29,6 @@
 #include "XMPCommon/Interfaces/IUTF8String_I.h"
 
 const XMP_VarString xmlNameSpace = "http://www.w3.org/XML/1998/namespace";
-extern bool IsInternalProperty(const XMP_VarString & schema, const XMP_VarString & prop);
 extern const char * sListProps[];
 extern const char * sDateProps[];
 
@@ -40,8 +39,9 @@ using namespace AdobeXMPCore;
 // CloneSubtree
 // ============
 
-void 
-CloneIXMPSubtree(const spcINode & origRoot, const spINode & cloneParent, bool skipEmpty /* = false */)
+
+
+static void CloneIXMPSubtree(const spcINode & origRoot, const spINode & cloneParent, bool skipEmpty /* = false */)
 {
 	spINode clonedRoot = origRoot->Clone(skipEmpty, true);
 	if (!clonedRoot) return;
@@ -59,8 +59,7 @@ CloneIXMPSubtree(const spcINode & origRoot, const spINode & cloneParent, bool sk
 //
 // ! Assumes that the language value is already normalized.
 
-XMP_Index
-LookupIXMPLangItem(const spcIArrayNode & arrayNode, XMP_VarString & lang)
+static XMP_Index LookupIXMPLangItem(const spcIArrayNode & arrayNode, XMP_VarString & lang)
 {
 	XMP_OptionBits arrayOptions = XMPUtils::GetIXMPOptions(arrayNode);
 	if (!(arrayOptions & kXMP_PropValueIsArray)) {	// *** Check for alt-text?
@@ -68,7 +67,7 @@ LookupIXMPLangItem(const spcIArrayNode & arrayNode, XMP_VarString & lang)
 	}
 
 	XMP_Index index = 1;
-	XMP_Index itemLim = arrayNode->ChildCount();
+	XMP_Index itemLim = (XMP_Index)arrayNode->ChildCount();
 
 	for (; index <= itemLim; ++index) {
 		spcINode currItem = arrayNode->GetNodeAtIndex(index);
@@ -99,9 +98,7 @@ LookupIXMPLangItem(const spcIArrayNode & arrayNode, XMP_VarString & lang)
 // *** Might someday consider sorting unordered arrays.
 // *** Should expose this through XMPUtils.
 
-
-bool
-CompareSubtrees(spcINode leftNode, spcINode rightNode)
+static bool CompareSubtrees(spcINode leftNode, spcINode rightNode)
 {
 	// Don't compare the names here, we want to allow the outermost roots to have different names.
 	XMP_OptionBits leftNodeOptions = XMPUtils::GetIXMPOptions(leftNode), rightNodeOptions = XMPUtils::GetIXMPOptions(rightNode);
@@ -146,7 +143,7 @@ CompareSubtrees(spcINode leftNode, spcINode rightNode)
 			spcINode leftChildFirstQualifier = leftChild->GetQualifier(xmlNameSpace.c_str(), xmlNameSpace.size(), "lang", AdobeXMPCommon::npos );
 			if (leftChildFirstQualifier) {
 				XMP_VarString leftChildFirstQualifierValue = leftChildFirstQualifier->ConvertToSimpleNode()->GetValue()->c_str();
-				size_t rightIdx = LookupIXMPLangItem( rightNodeAsArray, leftChildFirstQualifierValue );
+				XMP_Index rightIdx = LookupIXMPLangItem( rightNodeAsArray, leftChildFirstQualifierValue );
 				if (rightIdx == -1) {
 					return false;
 				}
@@ -420,7 +417,7 @@ const bool mergeCompound, const bool replaceOld, const bool deleteEmpty)
 			spcINode langQualNode = sourceItem->GetQualifier(xmlNameSpace.c_str(), xmlNameSpace.size(), "lang", AdobeXMPCommon::npos );
 			if (!langQualNode || langQualNode->GetNodeType() != INode::kNTSimple) continue;
 			XMP_VarString langValue = langQualNode->ConvertToSimpleNode()->GetValue()->c_str();
-			size_t destIndex = LookupIXMPLangItem( destNode->ConvertToArrayNode(), langValue );
+			XMP_Index destIndex = LookupIXMPLangItem( destNode->ConvertToArrayNode(), langValue );
 
 			if (sourceItemValue->empty()) {
 
@@ -576,8 +573,7 @@ XMPUtils::ApplyTemplate_v2( XMPMeta *	      workingXMPBasePtr,
 // DuplicateSubtree
 // ----------------
 
-
-void CloneContents(spINode sourceNode, spINode &destNode) {
+static void CloneContents(spINode sourceNode, spINode &destNode) {
 
 	
 	if (sourceNode->GetNodeType() == INode::kNTSimple) {
@@ -699,11 +695,11 @@ XMP_OptionBits	 options)
 
 		XMP_ExpandedXPath srcPath;
 		ExpandXPath(sourceNS, sourceRoot, &srcPath);
-		spINode sourceNode;
+		spINode spSourceNode;
 		XMP_OptionBits sourceNodeOptions = 0;
-		XMPUtils::FindCnstNode(source.mDOM, srcPath, sourceNode, &sourceNodeOptions);
+		XMPUtils::FindCnstNode(source.mDOM, srcPath, spSourceNode, &sourceNodeOptions);
 
-		if ((!sourceNode) || (!XMP_PropIsStruct(sourceNodeOptions))) {
+		if ((!spSourceNode) || (!XMP_PropIsStruct(sourceNodeOptions))) {
 			XMP_Throw("Source must be an existing struct", kXMPErr_BadXPath);
 		}
 
@@ -719,7 +715,7 @@ XMP_OptionBits	 options)
 		}
 
 
-		for (auto sourceChildIter = XMPUtils::GetNodeChildIterator(sourceNode); sourceChildIter; sourceChildIter = sourceChildIter->Next()) {
+		for (auto sourceChildIter = XMPUtils::GetNodeChildIterator(spSourceNode); sourceChildIter; sourceChildIter = sourceChildIter->Next()) {
 
 			spINode copyNode = sourceChildIter->GetNode()->Clone();
 			if (destNode->GetNodeType() == INode::kNTStructure){

@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2007 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2007 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -210,6 +210,8 @@ static void GetTagInfo ( XMP_IO* fileRef, XMP_Uns64 tagPos, TagInfo * info )
 
 static XMP_Uns32 GetASValueLen ( const XMP_Uns8 * asValue, const XMP_Uns8 * asLimit )
 {
+	if (asValue > asLimit)
+		return 0;
 	XMP_Uns32 valueLen = 0;
 	const XMP_Uns8 * itemPtr;
 	XMP_Uns32 arrayCount;

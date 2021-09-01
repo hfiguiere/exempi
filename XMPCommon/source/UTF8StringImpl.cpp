@@ -1,10 +1,12 @@
 // =================================================================================================
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright 2014 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
+
+#include <algorithm>
 
 #define IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED 1
 	#include "XMPCommon/ImplHeaders/UTF8StringImpl.h"
@@ -15,11 +17,8 @@
 #include "XMPCommon/Utilities/TSmartPointers_I.h"
 #include "XMPCommon/Interfaces/IObjectFactory.h"
 
-#include <algorithm>
-
 namespace XMP_COMPONENT_INT_NAMESPACE {
-
-	sizet ValidateSrcPosParameter( const spcIUTF8String & src, const sizet & srcPos ) {
+	 static sizet ValidateSrcPosParameter( const spcIUTF8String & src, const sizet & srcPos ) {
 		sizet srcSize = src->size();
 		if ( srcPos > srcSize ) {
 			NOTIFY_ERROR( IError_v1::kEDGeneral, kGECIndexOutOfBounds,
@@ -168,7 +167,7 @@ namespace XMP_COMPONENT_INT_NAMESPACE {
 	}
 
 	int32 APICALL UTF8StringImpl::compare( sizet pos, sizet len, const char * buf, sizet count ) const {
-		if ( buf && len >= 0 && count >= 0 ) {
+		if ( buf && (len > 0||len ==0) && (count > 0 || count==0) ) {
 			sizet size = ValidatePosParameter( pos );
 			if ( count == npos )
 				return mString.compare( pos, len, buf );
@@ -179,7 +178,7 @@ namespace XMP_COMPONENT_INT_NAMESPACE {
 	}
 
 	int32 APICALL UTF8StringImpl::compare( sizet pos, sizet len, const spcIUTF8String & str, sizet strPos, sizet strLen ) const {
-		if ( str && len >= 0 && strLen >= 0 ) {
+		if ( str && (len > 0||len ==0) && (strLen > 0||strLen ==0) ) {
 			ValidatePosParameter( pos );
 			ValidateSrcPosParameter( str, strPos );
 			return mString.compare( pos, len, str->c_str() + strPos, strLen );

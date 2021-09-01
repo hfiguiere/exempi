@@ -10,6 +10,7 @@ var XMPCoreLatestInterfaceVersions_8h =
     [ "IDOMPARSER_VERSION", "XMPCoreLatestInterfaceVersions_8h.html#a813f82b55a0bb68c1553e8b38592e705", null ],
     [ "IDOMSERIALIZER_VERSION", "XMPCoreLatestInterfaceVersions_8h.html#a52d6e44f27f19214b38959683d6cc829", null ],
     [ "IMETADATA_VERSION", "XMPCoreLatestInterfaceVersions_8h.html#af7d51c3ccf825fc82fa4a2a6cca26bc8", null ],
+    [ "IMETADATACONVERTERUTILS_VERSION", "XMPCoreLatestInterfaceVersions_8h.html#a4faf22ab9273295d54377df9b0ded7db", null ],
     [ "INAMESPACEPREFIXMAP_VERSION", "XMPCoreLatestInterfaceVersions_8h.html#a79e1c8ec2c46a2cbee3ba9cfd0d78ad4", null ],
     [ "INODE_VERSION", "XMPCoreLatestInterfaceVersions_8h.html#aff2b1eabe2ac90a68ba3690930494a17", null ],
     [ "INODEITERATOR_VERSION", "XMPCoreLatestInterfaceVersions_8h.html#afe7756c974951e8e78be1cfb96aacc8b", null ],

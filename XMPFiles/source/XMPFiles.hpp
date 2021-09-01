@@ -2,12 +2,12 @@
 #define __XMPFiles_hpp__	1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2004 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2004 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include.
@@ -213,7 +213,7 @@ public:
 		XMP_Uns32 limit);
 
 	XMPFiles();
-	virtual ~XMPFiles();
+	virtual ~XMPFiles() NO_EXCEPT_FALSE;
 
 	bool OpenFile(XMP_StringPtr filePath, XMP_FileFormat format = kXMP_UnknownFile, XMP_OptionBits openFlags = 0);
 	bool OpenFile(const Common::XMPFileHandlerInfo & hdlInfo, XMP_StringPtr filePath, XMP_OptionBits openFlags = 0);

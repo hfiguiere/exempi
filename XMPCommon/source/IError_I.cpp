@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2015 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2015 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "XMPCommon/Interfaces/IError_I.h"
@@ -126,17 +126,17 @@ namespace XMP_COMPONENT_INT_NAMESPACE {
 	}
 
 
-	uint32 ReportErrorAndContinueABISafe( uint32 errorDomain, uint32 errorCode, uint32 errorSeverity, const char * message, pcIError_base & error ) __NOTHROW__ {
+	uint32 ReportErrorAndContinueABISafe( uint32 errorDomain, uint32 errorCode, uint32 errorSeverity, const char * message, pcIError_base & _error ) __NOTHROW__ {
 		try {
 			NOTIFY_ERROR( static_cast< IError::eErrorDomain >( errorDomain ), errorCode, message,
 				static_cast< IError::eErrorSeverity >( errorSeverity ), false, false );
 			return 1;
 		} catch ( spcIError err ) {
 			err->GetISharedObject_I()->AcquireInternal();
-			error = err.get();
+			_error = err.get();
 		} catch ( ... ) {
-			error = IError_I::CreateClientCodeExceptionError( static_cast< IError::eErrorSeverity >( errorSeverity ), __FILE__, __LINE__ ).get();
-			error->GetISharedObject_I()->AcquireInternal();
+			_error = IError_I::CreateClientCodeExceptionError( static_cast< IError::eErrorSeverity >( errorSeverity ), __FILE__, __LINE__ ).get();
+			_error->GetISharedObject_I()->AcquireInternal();
 		}
 		return 0;
 	}

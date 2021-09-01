@@ -2,11 +2,11 @@
 #define __XMP_LibUtils_hpp__ 1
 
 // =================================================================================================
-// Copyright 2009 Adobe Systems Incorporated
+// Copyright 2009 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! Must be the first include.
@@ -177,6 +177,7 @@ struct ErrorCallbackBox
 			const char * assert_msg = _NotifyMsg ( XMP_Enforce, (c), __FILE__, __LINE__ );	\
 			XMP_Throw ( assert_msg , kXMPErr_EnforceFailure );								\
 		}
+	#define XMP_Enforce_NoThrow(c)
 // =================================================================================================
 // Thread synchronization locks
 // ============================
@@ -234,22 +235,33 @@ struct ErrorCallbackBox
 #elif XMP_MacBuild | XMP_iOSBuild
 
 	#include <pthread.h>
-	#include <libkern/OSAtomic.h>
+
+	// #include <libkern/OSAtomic.h> deprecated header
+	#include <atomic>
 
 	#define HaveAtomicIncrDecr 1
-	typedef int32_t XMP_AtomicCounter;
+	//typedef int32_t XMP_AtomicCounter;  //Changing XMP_AtomicCounter type to std::atomic
+											 // due to deprecation of mac os APIs
 
-	#define XMP_AtomicIncrement(x)	OSAtomicIncrement32Barrier ( &(x) )
-	#define XMP_AtomicDecrement(x)	OSAtomicDecrement32Barrier ( &(x) )
+
+	typedef std::atomic<int32_t> XMP_AtomicCounter;
+
+	//Both these APIs are deprecated.
+
+	//#define XMP_AtomicIncrement(x)	OSAtomicIncrement32Barrier ( &(x) )
+	//#define XMP_AtomicDecrement(x)	OSAtomicDecrement32Barrier ( &(x) )
+
+	#define XMP_AtomicIncrement(x)	std::atomic_fetch_add ( &(x), 1 )
+	#define XMP_AtomicDecrement(x)	std::atomic_fetch_sub ( &(x), 1 )
 
 	typedef pthread_mutex_t XMP_BasicMutex;
 
 	#define InitializeBasicMutex(mutex)	{ int err = pthread_mutex_init ( &mutex, 0 ); XMP_Enforce ( err == 0 ); }
-	#define TerminateBasicMutex(mutex)	{ int err = pthread_mutex_destroy ( &mutex ); XMP_Enforce ( err == 0 ); }
+	#define TerminateBasicMutex(mutex)	{ int err = pthread_mutex_destroy ( &mutex ); XMP_Enforce_NoThrow ( err == 0 ); }
 	#define AcquireBasicMutex(mutex)	{ int err = pthread_mutex_lock ( &mutex ); XMP_Enforce ( err == 0 ); }
 	#define ReleaseBasicMutex(mutex)	{ int err = pthread_mutex_unlock ( &mutex ); XMP_Enforce ( err == 0 ); }
 
-#elif XMP_UNIXBuild
+#elif XMP_UNIXBuild || XMP_AndroidBuild
 
 	#include <pthread.h>
 
@@ -266,7 +278,7 @@ struct ErrorCallbackBox
 	typedef pthread_mutex_t XMP_BasicMutex;
 
 	#define InitializeBasicMutex(mutex)	{ int err = pthread_mutex_init ( &mutex, 0 ); XMP_Enforce ( err == 0 ); }
-	#define TerminateBasicMutex(mutex)	{ int err = pthread_mutex_destroy ( &mutex ); XMP_Enforce ( err == 0 ); }
+	#define TerminateBasicMutex(mutex)	{ int err = pthread_mutex_destroy ( &mutex ); XMP_Enforce_NoThrow ( err == 0 ); }
 	#define AcquireBasicMutex(mutex)	{ int err = pthread_mutex_lock ( &mutex ); XMP_Enforce ( err == 0 ); }
 	#define ReleaseBasicMutex(mutex)	{ int err = pthread_mutex_unlock ( &mutex ); XMP_Enforce ( err == 0 ); }
 
@@ -378,7 +390,7 @@ private:
 	#define XMP_BasicRWLock_ReleaseFromRead(lck)	lck.ReleaseFromRead()
 	#define XMP_BasicRWLock_ReleaseFromWrite(lck)	lck.ReleaseFromWrite()
 	
-	#if XMP_MacBuild | XMP_UNIXBuild | XMP_iOSBuild
+	#if XMP_MacBuild | XMP_UNIXBuild | XMP_iOSBuild | XMP_AndroidBuild
 
 		#include <pthread.h>
 
@@ -546,6 +558,10 @@ private:
 #else
 	#define RELEASE_NO_THROW	throw()
 #endif
+
+
+#define NO_EXCEPT_FALSE noexcept(false)
+#define NO_EXCEPT_TRUE noexcept(true)
 
 // =================================================================================================
 // Data structure dumping utilities

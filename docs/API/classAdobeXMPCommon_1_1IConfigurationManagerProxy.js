@@ -9,7 +9,7 @@ var classAdobeXMPCommon_1_1IConfigurationManagerProxy =
     [ "GetInterfacePointer", "classAdobeXMPCommon_1_1IConfigurationManagerProxy.html#acf184689e6c9862642425392ac80640c", null ],
     [ "getInterfacePointer", "classAdobeXMPCommon_1_1IConfigurationManagerProxy.html#acb62caf44deca15cc1a427ff4d437e0b", null ],
     [ "GetISharedObject_I", "classAdobeXMPCommon_1_1IConfigurationManagerProxy.html#a9efc36a9faf07297c329f1c422659758", null ],
-    [ "IsMultiThreaded", "classAdobeXMPCommon_1_1IConfigurationManagerProxy.html#a84324c2d73c81094f9a4ea365b22acb7", null ],
+    [ "IsMultiThreaded", "classAdobeXMPCommon_1_1IConfigurationManagerProxy.html#abfaa3963adaadb27212c20126c563eb7", null ],
     [ "isMultiThreaded", "classAdobeXMPCommon_1_1IConfigurationManagerProxy.html#a7b99c9d6b1b337c74b240afbdb1ba11a", null ],
     [ "RegisterErrorNotifier", "classAdobeXMPCommon_1_1IConfigurationManagerProxy.html#a2f95a01a640809db056c50f3af9969a3", null ],
     [ "registerErrorNotifier", "classAdobeXMPCommon_1_1IConfigurationManagerProxy.html#adec0b71edd5e1d6af91ddb57d4c46fe5", null ],

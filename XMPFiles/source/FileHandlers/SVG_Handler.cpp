@@ -1,14 +1,14 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2015 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2015 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 //
 // This file includes implementation of SVG metadata, according to Scalable Vector Graphics (SVG) 1.1 Specification. 
 // "https://www.w3.org/TR/2003/REC-SVG11-20030114/"
-// Copyright © 1994-2002 World Wide Web Consortium, (Massachusetts Institute of Technology, 
+// Copyright Â© 1994-2002 World Wide Web Consortium, (Massachusetts Institute of Technology, 
 // Institut National de Recherche en Informatique et en Automatique, Keio University). 
 // All Rights Reserved . http://www.w3.org/Consortium/Legal
 //
@@ -30,6 +30,328 @@ using namespace std;
 /*
 	 Currently supporting only UTF-8 encoded SVG
 */
+
+// =================================================================================================
+// AppendData
+// ===============
+
+static inline void AppendData(RawDataBlock * dataOut, XMP_Uns8 * buffer, size_t count) {
+
+	size_t prevSize = dataOut->size();	// ! Don't save a pointer, there might be a reallocation.
+	dataOut->insert(dataOut->end(), count, 0);	// Add space to the RawDataBlock.
+	memcpy(&( ( *dataOut ) [prevSize] ), buffer, count);
+
+}	// AppendData
+
+// =================================================================================================
+// ReplaceData
+// ===============
+
+static inline void ReplaceData(RawDataBlock * dataOut, size_t pos, size_t deleteCount, const XMP_Uns8 * buffer, size_t count) {
+
+	RawDataBlock::iterator iter = dataOut->begin() + pos;
+	iter = dataOut->erase(iter, iter + deleteCount);
+	dataOut->insert(iter, count, 0);
+	memcpy(&( ( *dataOut ) [pos] ), buffer, count);
+
+}	// ReplaceData
+
+// =================================================================================================
+//DecompressBuffer
+// ==============================
+// This function will decompress the buffer contents
+static XMP_Uns64 DecompressBuffer(XMP_Uns8 * buffer, const XMP_Uns32 ioCount, RawDataBlock * dataOut)
+{
+	// Provided buffer is of size 1024 and contains compressed bytes, therefore buffer size is doubled 
+	// do that decompressing can be done in single step.
+
+	const size_t bufferSize = 2 * 1024;
+	XMP_Uns8 bufferOut [bufferSize];
+
+	z_stream zipState;
+	memset(&zipState, 0, sizeof(zipState));
+
+	// To decompress a gzip format file use windowBits as 16 + MAX_WBITS with inflateInit2
+	int err = inflateInit2(&zipState, 16 + MAX_WBITS);
+	if(err != Z_OK)
+		return 0;
+
+	// Initial input and output conditions. 
+	zipState.next_out = &bufferOut [0];
+	zipState.avail_out = bufferSize;
+	zipState.next_in = &buffer [0];
+	zipState.avail_in = ioCount;
+
+	// Process all of this input, writing as needed.
+	while(zipState.avail_in > 0)
+	{
+		XMP_Assert(zipState.avail_out > 0);	// Sanity check for output buffer space. pppp
+
+		err = inflate(&zipState, Z_NO_FLUSH);
+		if(err != Z_OK && err != Z_STREAM_END)
+			return 0;
+		if(zipState.avail_out == 0) {
+			AppendData(dataOut, bufferOut, bufferSize);
+			zipState.next_out = &bufferOut [0];
+			zipState.avail_out = bufferSize;
+		}
+	}
+
+	// Write the final output if any remaining.
+	XMP_Uns32 remainingSize = bufferSize - zipState.avail_out;
+	if(remainingSize > 0)
+	{
+		AppendData(dataOut, bufferOut, remainingSize);
+		zipState.next_out = &bufferOut [0];
+		zipState.avail_out = bufferSize;
+	}
+
+	// Finish the decompression 
+	inflateEnd(&zipState);
+	return zipState.total_out;
+}	// DecompressBuffer
+
+// =================================================================================================
+// SVG_MetaHandler::DecompressFileToMemory
+// ==============================
+// This function will decompress gzip contents of a file into a buffer
+XMP_Int64 SVG_MetaHandler::DecompressFileToMemory(XMP_IO * fileIn, RawDataBlock * dataOut)
+{
+	fileIn->Rewind();
+	dataOut->clear();
+
+	// Buffer size of 64K is efficient for faster compression and decompression
+	static const size_t bufferSize = 64 * 1024;
+	XMP_Uns8 bufferIn [bufferSize];
+	XMP_Uns8 bufferOut [bufferSize];
+
+	int err;
+	z_stream zipState;
+	memset(&zipState, 0, sizeof(zipState));
+
+	// To decompress a gzip format file use windowBits as 16 + MAX_WBITS with inflateInit2
+	err = inflateInit2(&zipState, 16 + MAX_WBITS);
+
+	// Any information contained in the gzip header is not retained unless inflateGetHeader() is used.
+	// Saving header for writing back compressed file 
+	inflateGetHeader(&zipState, &compressedHeader);
+	XMP_Enforce(err == Z_OK);
+
+	XMP_Int32 ioCount;
+	XMP_Int64 offsetIn = 0;
+	const XMP_Int64 lengthIn = fileIn->Length();
+
+	// Initial output conditions. Must be set before the input loop!
+	zipState.next_out = &bufferOut [0];
+	zipState.avail_out = bufferSize;
+
+	while(offsetIn < lengthIn) {
+
+		// Read the next chunk of input.
+		ioCount = fileIn->Read(bufferIn, bufferSize);
+		XMP_Enforce(ioCount > 0);
+		offsetIn += ioCount;
+		zipState.next_in = &bufferIn [0];
+		zipState.avail_in = ioCount;
+
+		// Process all of this input, writing as needed.
+
+		err = Z_OK;
+		while(( zipState.avail_in > 0 ) && ( err == Z_OK )) {
+
+			XMP_Assert(zipState.avail_out > 0);	// Sanity check for output buffer space.
+			err = inflate(&zipState, Z_NO_FLUSH);
+			XMP_Enforce(( err == Z_OK ) || ( err == Z_STREAM_END ));
+
+			if(zipState.avail_out == 0) {
+				AppendData(dataOut, bufferOut, bufferSize);
+				zipState.next_out = &bufferOut [0];
+				zipState.avail_out = bufferSize;
+			}
+		}
+	}
+
+	// Finish the decompression and write the final output.
+
+	do {
+
+		ioCount = bufferSize - zipState.avail_out;	// Make sure there is room for inflate to do more.
+		if(ioCount > 0) {
+			AppendData(dataOut, bufferOut, ioCount);
+			zipState.next_out = &bufferOut [0];
+			zipState.avail_out = bufferSize;
+		}
+
+		err = inflate(&zipState, Z_NO_FLUSH);
+		XMP_Enforce(( err == Z_OK ) || ( err == Z_STREAM_END ) || ( err == Z_BUF_ERROR ));
+
+	} while(err == Z_OK);
+
+	ioCount = bufferSize - zipState.avail_out;	// Write any final output.
+	if(ioCount > 0) {
+		AppendData(dataOut, bufferOut, ioCount);
+		zipState.next_out = &bufferOut [0];
+		zipState.avail_out = bufferSize;
+	}
+
+	// Done. Make sure the file header has the true decompressed size.
+	XMP_Int64 lengthOut = zipState.total_out;
+	inflateEnd(&zipState);
+	return lengthOut;
+
+}	// SVG_MetaHandler::DecompressFileToMemory
+
+// =================================================================================================
+// SVG_MetaHandler::CompressMemoryToFile
+// ==============================
+// This function will compress gzip contents of a buffer into a file
+XMP_Int64 SVG_MetaHandler::CompressMemoryToFile(const RawDataBlock & dataIn, XMP_IO * fileOut)
+{
+	fileOut->Rewind();
+	fileOut->Truncate(0);
+
+	// 64K buffer is ideal for faster compression
+	static const size_t bufferSize = 64 * 1024;
+	XMP_Uns8 bufferOut [bufferSize];
+
+	int err;
+	z_stream zipState;
+	memset(&zipState, 0, sizeof(zipState));
+	err = deflateInit2(&zipState, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 16 + MAX_WBITS, 8, Z_DEFAULT_STRATEGY);
+	XMP_Enforce(err == Z_OK);
+
+	// It provides gzip header information for when a gzip stream is requested by deflateInit2().
+	// The gz_header structure are written to the gzip header which would have been saved during decompressing.
+	err = deflateSetHeader(&zipState, &compressedHeader);
+	XMP_Enforce(err == Z_OK);
+
+	XMP_Int32 ioCount;
+	const size_t lengthIn = dataIn.size();
+
+	// Feed the input to the compression engine in one step, write the output as available.
+
+	zipState.next_in = (Bytef*) &dataIn [0];
+	zipState.avail_in = static_cast<XMP_Uns32>(lengthIn);
+	zipState.next_out = &bufferOut [0];
+	zipState.avail_out = bufferSize;
+
+	while(zipState.avail_in > 0) {
+
+		XMP_Assert(zipState.avail_out > 0);	// Sanity check for output buffer space.
+		err = deflate(&zipState, Z_NO_FLUSH);
+		XMP_Enforce(err == Z_OK);
+
+		if(zipState.avail_out == 0) {
+			fileOut->Write(bufferOut, bufferSize);
+			zipState.next_out = &bufferOut [0];
+			zipState.avail_out = bufferSize;
+		}
+
+	}
+
+	// Finish the compression and write the final output.
+	do {
+
+		err = deflate(&zipState, Z_FINISH);
+		XMP_Enforce(( err == Z_OK ) || ( err == Z_STREAM_END ));
+		ioCount = bufferSize - zipState.avail_out;	// See if there is output to write.
+
+		if(ioCount > 0) {
+			fileOut->Write(bufferOut, ioCount);
+			zipState.next_out = &bufferOut [0];
+			zipState.avail_out = bufferSize;
+		}
+
+	} while(err != Z_STREAM_END);
+
+	// Done.
+	XMP_Int64 lengthOut = zipState.total_out;
+
+	deflateEnd(&zipState);
+	return lengthOut;
+}	// SVG_MetaHandler::CompressMemoryToFile
+
+// =================================================================================================
+// SVG_MetaHandler::CompressFileToFile
+// ==============================
+// This function will compress gzip contents of a file into another file
+XMP_Int64 SVG_MetaHandler::CompressFileToFile(XMP_IO * fileIn, XMP_IO * fileOut)
+{
+	fileIn->Rewind();
+	fileOut->Truncate(0);
+
+	// 64K buffer is ideal for faster compression
+	static const size_t bufferSize = 64 * 1024;
+	XMP_Uns8 bufferIn [bufferSize];
+	XMP_Uns8 bufferOut [bufferSize];
+
+	int err;
+	z_stream zipState;
+	memset(&zipState, 0, sizeof(zipState));
+	err = deflateInit2(&zipState, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 16 + MAX_WBITS, 8, Z_DEFAULT_STRATEGY);
+	XMP_Enforce(err == Z_OK);
+	// Setting the header which would have been saved during decompressing
+	err = deflateSetHeader(&zipState, &compressedHeader);
+	XMP_Enforce(err == Z_OK);
+
+	XMP_Int32 ioCount;
+	XMP_Int64 offsetIn = 0;
+	const XMP_Int64 lengthIn = fileIn->Length();
+
+	// Read the input file, feed it to the compression engine, writing as needed.
+	// Initial output conditions. Must be set before the input loop!
+	zipState.next_out = &bufferOut [0];
+	zipState.avail_out = bufferSize;
+
+	while(offsetIn < lengthIn) {
+
+		// Read the next chunk of input.
+		ioCount = fileIn->Read(bufferIn, bufferSize);
+		XMP_Enforce(ioCount > 0);
+		offsetIn += ioCount;
+		zipState.next_in = &bufferIn [0];
+		zipState.avail_in = ioCount;
+
+		// Process all of this input, writing as needed. Yes, we need a loop. Compression means less
+		// output than input, but a previous read has probably left partial compression results.
+
+		while(zipState.avail_in > 0) {
+
+			XMP_Assert(zipState.avail_out > 0);	// Sanity check for output buffer space.
+			err = deflate(&zipState, Z_NO_FLUSH);
+			XMP_Enforce(err == Z_OK);
+
+			if(zipState.avail_out == 0) {
+				fileOut->Write(bufferOut, bufferSize);
+				zipState.next_out = &bufferOut [0];
+				zipState.avail_out = bufferSize;
+			}
+		}
+	}
+
+	// Finish the compression and write the final output.
+
+	do {
+
+		err = deflate(&zipState, Z_FINISH);
+		XMP_Enforce(( err == Z_OK ) || ( err == Z_STREAM_END ));
+		ioCount = bufferSize - zipState.avail_out;	// See if there is output to write.
+
+		if(ioCount > 0) {
+			fileOut->Write(bufferOut, ioCount);
+			zipState.next_out = &bufferOut [0];
+			zipState.avail_out = bufferSize;
+		}
+
+	} while(err != Z_STREAM_END);
+
+	// Done.
+
+	XMP_Int64 lengthOut = zipState.total_out;
+	deflateEnd(&zipState);
+	return lengthOut;
+}	// SVG_MetaHandler::CompressFileToFile
+
 
 // =================================================================================================
 // SVG_CheckFormat
@@ -62,23 +384,43 @@ bool SVG_CheckFormat( XMP_FileFormat format,
 	}
 
 	// Initially we are intersted only in "svg" element.
-	SVG_Adapter * svgChecker = new SVG_Adapter();
+	SVG_Adapter * svgChecker = new ( std::nothrow ) SVG_Adapter();
 	if ( svgChecker == 0 )
 		return false;
 
+	svgChecker->SetErrorCallback(&parent->errorCallback);
+
 	bool isSVG = false;
+	bool isCompressed = false;
+
+	// Checking for compressed header of gzip i.e. ID1 = (0x1F) , ID2 = (0x8B) & CM = (0x08)
+	if(buffer [0] == 0x1f && buffer [1] == 0x8b && buffer [2] == 0x08)
+		isCompressed = true;
 
 	fileRef->Rewind();
 	for ( XMP_Uns8 index = 0; index < 8; ++index )
 	{
-		XMP_Int32 ioCount = fileRef->Read( buffer, sizeof( buffer ) );
+		XMP_Uns64 ioCount = fileRef->Read( buffer, sizeof( buffer ) );
 		if ( ioCount == 0 ) break;
 
-		// Checking for well formed XML
-		if ( !svgChecker->ParseBufferNoThrow( buffer, ioCount, false /* not the end */ ) )
-			break;
+		// If compressed then first decompress 1024 bytes.
+		if(isCompressed)
+		{
+			RawDataBlock block;
+			ioCount = DecompressBuffer(buffer, static_cast<XMP_Uns32>(ioCount), &block);
+			if(ioCount == 0)
+				break;
+			if(!svgChecker->ParseBufferNoThrow(block.data(), ioCount, false /* not the end */))
+				break;
+		}
+		else
+		{
+			// Checking for well formed XML
+			if(!svgChecker->ParseBufferNoThrow(buffer, ioCount, false /* not the end */))
+				break;
+		}
 
-		if ( svgChecker->tree.GetNamedElement( "http://www.w3.org/2000/svg", "svg" ) )
+		if ( svgChecker->tree.GetNamedElement( kURI_SVG , "svg" ) )
 		{
 			isSVG = true;
 			break;
@@ -106,7 +448,7 @@ XMPFileHandler * SVG_MetaHandlerCTor( XMPFiles * parent )
 // SVG_MetaHandler::SVG_MetaHandler
 // ================================
 
-SVG_MetaHandler::SVG_MetaHandler( XMPFiles * _parent ) : svgAdapter( 0 ), svgNode( 0 ), isTitleUpdateReq( false ), isDescUpdateReq( false )
+SVG_MetaHandler::SVG_MetaHandler(XMPFiles * _parent) : svgNode(0), svgAdapter(0), isTitleUpdateReq(false), isDescUpdateReq(false), isCompressed(false), compressedHeader()
 {
 	this->parent = _parent;
 	this->handlerFlags = kSVG_HandlerFlags;
@@ -163,12 +505,13 @@ void SVG_MetaHandler::CacheFileData()
 	}
 		
 	// Creating a new SVG Parser
-	svgAdapter = new SVG_Adapter();
+	svgAdapter = new ( std::nothrow ) SVG_Adapter();
 	if ( svgAdapter == 0 )
 		XMP_Throw( "SVG_MetaHandler: Can't create SVG adapter", kXMPErr_NoMemory );
 	svgAdapter->SetErrorCallback( &this->parent->errorCallback );
 
 	// Registering all the required tags to SVG Parser
+	svgAdapter->RegisterElement("svg", "");
 	svgAdapter->RegisterPI( "xpacket" );
 	svgAdapter->RegisterElement( "metadata", "svg" );
 	svgAdapter->RegisterElement( "xmpmeta", "metadata" );
@@ -176,15 +519,41 @@ void SVG_MetaHandler::CacheFileData()
 	svgAdapter->RegisterElement( "title", "svg" );
 	svgAdapter->RegisterElement( "desc", "svg" );
 
-	// Parsing the whole buffer
-	fileRef->Rewind();
-	XMP_Uns8 buffer[ 64 * 1024 ];
-	while ( true ) {
-		XMP_Int32 ioCount = fileRef->Read( buffer, sizeof( buffer ) );
-		if ( ioCount == 0 || !svgAdapter->IsParsingRequire() ) break;
-		svgAdapter->ParseBuffer( buffer, ioCount, false /* not the end */ );
+
+	// Checking for compressed header of gzip i.e. ID1 = (0x1F) , ID2 = (0x8B) & CM = (0x08)
+	if(marker [0] == 0x1f && marker [1] == 0x8b && marker [2] == 0x08) {
+
+		isCompressed = true;
+
+		//Acc. to rfc1952 ISIZE (last 4 bytes) contains the size of the original(uncompressed) input data modulo 2 ^ 32.
+		const XMP_Int64 maxSize = 0xFFFFFFFFUL;
+		fileRef->Seek(-4, kXMP_SeekFromEnd);
+		fileRef->Read(marker, 4);
+		XMP_Uns32 expectedFullSize = GetUns32LE(marker);
+		XMP_Enforce(expectedFullSize <= maxSize);
+
+		svgContents.reserve(expectedFullSize); // Try to avoid reallocations.
+
+		fileRef->Rewind(); 					   // Read the input file from start.
+
+		// Filling svgContents with decompressed data
+		this->DecompressFileToMemory(fileRef, &svgContents);
+		
+		// Parsing the whole buffer
+		svgAdapter->ParseBuffer(this->svgContents.data(), this->svgContents.size(), true);	// End the parse.
+
 	}
-	svgAdapter->ParseBuffer( 0, 0, true );	// End the parse.
+	else {
+		// Parsing the whole file
+		fileRef->Rewind();
+		XMP_Uns8 buffer [64 * 1024];
+		while(true) {
+			XMP_Int32 ioCount = fileRef->Read(buffer, sizeof(buffer));
+			if(ioCount == 0 || !svgAdapter->IsParsingRequire()) break;
+			svgAdapter->ParseBuffer(buffer, ioCount, false /* not the end */);
+		}
+		svgAdapter->ParseBuffer(0, 0, true);	// End the parse.
+	}
 
 	XML_Node & xmlTree = this->svgAdapter->tree;
 	XML_NodePtr rootElem = 0;
@@ -269,9 +638,14 @@ void SVG_MetaHandler::CacheFileData()
 		{
 			this->packetInfo.offset = packetOffset;
 			this->packetInfo.length = ( XMP_Int32 ) packetLength;
-			this->xmpPacket.assign( this->packetInfo.length, ' ' );
-			fileRef->Seek( packetOffset, kXMP_SeekFromStart );
-			fileRef->ReadAll( ( void* )this->xmpPacket.data(), this->packetInfo.length );
+			this->xmpPacket.assign(this->packetInfo.length, ' ');
+
+			if(isCompressed)
+				this->xmpPacket.assign((const char *) ( &this->svgContents.at(packetOffset) ), packetLength);
+			else {
+				fileRef->Seek(packetOffset, kXMP_SeekFromStart);
+				fileRef->ReadAll(( void* )this->xmpPacket.data(), this->packetInfo.length);
+			}
 			FillPacketInfo( this->xmpPacket, &this->packetInfo );
 			this->containsXMP = true;
 			return;
@@ -324,18 +698,39 @@ void SVG_MetaHandler::ProcessXMP()
 // It is handling the updation and deletion case
 void SVG_MetaHandler::ProcessTitle( XMP_IO* sourceRef, XMP_IO * destRef, const std::string &value, XMP_Int64 &currentOffset, const OffsetStruct & titleOffset )
 {
+	//sourceRef will be NULL in case read from svgContents i.e compressed case
 	if ( value.empty() )
 	{
-		XIO::Copy( sourceRef, destRef, titleOffset.startOffset - currentOffset );
-		sourceRef->Seek( titleOffset.nextOffset, kXMP_SeekFromStart );
+		if(sourceRef != NULL) {
+			XIO::Copy(sourceRef, destRef, titleOffset.startOffset - currentOffset);
+			sourceRef->Seek(titleOffset.nextOffset, kXMP_SeekFromStart);
+		}
+		else
+			destRef->Write(&( this->svgContents.data() [currentOffset] ), static_cast<XMP_Uns32>(titleOffset.startOffset - currentOffset));
+
 		currentOffset = titleOffset.nextOffset;
 	}
 	else
 	{
-		std::string titleElement = "<title>";
-		XIO::Copy( sourceRef, destRef, titleOffset.startOffset - currentOffset + titleElement.length() );
+		char tempStr[1024];
+		tempStr [titleOffset.endOffset - titleOffset.startOffset] = '\0';
+
+		if(sourceRef != NULL) {
+			sourceRef->Seek(titleOffset.startOffset, kXMP_SeekFromStart);
+			sourceRef->Read(tempStr, static_cast<XMP_Uns32>(titleOffset.endOffset - titleOffset.startOffset));
+			sourceRef->Seek(currentOffset, kXMP_SeekFromStart);
+			const char *pos = strchr(tempStr, '>');
+			XIO::Copy(sourceRef, destRef, titleOffset.startOffset - currentOffset + ( pos - tempStr + 1 ));
+			sourceRef->Seek(titleOffset.endOffset, kXMP_SeekFromStart);
+		}
+		else{
+			memcpy( tempStr, &( this->svgContents.data() [titleOffset.startOffset] ), titleOffset.endOffset - titleOffset.startOffset);
+			tempStr [titleOffset.endOffset - titleOffset.startOffset] = '\0';
+			const char *pos = strchr(tempStr, '>');
+			destRef->Write(&( this->svgContents.data() [currentOffset] ), static_cast<XMP_Uns32>(titleOffset.startOffset - currentOffset + ( pos - tempStr + 1 )));
+		}
+
 		destRef->Write( value.c_str(), static_cast< int >( value.length() ) );
-		sourceRef->Seek( titleOffset.endOffset, kXMP_SeekFromStart );
 		currentOffset = titleOffset.endOffset;
 	}
 }	// SVG_MetaHandler::ProcessTitle
@@ -348,16 +743,30 @@ void SVG_MetaHandler::ProcessDescription( XMP_IO* sourceRef, XMP_IO * destRef, c
 {
 	if ( value.empty() )
 	{
-		XIO::Copy( sourceRef, destRef, descOffset.startOffset - currentOffset );
-		sourceRef->Seek( descOffset.nextOffset, kXMP_SeekFromStart );
+		if(sourceRef != NULL) {
+			XIO::Copy(sourceRef, destRef, descOffset.startOffset - currentOffset);
+			sourceRef->Seek(descOffset.nextOffset, kXMP_SeekFromStart);
+		}
 		currentOffset = descOffset.nextOffset;
 	}
 	else
 	{
-		std::string descElement = "<desc>";
-		XIO::Copy( sourceRef, destRef, descOffset.startOffset - currentOffset + descElement.length() );
+		char tempStr[1024];
+		tempStr [descOffset.endOffset - descOffset.startOffset] = '\0';
+		if(sourceRef != NULL) {
+			sourceRef->Seek(descOffset.startOffset, kXMP_SeekFromStart);
+			sourceRef->Read(tempStr, static_cast<XMP_Uns32>(descOffset.endOffset - descOffset.startOffset));
+			sourceRef->Seek(currentOffset, kXMP_SeekFromStart);
+			const char *pos = strchr(tempStr, '>');
+			XIO::Copy(sourceRef, destRef, descOffset.startOffset - currentOffset + ( pos - tempStr + 1 ));
+			sourceRef->Seek(descOffset.endOffset, kXMP_SeekFromStart);
+		}
+		else{
+			memcpy( tempStr, &( this->svgContents.data() [descOffset.startOffset] ), descOffset.endOffset - descOffset.startOffset);
+			const char *pos = strchr(tempStr, '>');
+			destRef->Write(&( this->svgContents.data() [currentOffset] ), static_cast<XMP_Uns32>(descOffset.startOffset - currentOffset + ( pos - tempStr + 1 )));
+		}
 		destRef->Write( value.c_str(), static_cast< int >( value.length() ) );
-		sourceRef->Seek( descOffset.endOffset, kXMP_SeekFromStart );
 		currentOffset = descOffset.endOffset;
 	}
 
@@ -367,12 +776,12 @@ void SVG_MetaHandler::ProcessDescription( XMP_IO* sourceRef, XMP_IO * destRef, c
 // SVG_MetaHandler::InsertNewTitle
 // ===========================
 // It is handling the insertion case
-void SVG_MetaHandler::InsertNewTitle( XMP_IO * destRef, const std::string &value )
+void SVG_MetaHandler::InsertNewTitle( XMP_IO * destRef, const std::string &value, const std::string &prefix )
 {
-	std::string titleElement = "<title>";
+	std::string titleElement = "<" + prefix + "title>";
 	destRef->Write( titleElement.c_str(), static_cast< int >( titleElement.length() ) );
 	destRef->Write( value.c_str(), static_cast< int >( value.length() ) );
-	titleElement = "</title>\n";
+	titleElement = "</" + prefix + "title>\n";
 	destRef->Write( titleElement.c_str(), static_cast< int >( titleElement.length() ) );
 
 }	// SVG_MetaHandler::InsertNewTitle
@@ -381,12 +790,12 @@ void SVG_MetaHandler::InsertNewTitle( XMP_IO * destRef, const std::string &value
 // SVG_MetaHandler::InsertNewDescription
 // ===========================
 // It is handling the insertion case
-void SVG_MetaHandler::InsertNewDescription( XMP_IO * destRef, const std::string &value )
+void SVG_MetaHandler::InsertNewDescription( XMP_IO * destRef, const std::string &value, const std::string &prefix )
 {
-	std::string descElement = "<desc>";
+	std::string descElement = "<" + prefix + "desc>";
 	destRef->Write( descElement.c_str(), static_cast< int >( descElement.length() ) );
 	destRef->Write( value.c_str(), static_cast< int >( value.length() ) );
-	descElement = "</desc>\n";
+	descElement = "</" + prefix + "desc>\n";
 	destRef->Write( descElement.c_str(), static_cast< int >( descElement.length() ) );
 
 }	// SVG_MetaHandler::InsertNewDescription
@@ -395,13 +804,13 @@ void SVG_MetaHandler::InsertNewDescription( XMP_IO * destRef, const std::string 
 // SVG_MetaHandler::InsertNewMetadata
 // ===========================
 // It is handling the insertion case
-void SVG_MetaHandler::InsertNewMetadata( XMP_IO * destRef, const std::string &value )
+void SVG_MetaHandler::InsertNewMetadata( XMP_IO * destRef, const std::string &value, const std::string &prefix )
 {
 
-	std::string metadataElement = "<metadata>";
+	std::string metadataElement = "<" + prefix + "metadata>";
 	destRef->Write( metadataElement.c_str(), static_cast< int >( metadataElement.length() ) );
 	destRef->Write( value.c_str(), static_cast< int >( value.length() ) );
-	metadataElement = "</metadata>\n";
+	metadataElement = "</" + prefix + "metadata>\n";
 	destRef->Write( metadataElement.c_str(), static_cast< int >( metadataElement.length() ) );
 
 }	// SVG_MetaHandler::InsertNewMetadata
@@ -448,20 +857,28 @@ void SVG_MetaHandler::UpdateFile( bool doSafeUpdate )
 	bool isUpdateRequire = isTitleUpdateReq | isDescUpdateReq | (this->packetInfo.offset == kXMPFiles_UnknownOffset);
 
 	// Inplace Updation of XMP
-	if ( !isUpdateRequire && ((XMP_Int32)(this->xmpPacket.size()) == this->packetInfo.length) )
+	if ( !isUpdateRequire && ((XMP_Int32)this->xmpPacket.size() == this->packetInfo.length) )
 	{
-		sourceRef->Seek( this->packetInfo.offset, kXMP_SeekFromStart );
-		sourceRef->Write( this->xmpPacket.c_str(), static_cast< int >( this->xmpPacket.size() ) );
+		if(this->isCompressed)
+		{
+			ReplaceData(&this->svgContents, this->packetInfo.offset, this->packetInfo.length, ( const XMP_Uns8 * )this->xmpPacket.data(), this->packetInfo.length);
+			CompressMemoryToFile(this->svgContents, sourceRef);
+		}
+		else {
+			sourceRef->Seek(this->packetInfo.offset, kXMP_SeekFromStart);
+			sourceRef->Write(this->xmpPacket.c_str(), static_cast<int>( this->xmpPacket.size() ));
+		}
 	}
 	else
 	{
+		
 		// Inplace is not possibe, So perform full updation
 		try
 		{
 			XMP_IO* tempRef = sourceRef->DeriveTemp();
-			this->WriteTempFile( tempRef );
+			this->WriteTempFile(tempRef);
 		}
-		catch ( ... )
+		catch(...)
 		{
 			sourceRef->DeleteTemp();
 			throw;
@@ -489,8 +906,14 @@ void SVG_MetaHandler::WriteTempFile( XMP_IO* tempRef )
 	tempRef->Rewind();
 	sourceRef->Rewind();
 
+	if(isCompressed)
+		sourceRef = NULL;
+
 	XMP_Int64 currentOffset = svgAdapter->firstSVGElementOffset;
-	XIO::Copy( sourceRef, tempRef, currentOffset );
+	if(currentOffset == -1) {
+		currentOffset = svgAdapter->GetElementOffsets("svg").endOffset;
+	}
+	Write(sourceRef, tempRef, currentOffset, 0);
 
 	OffsetStruct titleOffset = svgAdapter->GetElementOffsets( "title" );
 	OffsetStruct descOffset = svgAdapter->GetElementOffsets( "desc" );
@@ -531,6 +954,22 @@ void SVG_MetaHandler::WriteTempFile( XMP_IO* tempRef )
 
 	// Initial Insertion/Updation
 
+	//Find the prefix of URI "http://www.w3.org/2000/svg"
+	//It is not possible that this uri is not present , as it is checked in checkFileFormat
+
+	XMP_StringPtr prefix;
+	XMP_StringLen prefixLen;
+
+	std::string nameSpacePrefix = "";
+	bool found = svgAdapter->registeredNamespaces->GetPrefix ( kURI_SVG , &prefix , &prefixLen );
+	if( !found ) {
+		XMP_Error error ( kXMPErr_ExternalFailure , "SVG URI not present in svg file" );
+		svgAdapter->NotifyClient ( kXMPErrSev_OperationFatal , error );
+	}
+	
+	if( strcmp(prefix,"_dflt_:") != 0 ) 
+		nameSpacePrefix.assign ( prefix, prefixLen );
+
 	// Insert/Update Title if requires
 	// Don't insert/update it if Metadata or desc child comes before title child
 	bool isTitleWritten = !isTitleUpdateReq;
@@ -539,7 +978,7 @@ void SVG_MetaHandler::WriteTempFile( XMP_IO* tempRef )
 		// Insertion Case
 		if ( titleNode == NULL )
 		{
-			InsertNewTitle( tempRef, title );
+			InsertNewTitle( tempRef, title, nameSpacePrefix );
 			isTitleWritten = true;
 		}
 		else if ( ( descOffset.startOffset == -1 || titleOffset.startOffset < descOffset.startOffset )	// Updation/Deletion Case
@@ -559,10 +998,10 @@ void SVG_MetaHandler::WriteTempFile( XMP_IO* tempRef )
 		{
 			if ( titleOffset.nextOffset != -1 )
 			{
-				XIO::Copy( sourceRef, tempRef, titleOffset.nextOffset - currentOffset );
+				Write(sourceRef, tempRef, titleOffset.nextOffset - currentOffset, currentOffset);
 				currentOffset = titleOffset.nextOffset;
 			}
-			InsertNewDescription( tempRef, description );
+			InsertNewDescription( tempRef, description, nameSpacePrefix );
 			isDescWritten = true;
 		}
 		else if ( metadataOffset.startOffset == -1 || descOffset.startOffset < metadataOffset.startOffset )
@@ -579,15 +1018,15 @@ void SVG_MetaHandler::WriteTempFile( XMP_IO* tempRef )
 	{
 		if ( descOffset.nextOffset != -1 )
 		{
-			XIO::Copy( sourceRef, tempRef, descOffset.nextOffset - currentOffset );
+			Write(sourceRef, tempRef, descOffset.nextOffset - currentOffset, currentOffset);
 			currentOffset = descOffset.nextOffset;
 		}
 		else if ( titleOffset.nextOffset != -1 )
 		{
-			XIO::Copy( sourceRef, tempRef, titleOffset.nextOffset - currentOffset );
+			Write(sourceRef, tempRef, titleOffset.nextOffset - currentOffset, currentOffset);
 			currentOffset = titleOffset.nextOffset;
 		}
-		InsertNewMetadata( tempRef, this->xmpPacket );
+		InsertNewMetadata( tempRef, this->xmpPacket, nameSpacePrefix ); 
 		isMetadataWritten = true;
 	}
 	else if ( !( !isTitleWritten && isDescWritten && titleOffset.startOffset < metadataOffset.startOffset ) )		// Not DTM
@@ -595,17 +1034,28 @@ void SVG_MetaHandler::WriteTempFile( XMP_IO* tempRef )
 		// No XMP packet was present in the file
 		if ( this->packetInfo.offset == kXMPFiles_UnknownOffset )
 		{
-			std::string metadataElement = "<metadata>";
+			/*
+			std::string metadataElement = "<" + nameSpacePrefix+ "metadata>"; 
 			XIO::Copy( sourceRef, tempRef, metadataOffset.startOffset - currentOffset + metadataElement.length() );
 			currentOffset = sourceRef->Offset();
 			tempRef->Write( this->xmpPacket.c_str(), static_cast< int >( this->xmpPacket.length() ) );
+			*/
+
+			Write(sourceRef, tempRef, metadataOffset.startOffset - currentOffset, currentOffset);
+			InsertNewMetadata(tempRef, this->xmpPacket.c_str(), nameSpacePrefix);
+			if(sourceRef != NULL){
+				sourceRef->Seek(metadataOffset.nextOffset, kXMP_SeekFromStart);
+			}
+			currentOffset = metadataOffset.nextOffset;
 		}
 		else	// Replace XMP Packet
 		{
-			XIO::Copy( sourceRef, tempRef, this->packetInfo.offset - currentOffset );
-			tempRef->Write( this->xmpPacket.c_str(), static_cast< int >( this->xmpPacket.length() ) );
-			sourceRef->Seek( this->packetInfo.offset + this->packetInfo.length, kXMP_SeekFromStart );
-			currentOffset = sourceRef->Offset();
+			Write(sourceRef, tempRef, this->packetInfo.offset - currentOffset, currentOffset);
+			if(sourceRef != NULL) {
+				sourceRef->Seek(this->packetInfo.offset + this->packetInfo.length, kXMP_SeekFromStart);
+			}
+			tempRef->Write(this->xmpPacket.c_str(), static_cast< int >( this->xmpPacket.length() ));
+			currentOffset = this->packetInfo.offset + this->packetInfo.length;
 		}
 		isMetadataWritten = true;
 	}
@@ -613,7 +1063,7 @@ void SVG_MetaHandler::WriteTempFile( XMP_IO* tempRef )
 	// If simple cases was followed then copy rest file
 	if ( isTitleWritten && isDescWritten && isMetadataWritten )
 	{
-		XIO::Copy( sourceRef, tempRef, ( sourceRef->Length() - currentOffset ) );
+		Write(sourceRef, tempRef, ( (sourceRef ? sourceRef->Length() : this->svgContents.size() ) - currentOffset ), currentOffset);
 		return;
 	}
 
@@ -629,17 +1079,18 @@ void SVG_MetaHandler::WriteTempFile( XMP_IO* tempRef )
 
 				if ( this->packetInfo.offset == kXMPFiles_UnknownOffset )
 				{
-					std::string metadataElement = "<metadata>";
-					XIO::Copy( sourceRef, tempRef, metadataOffset.startOffset - currentOffset + metadataElement.length() );
-					currentOffset = sourceRef->Offset();
-					tempRef->Write( this->xmpPacket.c_str(), static_cast< int >( this->xmpPacket.length() ) );
+					std::string metadataElement = "<" + nameSpacePrefix + "metadata>";
+					Write(sourceRef, tempRef, metadataOffset.startOffset - currentOffset + metadataElement.length(), currentOffset);
+					currentOffset = metadataOffset.startOffset + metadataElement.length();
+					tempRef->Write(this->xmpPacket.c_str(), static_cast< int >( this->xmpPacket.length() ));
 				}
 				else
 				{
-					XIO::Copy( sourceRef, tempRef, this->packetInfo.offset - currentOffset );
-					tempRef->Write( this->xmpPacket.c_str(), static_cast< int >( this->xmpPacket.length() ) );
-					sourceRef->Seek( this->packetInfo.offset + this->packetInfo.length, kXMP_SeekFromStart );
-					currentOffset = sourceRef->Offset();
+					Write(sourceRef, tempRef, this->packetInfo.offset - currentOffset, currentOffset);
+					tempRef->Write(this->xmpPacket.c_str(), static_cast< int >( this->xmpPacket.length() ));
+					if(sourceRef != NULL)
+						sourceRef->Seek(this->packetInfo.offset + this->packetInfo.length, kXMP_SeekFromStart);
+					currentOffset = this->packetInfo.offset + this->packetInfo.length;
 				}
 				isMetadataWritten = true;
 
@@ -683,8 +1134,40 @@ void SVG_MetaHandler::WriteTempFile( XMP_IO* tempRef )
 	}
 
 	// Finally Everything would have been written
-	XMP_Enforce( isTitleWritten && isDescWritten && isMetadataWritten );
-	XIO::Copy( sourceRef, tempRef, ( sourceRef->Length() - currentOffset ) );
+	XMP_Enforce(isTitleWritten && isDescWritten && isMetadataWritten);
+	Write(sourceRef, tempRef, ( ( sourceRef ? sourceRef->Length() : this->svgContents.size() ) - currentOffset ), currentOffset);
 	this->needsUpdate = false;
 
+	if(this->isCompressed)
+	{
+		try
+		{
+			XMP_IO* tempCompressedRef = tempRef->DeriveTemp();
+			this->CompressFileToFile(tempRef, tempCompressedRef);
+		}
+		catch(...)
+		{
+			tempRef->DeleteTemp();
+			throw;
+		}
+		tempRef->AbsorbTemp();
+	}
 }	// SVG_MetaHandler::WriteTempFile
+
+// =================================================================================================
+// SVG_MetaHandler::Write 
+// ==============================
+// This function will write from buffer(svgContents i.e uncompressed contents) to destFile if sourceFile is NULL , 
+// otherwise from sourceFile to DestFile. 
+void SVG_MetaHandler::Write(XMP_IO* sourceFile, XMP_IO* destFile, XMP_Int64 length, XMP_Int64 currentOffset) {
+
+	if(sourceFile != NULL) {
+		XIO::Copy(sourceFile, destFile, length);
+	}
+	else {
+		//assuming currentOffset and length will never be negative
+		if(this->svgContents.capacity() - static_cast<decltype(this->svgContents.capacity())>(currentOffset) < static_cast<decltype(this->svgContents.capacity())>(length))
+			this->svgContents.reserve(currentOffset + length);
+		destFile->Write(&( this->svgContents.data() [currentOffset] ), static_cast<XMP_Uns32>(length));
+	}
+}	//SVG_MetaHandler::Write

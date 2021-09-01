@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2010 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2010 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -843,16 +843,15 @@ void Chunk::writeChunk( XMP_IO* file )
 		XIO::WriteInt32_BE( file, mChunkId.id );
 
 		// writes size, which is always 32bit
-		// XXX for some reason this is unused -- Hub
-		/*XMP_Uns32 outSize = ( mSize >= 0x00000000FFFFFFFF ? 0xFFFFFFFF : static_cast<XMP_Uns32>( mSize & 0x00000000FFFFFFFF ) );*/
+		XMP_Uns32 outSize = ( mSize >= 0x00000000FFFFFFFF ? 0xFFFFFFFF : static_cast<XMP_Uns32>( mSize & 0x00000000FFFFFFFF ) );
 
 		if (typeid(mEndian) == typeid(LittleEndian))
 		{	
-			XIO::WriteUns32_LE( file, static_cast<XMP_Uns32>(mSize) );
+			XIO::WriteUns32_LE( file, static_cast<XMP_Uns32>(outSize) );
 		}
 		else
 		{
-			XIO::WriteUns32_BE( file, static_cast<XMP_Uns32>(mSize) );
+			XIO::WriteUns32_BE( file, static_cast<XMP_Uns32>(outSize) );
 		}
 
 
@@ -1209,7 +1208,7 @@ void Chunk::adjustSize( XMP_Int64 sizeChange )
 		mSize = mBufferSize;
 
 		// if the difference is odd, the corrected even size has be incremented by 1
-		sizeChange += std::abs(sizeChange % 2);
+		sizeChange += abs((XMP_Int32)sizeChange % 2);
 	}
 	else // mChunkMode == CHUNK_NODE/CHUNK_UNKNOWN
 	{

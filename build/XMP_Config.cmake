@@ -9,7 +9,12 @@
 
 # ==============================================================================
 # define minimum cmake version
-cmake_minimum_required(VERSION 3.5.2)
+# For Android always build with make 3.6
+if(ANDROID)
+	cmake_minimum_required(VERSION 3.5.2)
+else(ANDROID)
+	cmake_minimum_required(VERSION 3.15.5)
+endif(ANDROID)
 
 # ==============================================================================
 # XMP config for XMPTOOLKIT and TestRunner
@@ -21,7 +26,9 @@ if(NOT DEFINED COMMON_BUILD_SHARED_DIR)
 	set(COMMON_BUILD_SHARED_DIR ${XMP_ROOT}/build/shared)
 endif()
 
-set(INCLUDE_CPP_DOM_SOURCE TRUE)
+if(NOT DEFINED INCLUDE_CPP_DOM_SOURCE)
+	set(INCLUDE_CPP_DOM_SOURCE TRUE)
+endif()
 
 if (INCLUDE_CPP_DOM_SOURCE)
 	add_definitions(-DENABLE_CPP_DOM_MODEL=1)

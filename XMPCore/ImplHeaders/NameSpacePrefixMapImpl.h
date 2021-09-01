@@ -2,12 +2,12 @@
 #define NameSpacePrefixMapImpl_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #if !(IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED)
@@ -40,7 +40,7 @@ namespace AdobeXMPCore_Int {
 	{
 	public:
 		typedef std::pair< spcIUTF8String, spcIUTF8String > NameSpacePrefixPair;
-		typedef std::map< spcIUTF8String, spcIUTF8String, IUTF8StringComparator, TAllocator< spcIUTF8String > > NameSpacePrefixMap;
+		typedef std::map< spcIUTF8String, spcIUTF8String, IUTF8StringComparator, TAllocator< std::pair< const spcIUTF8String, spcIUTF8String > > > NameSpacePrefixMap;
 
 		NameSpacePrefixMapImpl();
 

@@ -1,3 +1,29 @@
+2.6.0 -
+
+- Update XMPCore to Adobe XMP SDK v2021.08
+  (issue https://gitlab.freedesktop.org/libopenraw/exempi/-/issues/22)
+  - Changes in v2021.08
+    - Security Fixes
+    - Fixes syntax errors like semicolons in the codebase
+    - Copyright note changes across the codebase
+    - Fixes broken license link in Read.md
+    - Fully implements kXMPFiles_OpenOnlyXMP flag for MPEG4
+  - Changes in v2021.07
+    - Security Fixes
+    - Write Exif 2.3.1 Time Zone Metadata - XMPFiles Should Read/Write
+    - Removal of words Master/Slave/Blacklist/Whitelist from codebase
+    - cmake scripts use --version instead of -dumpversion to get complete
+      gcc version string
+    - Updating ReadMe.txt
+  - Changes in v2020.1
+    - iOS project generation issue
+    - iOS compilation issue with libc++
+    - Android support with cmake version 3.6
+    - CMake upgrade to version 3.15 (except for android)
+    - Add XCode 10.2 support
+    - Add VS2017 support
+  - Some fixes previously done in Exempi are now upstream.
+
 2.5.2 - 2020/06/24
 
 - Bug #18: Remove an unnecessary message to stdout in the exempi tool.

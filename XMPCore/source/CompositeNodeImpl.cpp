@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #define IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED 1
@@ -61,11 +61,41 @@ namespace AdobeXMPCore_Int {
 
 			case IPathSegment::kPSTProperty:
 				{
-					auto node = parent->ConvertToStructureNode();
-					if ( node )
-						current = node->GetIStructureNode_I()->GetNode( segment->GetNameSpace(), segment->GetName() );
-					else
-						current = spINode(); 
+					eNodeType nodeType = parent->GetNodeType();
+					switch (nodeType)
+					{
+						case kNTSimple:
+						{
+							auto node = parent->ConvertToSimpleNode();
+							if (node)
+								current = node;
+							else
+								current = spINode();
+							break;
+						}
+						case kNTArray:
+						{
+							auto node = parent->ConvertToArrayNode ( );
+							if ( node )
+								current = node;
+							else
+								current = spINode ( );
+							break;
+						}
+						case kNTStructure:
+						{
+							auto node = parent->ConvertToStructureNode();
+							if (node)
+								current = node->GetIStructureNode_I()->GetNode(segment->GetNameSpace(), segment->GetName());
+							else
+								current = spINode();
+							break;
+						}
+						default:
+							current = spINode();
+							break;
+					}
+					
 				}
 				break;
 

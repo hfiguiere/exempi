@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2015 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2015 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 // =================================================================================================
@@ -333,9 +333,9 @@ void XDCAMFAM_MetaHandler::FillAssociatedResources(  std::vector<std::string> * 
 			XMP_VarString fileName;
 			size_t pos = editNRTFile.find_last_of ( kDirChar );
 			fileName = editNRTFile.substr ( pos + 1 );
-			XMP_VarString regExp = "^" + fileName + "M\\d\\d.XML$";
+			XMP_VarString regExpStr = "^" + fileName + "M\\d\\d.XML$";
 			oldCount = resourceList->size();
-			IOUtils::GetMatchingChildren ( *resourceList, clipPath, regExp, false, true, true );
+			IOUtils::GetMatchingChildren ( *resourceList, clipPath, regExpStr, false, true, true );
 			atLeastOneFileAdded = resourceList->size() > oldCount;
 
 		}
@@ -376,9 +376,9 @@ void XDCAMFAM_MetaHandler::FillAssociatedResources(  std::vector<std::string> * 
 				XMP_VarString fileName;
 				size_t pos = takeNRTFile.find_last_of ( kDirChar );
 				fileName = takeNRTFile.substr ( pos + 1 );
-				XMP_VarString regExp = "^" + fileName + "M\\d\\d.XML$";
+				XMP_VarString regExpStr = "^" + fileName + "M\\d\\d.XML$";
 				oldCount = resourceList->size();
-				IOUtils::GetMatchingChildren ( *resourceList, clipPath, regExp, false, true, true );
+				IOUtils::GetMatchingChildren ( *resourceList, clipPath, regExpStr, false, true, true );
 				atLeastOneFileAdded = resourceList->size() > oldCount;
 			}
 		}

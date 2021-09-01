@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2010 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2010 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include <string.h>
@@ -152,7 +152,7 @@ XMP_Uns64 INFOMetadata::serialize( XMP_Uns8** outBuffer )
 		{
 			TValueObject<std::string>* strObj = dynamic_cast<TValueObject<std::string>*>(iter->second);
 
-			XMP_Uns32 chunkSize = kChunkHeaderSize + strObj->getValue().length() + 1;	// 1 byte is added for NULL termination string
+			XMP_Uns32 chunkSize = kChunkHeaderSize + (XMP_Uns32)strObj->getValue().length() + 1;	// 1 byte is added for NULL termination string
 
 			if( chunkSize & 1 )
 			{
@@ -194,9 +194,9 @@ XMP_Uns64 INFOMetadata::serialize( XMP_Uns8** outBuffer )
 				TValueObject<std::string>* strObj = dynamic_cast<TValueObject<std::string>*>(iter->second);
 				std::string value	= strObj->getValue();
 				XMP_Uns32 id		= iter->first;
-				XMP_Uns32 size		= value.length() + 1;		// Null terminated string
+				XMP_Uns32 lSize		= (XMP_Uns32)value.length() + 1;		// Null terminated string
 
-				if( size & 1 && strObj->hasChanged() )
+				if( lSize & 1 && strObj->hasChanged() )
 				{
 					//
 					// if we modified the value of this entry
@@ -205,31 +205,31 @@ XMP_Uns64 INFOMetadata::serialize( XMP_Uns8** outBuffer )
 					// size of each LIST:INFO entry has
 					// an odd size
 					//
-					size++;
+					lSize++;
 				}
 
 				//
 				// chunk id and chunk size are stored in little endian format
 				//
 				id		= BE.getUns32( &id );
-				size	= LE.getUns32( &size );
+				lSize	= LE.getUns32( &lSize );
 
 				//
 				// copy values into output buffer
 				//
 				memcpy( buffer+offset, &id, kSizeChunkID );
-				memcpy( buffer+offset+kSizeChunkID, &size, kSizeChunkSize );
+				memcpy( buffer+offset+kSizeChunkID, &lSize, kSizeChunkSize );
 				//size has been changed in little endian format. Change it back to bigendina
-				size	= LE.getUns32( &size );
+				lSize	= LE.getUns32( &lSize );
 				memcpy( buffer+offset+kChunkHeaderSize, value.c_str(), value.length() );
 
 				//
 				// update pointer
 				//
 				offset += kChunkHeaderSize;
-				offset += size;
+				offset += lSize;
 
-				if( size & 1 )
+				if( lSize & 1 )
 				{
 					//
 					// take account of pad byte

@@ -1,14 +1,14 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2011 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2011 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "FileHandlerInstance.h"
-
+#if EnablePluginManager
 namespace XMP_PLUGIN
 {
 
@@ -23,8 +23,9 @@ XMPFileHandler( _parent ), mObject( object ), mHandler( handler )
 FileHandlerInstance::~FileHandlerInstance()
 {
 	WXMP_Error error;
-	mHandler->getModule()->getPluginAPIs()->mTerminateSessionProc( this->mObject, &error );
-	PluginManager::removeHandlerInstance( this->mObject );
+
+	PluginManager::removeHandlerInstance(this->mObject);
+	mHandler->getModule()->getPluginAPIs()->mTerminateSessionProc(this->mObject, &error);
 	CheckError( error );
 }
 
@@ -250,3 +251,4 @@ void FileHandlerInstance::SetProgressCallback ( XMP_ProgressTracker::CallbackInf
 }
 
 } //namespace XMP_PLUGIN
+#endif

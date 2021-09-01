@@ -9,10 +9,17 @@
 
 # ==============================================================================
 # define minimum cmake version
-cmake_minimum_required(VERSION 3.5.2)
+# For Android always build with make 3.6
+if(ANDROID)
+	cmake_minimum_required(VERSION 3.5.2)
+else(ANDROID)
+	cmake_minimum_required(VERSION 3.15.5)
+endif(ANDROID)
 
 # Enable folder grouping of projects in IDEs
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set(CMAKE_C_IMPLICIT_LINK_DIRECTORIES "")
+set(CMAKE_C_IMPLICIT_LINK_FRAMEWORK_DIRECTORIES "")
 
 # ==============================================================================
 # This project
@@ -43,6 +50,10 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/${XMP_THIS_PROJECT_RELATIVEPATH}/build/XMP_C
 set(TP_ZUID_PATH "${XMPROOT_DIR}/third-party/zuid/interfaces")
 set(TP_EXPAT_PATH "${PROJECT_ROOT}/../../third-party/expat/lib/")
 set(LIB_ADOBEXMP XMPCore)
+
+if(ANDROID)
+	set(LIB_ADOBEXMP libXMPCore.so)
+endif()
 
 # ==============================================================================
 # platform specific config

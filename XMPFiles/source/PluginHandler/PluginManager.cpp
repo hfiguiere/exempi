@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2011 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2011 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "PluginManager.h"
@@ -19,7 +19,7 @@ using namespace Common;
 using namespace std;
 
 // =================================================================================================
-
+#if EnablePluginManager
 namespace XMP_PLUGIN
 {
 
@@ -52,7 +52,7 @@ static XMPFileHandler* Plugin_MetaHandlerCTor ( FileHandlerSharedPtr handler, XM
 	SessionRef object;
 	WXMP_Error error;
 
-	if( (handler == 0) || (! handler->load()) ) 
+	if( (handler == libcppNULL) || (! handler->load()) )
 	{
 		XMP_Throw ( "Plugin not loaded", kXMPErr_InternalFailure );
 	}
@@ -85,7 +85,7 @@ static XMPFileHandler* Plugin_MetaHandlerCTor_Replacement( XMPFiles * parent )
 
 static bool Plugin_CheckFileFormat ( FileHandlerSharedPtr handler, XMP_StringPtr filePath, XMP_IO * fileRef, XMPFiles * /*parent*/ )
 {
-	if ( handler != 0 ) {
+	if ( handler != libcppNULL ) {
 
 		// call into plugin if owning handler or if manifest has no CheckFormat entry
 		if ( fileRef == 0 || handler->getCheckFormatSize() == 0) {
@@ -190,7 +190,7 @@ static bool Plugin_CheckFolderFormat( FileHandlerSharedPtr handler,
 {
 	XMP_Bool result = false;
 
-	if ( handler != 0 ) 
+	if ( handler != libcppNULL )
 	{
 		WXMP_Error error;
 		CheckSessionFolderFormatProc checkProc = handler->getModule()->getPluginAPIs()->mCheckFolderFormatProc;
@@ -256,7 +256,7 @@ PluginManager::PluginManager( const std::string& pluginDir, const std::string& p
 	if ( ! mPluginDir.empty() && Host_IO::Exists( mPluginDir.c_str() ) ) {
 
 		XMP_StringPtr strPtr = plugins.c_str();
-		size_t pos = 0;
+		size_t posn = 0;
 		size_t length = 0;
 
 		for ( ; ; ++strPtr, ++length ) {
@@ -266,13 +266,13 @@ PluginManager::PluginManager( const std::string& pluginDir, const std::string& p
 				if ( length != 0 ) {
 
 					//Remove white spaces from front
-					while ( plugins[pos] == ' ' ) {
-						++pos;
+					while ( plugins[posn] == ' ' ) {
+						++posn;
 						--length;
 					}
 
 					std::string pluginName;
-					pluginName.assign ( plugins, pos, length );
+					pluginName.assign ( plugins, posn, length );
 					
 					//Remove extension from the plugin name
 					size_t found = pluginName.find ( '.' );
@@ -286,7 +286,7 @@ PluginManager::PluginManager( const std::string& pluginDir, const std::string& p
 					mPluginsNeeded.push_back ( pluginName );
 
 					//Reset for next plugin
-					pos = pos + length + 1;
+					posn = posn + length + 1;
 					length = 0;
 
 				}
@@ -401,12 +401,12 @@ void PluginManager::initialize( const std::string& pluginDir, const std::string&
 			XMP_FileFormat format = it->first;
 			FileHandlerPair handlers = it->second;
 
-			if( handlers.mStandardHandler != NULL )
+			if( handlers.mStandardHandler != libcppNULL )
 			{
 				registerHandler( format, handlers.mStandardHandler );
 			}
 
-			if( handlers.mReplacementHandler != NULL )
+			if( handlers.mReplacementHandler != libcppNULL )
 			{
 				registerHandler( format, handlers.mReplacementHandler );
 			}
@@ -824,3 +824,4 @@ void PluginManager::initializeHostAPI()
 }
 
 }	// namespace XMP_PLUGIN
+#endif

@@ -1,9 +1,9 @@
 // =================================================================================================
-// Copyright 2003 Adobe Systems Incorporated
+// Copyright 2003 Adobe
 // All Rights Reserved.
 //
 // NOTICE:	Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include!
@@ -52,9 +52,7 @@ const XMP_VarString xmlNameSpace  = "http://www.w3.org/XML/1998/namespace";
 // =================================================================================================
 // Local Utilities
 // ===============
-extern void SplitNameAndValue ( const XMP_VarString & selStep, XMP_VarString * nameStr, XMP_VarString * valueStr );
 
-extern void DumpNodeOptions	( XMP_OptionBits	 options,XMP_TextOutputProc outProc,void *refCon );
 // -------------------------------------------------------------------------------------------------
 // SetINode
 // --------------
@@ -1214,7 +1212,7 @@ XMP_Index XMPUtils::LookupFieldSelector_v2(const spIArrayNode & arrayNode, XMP_V
 
 	XMP_Index destIdx = -1;
 	if (arrayNode->GetNodeType() != INode::kNTArray)	return destIdx;
-	for (size_t index = 1, indexLim = arrayNode->ChildCount(); index <= indexLim; ++index) {
+	for (XMP_Index index = 1, indexLim = (XMP_Index)arrayNode->ChildCount(); index <= indexLim; ++index) {
 
 		spINode childNode = arrayNode->GetNodeAtIndex(index);
 		if (childNode->GetNodeType() != INode::kNTStructure) {
@@ -1242,7 +1240,7 @@ XMP_Index XMPUtils::LookupFieldSelector_v2(const spIArrayNode & arrayNode, XMP_V
 // A bit of hackery to use the best available time functions. Mac, UNIX and iOS have thread safe versions
 // of gmtime and localtime.
 
-#if XMP_MacBuild | XMP_UNIXBuild | XMP_iOSBuild
+#if XMP_MacBuild | XMP_UNIXBuild | XMP_iOSBuild | XMP_AndroidBuild
 
 	typedef time_t			ansi_tt;
 	typedef struct tm		ansi_tm;
@@ -2503,12 +2501,18 @@ XMPUtils::ConvertToDate ( XMP_StringPtr	 strValue,
 		++pos;
 		temp = GatherInt ( strValue, &pos, "Invalid month in date string" );	// Extract the month.
 		if ( (strValue[pos] != 0) && (strValue[pos] != '-') ) XMP_Throw ( "Invalid date string, after month", kXMPErr_BadParam );
+		
+		if ( binValue->year != 0 && temp < 1 ) temp = 1;
+		if (  temp > 12 ) temp = 12;
+		
 		binValue->month = temp;
 		if ( strValue[pos] == 0 ) return;
 
 		++pos;
 		temp = GatherInt ( strValue, &pos, "Invalid day in date string" );	// Extract the day.
 		if ( (strValue[pos] != 0) && (strValue[pos] != 'T') ) XMP_Throw ( "Invalid date string, after day", kXMPErr_BadParam );
+		
+		if ( temp > 31 ) temp = 31;
 		binValue->day = temp;
 		if ( strValue[pos] == 0 ) return;
 
@@ -2518,9 +2522,9 @@ XMPUtils::ConvertToDate ( XMP_StringPtr	 strValue,
 			// if ( (binValue->month < 1) || (binValue->month > 12) ) XMP_Throw ( "Month is out of range", kXMPErr_BadParam );
 			// if ( (binValue->day < 1) || (binValue->day > 31) ) XMP_Throw ( "Day is out of range", kXMPErr_BadParam );
 			if ( binValue->month < 1 ) binValue->month = 1;
-			if ( binValue->month > 12 ) binValue->month = 12;
+			// if ( binValue->month > 12 ) binValue->month = 12;
 			if ( binValue->day < 1 ) binValue->day = 1;
-			if ( binValue->day > 31 ) binValue->day = 31;
+			// if ( binValue->day > 31 ) binValue->day = 31;
 		}
 
 	}

@@ -1,9 +1,9 @@
 // =================================================================================================
-// Copyright 2008 Adobe Systems Incorporated
+// Copyright 2008 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 /**
@@ -217,8 +217,8 @@ int main(int argc, const char * argv[])
 			AdobeXMPCore::spIArrayNode subjectArray = metaNode->GetArrayNode(kXMP_NS_DC, AdobeXMPCommon::npos, "subject", AdobeXMPCommon::npos);
 			if (subjectArray != NULL)
 			{
-				int arraySize = subjectArray->ChildCount();
-				for (int i = 1; i <= arraySize; i++)
+				sizet arraySize = subjectArray->ChildCount();
+				for (sizet i = 1; i <= arraySize; i++)
 				{
 					AdobeXMPCore::spISimpleNode subjectChild = subjectArray->GetSimpleNodeAtIndex(i);
 					if (subjectChild != NULL)
@@ -243,8 +243,11 @@ int main(int argc, const char * argv[])
 		    
 			// Get dc:MetadataDate			
 			AdobeXMPCore::spISimpleNode dateNode = metaNode->GetSimpleNode(kXMP_NS_XMP, AdobeXMPCommon::npos, "MetadataDate", AdobeXMPCommon::npos);
-			string date = dateNode->GetValue()->c_str();
-			cout << "meta:MetadataDate = " << date << endl;
+			if(dateNode != NULL)
+			{
+				string date = dateNode->GetValue()->c_str();
+				cout << "meta:MetadataDate = " << date << endl;
+			}
 			
 
 			// See if the flash struct exists and see if it was used

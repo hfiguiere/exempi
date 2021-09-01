@@ -1,12 +1,11 @@
 #ifndef __XMPCommonDefines_h__
 #define __XMPCommonDefines_h__ 1
-
 // =================================================================================================
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright 2014 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 // =================================================================================================
@@ -28,7 +27,7 @@
 	// Macintosh Specific Settings
 	// ===========================
 	#if XMP_MacBuild
-		#define SUPPORT_STD_ATOMIC_IMPLEMENTATION 0
+		#define SUPPORT_STD_ATOMIC_IMPLEMENTATION 1
 		#ifdef _LIBCPP_VERSION
 			#define SUPPORT_SHARED_POINTERS_IN_TR1 0
 			#define SUPPORT_SHARED_POINTERS_IN_STD 1
@@ -40,13 +39,35 @@
 		#define BAD_EXCEPTION_SUPPORT_STRINGS 0
 		#define VECTOR_SUPPORT_CONST_ITERATOR_FUNCTIONS 0
 		#define SUPPORT_VARIADIC_TEMPLATES 0
-	#endif
+		#define libcppNULL 0
+
+
+    #endif
+
+    #if XMP_AndroidBuild
+    #define SUPPORT_STD_ATOMIC_IMPLEMENTATION 0
+    #ifdef _LIBCPP_VERSION
+        #define SUPPORT_SHARED_POINTERS_IN_TR1 0
+        #define SUPPORT_SHARED_POINTERS_IN_STD 1
+        #define libcppNULL nullptr
+    #else
+        #define SUPPORT_SHARED_POINTERS_IN_TR1 1
+        #define SUPPORT_SHARED_POINTERS_IN_STD 0
+        #define libcppNULL NULL
+    #endif
+    #define SUPPORT_SHARED_POINTERS_WITH_ALLOCATORS 0
+    #define BAD_EXCEPTION_SUPPORT_STRINGS 0
+    #define VECTOR_SUPPORT_CONST_ITERATOR_FUNCTIONS 0
+    #define SUPPORT_VARIADIC_TEMPLATES 0
+
+
+    #endif
 
 	// =================================================================================================
 	// IOS Specific Settings
 	// ===========================
 	#if XMP_iOSBuild
-		#define SUPPORT_STD_ATOMIC_IMPLEMENTATION 0
+		#define SUPPORT_STD_ATOMIC_IMPLEMENTATION 1
 		#ifdef _LIBCPP_VERSION
 			#define SUPPORT_SHARED_POINTERS_IN_TR1 0
 			#define SUPPORT_SHARED_POINTERS_IN_STD 1
@@ -58,6 +79,7 @@
 		#define BAD_EXCEPTION_SUPPORT_STRINGS 0
 		#define VECTOR_SUPPORT_CONST_ITERATOR_FUNCTIONS 0
 		#define SUPPORT_VARIADIC_TEMPLATES 0
+		#define libcppNULL 0
 	#endif
 
 	// =================================================================================================
@@ -76,19 +98,25 @@
 		#endif
 		#define BAD_EXCEPTION_SUPPORT_STRINGS 1
 		#define VECTOR_SUPPORT_CONST_ITERATOR_FUNCTIONS 1
+		#define libcppNULL 0
 	#endif
 
 	// =================================================================================================
 	// UNIX Specific Settings
 	// ======================
 	#if XMP_UNIXBuild
-		#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
-		#if GCC_VERSION >= 40800
+		# if __clang__
 			#define SUPPORT_STD_ATOMIC_IMPLEMENTATION 1
-		#else
-			#define REQ_FRIEND_CLASS_DECLARATION() template<typename _Ptr, std::_Lock_policy _Lp> friend class std::_Sp_counted_ptr;
-			#define SUPPORT_STD_ATOMIC_IMPLEMENTATION 0
-		#endif
+		#else	
+			#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+			#if GCC_VERSION >= 40800
+				#define SUPPORT_STD_ATOMIC_IMPLEMENTATION 1
+			#else
+				#define REQ_FRIEND_CLASS_DECLARATION() template<typename _Ptr, std::_Lock_policy _Lp> friend class std::_Sp_counted_ptr;
+				#define SUPPORT_STD_ATOMIC_IMPLEMENTATION 0
+			#endif
+		#endif	
+
 
 		#define SUPPORT_SHARED_POINTERS_IN_TR1 0
 		#define SUPPORT_SHARED_POINTERS_IN_STD 1
@@ -97,8 +125,8 @@
 		#define VECTOR_SUPPORT_CONST_ITERATOR_FUNCTIONS 1
 		#define SUPPORT_DYNAMIC_CAST_OPTIMIZATION 0
 		#define SUPPORT_VARIADIC_TEMPLATES 0
+		#define libcppNULL 0
 	#endif
-
 	#ifndef SUPPORT_VARIADIC_TEMPLATES
 		#define SUPPORT_VARIADIC_TEMPLATES 1
 	#endif

@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2011 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2011 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -453,6 +453,7 @@ bool HandlerRegistry::isReplaced( XMP_FileFormat format )
 
 bool HandlerRegistry::getFormatInfo( XMP_FileFormat format, XMP_OptionBits* flags /*= 0*/ )
 {
+	XMP_OptionBits voidOptionBits = 0;
 	if ( flags == 0 ) flags = &voidOptionBits;
 
 	XMPFileHandlerInfo*	handler = this->getHandlerInfo( format );
@@ -702,6 +703,12 @@ XMPFileHandlerInfo* HandlerRegistry::selectSmartHandler( XMPFiles* session, XMP_
 			if ( session->format == kXMP_UnknownFile ) return 0;
 
 			handlerInfo = this->tryFolderHandlers( session->format, rootPath, gpName, parentName, leafName, session );	// ! Parent and GP are empty.
+
+			if ( handlerInfo == 0 && session->format == kXMP_AVCUltraFile )
+			{
+				session->format = kXMP_P2File;
+				handlerInfo = this->tryFolderHandlers( session->format, rootPath, gpName, parentName, leafName, session );	// ! Parent and GP are empty.
+			}
 
 			return handlerInfo;	// ! Return found handler or 0.
 		}

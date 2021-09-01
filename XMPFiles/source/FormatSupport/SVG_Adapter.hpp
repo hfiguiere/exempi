@@ -2,15 +2,15 @@
 #define __SVG_Adapter_hpp__
 
 // =================================================================================================
-// Copyright 2015 Adobe Systems Incorporated
+// Copyright 2015 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 //
 // This file includes implementation of SVG metadata, according to Scalable Vector Graphics (SVG) 1.1 Specification. 
 // "https://www.w3.org/TR/2003/REC-SVG11-20030114/"
-// Copyright © 1994-2002 World Wide Web Consortium, (Massachusetts Institute of Technology, 
+// Copyright  1994-2002 World Wide Web Consortium, (Massachusetts Institute of Technology, 
 // Institut National de Recherche en Informatique et en Automatique, Keio University). 
 // All Rights Reserved . http://www.w3.org/Consortium/Legal
 //
@@ -30,6 +30,8 @@
 struct XML_ParserStruct;	// ! Hack to avoid exposing expat.h to all clients.
 typedef struct XML_ParserStruct *XML_Parser;
 typedef std::map<std::string, XMP_Int64>::iterator IteratorStringXMP_Int64;
+
+#define kURI_SVG			   "http://www.w3.org/2000/svg"
 
 struct OffsetStruct
 {

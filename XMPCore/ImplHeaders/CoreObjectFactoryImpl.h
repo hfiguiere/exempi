@@ -2,12 +2,12 @@
 #define CoreObjectFactoryImpl_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #if !(IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED)
@@ -17,12 +17,16 @@
 
 #include "XMPCore/Interfaces/ICoreObjectFactory_I.h"
 #include "XMPCommon/BaseClasses/MemoryManagedObject.h"
+#if ENABLE_CPP_DOM_MODEL
 #include "XMPCommon/ImplHeaders/SharedObjectImpl.h"
+#endif
 
 #if XMP_WinBuild
 	#pragma warning( push )
 	#pragma warning( disable : 4250 )
 #endif
+
+extern "C" XMP_PUBLIC AdobeXMPCore::pICoreObjectFactory_base WXMPMeta_GetXMPDOMFactoryInstance_1();
 
 namespace AdobeXMPCore_Int {
 
@@ -49,6 +53,8 @@ namespace AdobeXMPCore_Int {
 		virtual pIDOMImplementationRegistry_base APICALL GetDOMImplementationRegistry( pcIError_base & error ) __NOTHROW__;
 		virtual pcINameSpacePrefixMap_base APICALL GetDefaultNameSpacePrefixMap( pcIError_base & error ) __NOTHROW__;
 		virtual pIPath_base APICALL ParsePath( const char * path, sizet pathLength, pcINameSpacePrefixMap_base map, pcIError_base & error ) __NOTHROW__;
+        virtual pIMetadata_base APICALL ConvertXMPMetatoIMetadata(XMPMetaRef xmpref, pcIError_base & error ) __NOTHROW__;
+        virtual XMPMetaRef APICALL ConvertIMetadatatoXMPMeta( pIMetadata iMeta, pcIError_base & error ) __NOTHROW__;
 
 	protected:
 

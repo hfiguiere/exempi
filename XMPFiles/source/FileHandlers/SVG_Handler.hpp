@@ -2,16 +2,16 @@
 #define __SVG_Handler_hpp__	1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2015 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2015 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 //
 // This file includes implementation of SVG metadata, according to Scalable Vector Graphics (SVG) 1.1 Specification. 
 // "https://www.w3.org/TR/2003/REC-SVG11-20030114/"
-// Copyright © 1994-2002 World Wide Web Consortium, (Massachusetts Institute of Technology, 
+// Copyright  1994-2002 World Wide Web Consortium, (Massachusetts Institute of Technology, 
 // Institut National de Recherche en Informatique et en Automatique, Keio University). 
 // All Rights Reserved . http://www.w3.org/Consortium/Legal
 //
@@ -24,6 +24,8 @@
 
 #include "XMPFiles/source/XMPFiles_Impl.hpp"
 #include "XMPFiles/source/FormatSupport/SVG_Adapter.hpp"
+
+#include "third-party/zlib/zlib.h"
 
 extern XMPFileHandler* SVG_MetaHandlerCTor( XMPFiles* parent );
 
@@ -63,12 +65,22 @@ private:
 	bool isTitleUpdateReq;
 	bool isDescUpdateReq;
 
+	RawDataBlock svgContents;
+	bool isCompressed;
+	gz_header compressedHeader;
+
 	void ProcessTitle( XMP_IO* sourceRef, XMP_IO * destRef, const std::string &value, XMP_Int64 &currentOffset, const OffsetStruct & titleOffset );
 	void ProcessDescription( XMP_IO* sourceRef, XMP_IO * destRef, const std::string &value, XMP_Int64 &currentOffset, const OffsetStruct & descOffset );
-	void InsertNewTitle( XMP_IO * destRef, const std::string &value );
-	void InsertNewDescription( XMP_IO * destRef, const std::string &value );
-	void InsertNewMetadata( XMP_IO * destRef, const std::string &value );
+	void InsertNewTitle( XMP_IO * destRef, const std::string &value, const std::string &prefix );
+	void InsertNewDescription( XMP_IO * destRef, const std::string &value, const std::string &prefix );
+	void InsertNewMetadata( XMP_IO * destRef, const std::string &value, const std::string &prefix );
 
+	void Write(XMP_IO* sourceFile, XMP_IO* destFile, XMP_Int64 length, XMP_Int64 currentOffset);
+
+	XMP_Int64 CompressMemoryToFile(const RawDataBlock & dataOut, XMP_IO * fileIn);
+	XMP_Int64 DecompressFileToMemory(XMP_IO * fileIn, RawDataBlock * dataOut);
+	XMP_Int64 CompressFileToFile(XMP_IO * fileIn, XMP_IO * fileOut);
+	
 };	// SVG_MetaHandler
 
 // =================================================================================================

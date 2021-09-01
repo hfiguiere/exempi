@@ -1,9 +1,9 @@
 // =================================================================================================
-// Copyright 2003 Adobe Systems Incorporated
+// Copyright 2003 Adobe
 // All Rights Reserved.
 //
 // NOTICE:	Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include!
@@ -782,9 +782,12 @@ AppendSubtree ( const XMP_Node * sourceNode, XMP_Node * destParent,
 		for ( size_t sourceNum = 0, sourceLim = sourceNode->children.size(); sourceNum != sourceLim && destNode!= NULL; ++sourceNum ) {
 			const XMP_Node * sourceField = sourceNode->children[sourceNum];
 			AppendSubtree ( sourceField, destNode, mergeCompound, replaceOld, deleteEmpty );
-			if ( deleteEmpty && destNode->children.empty() ) {
-				delete ( destNode );
-				destParent->children.erase ( destPos );
+
+			if (deleteEmpty && destNode->children.empty())
+			{
+				delete (destNode);
+				destNode = NULL;
+				destParent->children.erase(destPos);
 			}
 		}
 		
@@ -1004,7 +1007,7 @@ XMPUtils::CatenateArrayItems ( const XMPMeta & xmpObj,
 	
 	if(sUseNewCoreAPIs) {
 
-		dynamic_cast<const XMPMeta2 &>(xmpObj);
+		//dynamic_cast<const XMPMeta2 &>(xmpObj);
 		CatenateArrayItems_v2(xmpObj, schemaNS, arrayName, separator, quotes, options, catedStr);
 		return;
 
@@ -1163,19 +1166,19 @@ XMP_StringPtr  catedStr)
 		if (!XMPUtils::FindNode(xmpObj->mDOM, arrayPath, kXMP_CreateNodes, options, destNode, &insertIndex, true)) {
 			XMP_Throw("Failure creating array node", kXMPErr_BadXPath);
 		}
-		std::string arrayNameSpace, arrayName;
+		std::string arrayNameSpace, arrayNameStr;
 		auto defaultMap = INameSpacePrefixMap::GetDefaultNameSpacePrefixMap();
 		arrayOptions = options;
-		XMPUtils::GetNameSpaceAndNameFromStepValue(lastPathSegment.step, defaultMap, arrayNameSpace, arrayName);
+		XMPUtils::GetNameSpaceAndNameFromStepValue(lastPathSegment.step, defaultMap, arrayNameSpace, arrayNameStr);
 		//  Need to check Alternate first
 		if (arrayOptions & kXMP_PropArrayIsAlternate) {
-			arrayNode = IArrayNode::CreateAlternativeArrayNode( arrayNameSpace.c_str(), arrayNameSpace.size(), arrayName.c_str(), arrayName.size());
+			arrayNode = IArrayNode::CreateAlternativeArrayNode( arrayNameSpace.c_str(), arrayNameSpace.size(), arrayNameStr.c_str(), arrayNameStr.size());
 		}
 		else if (arrayOptions & kXMP_PropArrayIsOrdered) {
-			arrayNode = IArrayNode::CreateOrderedArrayNode( arrayNameSpace.c_str(), arrayNameSpace.size(), arrayName.c_str(), arrayName.size() );
+			arrayNode = IArrayNode::CreateOrderedArrayNode( arrayNameSpace.c_str(), arrayNameSpace.size(), arrayNameStr.c_str(), arrayNameStr.size() );
 		}
 		else if (arrayOptions & kXMP_PropArrayIsUnordered) {
-			arrayNode = IArrayNode::CreateUnorderedArrayNode( arrayNameSpace.c_str(), arrayNameSpace.size(), arrayName.c_str(), arrayName.size() );
+			arrayNode = IArrayNode::CreateUnorderedArrayNode( arrayNameSpace.c_str(), arrayNameSpace.size(), arrayNameStr.c_str(), arrayNameStr.size() );
 		}
 
 		else {

@@ -2,11 +2,11 @@
 #define __Host_IO_hpp__	1
 
 // =================================================================================================
-// Copyright 2010 Adobe Systems Incorporated
+// Copyright 2010 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include.
@@ -21,7 +21,7 @@
 #elif XMP_MacBuild
 	#include <CoreServices/CoreServices.h>
 	#include <dirent.h>	// Mac uses the POSIX folder functions.
-#elif XMP_UNIXBuild | XMP_iOSBuild
+#elif XMP_UNIXBuild | XMP_iOSBuild | XMP_AndroidBuild
 	#include <dirent.h>
 #else
 	#error "Unknown host platform."
@@ -99,12 +99,14 @@ namespace Host_IO {
 	#if XMP_WinBuild
 		typedef HANDLE FileRef;
 		static const FileRef noFileRef = INVALID_HANDLE_VALUE;
-	#elif XMP_MacBuild
-		typedef FSIORefNum FileRef;
-		static const FileRef noFileRef = -1;
-	#elif XMP_UNIXBuild | XMP_iOSBuild
+	#elif XMP_AndroidBuild
 		typedef int FileRef;
 		static const FileRef noFileRef = -1;
+		typedef off64_t XMP_off_t;
+	#elif XMP_MacBuild | XMP_UNIXBuild | XMP_iOSBuild
+		typedef int FileRef;
+		static const FileRef noFileRef = -1;
+		typedef off_t XMP_off_t;
 	#endif
 
 	bool Exists ( const char* filePath );
@@ -168,7 +170,7 @@ namespace Host_IO {
 	#elif XMP_MacBuild
 		typedef DIR* FolderRef;
 		static const FolderRef noFolderRef = 0;
-	#elif XMP_UNIXBuild | XMP_iOSBuild
+	#elif XMP_UNIXBuild | XMP_iOSBuild | XMP_AndroidBuild
 		typedef DIR* FolderRef;
 		static const FolderRef noFolderRef = 0;
 	#endif

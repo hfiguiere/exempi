@@ -1,13 +1,15 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2008 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2008 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
+
+#include <sstream>
 
 #include "public/include/XMP_Const.h"
 #include "public/include/XMP_IO.hpp"
@@ -22,7 +24,6 @@
 #include "XMPFiles/source/FormatSupport/RIFF_Support.hpp"
 #include "XMPFiles/source/FormatSupport/Reconcile_Impl.hpp"
 
-#include <sstream>
 
 #define MIN(a, b)       ((a) < (b) ? (a) : (b))
 
@@ -655,7 +656,7 @@ void relocateWronglyPlacedXMPChunk( RIFF_MetaHandler* handler )
          lastChunk->getChild( handler->xmpChunk ) == lastChunk->children.end() // not already in last chunk?
 	    )
 	{
-		RIFF::ContainerChunk* cur;
+		RIFF::ContainerChunk* cur = NULL;
 		chunkVectIter child;
 		XMP_Int32 chunkNo;
 

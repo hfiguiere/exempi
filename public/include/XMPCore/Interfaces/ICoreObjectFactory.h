@@ -2,11 +2,11 @@
 #define ICoreObjectFactory_h__ 1
 
 // =================================================================================================
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright 2014 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "XMPCore/XMPCoreFwdDeclarations.h"
@@ -167,6 +167,21 @@ namespace AdobeXMPCore {
 		virtual pICoreConfigurationManager_base APICALL GetCoreConfigurationManager( pcIError_base & error ) __NOTHROW__ = 0;
 
 		//!
+        //! @brief Converts old xmp object to new xmp object.
+        //! \param[out] error A reference to a pointer to const IError object which will be filled with the error object in case of any error.
+        //! \return A pointer to \#IMetadata_base object.
+        //!
+        virtual pIMetadata_base APICALL ConvertXMPMetatoIMetadata( XMPMetaRef xmpref, pcIError_base & error ) __NOTHROW__ = 0;
+        
+        //!
+        //! @brief Converts new xmp object to old xmp object.
+        //! \param[out] error A reference to a pointer to const IError object which will be filled with the error object in case of any error.
+        //! \return XMPMetaRef.
+        //!
+        virtual XMPMetaRef APICALL ConvertIMetadatatoXMPMeta( pIMetadata iMeta, pcIError_base & error ) __NOTHROW__ = 0;
+        
+
+		//!
 		//! \cond XMP_INTERNAL_DOCUMENTATION
 		
 		//!
@@ -202,7 +217,7 @@ namespace AdobeXMPCore {
 		//!
 		XMP_PRIVATE static pICoreObjectFactory MakeCoreObjectFactory( pICoreObjectFactory_base ptr );
 		XMP_PRIVATE static pcICoreObjectFactory MakeCoreObjectFactory( pcICoreObjectFactory_base ptr ) {
-			return MakeCoreObjectFactory( const_cast< pcICoreObjectFactory_base >( ptr ) );
+			return MakeCoreObjectFactory( const_cast< pICoreObjectFactory_base >( ptr ) );
 		}
 		//!
 		//! @}

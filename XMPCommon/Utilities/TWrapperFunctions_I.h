@@ -386,7 +386,7 @@ namespace XMP_COMPONENT_INT_NAMESPACE {
 	//! @}
 
 	template< typename sharedPointerType, typename rawPointerType >
-	rawPointerType ReturnRawPointerFromSharedPointer( shared_ptr< sharedPointerType >( *FuncPtr )( ), pcIError_base & error, const char * fileName, sizet lineNumber ) __NOTHROW__ {
+	rawPointerType ReturnRawPointerFromSharedPointer( shared_ptr< sharedPointerType >( *FuncPtr )( ), pcIError_base & error, const char * fileName, uint32 lineNumber ) __NOTHROW__ {
 		error = NULL;
 		try {
 			auto sp = FuncPtr();
@@ -404,7 +404,7 @@ namespace XMP_COMPONENT_INT_NAMESPACE {
 	}
 
 	template< typename sharedPointerType, typename rawPointerType, typename ... Ts >
-	rawPointerType ReturnRawPointerFromSharedPointer( shared_ptr< sharedPointerType >( *FuncPtr )( Ts ... ), pcIError_base & error, const char * fileName, sizet lineNumber, Ts ... Vs ) __NOTHROW__ {
+	rawPointerType ReturnRawPointerFromSharedPointer( shared_ptr< sharedPointerType >( *FuncPtr )( Ts ... ), pcIError_base & error, const char * fileName, uint32 lineNumber, Ts ... Vs ) __NOTHROW__ {
 		error = NULL;
 		try {
 			auto sp = FuncPtr( Vs ... );
@@ -414,7 +414,7 @@ namespace XMP_COMPONENT_INT_NAMESPACE {
 			error = err->GetActualIError();
 			error->GetISharedObject_I()->AcquireInternal();
 		} catch ( ... ) {
-			pIError_I err = IError_I::CreateUnknownExceptionCaughtError( IError_v1::kESOperationFatal, fileName, lineNumber ).get();
+pIError_I err = IError_I::CreateUnknownExceptionCaughtError( IError_v1::kESOperationFatal, fileName, lineNumber ).get();
 			err->AcquireInternal();
 			error = err;
 		}

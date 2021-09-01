@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2004 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2004 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -263,7 +263,7 @@ bool PostScript_MetaHandler::FindFirstPacket()
 		if ( bufLen == 0 ) return firstfound;	// Must be at EoF, no packets found.
 
 		scanner.Scan ( buffer, bufPos, bufLen );
-		snipCount = scanner.GetSnipCount();
+		snipCount = (int)scanner.GetSnipCount();
 		scanner.Report ( snips );
 		for ( int i = 0; i < snipCount; ++i ) 
 		{
@@ -341,7 +341,7 @@ bool PostScript_MetaHandler::FindLastPacket()
 	// -------------------------------
 	// Pick the last the valid packet.
 
-	int snipCount = scanner.GetSnipCount();
+	int snipCount = (int)scanner.GetSnipCount();
 
 	XMPScanner::SnipInfoVector snips ( snipCount );
 	scanner.Report ( snips );
@@ -1082,7 +1082,7 @@ void PostScript_MetaHandler::RegisterKeyValue(std::string& key, std::string& val
 void PostScript_MetaHandler::ReconcileXMP( const std::string &xmpStr, std::string *outStr ) 
 {
 	SXMPMeta xmp;
-	xmp.ParseFromBuffer( xmpStr.c_str(), xmpStr.length() );
+	xmp.ParseFromBuffer( xmpStr.c_str(), (XMP_Uns32)xmpStr.length() );
 	// Adding creator Toll if any 
 	if (!xmp.DoesPropertyExist ( kXMP_NS_XMP,"CreatorTool" ))
 	{
@@ -1259,7 +1259,7 @@ void PostScript_MetaHandler::modifyHeader(XMP_IO* fileRef,XMP_Int64 extrabytes,X
 		XMP_Uns32 psLength = GetUns32LE ( temp.ptr+8 );	// PostScript length.
 		if (psLength>0)
 		{
-			psLength+=extrabytes;
+			psLength+=(XMP_Uns32)extrabytes;
 			PutUns32LE ( psLength, buffLE);
 			fileRef->Seek ( 8, kXMP_SeekFromStart );
 			fileRef->Write(buffLE,4);
@@ -1267,7 +1267,7 @@ void PostScript_MetaHandler::modifyHeader(XMP_IO* fileRef,XMP_Int64 extrabytes,X
 		XMP_Uns32 wmfOffset = GetUns32LE ( temp.ptr+12 );	// WMF offset.
 		if (wmfOffset>0 && wmfOffset>offset)
 		{
-			wmfOffset+=extrabytes;
+			wmfOffset+=(XMP_Uns32)extrabytes;
 			PutUns32LE ( wmfOffset, buffLE);
 			fileRef->Seek ( 12, kXMP_SeekFromStart );
 			fileRef->Write(buffLE,4);
@@ -1276,7 +1276,7 @@ void PostScript_MetaHandler::modifyHeader(XMP_IO* fileRef,XMP_Int64 extrabytes,X
 		XMP_Uns32 tiffOffset = GetUns32LE ( temp.ptr+20 );	// Tiff offset.
 		if (tiffOffset>0 && tiffOffset>offset)
 		{
-			tiffOffset+=extrabytes;
+			tiffOffset+=(XMP_Uns32)extrabytes;
 			PutUns32LE ( tiffOffset, buffLE);
 			fileRef->Seek ( 20, kXMP_SeekFromStart );
 			fileRef->Write(buffLE,4);
@@ -1308,7 +1308,7 @@ UpdateMethod PostScript_MetaHandler::DetermineUpdateMethod(std::string & outStr)
 	SXMPMeta xmp;
 	std::string &    xmpPacket  = this->xmpPacket;
 	XMP_PacketInfo & packetInfo = this->packetInfo;
-	xmp.ParseFromBuffer( xmpPacket.c_str(), xmpPacket.length() );
+	xmp.ParseFromBuffer( xmpPacket.c_str(), (XMP_Uns32)xmpPacket.length() );
 	if (packetInfo.length>0)
 	{
 		try
@@ -1392,7 +1392,7 @@ void PostScript_MetaHandler::ExpandingSFDFilterUpdate (std::string &outStr,XMP_I
 
 	XMP_IO*      fileRef		= this->parent->ioRef;
 	XMP_Int64	 pos			= 0;
-	XMP_Int32 extrapacketlength=outStr.length()-packetInfo.length;
+	XMP_Int64 extrapacketlength=outStr.length()-packetInfo.length;
 	XMP_ProgressTracker* progressTracker = this->parent->progressTracker;	
 	if ( progressTracker != 0 )  progressTracker->AddTotalWork ((float) (extrapacketlength + fileRef->Length() -packetInfo.offset+14) );
 	if (!doSafeUpdate)
@@ -1424,7 +1424,7 @@ void PostScript_MetaHandler::ExpandingSFDFilterUpdate (std::string &outStr,XMP_I
 				readpoint+=temp.len;
 			}
 			fileRef->Seek ( writepoint, kXMP_SeekFromStart );
-			fileRef->Write(tempfilebuffer1[y].data,tempfilebuffer1[y].len);
+			fileRef->Write(tempfilebuffer1[y].data,(XMP_Uns32)tempfilebuffer1[y].len);
 			writepoint+=tempfilebuffer1[y].len;
 			if (continueread)
 				tempfilebuffer1[y]=temp;
@@ -1685,12 +1685,12 @@ void PostScript_MetaHandler::InsertNewUpdate (std::string &outStr, XMP_IO* &temp
 		if (fileformat==kXMP_EPSFile || kXMPFiles_UnknownLength==packetInfo.offset)
 		{
 			if ( progressTracker != 0 )  progressTracker->AddTotalWork ((float) ( kPS_XMPHintMainFirst.length()) );
-			tempRef->Write(kPS_XMPHintMainFirst.c_str(),kPS_XMPHintMainFirst.length());
+			tempRef->Write(kPS_XMPHintMainFirst.c_str(),(XMP_Uns32)kPS_XMPHintMainFirst.length());
 		}
 		else
 		{
 			if ( progressTracker != 0 )  progressTracker->AddTotalWork ((float) ( kPS_XMPHintMainLast.length()) );
-			tempRef->Write(kPS_XMPHintMainLast.c_str(),kPS_XMPHintMainLast.length());
+			tempRef->Write(kPS_XMPHintMainLast.c_str(),(XMP_Uns32)kPS_XMPHintMainLast.length());
 		}
 	}
 	InjectData1Offset-=totalReadLength;
@@ -1698,15 +1698,15 @@ void PostScript_MetaHandler::InsertNewUpdate (std::string &outStr, XMP_IO* &temp
 	totalReadLength+=InjectData1Offset;
 	if (fileformat==kXMP_EPSFile)
 	{
-		tempRef->Write(kEPS_Injectdata1.c_str(),kEPS_Injectdata1.length());
+		tempRef->Write(kEPS_Injectdata1.c_str(),(XMP_Uns32)kEPS_Injectdata1.length());
 		tempRef->Write((void *)outStr.c_str(), static_cast<XMP_Uns32>(outStr.length()));
-		tempRef->Write(kEPS_Injectdata2.c_str(),kEPS_Injectdata2.length());
+		tempRef->Write(kEPS_Injectdata2.c_str(),(XMP_Uns32)kEPS_Injectdata2.length());
 	}
 	else
 	{
-		tempRef->Write(kPS_Injectdata1.c_str(),kPS_Injectdata1.length());
+		tempRef->Write(kPS_Injectdata1.c_str(),(XMP_Uns32)kPS_Injectdata1.length());
 		tempRef->Write((void *)outStr.c_str(), static_cast<XMP_Uns32>(outStr.length()));
-		tempRef->Write(kPS_Injectdata2.c_str(),kPS_Injectdata2.length());
+		tempRef->Write(kPS_Injectdata2.c_str(),(XMP_Uns32)kPS_Injectdata2.length());
 	}
 	if (InjectData3Offset!=-1)
 	{
@@ -1715,7 +1715,7 @@ void PostScript_MetaHandler::InsertNewUpdate (std::string &outStr, XMP_IO* &temp
 		totalReadLength+=InjectData3Offset;
 		if (fileformat==kXMP_EPSFile)
 		{
-			tempRef->Write(kEPS_Injectdata3.c_str(),kEPS_Injectdata3.length());
+			tempRef->Write(kEPS_Injectdata3.c_str(),(XMP_Uns32)kEPS_Injectdata3.length());
 		}
 		XMP_Int64 remlength=fileRef->Length()-totalReadLength;
 		XIO::Copy(fileRef,tempRef,remlength,this->parent->abortProc,this->parent->abortArg);
@@ -1728,7 +1728,7 @@ void PostScript_MetaHandler::InsertNewUpdate (std::string &outStr, XMP_IO* &temp
 		totalReadLength+=remlength;
 		if (fileformat==kXMP_EPSFile)
 		{
-			tempRef->Write(kEPS_Injectdata3.c_str(),kEPS_Injectdata3.length());
+			tempRef->Write(kEPS_Injectdata3.c_str(),(XMP_Uns32)kEPS_Injectdata3.length());
 		}
 	}
 	XMP_Int64 extraBytes;

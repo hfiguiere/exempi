@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -19,7 +19,7 @@
 
 namespace IFF_RIFF {
 
-	static const char * tagNames[ iXMLMetadata::kLastEntry ] = {
+	static const char * tagNames[ iXMLMetadata::kLastEntry - 1 ] = {
 		"TAPE",										//kTape,								// std::string
 		"TAKE",										//kTake,								// std::string
 		"SCENE",									//kScene,								// std::string
@@ -250,6 +250,10 @@ namespace IFF_RIFF {
 			}
 			break;
 
+		case kNativeTrackCount:
+			ret = false;
+			break;
+
 		default:
 			ret = true;
 		}
@@ -386,16 +390,16 @@ namespace IFF_RIFF {
 
 	void iXMLMetadata::UpdateXMLNode( XML_Node * parentNode, const char * localName, const std::string & value ) {
 		XML_Node * node = parentNode->GetNamedElement( "", localName );
-
-		if ( node == NULL ) {
-			node = new XML_Node( parentNode, localName, kElemNode );
-			if ( node == NULL ) {
-				XMP_Error error( kXMPErr_NoMemory, "Unable to create new objects" );
-				NotifyClient( kXMPErrSev_OperationFatal, error );
-				return;
+		if (node == NULL) {
+			
+				node = new XML_Node(parentNode, localName, kElemNode);
+				if (node == NULL) {
+					XMP_Error error(kXMPErr_NoMemory, "Unable to create new objects");
+					NotifyClient(kXMPErrSev_OperationFatal, error);
+					return;
+				}
+				parentNode->content.push_back(node);
 			}
-			parentNode->content.push_back( node );
-		}
 
 		if ( node->IsLeafContentNode() == false ) {
 			XMP_Error error( kXMPErr_BadBlockFormat, "iXML Metadata reconciliation failure: node was supposed to be a leaf node" );
@@ -468,6 +472,7 @@ namespace IFF_RIFF {
 
 	void iXMLMetadata::UpdateTrackListInfo( XML_Node * parentNode ) {
 		if ( valueExists( kTrackList ) ) {
+			RemoveXMLNode(parentNode, tagNames[kTrackList]);
 			XMP_Uns32 size;
 			const TrackListInfo * arrayObj( NULL );
 			try {
@@ -507,13 +512,14 @@ namespace IFF_RIFF {
 						node->content.push_back( track );
 					}
 					const TrackListInfo & ref = arrayObj[i];
-					count = ConvertUns64ToString( ref.mChannelIndex );
-					UpdateXMLNode( track, trackChannelIndexTagName, count );
-					if ( ref.mChannelIndex != i + 1 )
-						count = ConvertUns64ToString( i + 1 );
-					UpdateXMLNode( track, trackInterleaveIndexTagName, count );
-					UpdateXMLNode( track, trackNameTagName, ref.mName );
-					UpdateXMLNode( track, trackFunctionTagName, ref.mFunction );
+					if (ref.mChannelIndex.size()>0)
+						UpdateXMLNode( track, trackChannelIndexTagName, ref.mChannelIndex);
+					if (ref.mInterleaveIndex.size()>0)
+						UpdateXMLNode( track, trackInterleaveIndexTagName,ref.mInterleaveIndex );
+					if (ref.mName.size()>0)
+						UpdateXMLNode( track, trackNameTagName, ref.mName );
+					if (ref.mFunction.size()>0)
+						UpdateXMLNode( track, trackFunctionTagName, ref.mFunction );
 				}
 			} else {
 				RemoveXMLNode( parentNode, tagNames[ kTrackList ] );
@@ -648,6 +654,10 @@ namespace IFF_RIFF {
 		case kTimeStampSampleSinceMidnightHigh:
 		case kTimeStampSampleSinceMidnightLow:
 			return validateInt( valueObj, 0, Max_XMP_Uns32 );
+			break;
+
+		case kNativeTrackCount:
+			return validateInt(valueObj, 1, Max_XMP_Uns64);
 			break;
 
 		default:
@@ -862,7 +872,8 @@ namespace IFF_RIFF {
 				NotifyClient( recoverable ? kXMPErrSev_Recoverable : kXMPErrSev_OperationFatal, error );
 			}
 		} else {
-			XMP_Error error ( recoverable ? kXMPErrSev_Recoverable : kXMPErrSev_OperationFatal, "iXML Metadata reconciliation failure: node not present" );
+			XMP_Error error(kXMPErr_BadBlockFormat, "iXML Metadata reconciliation failure: node not present");
+			NotifyClient(recoverable ? kXMPErrSev_Recoverable : kXMPErrSev_OperationFatal, error);
 		}
 		return nodeValue;
 	}
@@ -884,56 +895,49 @@ namespace IFF_RIFF {
 		return Max_XMP_Uns64;
 	}
 
+	
+	/*
+	* Handling of Tracklist changed in refrence to bug CTECHXMP-4169661
+	*/
 	void iXMLMetadata::ParseAndSetTrackListInfo( XML_Node * parentNode ) {
 		XMP_Uns64 trackCount( 0 );
-		try {
-			trackCount = ParseUns64Value( parentNode, trackCountTagName );
-		} catch( ... ) {
-			XMP_Error error( kXMPErr_BadBlockFormat, "iXML Metadata reconciliation failure: failed parsing track list" );
-			NotifyClient( kXMPErrSev_Recoverable, error );
-			return;
+		XMP_Uns64 nativeTrackCount(0); //to notice if there is change in track count as read from iXML chunk
+		try
+		{
+			nativeTrackCount = ParseUns64Value(parentNode, trackCountTagName);
+			this->setValue<XMP_Uns64>(kNativeTrackCount, nativeTrackCount);
 		}
-		std::vector< TrackListInfo > trackInfoListVector( trackCount );
+		catch (...) {
+			//do nothing. don't set native track count value
+		}
+		trackCount = parentNode->CountNamedElements("", trackTagName);
+		std::vector< TrackListInfo > trackInfoListVector ;
 
 		for ( size_t i = 0; i < trackCount; i++ ) {
 			XML_Node * trackElement = parentNode->GetNamedElement( "", trackTagName, i );
 			if ( trackElement ) {
-				XMP_Uns64 channelIndex( 0 ), interleaveIndex( 0 );
-				std::string name, function;
+				
+				std::string name, function, channelIndex, interleaveIndex;
 
-				try {
-					channelIndex = ParseUns64Value( trackElement, trackChannelIndexTagName );
-					interleaveIndex = ParseUns64Value( trackElement, trackInterleaveIndexTagName );
+					channelIndex = ParseStringValue( trackElement, trackChannelIndexTagName );
+					interleaveIndex = ParseStringValue( trackElement, trackInterleaveIndexTagName );
 					name = ParseStringValue( trackElement, trackNameTagName );
 					function = ParseStringValue( trackElement, trackFunctionTagName );
-				} catch( ... ) {
-					XMP_Error error( kXMPErr_BadBlockFormat, "iXML Metadata reconciliation failure: failed parsing track list" );
-					NotifyClient( kXMPErrSev_Recoverable, error );
-					return;
-				}
-
-				// check value of interleave index it should be between 1 and trackCount.
-				if ( interleaveIndex > 0 && interleaveIndex <= trackCount
-					&& trackInfoListVector[ interleaveIndex - 1 ].mChannelIndex == 0 )
-				{
-					TrackListInfo & currentElement = trackInfoListVector[ interleaveIndex - 1 ];
-					currentElement.mChannelIndex = channelIndex;
-					currentElement.mName = name;
-					currentElement.mFunction = function;
-				} else {
-					XMP_Error error( kXMPErr_BadBlockFormat, "iXML Metadata reconciliation failure: interleave index is not correct" );
-					NotifyClient( kXMPErrSev_Recoverable, error );
-					return;
-				}
+				
+					if (channelIndex.size() > 0 || interleaveIndex.size() > 0 || name.size() > 0 || function.size() > 0)
+					{
+						TrackListInfo currentElement(channelIndex, name, function, interleaveIndex);
+						trackInfoListVector.push_back(currentElement);
+					}
+				
 			} else {
-				XMP_Error error( kXMPErr_BadBlockFormat, "iXML Metadata reconciliation failure: number of track elements is less than expected" );
-				NotifyClient( kXMPErrSev_Recoverable, error );
-				return;
+				trackCount = i;
 			}
 		}
 
-		if ( trackCount > 0 ) {
-			this->setArray( kTrackList, trackInfoListVector.data(), ( XMP_Uns32 ) trackInfoListVector.size() );
+		XMP_Uns32 count = (XMP_Uns32)trackInfoListVector.size();
+		if (count > 0 ) {
+			this->setArray( kTrackList, trackInfoListVector.data(), count);
 		}
 	}
 

@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2010 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2010 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #ifndef _ChunkController_h_
@@ -51,7 +51,7 @@ class ChunkController
 		 */
 		ChunkController( IChunkBehavior* chunkBehavior, XMP_Bool bigEndian );
 
-		~ChunkController() noexcept(false);
+		~ChunkController () NO_EXCEPT_FALSE;
 
 		/**
 		 * Adds the given path to the array of "Chunk's of interest",
@@ -242,6 +242,8 @@ class ChunkController
 		/** Cached search results */
 		std::vector<IChunkData*> mSearchResults;
 }; // ChunkController
+
+	static const XMP_Uns64 kMaxRIFFChunkSize = 0x00000000FFFFFFFFLL;
 
 } // namespace
 

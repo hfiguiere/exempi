@@ -2,12 +2,12 @@
 #define __XMP_ProgressTracker_hpp__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2012 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2012 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -46,7 +46,8 @@ public:
 	void AddWorkDone ( float workIncrement );
 	void WorkComplete();
 	CallbackInfo * GetCallbackInfo() {
-		return &cbInfo;
+		//return ( (&cbInfo) ? (&cbInfo) : NULL); //cbInfo is an object so its address will always be available
+        return (&cbInfo);
 	}
 
 	bool WorkInProgress() { return this->workInProgress; };

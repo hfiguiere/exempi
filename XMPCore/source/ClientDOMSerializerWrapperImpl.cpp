@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2015 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2015 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 namespace AdobeXMPCore_Int {
@@ -31,14 +31,14 @@ namespace AdobeXMPCore_Int {
 		: mpSerializer( serializer )
 	{
 		if ( serializer ) {
-			pcIError_base error( NULL );
+			pcIError_base pError( NULL );
 			uint32 unknownExceptionCaught( 0 );
-			TreatKeyAsCaseInsensitive( serializer->areKeysCaseSensitive( error, unknownExceptionCaught ) == 0 );
-			if ( !error && unknownExceptionCaught == 0 )
-				serializer->initialize( this, error, unknownExceptionCaught );
-			if ( error ) {
-				auto spError = IError::MakeShared( error );
-				error->Release();
+			TreatKeyAsCaseInsensitive( serializer->areKeysCaseSensitive( pError, unknownExceptionCaught ) == 0 );
+			if ( !pError && unknownExceptionCaught == 0 )
+				serializer->initialize( this, pError, unknownExceptionCaught );
+			if ( pError ) {
+				auto spError = IError::MakeShared( pError );
+				pError->Release();
 				throw spError;
 			}
 			if ( unknownExceptionCaught )
@@ -62,7 +62,7 @@ namespace AdobeXMPCore_Int {
 
 	spIUTF8String APICALL ClientDOMSerializerWrapperImpl::Serialize( const spINode & node, const spcINameSpacePrefixMap & map ) {
 		spIUTF8String str( IUTF8String_I::CreateUTF8String( NULL, 0 ) );
-		pcIError_base error( NULL );
+		pcIError_base pError( NULL );
 		uint32 unknownExceptionCaught( 0 );
 		spcINameSpacePrefixMap mergedMap = INameSpacePrefixMap::GetDefaultNameSpacePrefixMap();
 
@@ -73,10 +73,10 @@ namespace AdobeXMPCore_Int {
 		}
 
 		mpSerializer->serialize( node ? node->GetActualINode() : NULL, mergedMap ? mergedMap->GetActualINameSpacePrefixMap() : NULL, this,
-			&ReportErrorAndContinueABISafe, str->GetActualIUTF8String(), error, unknownExceptionCaught );
-		if ( error ) {
-			auto spError = IError::MakeShared( error );
-			error->Release();
+			&ReportErrorAndContinueABISafe, str->GetActualIUTF8String(), pError, unknownExceptionCaught );
+		if ( pError ) {
+			auto spError = IError::MakeShared( pError );
+			pError->Release();
 			throw spError;
 		}
 		if ( unknownExceptionCaught )
@@ -85,12 +85,12 @@ namespace AdobeXMPCore_Int {
 	}
 
 	eConfigurableErrorCode APICALL ClientDOMSerializerWrapperImpl::ValidateValue( const uint64 & key, eDataType type, const CombinedDataValue & value ) const {
-		pcIError_base error( NULL );
+		pcIError_base pError( NULL );
 		uint32 unknownExceptionCaught( 0 );
-		auto retValue = mpSerializer->validate( key, static_cast< uint32 >( type ), value, error, unknownExceptionCaught );
-		if ( error ) {
-			auto spError = IError::MakeShared( error );
-			error->Release();
+		auto retValue = mpSerializer->validate( key, static_cast< uint32 >( type ), value, pError, unknownExceptionCaught );
+		if ( pError ) {
+			auto spError = IError::MakeShared( pError );
+			pError->Release();
 			throw spError;
 		}
 		if ( unknownExceptionCaught )

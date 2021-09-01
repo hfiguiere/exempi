@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2009 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2009 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -141,12 +141,12 @@ Chunk* getChunk ( ContainerChunk* parent, RIFF_MetaHandler* handler )
 
 // BASE CLASS CHUNK ///////////////////////////////////////////////
 // ad hoc creation
-Chunk::Chunk( ContainerChunk* parent_, ChunkType c, XMP_Uns32 id_ )
+Chunk::Chunk( ContainerChunk* _parent, ChunkType c, XMP_Uns32 _id )
 {
 	this->hasChange = false;
 	this->chunkType = c; // base class assumption
-	this->parent = parent_;
-	this->id = id_;
+	this->parent = _parent;
+	this->id = _id;
 	this->oldSize = 0;
 	this->newSize = 8;
 	this->oldPos = 0; // inevitable for ad-hoc
@@ -162,10 +162,10 @@ Chunk::Chunk( ContainerChunk* parent_, ChunkType c, XMP_Uns32 id_ )
 }
 
 // parsing creation
-Chunk::Chunk( ContainerChunk* parent_, RIFF_MetaHandler* handler, bool skip, ChunkType c )
+Chunk::Chunk( ContainerChunk* _parent, RIFF_MetaHandler* handler, bool skip, ChunkType c )
 {
 	chunkType = c; // base class assumption
-	this->parent = parent_;
+	this->parent = _parent;
 	this->oldSize = 0;
 	this->hasChange = false; // [2414649] valid assumption at creation time
 
@@ -179,12 +179,16 @@ Chunk::Chunk( ContainerChunk* parent_, RIFF_MetaHandler* handler, bool skip, Chu
 	// Make sure the size is within expected bounds.
 	XMP_Int64 chunkEnd = this->oldPos + this->oldSize;
 	XMP_Int64 chunkLimit = handler->oldFileSize;
-	if ( parent_ != 0 ) chunkLimit = parent_->oldPos + parent_->oldSize;
+	if ( _parent != 0 ) chunkLimit = _parent->oldPos + _parent->oldSize;
 	if ( chunkEnd > chunkLimit ) {
 		bool isUpdate = XMP_OptionIsSet ( handler->parent->openFlags, kXMPFiles_OpenForUpdate );
 		bool repairFile = XMP_OptionIsSet ( handler->parent->openFlags, kXMPFiles_OpenRepairFile );
-		if ( (! isUpdate) || (repairFile && (parent_ == 0)) ) {
+		if ( (! isUpdate) || (repairFile && (_parent == 0)) ) {
 			this->oldSize = chunkLimit - this->oldPos;
+			if (this->oldSize < 8)
+			{
+				XMP_Throw("Invalid RIFF chunk size", kXMPErr_BadFileFormat);
+			}
 		} else {
 			XMP_Throw ( "Bad RIFF chunk size", kXMPErr_BadFileFormat );
 		}
@@ -237,12 +241,12 @@ Chunk::~Chunk()
 // CONTAINER CHUNK /////////////////////////////////////////////////
 // a) creation
 // [2376832] expectedSize - minimum padding "parking size" to use, if not available append to end
-ContainerChunk::ContainerChunk( ContainerChunk* parent_, XMP_Uns32 id_, XMP_Uns32 containerType ) : Chunk( NULL /* !! */, chunk_CONTAINER, id_ )
+ContainerChunk::ContainerChunk( ContainerChunk* parent_, XMP_Uns32 id, XMP_Uns32 _containerType ) : Chunk( NULL /* !! */, chunk_CONTAINER, id )
 {
 	// accept no unparented ConatinerChunks
 	XMP_Enforce( parent_ != NULL );
 
-	this->containerType = containerType;
+	this->containerType = _containerType;
 	this->newSize = 12;
 	this->parent = parent_;
 
@@ -611,9 +615,9 @@ std::string ContainerChunk::toString(XMP_Uns8 level )
 	chunkVectIter iter;
 	for( iter = this->children.begin(); iter != this->children.end(); iter++ )
 	{
-		char buffer[256];
-		snprintf( buffer, 250, "offset 0x%.8llX", offset );
-		r += std::string ( level*4, ' ' ) + std::string( buffer ) + ":" + (*iter)->toString( level + 1 );
+		char lBuffer[256];
+		snprintf( lBuffer, 250, "offset 0x%.8llX", offset );
+		r += std::string ( level*4, ' ' ) + std::string( lBuffer ) + ":" + (*iter)->toString( level + 1 );
 		offset += (*iter)->newSize;
 		if ( offset % 2 == 1 )
 			offset++;
@@ -718,7 +722,7 @@ XMPChunk::XMPChunk( ContainerChunk* parent_, RIFF_MetaHandler* handler ) : Chunk
 
 void XMPChunk::changesAndSize( RIFF_MetaHandler* handler )
 {
-	XMP_Enforce( &handler->xmpPacket != 0 );
+	//XMP_Enforce( &handler->xmpPacket != 0 );
 	XMP_Enforce( handler->xmpPacket.size() > 0 );
 	this->newSize = 8 + handler->xmpPacket.size();
 

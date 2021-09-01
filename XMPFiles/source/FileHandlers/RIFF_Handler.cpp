@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2009 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2009 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -297,9 +297,9 @@ void RIFF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 			file->Rewind();
 		}
 
-		RIFF::Chunk* mainChunk = rc->at(0);
+		RIFF::Chunk* mainChunkPtr = rc->at(0);
 
-		XMP_Int64 mainGrowth = mainChunk->newSize - mainChunk->oldSize;
+		XMP_Int64 mainGrowth = mainChunkPtr->newSize - mainChunkPtr->oldSize;
 		XMP_Enforce( mainGrowth >= 0 ); // main always stays or grows
 
 		//temptemp

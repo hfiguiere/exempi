@@ -1,16 +1,19 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #define IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED 1
 	#include "XMPCore/ImplHeaders/MetadataImpl.h"
 #undef IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED
-
+#include "XMPCommon/Utilities/UTF8String.h"
+#include "XMPCommon/Interfaces/IUTF8String_I.h"
+#include "XMPCommon/Utilities/AutoSharedLock.h"
+#include "XMPCommon/Utilities/TSmartPointers_I.h"
 #include "XMPCommon/Interfaces/IError_I.h"
 #include "XMPCore/XMPCoreErrorCodes.h"
 #include "XMPCore/Interfaces/INameSpacePrefixMap_I.h"
@@ -19,10 +22,6 @@
 #include "XMPCore/Interfaces/ISimpleNode_I.h"
 #include "XMPCore/source/XMPCore_Impl.hpp"
 
-#include "XMPCommon/Interfaces/IUTF8String_I.h"
-#include "XMPCommon/Utilities/AutoSharedLock.h"
-#include "XMPCommon/Utilities/TSmartPointers_I.h"
-#include "XMPCommon/Utilities/UTF8String.h"
 
 #include <assert.h>
 
@@ -109,6 +108,7 @@ namespace AdobeXMPCore_Int {
 			mSupportAliases = false;
 	}
 
+    bool IsNodeAlias( const char * nameSpace, const char * name, XMP_ExpandedXPath & exPath );
 	bool IsNodeAlias( const char * nameSpace, const char * name, XMP_ExpandedXPath & exPath ) {
 		spIUTF8String qualName = IUTF8String_I::CreateUTF8String();
 		auto defaultMap = INameSpacePrefixMap::GetDefaultNameSpacePrefixMap();
@@ -127,7 +127,10 @@ namespace AdobeXMPCore_Int {
 		return aliasFound;
 	}
 
-	bool HandleConstAlias( const spIMetadata & meta, spINode & destNode, const XMP_ExpandedXPath & expandedXPath, sizet & nodeIndex ) {
+    
+    bool HandleConstAlias( const spIMetadata & meta, spINode & destNode, const XMP_ExpandedXPath & expandedXPath, sizet & nodeIndex );
+    
+    bool HandleConstAlias( const spIMetadata & meta, spINode & destNode, const XMP_ExpandedXPath & expandedXPath, sizet & nodeIndex ) {
 		if ( expandedXPath.empty() ) NOTIFY_ERROR( IError::kEDGeneral, kGECLogicalError, "Empty XPath", IError::kESOperationFatal, false, false );
 
 		if ( !( expandedXPath[ kSchemaStep ].options & kXMP_SchemaNode ) ) {
@@ -178,8 +181,9 @@ namespace AdobeXMPCore_Int {
 			return false;
 		}
 	}
+    
 
-	spINode CreateTerminalNode( const char* nameSpace, const char * name, XMP_OptionBits options, const spcINode & nodeToBeCloned = spINode() ) {
+    static spINode CreateTerminalNode( const char* nameSpace, const char * name, XMP_OptionBits options, const spcINode & nodeToBeCloned = spINode() ) {
 
 		spINode newNode;
 		if ( nodeToBeCloned ) {
@@ -201,7 +205,8 @@ namespace AdobeXMPCore_Int {
 		return newNode;
 	}
 
-	bool HandleNonConstAlias( const spIMetadata & meta, XMP_ExpandedXPath & expandedXPath, bool createNodes, XMP_OptionBits leafOptions, spINode & destNode, sizet & nodeIndex, bool ignoreLastStep, const spINode & inputNode ) {
+   
+    static bool HandleNonConstAlias( const spIMetadata & meta, XMP_ExpandedXPath & expandedXPath, bool createNodes, XMP_OptionBits leafOptions, spINode & destNode, sizet & nodeIndex, bool ignoreLastStep, const spINode & inputNode ) {
 		destNode = meta;
 		spcIUTF8String inputNodeValue;
 		if ( inputNode && inputNode->GetNodeType() == INode::kNTSimple ) {

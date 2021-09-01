@@ -9,7 +9,12 @@
 
 # ==============================================================================
 # define minimum cmake version
-cmake_minimum_required(VERSION 3.5.2)
+# For Android always build with make 3.6
+if(ANDROID)
+	cmake_minimum_required(VERSION 3.5.2)
+else(ANDROID)
+	cmake_minimum_required(VERSION 3.15.5)
+endif(ANDROID)
 
 # ==============================================================================
 # Shared config
@@ -44,6 +49,8 @@ if (UNIX)
             else()
 		        include(${COMMON_BUILD_SHARED_DIR}/SharedConfig_sunos_intel.cmake)
             endif()
+		elseif(ANDROID)
+			include(${COMMON_BUILD_SHARED_DIR}/SharedConfig_Android.cmake)
         else()
 		    include(${COMMON_BUILD_SHARED_DIR}/SharedConfig_Linux.cmake)
         endif()

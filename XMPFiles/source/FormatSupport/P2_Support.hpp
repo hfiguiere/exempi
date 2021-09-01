@@ -2,12 +2,12 @@
 #define __P2_Support_hpp__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	
@@ -66,6 +66,7 @@ protected:
 	ClipContent    headContent;
 private:
 	void DestroyExpatParser();
+	void PrepareForExpatParser(const std::string & p2ClipMetadataFilePath);
 	void CreateExpatParser(XMPFiles_IO &xmlFile);
 	void CacheClipContent();
 
@@ -79,7 +80,7 @@ private:
 }; // class P2_Clip
 struct P2SpannedClip_Order
 {
-	bool operator()( P2_Clip* lhs,  P2_Clip* rhs) const
+	bool operator()( P2_Clip* lhs,  P2_Clip* rhs) const  
 	{  
 		return lhs->GetOffsetInShot() < rhs->GetOffsetInShot();
 	}
@@ -90,7 +91,8 @@ class P2_SpannedClip : public  P2_Clip{
 public:
 	P2_SpannedClip(const std::string & p2ClipMetadataFilePath);
 	bool AddIfRelated(P2_Clip* openedClip);
-	bool IsComplete()const;
+	bool IsComplete();
+	void checkSpannedClipIsComplete();
 	XMP_Uns32 GetDuration();
 	P2_Clip* TopP2Clip() ;
 	std::string GetXMPFilePath();
@@ -106,6 +108,7 @@ private:
 	typedef std::multiset<P2_Clip*,P2SpannedClip_Order> RelatedP2ClipList;
 	std::set<std::string> addedClipIds;
 	RelatedP2ClipList spannedP2Clip;
+	bool completeSpannedClip;
 
 }; // class P2_SpannedClip
 

@@ -1,6 +1,8 @@
 var classAdobeXMPCore_1_1ICoreObjectFactory__v1 =
 [
     [ "~ICoreObjectFactory_v1", "classAdobeXMPCore_1_1ICoreObjectFactory__v1.html#a86ec61e722ad68c9f09e95a7ceaa4393", null ],
+    [ "ConvertIMetadatatoXMPMeta", "classAdobeXMPCore_1_1ICoreObjectFactory__v1.html#ab8ad433eb471d763dca6f9bac9e726d7", null ],
+    [ "ConvertXMPMetatoIMetadata", "classAdobeXMPCore_1_1ICoreObjectFactory__v1.html#a18c28cbe38dff7726bcdfcd2fc2f375f", null ],
     [ "CreateArrayIndexPathSegment", "classAdobeXMPCore_1_1ICoreObjectFactory__v1.html#a3bfacdef9fe44e03dbe826e5ab4d96a5", null ],
     [ "CreateArrayNode", "classAdobeXMPCore_1_1ICoreObjectFactory__v1.html#a483da62ca0b16df479b574ce159656a0", null ],
     [ "CreateMetadata", "classAdobeXMPCore_1_1ICoreObjectFactory__v1.html#a256fa057baeddc10da895731a2e24089", null ],

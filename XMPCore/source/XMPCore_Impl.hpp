@@ -2,11 +2,11 @@
 #define __XMPCore_Impl_hpp__ 1
 
 // =================================================================================================
-// Copyright 2004 Adobe Systems Incorporated
+// Copyright 2004 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! Must be the first #include!
@@ -85,17 +85,20 @@ extern XMP_ReadWriteLock * sDefaultNamespacePrefixMapLock;
 
 #define WtoXMPDocOps_Ptr(docRef)	((XMPDocOps*)(docRef))
 
-extern void *			voidVoidPtr;	// Used to backfill null output parameters.
-extern XMP_StringPtr	voidStringPtr;
-extern XMP_StringLen	voidStringLen;
-extern XMP_OptionBits	voidOptionBits;
-extern XMP_Bool			voidByte;
-extern bool				voidBool;
-extern XMP_Int32		voidInt32;
-extern XMP_Int64		voidInt64;
-extern double			voidDouble;
-extern XMP_DateTime		voidDateTime;
-extern WXMP_Result		void_wResult;
+// **** see CTECHXMP-4169947 ***//
+
+//extern void *			voidVoidPtr;	// Used to backfill null output parameters.
+//extern XMP_StringPtr	voidStringPtr;
+//extern XMP_StringLen	voidStringLen;
+//extern XMP_OptionBits	voidOptionBits;
+//extern XMP_Bool			voidByte;
+//extern bool				voidBool;
+//extern XMP_Int32		voidInt32;
+//extern XMP_Int64		voidInt64;
+//extern double			voidDouble;
+//extern XMP_DateTime		voidDateTime;
+//extern WXMP_Result		void_wResult;
+
 
 #define kHexDigits "0123456789ABCDEF"
 
@@ -172,6 +175,11 @@ extern WXMP_Result		void_wResult;
 #define FindConstChild(p,c)		::FindChildNode ( const_cast<XMP_Node*>(p), c, kXMP_ExistingOnly, 0 )
 #define FindConstQualifier(p,c)	FindQualifierNode ( const_cast<XMP_Node*>(p), c, kXMP_ExistingOnly, 0 )
 #define FindConstNode(t,p)		::FindNode ( const_cast<XMP_Node*>(t), p, kXMP_ExistingOnly, 0 )
+
+void
+SplitNameAndValue(const XMP_VarString & selStep, 
+				  XMP_VarString *       nameStr, 
+				  XMP_VarString *       valueStr);
 
 extern XMP_OptionBits
 VerifySetOptions ( XMP_OptionBits options, XMP_StringPtr propValue );

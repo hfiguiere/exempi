@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2010 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2010 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -29,7 +29,7 @@ static XMP_Uns32 getIndex( const IChunkContainer& tree, const Chunk& chunk )
 {
 	const Chunk& parent = dynamic_cast<const Chunk&>( tree );
 
-	return std::find( parent.firstChild(), parent.lastChild(), &chunk ) - parent.firstChild();
+	return (XMP_Uns32)(std::find( parent.firstChild(), parent.lastChild(), &chunk ) - parent.firstChild());
 }
 
 //-----------------------------------------------------------------------------

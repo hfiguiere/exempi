@@ -130,8 +130,8 @@ ConvertFromInt ( long		   binValue,
 				 XMP_StringPtr format,
 				 tStringObj *  strValue )
 {
-	#if XMP_MacBuild & XMP_64	// This is checked because on Mac 64 bit environment, long is of 64 bit and hence gives a warning during implicit
-								// typecasting to XMP_Int32. Now doing it explicitly in that case.
+	#if (XMP_MacBuild || XMP_iOSBuild) & XMP_64	// This is checked because on Mac 64 bit environment, long is of 64 bit and hence gives a warning during implicit
+								// typecasting to XMP_Int32. Now doing it explicitly in that case. Doing the same for iOS.
 		WrapCheckVoid ( zXMPUtils_ConvertFromInt_1 ( (XMP_Int32)binValue, format, strValue, SetClientString ) );
 	#else
 		WrapCheckVoid ( zXMPUtils_ConvertFromInt_1 ( binValue, format, strValue, SetClientString ) );

@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2008 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2008 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -131,7 +131,7 @@ MP3_MetaHandler::MP3_MetaHandler ( XMPFiles * _parent )
 	this->tagIsDirty = false;
 	this->mustShift = false;
 	this->majorVersion = 2;
-	this->minorVersion = 3;
+	this->minorVersion = 2;
 	this->hasID3Tag = false;
 	this->hasFooter = false;
 	this->extHeaderSize = 0;
@@ -207,9 +207,11 @@ void MP3_MetaHandler::CacheFileData()
 	// read frames
 	
 	XMP_Uns32 xmpID = XMP_V23_ID;
+	XMP_Uns16 frameHeaderSize = ID3v2Frame::kV23_FrameHeaderSize;
 	if ( this->majorVersion == 2 )
 	{
 		xmpID = XMP_V22_ID;
+		frameHeaderSize = ID3v2Frame::kV22_FrameHeaderSize;
 	}
 
 	while ( file->Offset() < this->oldTagSize ) {
@@ -253,7 +255,7 @@ void MP3_MetaHandler::CacheFileData()
 		// No space for another frame? => assume into ID3v2.4 padding.
 		XMP_Int64 newPos = file->Offset();
 		XMP_Int64 spaceLeft = this->oldTagSize - newPos;	// Depends on first check below!
-		if ( (newPos > this->oldTagSize) || (spaceLeft < (XMP_Int64)ID3Header::kID3_TagHeaderSize) ) break;
+		if ( (newPos > this->oldTagSize) || (spaceLeft < frameHeaderSize ) ) break;
 
 	}
 
@@ -317,11 +319,8 @@ void MP3_MetaHandler::ProcessXMP()
 			//get the frame ID to look for
 			XMP_Uns32 logicalID = GetUns32BE ( reconProps[r].mainID );
 			XMP_Uns32 storedID = logicalID;
-			// if the v22ID is empty, skip this.
-                        // See https://gitlab.freedesktop.org/libopenraw/exempi/issues/14
-			if ( this->majorVersion == 2 && reconProps[r].v22ID[0] ) {
+			if ( this->majorVersion == 2 && reconProps[r].v22ID != NULL  && *(reconProps[r].v22ID) != '\0') //handling "" value of v22ID
 				storedID = GetUns32BE ( reconProps[r].v22ID );
-			}
 
 			// deal with each such frame in the frameVector
 			// (since there might be several, some of them not applicable, i.e. COMM)
@@ -379,7 +378,7 @@ void MP3_MetaHandler::ProcessXMP()
 							{
 								try {	// Don't let wrong dates in id3 stop import.
 									if ( ! hasTDRC ) {
-										newDateTime.year = SXMPUtils::ConvertToInt ( id3Text );
+										newDateTime.year = (XMP_Int32)SXMPUtils::ConvertToInt ( id3Text );
 										newDateTime.hasDate = true;
 									}
 								} catch ( ... ) {
@@ -394,8 +393,8 @@ void MP3_MetaHandler::ProcessXMP()
 									// only if no TDRC has been found before
 									//&& must have the format DDMM
 									if ( (! hasTDRC) && (id3Text.length() == 4) ) {
-										newDateTime.day = SXMPUtils::ConvertToInt (id3Text.substr(0,2));
-										newDateTime.month = SXMPUtils::ConvertToInt ( id3Text.substr(2,2));
+										newDateTime.day = (XMP_Int32)SXMPUtils::ConvertToInt (id3Text.substr(0,2));
+										newDateTime.month = (XMP_Int32)SXMPUtils::ConvertToInt ( id3Text.substr(2,2));
 										newDateTime.hasDate = true;
 									}
 								} catch ( ... ) {
@@ -410,8 +409,8 @@ void MP3_MetaHandler::ProcessXMP()
 									// only if no TDRC has been found before
 									// && must have the format HHMM
 									if ( (! hasTDRC) && (id3Text.length() == 4) ) {
-										newDateTime.hour = SXMPUtils::ConvertToInt (id3Text.substr(0,2));
-										newDateTime.minute = SXMPUtils::ConvertToInt ( id3Text.substr(2,2));
+										newDateTime.hour = (XMP_Int32)SXMPUtils::ConvertToInt (id3Text.substr(0,2));
+										newDateTime.minute = (XMP_Int32)SXMPUtils::ConvertToInt ( id3Text.substr(2,2));
 										newDateTime.hasTime = true;
 									}
 								} catch ( ... ) {
@@ -506,7 +505,8 @@ void MP3_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 		XMP_Uns32 logicalID = GetUns32BE ( reconProps[r].mainID );
 		XMP_Uns32 storedID = logicalID;
-		if ( this->majorVersion == 2 ) storedID = GetUns32BE ( reconProps[r].v22ID );
+		if ( this->majorVersion == 2 && reconProps[r].v22ID != NULL  && *(reconProps[r].v22ID) != '\0') //handling "" value of v22ID)
+			storedID = GetUns32BE ( reconProps[r].v22ID );
 
 		ID3v2Frame* frame = framesMap[ storedID ];	// the actual frame (if already existing)
 

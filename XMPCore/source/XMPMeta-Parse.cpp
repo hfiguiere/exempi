@@ -1,15 +1,20 @@
 // =================================================================================================
-// Copyright 2003 Adobe Systems Incorporated
+// Copyright 2003 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 //
 // Adobe patent application tracking #P435, entitled 'Unique markers to simplify embedding data of
 // one format in a file with a different format', inventors: Sean Parent, Greg Gilley.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include!
+
+#if XMP_DebugBuild
+	#include <iostream>
+#endif
+
 #include "XMPCore/source/XMPCore_Impl.hpp"
 
 #include "XMPCore/source/XMPMeta.hpp"
@@ -20,10 +25,6 @@
 #include "source/ExpatAdapter.hpp"
 #define  STATIC_SAFE_API
 #include "source/SafeStringAPIs.h"
-
-#if XMP_DebugBuild
-	#include <iostream>
-#endif
 
 using namespace std;
 

@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -19,7 +19,7 @@
 
 namespace TimeConversionUtils {
 
-	void DropFrameToHMSF(
+	static void DropFrameToHMSF(
 		XMP_Int64 inFrames,
 		XMP_Int64 inTimecodeFPS,
 		XMP_Uns32& outHours,
@@ -68,7 +68,7 @@ namespace TimeConversionUtils {
 		outFrames = static_cast<XMP_Int32>(framesLeft % framesPerSecond);
 	}
 
-	bool ConvertSamplesToTimecode(
+	static bool ConvertSamplesToTimecode(
 		std::string &					outTimecode,
 		XMP_Int64						inSamples,
 		XMP_Uns64						inSampleRate,
@@ -308,7 +308,7 @@ namespace TimeConversionUtils {
 		return result;
 	}
 
-	bool StringToNumber(
+	static bool StringToNumber(
 		XMP_Int32 &			outNumber,
 		const std::string & inString )
 	{
@@ -327,7 +327,7 @@ namespace TimeConversionUtils {
 		return numberFound;
 	}
 
-	void ParseTimeCodeString(
+	static void ParseTimeCodeString(
 		const std::string &		inTimecode, 
 		XMP_Int32 &				outHours,
 		XMP_Int32 &				outMinutes,
@@ -475,7 +475,7 @@ namespace TimeConversionUtils {
 		outFrames = m1;
 	}
 
-	bool ConvertTimecodeToSamples(
+	static bool ConvertTimecodeToSamples(
 		XMP_Int64 &						outSamples,
 		const std::string &				inTimecode,
 		XMP_Uns64						inSampleRate,

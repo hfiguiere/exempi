@@ -2,12 +2,12 @@
 #define TWrapperFunctions2_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2015 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2015 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 //! \cond XMP_INTERNAL_DOCUMENTATION
@@ -547,6 +547,16 @@ namespace AdobeXMPCommon {
 		internalReturnType returnValue = ( ptr->*Func )( v1, v2, v3, v4, v5, v6, error );
 		if ( error ) throw IError::MakeShared( error );
 		return sharedPointerType::MakeShared( returnValue );
+	}
+
+	template < typename className , typename internalReturnType , typename sharedPointerType , typename t1 , typename t2 , typename t3 , typename t4 , typename t5 , typename t6 , typename t7 , typename t8 >
+	shared_ptr< sharedPointerType > CallConstSafeFunctionReturningPointer ( const className * const ptr ,
+		internalReturnType ( APICALL className::*Func )(t1 , t2 , t3 , t4 , t5 , t6 , t7, t8 , pcIError_base &) const , t1 v1 , t2 v2 , t3 v3 , t4 v4 , t5 v5 , t6 v6 , t7 v7 , t8 v8 )
+	{
+		pcIError_base error ( NULL );
+		internalReturnType returnValue = (ptr->*Func)(v1 , v2 , v3 , v4 , v5 , v6 , v7 , v8 , error);
+		if ( error ) throw IError::MakeShared ( error );
+		return sharedPointerType::MakeShared ( returnValue );
 	}
 }
 //! \endcond

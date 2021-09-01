@@ -9,7 +9,12 @@
   
 # ==============================================================================
 # define minimum cmake version
-cmake_minimum_required(VERSION 3.5.2)
+# For Android always build with make 3.6
+if(ANDROID)
+	cmake_minimum_required(VERSION 3.5.2)
+else(ANDROID)
+	cmake_minimum_required(VERSION 3.15.5)
+endif(ANDROID)
 
 
 # Enable folder grouping of projects in IDEs
@@ -91,4 +96,7 @@ message (STATUS " ${XMP_GLOBALS}")
 message (STATUS " Compiler: ")
 message (STATUS " CC=${CMAKE_C_COMPILER}")
 message (STATUS " CXX=${CMAKE_CXX_COMPILER}")
+
+#disable cmake warning "Manually-specified variables were not used by the project"
+set(ignore "${CMAKE_CL_64}${CMAKE_BUILD_TYPE}${XMP_CMAKEFOLDER_NAME}${CMAKE_TOOLCHAIN_FILE}${CMAKE_LIBCPP}${XMP_BUILD_WARNING_AS_ERROR}") 
 message (STATUS "===========================================================================")

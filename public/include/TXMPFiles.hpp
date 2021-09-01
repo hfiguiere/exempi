@@ -6,12 +6,12 @@
 #endif
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2002 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2002 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 // =================================================================================================
@@ -207,7 +207,6 @@ public:
     ///   \li \c #kXMPFiles_OpenUsePacketScanning
     ///   \li \c #kXMPFiles_OpenLimitedScanning
     ///
-    /// @return The new \c TXMPFiles object.
 
     TXMPFiles ( XMP_StringPtr  filePath,
                 XMP_FileFormat format = kXMP_UnknownFile,
@@ -231,7 +230,6 @@ public:
     ///
     /// @param original The existing \c TXMPFiles object to copy.
     ///
-    /// @return The new \c TXMPFiles object.
 
     TXMPFiles ( const TXMPFiles<tStringObj> & original );
 
@@ -254,7 +252,7 @@ public:
     /// @param xmpFilesObj The underlying reference object, obtained from some other XMP object
     /// with \c TXMPFiles::GetInternalRef().
     ///
-    /// @return The new object.
+
 
     TXMPFiles ( XMPFilesRef xmpFilesObj );
 
@@ -541,7 +539,8 @@ public:
     ///
     /// If the file is opened for update (passing \c #kXMPFiles_OpenForUpdate), the disk file remains
     /// open until \c CloseFile() is called. The disk file is only updated once, when \c CloseFile()
-    /// is called, regardless of how many calls are made to \c PutXMP().
+    /// is called, regardless of how many calls are made to \c PutXMP(). When in-place update is not possible
+    /// we might write into a temporary file and then swap for corruption/crash safety. /* Documenatation update for CTECHXMP-4170278*/
     ///
     /// @param closeFlags Option flags for optional closing actions. This bit-flag constant is
     /// defined:

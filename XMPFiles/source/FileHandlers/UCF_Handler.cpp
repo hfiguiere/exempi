@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2007 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2007 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // ===============================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -131,6 +131,8 @@ bool UCF_CheckFormat (  XMP_FileFormat format,
 		XMP_LitMatch( mimetype, "application/vnd.adobe.collage"    ) ||  //Adobe Collage
 		XMP_LitMatch( mimetype, "application/vnd.adobe.ideas"      ) ||  //Adobe Ideas
 		XMP_LitMatch( mimetype, "application/vnd.adobe.proto"      ) ||  //Adobe Proto
+		XMP_LitMatch( mimetype, "application/vnd.adobe.sparkler.project+dcxucf"      ) ||  //Adobe DCX
+		XMP_LitMatch( mimetype, "3d/vnd.adobe.dn+dcxucf"      ) ||  //Adobe Dimensions
 		false ) // "sentinel"
 
 		// *** ==> unknown are also treated as not acceptable
@@ -486,6 +488,9 @@ void UCF_MetaHandler::CacheFileData()
 					}
 
 					have = CHUNK - strm.avail_out;
+					if ((bytesWritten + have) > sizeUncompressed){
+						XMP_Throw("UCF Bad XMP block", kXMPErr_BadBlockFormat);
+					}
 					memcpy( (unsigned char*) packetStr + bytesWritten , out , have );
 					bytesWritten += have;
 
@@ -547,7 +552,6 @@ void UCF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 	uncomprPacketLen = (XMP_StringLen) xmpPacket.size();
 	finalPacketStr = uncomprPacketStr;		// will be overriden if compressedXMP==true
 	finalPacketLen = uncomprPacketLen;
-	std::string compressedPacket;	// moot if non-compressed, still here for scope reasons (having to keep a .c_str() alive)
 
 	if ( !x ) // if new XMP...
 	{
@@ -584,6 +588,9 @@ void UCF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 		unsigned int have;
 		z_stream strm;
 		unsigned char out[CHUNK];
+		/* initilalisation for fix to CTECHXMP-4170441*/
+		strm.total_out = 0;
+		strm.total_in = 0;
 
 		/* allocate deflate state */
 		strm.zalloc = Z_NULL; strm.zfree = Z_NULL; strm.opaque = Z_NULL;
@@ -621,7 +628,7 @@ void UCF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// CRC (always of uncompressed data)
-	XMP_Uns32 crc = crc32( 0 , (Bytef*)uncomprPacketStr, uncomprPacketLen );
+	XMP_Uns32 crc = (XMP_Uns32)crc32( 0 , (Bytef*)uncomprPacketStr, uncomprPacketLen );
 	PutUns32LE( crc, &xmpFileHeader.fields[FileHeader::o_crc32] );
 
 	////////////////////////////////////////////////////////////////////////////////////////////////

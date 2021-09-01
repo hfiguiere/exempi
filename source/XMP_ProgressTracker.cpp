@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2012 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2012 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -131,7 +131,7 @@ void XMP_ProgressTracker::NotifyClient ( bool isStartStop )
 		float totalTime = 0.0;
 		if ( this->workDone > 0.0 ) {
 			fractionDone = 1.0;	// This is the stop call.
-			totalTime = PerfUtils::GetElapsedSeconds ( this->startTime, PerfUtils::NoteThisMoment() );
+			totalTime = (float)PerfUtils::GetElapsedSeconds ( this->startTime, PerfUtils::NoteThisMoment() );
 		}
 		ok = (*this->cbInfo.wrapperProc ) ( this->cbInfo.clientProc, this->cbInfo.context,
 											totalTime, fractionDone, 0.0 );
@@ -139,15 +139,15 @@ void XMP_ProgressTracker::NotifyClient ( bool isStartStop )
 	} else {
 
 		PerfUtils::MomentValue currentTime = PerfUtils::NoteThisMoment();
-		float elapsedTime = PerfUtils::GetElapsedSeconds ( this->prevTime, currentTime );
+		float elapsedTime =(float) PerfUtils::GetElapsedSeconds ( this->prevTime, currentTime );
 		if ( elapsedTime < this->cbInfo.interval ) return;
 
 		float remainingTime = 0.0;
 		if ( (this->totalWork > 0.0) && (this->workDone > 0.0) ) {
 			fractionDone = this->workDone / this->totalWork;
 			if ( fractionDone > 1.0 ) fractionDone = 1.0;
-			elapsedTime = PerfUtils::GetElapsedSeconds ( this->startTime, currentTime );
-			remainingTime = (elapsedTime / fractionDone) * (1.0 - fractionDone);
+			elapsedTime =(float) PerfUtils::GetElapsedSeconds ( this->startTime, currentTime );
+			remainingTime = (float)((elapsedTime / fractionDone) * (1.0F - fractionDone));
 		}
 
 		this->prevTime = currentTime;

@@ -14,17 +14,17 @@ if [ "$unamestr" == 'Linux' ]; then
 	    is_makefile='ON'
 	    cmake_generator='Unix Makefiles'
 	    compiler='gcc'
-	    PATH=$PATH:$XMPROOT/tools/cmake/bin
+		PATH=$XMPROOT/tools/cmake/bin:$PATH
 elif [ "$unamestr" == 'Darwin' ]; then
 	    is_makefile='OFF'
 	    cmake_generator='Xcode'
 	    compiler='xcode'
-	    PATH=$PATH:$XMPROOT/tools/cmake/bin/CMake.app/Contents/bin
+		PATH=$XMPROOT/tools/cmake/bin/CMake.app/Contents/bin:$PATH
 else
 	    is_makefile='ON'
 	    cmake_generator='Unix Makefiles'
 	    compiler='gcc'
-	    PATH=$PATH:$XMPROOT/tools/cmake/bin/
+		PATH=$PATH:$XMPROOT/tools/cmake/bin/:$PATH
 fi
 
 
@@ -48,6 +48,7 @@ cmake_buildmode="Release"
 cmake_buildtype="dynamic"
 cmake_build_static="Off"
 clean_cmakedir="Off"
+cmake_libcpp="Off"
 
 while [ "$1" != "" ]
 do
@@ -61,6 +62,9 @@ elif [ "$1" == "Static" ]; then
     cmake_buildtype="static"
 elif [ "$1" == "Debug" ]; then
     cmake_buildmode="Debug"
+elif [ "$1" == "libcpp" ]; then
+	cmake_libcpp="On"
+	cmake_modesubdir="$cmake_modesubdir"_libcpp
 elif [ "$1" == "WarningAsError" ]; then
         cmake_build_warning_as_error="On"
 elif [ "$1" == "Clean" ]; then
@@ -86,6 +90,7 @@ echo "cmake_buildtype=$cmake_buildtype"
 echo "cmake_buildmode=$cmake_buildmode"
 echo "cmake_build_static=$cmake_build_static"
 echo "clean_cmakedir=$clean_cmakedir"
+echo "cmake_libcpp=$cmake_libcpp"
 # make build dir
 if [ "$is_makefile" == "ON" ]; then
 	cmakedir="$compiler/$cmake_buildtype/i80386linux$cmake_modesubdir/$cmake_buildmode"
@@ -108,10 +113,10 @@ cd "$cmakedir"
 if [ "$TOOLCHAIN" != "" ]; then
 	echo "Using toolchain $TOOLCHAIN"
 	# generate projects with toolchain file
-	cmake $cmakeconfigdir -G"$cmake_generator" -DCMAKE_CL_64="$cmake_buildbitdepth" -DCMAKE_BUILD_TYPE="$cmake_buildmode" -DXMP_CMAKEFOLDER_NAME="$cmakedir" -DXMP_BUILD_STATIC="$cmake_build_static" -DCMAKE_TOOLCHAIN_FILE="$XMPROOT/build/shared/$TOOLCHAIN" 
+	cmake $cmakeconfigdir -G"$cmake_generator" -DCMAKE_CL_64="$cmake_buildbitdepth" -DCMAKE_BUILD_TYPE="$cmake_buildmode" -DXMP_CMAKEFOLDER_NAME="$cmakedir" -DXMP_BUILD_STATIC="$cmake_build_static" -DCMAKE_TOOLCHAIN_FILE="$XMPROOT/build/shared/$TOOLCHAIN" -DCMAKE_LIBCPP="$cmake_libcpp" -Wno-dev
 else
 	# generate projects for  build
-	cmake $cmakeconfigdir -G"$cmake_generator" -DCMAKE_CL_64="$cmake_buildbitdepth" -DCMAKE_BUILD_TYPE="$cmake_buildmode" -DXMP_CMAKEFOLDER_NAME="$cmakedir" -DXMP_BUILD_STATIC="$cmake_build_static"
+	cmake $cmakeconfigdir -G"$cmake_generator" -DCMAKE_CL_64="$cmake_buildbitdepth" -DCMAKE_BUILD_TYPE="$cmake_buildmode" -DXMP_CMAKEFOLDER_NAME="$cmakedir" -DXMP_BUILD_STATIC="$cmake_build_static" -DCMAKE_LIBCPP="$cmake_libcpp" -Wno-dev
 fi
 
 if [ $? -ne 0 ]; then

@@ -17,13 +17,13 @@
 	#include <cstdio>
 
 	//sanity check platform/endianess
-	#if !defined(WIN_ENV) && !defined(MAC_ENV) && !defined(UNIX_ENV) && !defined(IOS_ENV)
-		#error "XMP environment error - must define one of MAC_ENV, WIN_ENV, UNIX_ENV or IOS_ENV"
+	#if !defined(WIN_ENV) && !defined(MAC_ENV) && !defined(UNIX_ENV) && !defined(IOS_ENV) && !defined(ANDROID_ENV)
+		#error "XMP environment error - must define one of MAC_ENV, WIN_ENV, UNIX_ENV or IOS_ENV or ANDROID_ENV"
 	#endif
 
 	#ifdef WIN_ENV
 		#define XMPQE_LITTLE_ENDIAN 1
-	#elif (defined(MAC_ENV) || defined(IOS_ENV))
+	#elif (defined(MAC_ENV) || defined(IOS_ENV)) || defined(ANDROID_ENV)
 		#if __BIG_ENDIAN__
 			#define XMPQE_BIG_ENDIAN 1
 		#elif __LITTLE_ENDIAN__
@@ -39,10 +39,12 @@
 			#define XMPQE_BIG_ENDIAN 0
 		#endif
 	#else
-		#error "Unknown build environment, neither WIN_ENV nor MAC_ENV nor UNIX_ENV"
+		#error "Unknown build environment, neither WIN_ENV nor MAC_ENV nor UNIX_ENV nor ANDROID_ENV"
 	#endif
 
 	const static unsigned int XMPQE_BUFFERSIZE=4096; //should do for all my buffer output, but you never now (stdarg dilemma)
+
+
 
 	const char OMNI_CSTRING[]={0x41,0xE4,0xB8,0x80,0x42,0xE4,0xBA,0x8C,0x43,0xC3,0x96,0x44,0xF0,0x90,0x81,0x91,0x45,'\0'};
 	const char BOM_CSTRING[]={0xEF,0xBB,0xBF,'\0'}; // nb: forgetting the '\0' is a very evil mistake.

@@ -2,12 +2,12 @@
 #define MetadataImpl_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #if !(IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED)
@@ -53,7 +53,8 @@ namespace AdobeXMPCore_Int {
 		virtual spIMetadata APICALL ConvertToMetadata();
 		virtual void APICALL EnableFeature( const char * key, sizet keyLength ) const __NOTHROW__;
 		virtual void APICALL DisableFeature( const char * key, sizet keyLength ) const __NOTHROW__;
-
+        using IMetadata_I::GetNode;
+        using IMetadata_I::RemoveNode;
 		virtual spINode APICALL GetNode( const spcIUTF8String & nameSpace, const spcIUTF8String & name );
 		virtual spINode APICALL RemoveNode( const spcIUTF8String & nameSpace, const spcIUTF8String & name );
 		virtual void APICALL InsertNode( const spINode & node );

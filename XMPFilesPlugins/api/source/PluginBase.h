@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2011 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2011 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 /**************************************************************************
@@ -69,8 +69,11 @@ public:
 
 	PluginBase( const std::string& filePath, XMP_Uns32 openFlags, XMP_Uns32 format = 0, XMP_Uns32 handlerFlags = 0 ) 
 		: mPath( filePath ),mHandlerFlags(handlerFlags), mOpenFlags( openFlags ), mFormat( format ), mErrorCallback()	{}
-	virtual ~PluginBase(){};
-
+#if WIN_ENV
+	virtual ~PluginBase() NO_EXCEPT_FALSE {}
+#else
+	virtual ~PluginBase() {}
+#endif
 	/** @brief Delegator functions which will eventually call the corresponding virtual function.
 	 */
 	void cacheFileData( XMP_IORef fileRef, XMP_StringPtr* xmpStr );

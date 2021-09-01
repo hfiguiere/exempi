@@ -2,11 +2,11 @@
 #define __XMLParserAdapter_hpp__
 
 // =================================================================================================
-// Copyright 2005 Adobe Systems Incorporated
+// Copyright 2005 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! Must be the first #include!

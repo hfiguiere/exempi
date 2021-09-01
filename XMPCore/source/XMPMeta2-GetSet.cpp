@@ -1,9 +1,9 @@
 // =================================================================================================
-// Copyright 2003 Adobe Systems Incorporated
+// Copyright 2003 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 //
 // Adobe patent application tracking #P435, entitled 'Unique markers to simplify embedding data of
 // one format in a file with a different format', inventors: Sean Parent, Greg Gilley.
@@ -13,6 +13,9 @@
 #include "XMPCore/XMPCoreDefines.h"
 #if ENABLE_CPP_DOM_MODEL
 #include "public/include/XMP_Environment.h"	// ! This must be the first include!
+#if XMP_DebugBuild
+	#include <iostream>
+#endif
 #include "XMPCore/source/XMPCore_Impl.hpp"
 
 
@@ -39,12 +42,6 @@
 #include "XMPCore/Interfaces/IDOMParser_I.h"
 #include "XMPCore/Interfaces/IDOMSerializer_I.h"
 #include "XMPCore/Interfaces/ICoreConfigurationManager.h"
-
-
-
-#if XMP_DebugBuild
-	#include <iostream>
-#endif
 
 using namespace std;
 
@@ -85,9 +82,7 @@ const XMP_VarString xmlNameSpace  = "http://www.w3.org/XML/1998/namespace";
 // =================================================================================================
 // Local Utilities
 // ===============
-extern void SplitNameAndValue ( const XMP_VarString & selStep, XMP_VarString * nameStr, XMP_VarString * valueStr );
 
-extern void DumpNodeOptions	( XMP_OptionBits	 options,XMP_TextOutputProc outProc,void *refCon );
 using namespace AdobeXMPCore_Int;
 using namespace AdobeXMPCommon_Int;
 
@@ -148,7 +143,7 @@ XMPMeta2::XMPMeta2()
 	spParser = spRegistry->GetParser( "rdf" );
 }
 
-XMPMeta2::~XMPMeta2()
+XMPMeta2::~XMPMeta2() RELEASE_NO_THROW
 {
 
 }
@@ -405,8 +400,8 @@ void XMPMeta2::SerializeToBuffer ( XMP_VarString * rdfString,
 						XMP_StringPtr	indent,
 						XMP_Index		baseIndent ) const
 {
-	auto spRegistry = IDOMImplementationRegistry::GetDOMImplementationRegistry();
-	auto rdfSerializer = spRegistry->GetSerializer( "rdf" );
+	auto registry = IDOMImplementationRegistry::GetDOMImplementationRegistry();
+	auto rdfSerializer = registry->GetSerializer( "rdf" );
 	auto str = rdfSerializer->GetIDOMSerializer_I()->SerializeInternal( mDOM, options, padding, newline, indent, baseIndent);
 	rdfString->clear();
 	if (str)

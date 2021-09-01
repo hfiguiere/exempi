@@ -1,15 +1,23 @@
 // =================================================================================================
-// Copyright 2003 Adobe Systems Incorporated
+// Copyright 2003 Adobe
 // All Rights Reserved.
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 //
 // Adobe patent application tracking #P435, entitled 'Unique markers to simplify embedding data of
 // one format in a file with a different format', inventors: Sean Parent, Greg Gilley.
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include!
+
+#include <algorithm>	// For sort and stable_sort.
+#include <cstdio>		// For snprintf.
+
+#if XMP_DebugBuild
+	#include <iostream>
+#endif
+
 #include "XMPCore/source/XMPCore_Impl.hpp"
 
 #include "XMPCore/source/XMPMeta.hpp"
@@ -29,14 +37,6 @@
 	#include "XMPCommon/ImplHeaders/SharedObjectImpl.h"
 	#include "XMPCore/Interfaces/ICoreObjectFactory_I.h"
 	#include "XMPCore/Interfaces/IDOMImplementationRegistry_I.h"
-#endif
-
-
-#include <algorithm>	// For sort and stable_sort.
-#include <cstdio>		// For snprintf.
-
-#if XMP_DebugBuild
-	#include <iostream>
 #endif
 
 using namespace std;

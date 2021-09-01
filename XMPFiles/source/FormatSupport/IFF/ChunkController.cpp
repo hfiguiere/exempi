@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2010 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2010 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! XMP_Environment.h must be the first included header.
@@ -48,7 +48,7 @@ ChunkController::ChunkController( IChunkBehavior* chunkBehavior, XMP_Bool bigEnd
 	mChunkBehavior->setMovablePaths( &mChunkPaths );
 }
 
-ChunkController::~ChunkController() noexcept(false)
+ChunkController::~ChunkController() NO_EXCEPT_FALSE
 {
 	XMP_Validate( mRoot != NULL, "ERROR inserting Chunk. mRoot is NULL.", kXMPErr_InternalFailure );
 	XMP_Assert(dynamic_cast<Chunk*>(mRoot) == static_cast<Chunk*>(mRoot));
@@ -195,20 +195,40 @@ void ChunkController::parseChunks( XMP_IO* stream, ChunkPath& currentPath, XMP_O
 			//
 			// check size if value exceeds 4GB border
 			//
-			if( chunk->getSize() >= 0x00000000FFFFFFFFLL )
+			if(chunk->getSize() >= kMaxRIFFChunkSize || chunk->getID() == kChunk_RF64)
 			{
 				// remember file position
 				XMP_Int64 currentFilePos = stream->Offset();
-
-				// ask for the "real" size value
-				XMP_Uns64 realSize = mChunkBehavior->getRealSize( chunk->getSize(), 
+				
+				if(chunk->getID() == kChunk_RF64)
+				{
+					// get riff size present in ds64 , parse ds64 as it a mandatory chunk
+					XMP_Uns64 ds64RF64Size = mChunkBehavior->getRealSize( kMaxRIFFChunkSize,
+																		 chunk->getIdentifier(),
+																		 *mRoot, stream );
+					
+					if(chunk->getSize() >= kMaxRIFFChunkSize ||
+					   ((mFileSize - Chunk::HEADER_SIZE) >= kMaxRIFFChunkSize &&
+						(mFileSize - Chunk::HEADER_SIZE) == ds64RF64Size))
+					{
+						// to provide backward compatibilty, we read size from ds64 block when
+						// file size is greater than 4GB, set new size of rf64 chunk
+						chunk->setSize( ds64RF64Size, true );
+					}
+				}
+				
+				else
+				{
+					// ask for the "real" size value
+					XMP_Uns64 realSize = mChunkBehavior->getRealSize( chunk->getSize(),
 																  chunk->getIdentifier(),
 																  *mRoot,
 																  stream );
-
-				// set new size at chunk
-				chunk->setSize( realSize, true );
-
+					
+					// set new size at chunk
+					chunk->setSize( realSize, true );
+				}
+				
 				// set flag if the file position changed
 				chunkJump = currentFilePos < stream->Offset();
 			}

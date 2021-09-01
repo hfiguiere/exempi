@@ -2,20 +2,20 @@
 #define __EndianUtils_hpp__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2006 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include.
 #include "public/include/XMP_Const.h"
 
-#if SUNOS_SPARC || SUNOS || XMP_IOS_ARM
+#if SUNOS_SPARC || SUNOS || XMP_IOS_ARM || XMP_ANDROID_ARM
 #include "string.h"
-#endif //SUNOS_SPARC || SUNOS || XMP_IOS_ARM
+#endif //SUNOS_SPARC || SUNOS || XMP_IOS_ARM || XMP_ANDROID_ARM
 
 // *** These should be in a more common location. The Unicode conversions of XMPCore have similar utils. 
 // *** May want to improve with PowerPC swapping load/store, or SSE instructions.
@@ -34,8 +34,30 @@
 	#else
 		#error "Neither __BIG_ENDIAN__ nor __LITTLE_ENDIAN__ is set"
 	#endif
+#elif XMP_AndroidBuild
+    #if __BIG_ENDIAN__
+        #define kBigEndianHost 1
+    #elif __LITTLE_ENDIAN__
+        #define kBigEndianHost 0
+    #else
+        #error "Neither __BIG_ENDIAN__ nor __LITTLE_ENDIAN__ is set"
+    #endif
 #elif XMP_UNIXBuild
+// Use this endian check that is more reliable as it takes into account
+// Non Intel or Sparc.
 	#include "public/include/XMP_UnixEndian.h"
+        /*
+	 #ifndef kBigEndianHost	// Typically in the makefile for generic UNIX.
+		#if __GNUC__ && (__i386__ || __x86_64__)
+			#define kBigEndianHost 0
+		#elif __GNUC__ && (__sparc__)
+			#define kBigEndianHost 1
+			#define kLittleEndianHost 0
+		#else
+			#error "Must define kBigEndianHost as 0 or 1 in the makefile."
+		#endif
+	#endif
+        */
 #else
 	#error "Unknown build environment"
 #endif
@@ -62,7 +84,7 @@ typedef void (*PutDouble_Proc) ( double value, void* addr );
 
 // =================================================================================================
 
-#if SUNOS_SPARC || SUNOS || XMP_IOS_ARM
+#if SUNOS_SPARC || SUNOS || XMP_IOS_ARM || XMP_ANDROID_ARM
 	#define DefineAndGetValue(type,addr)	type value = 0; memcpy ( &value, addr, sizeof(type) )
 	#define DefineAndSetValue(type,addr)	memcpy(addr, &value, sizeof(type))
 	#define DefineFlipAndSet(type,x,addr)	type temp; memcpy(&temp, addr, sizeof(type)); temp = Flip##x(temp); memcpy(addr, &temp, sizeof(type))
@@ -70,7 +92,7 @@ typedef void (*PutDouble_Proc) ( double value, void* addr );
 	#define DefineAndGetValue(type,addr)	type value = *((type*)addr)
 	#define DefineAndSetValue(type,addr)	*((type*)addr) = value
 	#define DefineFlipAndSet(type,x,addr)	type* uPtr = (type*) addr; *uPtr = Flip##x ( *uPtr )
-#endif //#if SUNOS_SPARC || SUNOS || XMP_IOS_ARM
+#endif //#if SUNOS_SPARC || SUNOS || XMP_IOS_ARM || XMP_ANDROID_ARM
 
 // -------------------------------------------------------------------------------------------------
 

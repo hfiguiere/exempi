@@ -141,7 +141,7 @@ fi
 
 #generate the make file
 echo "PWD is $PWD, CMAKE LOCATION IS $CMAKE, dir is $DIR"
-if ! ("$CMAKE" -DCMAKE_CL_64=$bit64 -DSTATIC=$static -G "Xcode" -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN"  ../../cmake)
+if ! ("$CMAKE" -DCMAKE_CL_64=$bit64 -DSTATIC=$static -G "Xcode" -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" -DCMAKE_LIBCPP="On" ../../cmake)
 then
 echo "ERROR: CMAKE tool failed"
 exit 1

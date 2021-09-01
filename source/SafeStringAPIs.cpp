@@ -1,20 +1,10 @@
-/*************************************************************************
-*
-* ADOBE CONFIDENTIAL
-* ___________________
-*
-*  Copyright 2010 Adobe Systems Incorporated
-*  All Rights Reserved.
-*
-* NOTICE:  All information contained herein is, and remains
-* the property of Adobe Systems Incorporated and its suppliers,
-* if any.  The intellectual and technical concepts contained
-* herein are proprietary to Adobe Systems Incorporated and its
-* suppliers and are protected by trade secret or copyright law.
-* Dissemination of this information or reproduction of this material
-* is strictly forbidden unless prior written permission is obtained
-* from Adobe Systems Incorporated.
-**************************************************************************/
+// =================================================================================================
+// Copyright 2020 Adobe
+// All Rights Reserved.
+// NOTICE: Adobe permits you to use, modify, and distribute this file in
+// accordance with the terms of the Adobe license agreement accompanying
+// it.  
+// =================================================================================================
 
 #include <stddef.h>	/* Include standard ANSI C stuff: size_t, NULL etc */
 #include <string.h> /* memmove etc. defined here */
@@ -315,7 +305,7 @@ CONDITIONAL_STATIC SafeInt32 vsnprintf_safe(char *buffer, size_t size, size_t co
 			*buffer = '\0';
 			return 0;
 		}
-		SafeInt32 n = (count + 1) < size ? (count + 1) : size; //MIN(count+1, size);
+		SafeInt32 n = (SafeInt32)((count + 1) < size ? (count + 1) : size); //MIN(count+1, size);
 		SafeInt32 numBytes = vsnprintf(buffer, n, format, argp);
 		if(numBytes >= static_cast<SafeInt32>(size) && count >= size)
 		{

@@ -2,12 +2,12 @@
 #define IErrorNotifier_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "XMPCommon/XMPCommonFwdDeclarations.h"
@@ -34,6 +34,7 @@ namespace AdobeXMPCommon {
 		//! \return A value of bool type that will indicate the future course of action.
 		//!
 		virtual bool APICALL Notify( const spcIError & error ) = 0;
+        virtual ~IErrorNotifier_v1() {}
 
 	protected:
 		//! \cond XMP_INTERNAL_DOCUMENTATION

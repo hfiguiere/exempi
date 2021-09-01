@@ -2,12 +2,12 @@
 #define StructureNodeImpl_h__ 1
 
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2014 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2014 Adobe
 // All Rights Reserved
 //
 // NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #if !(IMPLEMENTATION_HEADERS_CAN_BE_INCLUDED)
@@ -46,7 +46,7 @@ namespace AdobeXMPCore_Int {
 			bool operator()( const QualifiedName & key1, const QualifiedName & key2 ) const;
 		};
 
-		typedef std::map< QualifiedName, spINode, CompareQualifiedName, TAllocator< spINode > > QualifiedNameNodeMap;
+		typedef std::map< QualifiedName, spINode, CompareQualifiedName, TAllocator< std::pair<const QualifiedName, spINode > > > QualifiedNameNodeMap;
 		
 		StructureNodeImpl( const char * nameSpace, sizet nameSpaceLength, const char * name, sizet nameLength );
 		using IStructureNode_I::GetNode;

@@ -1,10 +1,10 @@
 // =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
+// Copyright Adobe
+// Copyright 2006 Adobe
 // All Rights Reserved
 //
 // NOTICE: Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
+// of the Adobe license agreement accompanying it. 
 // =================================================================================================
 
 #include "public/include/XMP_Environment.h"	// ! This must be the first include.
@@ -235,9 +235,7 @@ void TIFF_MetaHandler::ProcessXMP()
 			// zero padding for the IPTC digest. If the full digest differs, recheck without the padding.
 
 			iptcDigestState = PhotoDataUtils::CheckIPTCDigest ( iptcInfo.dataPtr, iptcInfo.dataLen, digestInfo.dataPtr );
-			// See bug https://bugs.freedesktop.org/show_bug.cgi?id=105205
-			// if iptcInfo.dataLen is 0, then there is no digest.
-			if ( (iptcDigestState == kDigestDiffers) && (kTIFF_TypeSizes[iptcInfo.type] > 1) && iptcInfo.dataLen > 0 ) {
+			if ( (iptcDigestState == kDigestDiffers) && (kTIFF_TypeSizes[iptcInfo.type] > 1) && iptcInfo.dataLen > 0) {
 				XMP_Uns8 * endPtr = (XMP_Uns8*)iptcInfo.dataPtr + iptcInfo.dataLen - 1;
 				XMP_Uns8 * minPtr = endPtr - kTIFF_TypeSizes[iptcInfo.type] + 1;
 				while ( (endPtr >= minPtr) && (*endPtr == 0) ) --endPtr;
@@ -363,10 +361,10 @@ void TIFF_MetaHandler::UpdateFile ( bool doSafeUpdate )
 
 		if ( progressTracker != 0 ) {
 			if ( progressTracker->WorkInProgress() ) {
-				progressTracker->AddTotalWork ( this->xmpPacket.size() );
+				progressTracker->AddTotalWork ( (float(this->xmpPacket.size())) );
 			} else {
 				localProgressTracking = true;
-				progressTracker->BeginWork ( this->xmpPacket.size() );
+				progressTracker->BeginWork ( (float(this->xmpPacket.size())) );
 			}
 		}
 
