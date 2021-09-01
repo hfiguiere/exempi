@@ -144,13 +144,13 @@ void XMP_ReadWriteLock::Release()
 		// until the condition is signaled. When the call returns, the mutex is locked again.
 
 		#define InitializeBasicMutex(mutex)	{ int err = pthread_mutex_init ( &mutex, 0 ); XMP_Enforce ( err == 0 ); }
-		#define TerminateBasicMutex(mutex)	{ int err = pthread_mutex_destroy ( &mutex ); XMP_Enforce_NoThrow ( err == 0 ); }
+		#define TerminateBasicMutex(mutex)	{ int err = pthread_mutex_destroy ( &mutex ); (void)err; XMP_Enforce_NoThrow ( err == 0 ); }
 
 		#define AcquireBasicMutex(mutex)	{ int err = pthread_mutex_lock ( &mutex ); XMP_Enforce ( err == 0 ); }
 		#define ReleaseBasicMutex(mutex)	{ int err = pthread_mutex_unlock ( &mutex ); XMP_Enforce ( err == 0 ); }
 
 		#define InitializeBasicQueue(queue)	{ int err = pthread_cond_init ( &queue, 0 ); XMP_Enforce ( err == 0 ); }
-		#define TerminateBasicQueue(queue)	{ int err = pthread_cond_destroy ( &queue ); XMP_Enforce_NoThrow ( err == 0 ); }
+		#define TerminateBasicQueue(queue)	{ int err = pthread_cond_destroy ( &queue ); (void)err; XMP_Enforce_NoThrow ( err == 0 ); }
 
 		#define WaitOnBasicQueue(queue,mutex)	{ int err = pthread_cond_wait ( &queue, &mutex ); XMP_Enforce ( err == 0 ); }
 		#define ReleaseOneBasicQueue(queue)		{ int err = pthread_cond_signal ( &queue ); XMP_Enforce ( err == 0 ); }

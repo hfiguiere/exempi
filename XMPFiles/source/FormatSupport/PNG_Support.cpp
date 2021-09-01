@@ -74,10 +74,12 @@ namespace CRC
     }
     
     /* Return the CRC of the bytes buf[0..len-1]. */
+#if 0
     static unsigned long crc(unsigned char *buf, int len)
     {
         return update_crc(0xffffffffL, buf, len) ^ 0xffffffffL;
     }
+#endif
 } // namespace CRC
 
 namespace PNG_Support

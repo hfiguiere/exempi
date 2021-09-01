@@ -80,8 +80,8 @@ void FileHandlerInstance::ProcessXMP()
 	{
 		XMP_StringPtr xmpStr = this->xmpPacket.c_str();
 		XMP_StringPtr oldPacketPtr = NULL;
-		XMP_PacketInfo packetInfo;
-		mHandler->getModule()->getPluginAPIs()->mImportToXMPStringWithPacketProc( this->mObject, &xmpStr, &error, &oldPacketPtr, &packetInfo );
+		XMP_PacketInfo packetInfo_;
+		mHandler->getModule()->getPluginAPIs()->mImportToXMPStringWithPacketProc( this->mObject, &xmpStr, &error, &oldPacketPtr, &packetInfo_ );
 		
 		if( xmpStr != NULL && xmpStr != this->xmpPacket.c_str() )
 		{
@@ -98,7 +98,7 @@ void FileHandlerInstance::ProcessXMP()
 		{
 			this->xmpPacket.resize( strlen( oldPacketPtr ) );
 			this->xmpPacket.assign( oldPacketPtr );
-			this->packetInfo = packetInfo;
+			this->packetInfo = packetInfo_;
 			
 			// Note: Freeing memory would not create any problem as plugin would have allocated memory using Host library function
 			free( ( void * ) oldPacketPtr );

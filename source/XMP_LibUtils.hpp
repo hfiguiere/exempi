@@ -278,7 +278,7 @@ struct ErrorCallbackBox
 	typedef pthread_mutex_t XMP_BasicMutex;
 
 	#define InitializeBasicMutex(mutex)	{ int err = pthread_mutex_init ( &mutex, 0 ); XMP_Enforce ( err == 0 ); }
-	#define TerminateBasicMutex(mutex)	{ int err = pthread_mutex_destroy ( &mutex ); XMP_Enforce_NoThrow ( err == 0 ); }
+	#define TerminateBasicMutex(mutex)	{ int err = pthread_mutex_destroy ( &mutex );  (void)err; XMP_Enforce_NoThrow ( err == 0 ); }
 	#define AcquireBasicMutex(mutex)	{ int err = pthread_mutex_lock ( &mutex ); XMP_Enforce ( err == 0 ); }
 	#define ReleaseBasicMutex(mutex)	{ int err = pthread_mutex_unlock ( &mutex ); XMP_Enforce ( err == 0 ); }
 

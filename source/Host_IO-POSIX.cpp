@@ -40,7 +40,7 @@
 
 // Make sure off_t is 64 bits and signed.
 // Due to bug in NDK r12b size of off_t at 32 bit systems is 32 bit despite giving  _FILE_OFFSET_BITS=64 flag. So only for Android off64_t is used
-static char check_off_t_size [ (sizeof(Host_IO::XMP_off_t) == 8) ? 1 : -1 ];
+// UNUSED -- hub static char check_off_t_size [ (sizeof(Host_IO::XMP_off_t) == 8) ? 1 : -1 ];
 
 // *** No std::numeric_limits?  static char check_off_t_sign [ std::numeric_limits<off_t>::is_signed ? -1 : 1 ];
 

@@ -181,7 +181,7 @@ void RIFF_MetaHandler::ProcessXMP()
 // RIFF_MetaHandler::UpdateFile
 // ===========================
 
-void RIFF_MetaHandler::UpdateFile ( bool doSafeUpdate )
+void RIFF_MetaHandler::UpdateFile ( bool /*doSafeUpdate*/ )
 {
 	XMP_Validate( this->needsUpdate, "nothing to update", kXMPErr_InternalFailure );
 

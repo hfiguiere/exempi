@@ -232,7 +232,7 @@ bool PostScript_MetaHandler::FindFirstPacket()
 
 	XMP_IO* fileRef = this->parent->ioRef;
 	XMP_Int64   fileLen = fileRef->Length();
-	XMP_PacketInfo & packetInfo = this->packetInfo;
+	XMP_PacketInfo & packetInfo_ = this->packetInfo;
 
 	XMPScanner scanner ( fileLen );
 	XMPScanner::SnipInfoVector snips;
@@ -272,12 +272,12 @@ bool PostScript_MetaHandler::FindFirstPacket()
 				if (!firstfound)
 				{
 					if ( snips[i].fLength > 0x7FFFFFFF ) XMP_Throw ( "PostScript_MetaHandler::FindFirstPacket: Oversize packet", kXMPErr_BadXMP );
-					packetInfo.offset = snips[i].fOffset;
-					packetInfo.length = (XMP_Int32)snips[i].fLength;
-					packetInfo.charForm  = snips[i].fCharForm;
-					packetInfo.writeable = (snips[i].fAccess == 'w');
-					firstPacketInfo=packetInfo;
-					lastPacketInfo=packetInfo;
+					packetInfo_.offset = snips[i].fOffset;
+					packetInfo_.length = (XMP_Int32)snips[i].fLength;
+					packetInfo_.charForm  = snips[i].fCharForm;
+					packetInfo_.writeable = (snips[i].fAccess == 'w');
+					firstPacketInfo=packetInfo_;
+					lastPacketInfo=packetInfo_;
 					firstfound=true;
 				}
 				else
@@ -311,7 +311,7 @@ bool PostScript_MetaHandler::FindLastPacket()
 
 	XMP_IO* fileRef = this->parent->ioRef;
 	XMP_Int64   fileLen = fileRef->Length();
-	XMP_PacketInfo & packetInfo = this->packetInfo;
+	XMP_PacketInfo & packetInfo_ = this->packetInfo;
 
 	// ------------------------------------------------------
 	// Scan the entire file to find all of the valid packets.
@@ -354,12 +354,12 @@ bool PostScript_MetaHandler::FindLastPacket()
 			if (!lastfound)
 			{
 				if ( snips[i].fLength > 0x7FFFFFFF ) XMP_Throw ( "PostScript_MetaHandler::FindLastPacket: Oversize packet", kXMPErr_BadXMP );
-				packetInfo.offset = snips[i].fOffset;
-				packetInfo.length = (XMP_Int32)snips[i].fLength;
-				packetInfo.charForm  = snips[i].fCharForm;
-				packetInfo.writeable = (snips[i].fAccess == 'w');
-				firstPacketInfo=packetInfo;
-				lastPacketInfo=packetInfo;
+				packetInfo_.offset = snips[i].fOffset;
+				packetInfo_.length = (XMP_Int32)snips[i].fLength;
+				packetInfo_.charForm  = snips[i].fCharForm;
+				packetInfo_.writeable = (snips[i].fAccess == 'w');
+				firstPacketInfo=packetInfo_;
+				lastPacketInfo=packetInfo_;
 				lastfound=true;
 			}
 			else
@@ -368,7 +368,7 @@ bool PostScript_MetaHandler::FindLastPacket()
 				lastPacketInfo.length = (XMP_Int32)snips[i].fLength;
 				lastPacketInfo.charForm  = snips[i].fCharForm;
 				lastPacketInfo.writeable = (snips[i].fAccess == 'w');
-				packetInfo=lastPacketInfo;
+				packetInfo_=lastPacketInfo;
 			}
 		}
 	}
@@ -962,15 +962,15 @@ void PostScript_MetaHandler::ParsePSFile()
 // =====================================
 //
 // Helper method read the raw xmp into a string from a file
-void PostScript_MetaHandler::ReadXMPPacket (std::string & xmpPacket )
+void PostScript_MetaHandler::ReadXMPPacket (std::string & xmpPacket_ )
 {
 	if ( packetInfo.length == 0 ) XMP_Throw ( "ReadXMPPacket - No XMP packet", kXMPErr_BadXMP );
 
-	xmpPacket.erase();
-	xmpPacket.reserve ( packetInfo.length );
-	xmpPacket.append ( packetInfo.length, ' ' );
+	xmpPacket_.erase();
+	xmpPacket_.reserve ( packetInfo.length );
+	xmpPacket_.append ( packetInfo.length, ' ' );
 
-	XMP_StringPtr packetStr = XMP_StringPtr ( xmpPacket.c_str() );	// Don't set until after reserving the space!
+	XMP_StringPtr packetStr = XMP_StringPtr ( xmpPacket_.c_str() );	// Don't set until after reserving the space!
 
 	this->parent->ioRef->Seek ( packetInfo.offset, kXMP_SeekFromStart );
 	this->parent->ioRef->ReadAll ( (char*)packetStr, packetInfo.length );
@@ -1306,16 +1306,16 @@ void PostScript_MetaHandler::modifyHeader(XMP_IO* fileRef,XMP_Int64 extrabytes,X
 UpdateMethod PostScript_MetaHandler::DetermineUpdateMethod(std::string & outStr)
 {
 	SXMPMeta xmp;
-	std::string &    xmpPacket  = this->xmpPacket;
-	XMP_PacketInfo & packetInfo = this->packetInfo;
-	xmp.ParseFromBuffer( xmpPacket.c_str(), (XMP_Uns32)xmpPacket.length() );
-	if (packetInfo.length>0)
+	std::string &    xmpPacket_  = this->xmpPacket;
+	XMP_PacketInfo & packetInfo_ = this->packetInfo;
+	xmp.ParseFromBuffer( xmpPacket_.c_str(), (XMP_Uns32)xmpPacket_.length() );
+	if (packetInfo_.length>0)
 	{
 		try
 		{
 			//First try to fit the modified XMP data into existing XMP packet length
 			//prefers Inplace
-			xmp.SerializeToBuffer( &outStr, kXMP_ExactPacketLength|kXMP_UseCompactFormat,packetInfo.length);
+			xmp.SerializeToBuffer( &outStr, kXMP_ExactPacketLength|kXMP_UseCompactFormat,packetInfo_.length);
 		}
 		catch(...)
 		{
@@ -1328,11 +1328,11 @@ UpdateMethod PostScript_MetaHandler::DetermineUpdateMethod(std::string & outStr)
 		// this will be the case for Injecting new metadata
 		xmp.SerializeToBuffer( &outStr, kXMP_UseCompactFormat,0);
 	}
-	if ( this->containsXMPHint && (outStr.size() == (size_t)packetInfo.length) )
+	if ( this->containsXMPHint && (outStr.size() == (size_t)packetInfo_.length) )
 	{
 		return kPS_Inplace;
 	}
-	else if (this->containsXMPHint && PostScript_Support::IsSFDFilterUsed(this->parent->ioRef,packetInfo.offset))
+	else if (this->containsXMPHint && PostScript_Support::IsSFDFilterUsed(this->parent->ioRef,packetInfo_.offset))
 	{
 		return kPS_ExpandSFDFilter;
 	}

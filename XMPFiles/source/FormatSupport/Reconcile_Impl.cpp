@@ -375,8 +375,8 @@ void ReconcileUtils::UTF8ToLatin1 ( const void * _utf8Ptr, size_t utf8Len, std::
 void ReconcileUtils::LocalToUTF8 ( const void * _localPtr, size_t localLen, std::string * utf8 )
 {
 	const XMP_Uns8* localPtr = (XMP_Uns8*)_localPtr;
-    const char* localPtr1 = (const char*)_localPtr;
-    const wchar_t * lptr=(const wchar_t *)_localPtr;
+// UNUSED -- Hub    const char* localPtr1 = (const char*)_localPtr;
+// UNUSED -- Hub    const wchar_t * lptr=(const wchar_t *)_localPtr;
 
 	utf8->erase();
 	

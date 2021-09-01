@@ -373,14 +373,14 @@ XMPScanner::PacketMachine::CaptureAttrValue ( PacketMachine * ths, const char * 
 			ths->fBufferPtr += bytesPerChar;
 			ths->fPosition = 1;
 			// fall through OK because MatchOpenQuote will check the buffer limit and nulls ...
-
+			// fallthrough
 		case 1 :	// Look for the open quote.
 
 			result = MatchOpenQuote ( ths, NULL );
 			if ( result != eTriYes ) return result;
 			ths->fPosition = 2;
 			// fall through OK because the buffer limit and nulls are checked below ...
-
+			// fallthrough
 		default :	// Look for the close quote, capturing the value along the way.
 
 			assert ( ths->fPosition == 2 );
@@ -433,7 +433,7 @@ XMPScanner::PacketMachine::RecordStart ( PacketMachine * ths, const char * /* un
 				ths->fPacketLength = 0;
 				ths->fPosition = 1;
 				// ! OK to fall through here, we didn't consume a byte in this step.
-
+				// fallthrough
 			case 1 :	// Look for the first null byte.
 				if ( currByte != 0 ) return eTriYes;	// No nulls found.
 				ths->fCharForm = eChar16BitBig;			// Assume 16 bit big endian for now.

@@ -920,28 +920,28 @@ void P2_MetaHandler::SetAltitudeFromLegacyXML  ( XML_NodePtr legacyLocationConte
 // P2_MetaHandler::ForceChildElement
 // =================================
 
-XML_Node * P2_MetaHandler::ForceChildElement ( XML_Node * parent, XMP_StringPtr localName, XMP_Int32 indent , XMP_Bool insertAtFront  )
+XML_Node * P2_MetaHandler::ForceChildElement ( XML_Node * parent_, XMP_StringPtr localName, XMP_Int32 indent , XMP_Bool insertAtFront  )
 {
 	XML_Node * wsNodeBefore, * wsNodeAfter;
 	wsNodeBefore = wsNodeAfter = NULL;
 	P2_Clip* p2Clip = this->p2ClipManager.GetManagedClip() ;
 	XMP_StringPtr p2NS = p2Clip->GetP2RootNode()->ns.c_str();
-	XML_Node * childNode = parent->GetNamedElement ( p2NS, localName );
+	XML_Node * childNode = parent_->GetNamedElement ( p2NS, localName );
 	//
 
 	if ( childNode == 0 ) {
 
 		// The indenting is a hack, assuming existing 2 spaces per level.
 		try {
-			wsNodeBefore = new XML_Node ( parent, "", kCDataNode );
+			wsNodeBefore = new XML_Node ( parent_, "", kCDataNode );
 			wsNodeBefore->value = "  ";	// Add 2 spaces to the existing WS before the parent's close tag.
 
-			childNode = new XML_Node ( parent, localName, kElemNode );
-			childNode->ns = parent->ns;
-			childNode->nsPrefixLen = parent->nsPrefixLen;
-			childNode->name.insert ( 0, parent->name, 0, parent->nsPrefixLen );
+			childNode = new XML_Node ( parent_, localName, kElemNode );
+			childNode->ns = parent_->ns;
+			childNode->nsPrefixLen = parent_->nsPrefixLen;
+			childNode->name.insert ( 0, parent_->name, 0, parent_->nsPrefixLen );
 
-			wsNodeAfter = new XML_Node ( parent, "", kCDataNode );
+			wsNodeAfter = new XML_Node ( parent_, "", kCDataNode );
 		} catch (...) {
 			if (wsNodeBefore) 
 				delete wsNodeBefore;
@@ -965,12 +965,12 @@ XML_Node * P2_MetaHandler::ForceChildElement ( XML_Node * parent, XMP_StringPtr 
 			indentedNode.push_back(wsNodeAfter);
 			indentedNode.push_back(wsNodeBefore);
 			indentedNode.push_back(childNode);
-			parent->content.insert(parent->content.begin(), indentedNode.begin(), indentedNode.end());
+			parent_->content.insert(parent_->content.begin(), indentedNode.begin(), indentedNode.end());
 		}
 		else{
-			parent->content.push_back(wsNodeBefore);
-			parent->content.push_back(childNode);
-			parent->content.push_back(wsNodeAfter);
+			parent_->content.push_back(wsNodeBefore);
+			parent_->content.push_back(childNode);
+			parent_->content.push_back(wsNodeAfter);
 		}
 
 	}

@@ -282,15 +282,15 @@ void Scanner_MetaHandler::CacheFileData()
 			if ( snips[pkt].fState != XMPScanner::eValidPacketSnip ) continue;
 			fileRef->Seek ( snips[pkt].fOffset, kXMP_SeekFromStart );
 			newMeta = new SXMPMeta();
-			std::string xmpPacket;
-			xmpPacket.reserve ( (size_t)snips[pkt].fLength );
+			std::string xmpPacket_;
+			xmpPacket_.reserve ( (size_t)snips[pkt].fLength );
 
 			try {
 				for ( bufPos = 0; bufPos < snips[pkt].fLength; bufPos += bufLen ) {
 					bufLen = kBufferSize;
 					if ( (bufPos + bufLen) > (size_t)snips[pkt].fLength ) bufLen = size_t ( snips[pkt].fLength - bufPos );
 					(void) fileRef->ReadAll ( buffer, (XMP_Int32)bufLen );
-					xmpPacket.append ( (const char *)buffer, bufLen );
+					xmpPacket_.append ( (const char *)buffer, bufLen );
 					newMeta->ParseFromBuffer ( (char *)buffer, (XMP_StringLen)bufLen, kXMP_ParseMoreBuffers );
 				}
 				newMeta->ParseFromBuffer ( 0, 0, kXMP_NoOptions );
@@ -305,7 +305,7 @@ void Scanner_MetaHandler::CacheFileData()
 			candidates.push_back ( CandidateInfo() );
 			CandidateInfo & newInfo = candidates.back();
 			newInfo.xmpObj = newMeta;
-			newInfo.xmpPacket.swap ( xmpPacket );
+			newInfo.xmpPacket.swap ( xmpPacket_ );
 			newInfo.packetInfo.offset = snips[pkt].fOffset;
 			newInfo.packetInfo.length = (XMP_Int32)snips[pkt].fLength;
 			newInfo.packetInfo.charForm  = snips[pkt].fCharForm;

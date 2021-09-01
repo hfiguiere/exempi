@@ -448,7 +448,7 @@ XMPFileHandler * SVG_MetaHandlerCTor( XMPFiles * parent )
 // SVG_MetaHandler::SVG_MetaHandler
 // ================================
 
-SVG_MetaHandler::SVG_MetaHandler(XMPFiles * _parent) : svgNode(0), svgAdapter(0), isTitleUpdateReq(false), isDescUpdateReq(false), isCompressed(false), compressedHeader()
+SVG_MetaHandler::SVG_MetaHandler(XMPFiles * _parent) : svgAdapter(0), svgNode(0), isTitleUpdateReq(false), isDescUpdateReq(false), isCompressed(false), compressedHeader()
 {
 	this->parent = _parent;
 	this->handlerFlags = kSVG_HandlerFlags;

@@ -69,7 +69,7 @@ typedef unsigned char XMP_CLTMatch;
 
 #if XMP_MARKER_EXTENSIBILITY_BACKWARD_COMPATIBILITY
 extern "C" {
-    
+#if 0 // UNUSED -- Hub
 	 static void ReleaseXMP_Node(void * node) {
 		if (node) {
 			XMP_Node * ptr = (XMP_Node *)node;
@@ -77,6 +77,7 @@ extern "C" {
 			ptr = NULL;
 		}
 	}
+#endif
 }
 
 #if ENABLE_CPP_DOM_MODEL

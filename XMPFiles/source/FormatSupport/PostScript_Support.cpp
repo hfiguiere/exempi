@@ -267,6 +267,7 @@ bool PostScript_Support::IsValidPSFile(XMP_IO*    fileRef,XMP_FileFormat &format
 			if ( ! CheckBytes ( ioBuf.ptr, Uns8Ptr("EPSF-"), 5 ) ) return true;
 
 		}//intentional fall through for further checking of unknown files
+		// fallthrough
 		case kXMP_EPSFile:
 		{
 
