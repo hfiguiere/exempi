@@ -241,7 +241,7 @@ Chunk::~Chunk()
 // CONTAINER CHUNK /////////////////////////////////////////////////
 // a) creation
 // [2376832] expectedSize - minimum padding "parking size" to use, if not available append to end
-ContainerChunk::ContainerChunk( ContainerChunk* parent_, XMP_Uns32 id, XMP_Uns32 _containerType ) : Chunk( NULL /* !! */, chunk_CONTAINER, id )
+ContainerChunk::ContainerChunk( ContainerChunk* parent_, XMP_Uns32 id_, XMP_Uns32 _containerType ) : Chunk( NULL /* !! */, chunk_CONTAINER, id_ )
 {
 	// accept no unparented ConatinerChunks
 	XMP_Enforce( parent_ != NULL );
@@ -257,7 +257,7 @@ ContainerChunk::ContainerChunk( ContainerChunk* parent_, XMP_Uns32 id, XMP_Uns32
 }
 
 // b) parsing
-ContainerChunk::ContainerChunk( ContainerChunk* parent, RIFF_MetaHandler* handler ) : Chunk( parent, handler, false, chunk_CONTAINER )
+ContainerChunk::ContainerChunk( ContainerChunk* parent_, RIFF_MetaHandler* handler ) : Chunk( parent_, handler, false, chunk_CONTAINER )
 {
 	bool repairMode = ( 0 != ( handler->parent->openFlags & kXMPFiles_OpenRepairFile ));
 

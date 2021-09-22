@@ -1950,13 +1950,13 @@ void MPEG4_MetaHandler::CacheFileData()
 {
 	XMP_Assert ( ! this->containsXMP );
 
-	XMPFiles * parent = this->parent;
-	XMP_OptionBits openFlags = parent->openFlags;
+	XMPFiles * parent_ = this->parent;
+	XMP_OptionBits openFlags = parent_->openFlags;
 
-	XMP_IO* fileRef  = parent->ioRef;
+	XMP_IO* fileRef  = parent_->ioRef;
 
-	XMP_AbortProc abortProc  = parent->abortProc;
-	void *        abortArg   = parent->abortArg;
+	XMP_AbortProc abortProc  = parent_->abortProc;
+	void *        abortArg   = parent_->abortArg;
 	const bool    checkAbort = (abortProc != 0);
 
 	// First do some special case repair to QuickTime files, based on bad files in the wild.
@@ -1965,7 +1965,7 @@ void MPEG4_MetaHandler::CacheFileData()
 	const bool doRepair = XMP_OptionIsSet ( openFlags, kXMPFiles_OpenRepairFile );
 
 	if ( isUpdate ) {
-		CheckQTFileStructure ( this, doRepair, &parent->errorCallback );	// Will throw for failure.
+		CheckQTFileStructure ( this, doRepair, &parent_->errorCallback );	// Will throw for failure.
 	}
 
 	// Cache the top level 'moov' and 'uuid'/XMP boxes.
@@ -2033,7 +2033,7 @@ void MPEG4_MetaHandler::CacheFileData()
 
 	if ( (! moovFound) && (! moovIgnored) ){
 		XMP_Error error ( kXMPErr_BadFileFormat,"No 'moov' box" );
-		XMPFileHandler::NotifyClient(&parent->errorCallback, kXMPErrSev_FileFatal, error);
+		XMPFileHandler::NotifyClient(&parent_->errorCallback, kXMPErrSev_FileFatal, error);
 	}
 
 }	// MPEG4_MetaHandler::CacheFileData
@@ -2047,8 +2047,8 @@ void MPEG4_MetaHandler::ProcessXMP()
 	if ( this->processedXMP ) return;
 	this->processedXMP = true;	// Make sure only called once.
 
-	XMPFiles * parent = this->parent;
-	XMP_OptionBits openFlags = parent->openFlags;
+	XMPFiles * parent_ = this->parent;
+	XMP_OptionBits openFlags = parent_->openFlags;
 
 	bool xmpOnly = XMP_OptionIsSet ( openFlags, kXMPFiles_OpenOnlyXMP );
 	bool haveISOFile = (this->fileMode == MOOV_Manager::kFileIsNormalISO);
@@ -2073,7 +2073,7 @@ void MPEG4_MetaHandler::ProcessXMP()
 
 	if ( this->moovMgr.fullSubtree.empty() ) {
 		XMP_Error error ( kXMPErr_BadFileFormat,"No 'moov' box" );
-		XMPFileHandler::NotifyClient(&parent->errorCallback, kXMPErrSev_FileFatal, error);
+		XMPFileHandler::NotifyClient(&parent_->errorCallback, kXMPErrSev_FileFatal, error);
 	}
 	this->moovMgr.ParseMemoryTree ( this->fileMode );
 	if ( (this->xmpBoxPos == 0) || (! haveISOFile) ) {
