@@ -61,6 +61,7 @@ libformatsupport_la_SOURCES = \
 	SWF_Support.hpp SWF_Support.cpp\
 	XDCAM_Support.hpp XDCAM_Support.cpp\
 	TIFF_FileWriter.cpp  XMPScanner.cpp \
+	META_Support.cpp META_Support.hpp  \
 	MOOV_Support.cpp MOOV_Support.hpp \
 	QuickTime_Support.cpp \
 	ASF_Support.hpp ASF_Support.cpp \
