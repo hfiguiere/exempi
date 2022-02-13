@@ -1,7 +1,12 @@
-2.6.0 -
+2.6.0 - 2022/02/13
 
-- Update XMPCore to Adobe XMP SDK v2021.08
+- Update XMPCore to Adobe XMP SDK v2021.10
   (issue https://gitlab.freedesktop.org/libopenraw/exempi/-/issues/22)
+  - Changes in v2021.10
+    - Fixing CTECHXMP-4170583, CTECHXMP-4170596, CTECHXMP-4170597,
+      CTECHXMP-4170598, CTECHXMP-4170599, CTECHXMP-4170632 and CTECHXMP-4170633
+      (maintainer note: no idea what they are, but it seems to fix various buffer
+      size issues in WAVE and SVG)
   - Changes in v2021.08
     - Security Fixes
     - Fixes syntax errors like semicolons in the codebase
