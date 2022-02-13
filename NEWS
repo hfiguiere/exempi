@@ -1,3 +1,8 @@
+2.6.1 - 2022/02/13
+
+- Bug #26: Addressed missing README.md and others from tarball.
+  https://gitlab.freedesktop.org/libopenraw/exempi/-/issues/26
+
 2.6.0 - 2022/02/13
 
 - Update XMPCore to Adobe XMP SDK v2021.10
