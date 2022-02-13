@@ -1,7 +1,7 @@
 /*
  * exempi - test-xmpformat.cpp
  *
- * Copyright (C) 2020 Hubert Figuière
+ * Copyright (C) 2020-2022 Hubert Figuière
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -36,7 +36,7 @@
 #include <map>
 #include <string>
 
-#include <boost/test/minimal.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 #include "xmp.h"
 
@@ -65,7 +65,12 @@ const std::map<const char*, XmpFileType> FAILING_CASES = {
 // This test would have caught:
 // https://gitlab.freedesktop.org/libopenraw/exempi/-/issues/20
 //
-int test_main(int , char *[])
+boost::unit_test::test_suite* init_unit_test_suite(int, char **)
+{
+  return nullptr;
+}
+
+BOOST_AUTO_TEST_CASE(test_xmpformat)
 {
   const char* srcdir = getenv("srcdir");
   if (!srcdir) {
@@ -93,6 +98,4 @@ int test_main(int , char *[])
     auto xft = xmp_files_check_file_format(imagepath.c_str());
     BOOST_CHECK(xft == testcase.second);
   }
-
-  return 0;
 }

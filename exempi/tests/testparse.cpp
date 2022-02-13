@@ -1,7 +1,7 @@
 /*
- * exempi - test3.cpp
+ * exempi - testparse.cpp
  *
- * Copyright (C) 2007-2017 Hubert Figuiere
+ * Copyright (C) 2007-2022 Hubert Figuière
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,17 +40,19 @@
 #include <string>
 #include <iostream>
 
-#include <boost/test/minimal.hpp>
+#include <boost/test/included/unit_test.hpp>
 #include <boost/format.hpp>
 
 #include "utils.h"
 #include "xmp.h"
 #include "xmpconsts.h"
 
-using boost::unit_test::test_suite;
+boost::unit_test::test_suite* init_unit_test_suite(int, char**)
+{
+  return nullptr;
+}
 
-// void test_exempi_iterate()
-int test_main(int, char *[])
+BOOST_AUTO_TEST_CASE(test_parse)
 {
   char *buffer;
 
@@ -73,5 +75,4 @@ int test_main(int, char *[])
 
   BOOST_CHECK(!g_lt->check_leaks());
   BOOST_CHECK(!g_lt->check_errors());
-  return 0;
 }

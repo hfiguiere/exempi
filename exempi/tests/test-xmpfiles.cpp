@@ -1,7 +1,7 @@
 /*
  * exempi - test-xmpfiles.cpp
  *
- * Copyright (C) 2007-2016 Hubert Figuière
+ * Copyright (C) 2007-2022 Hubert Figuière
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,19 +41,21 @@
 
 #include <string>
 
-#include <boost/test/minimal.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 #include "utils.h"
 #include "xmp.h"
 #include "xmpconsts.h"
 
-using boost::unit_test::test_suite;
-
-// void test_xmpfiles()
-int test_main(int argc, char* argv[])
+boost::unit_test::test_suite* init_unit_test_suite(int argc, char * argv[])
 {
   prepare_test(argc, argv, "../../samples/testfiles/BlueSquare.jpg");
 
+  return nullptr;
+}
+
+BOOST_AUTO_TEST_CASE(test_xmpfiles)
+{
   BOOST_CHECK(xmp_init());
 
   XmpFilePtr f = xmp_files_open_new(g_testfile.c_str(), XMP_OPEN_READ);
@@ -125,5 +127,4 @@ int test_main(int argc, char* argv[])
 
   BOOST_CHECK(!g_lt->check_leaks());
   BOOST_CHECK(!g_lt->check_errors());
-  return 0;
 }

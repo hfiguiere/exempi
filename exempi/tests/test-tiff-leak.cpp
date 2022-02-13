@@ -1,7 +1,7 @@
 /*
  * exempi - test-tiff-leak.cpp
  *
- * Copyright (C) 2007-2008,2010 Hubert Figuiere
+ * Copyright (C) 2007-2022 Hubert Figuière
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 
 #include <string>
 
-#include <boost/test/minimal.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 #include "utils.h"
 #include "xmp.h"
@@ -49,11 +49,15 @@
 
 /**  See http://www.adobeforums.com/webx/.3bc42b73 for the orignal
  *   test case */
-// void test_tiff_leak()
-int test_main(int argc, char *argv[])
+boost::unit_test::test_suite* init_unit_test_suite(int argc, char * argv[])
 {
   prepare_test(argc, argv, "../../samples/testfiles/BlueSquare.jpg");
 
+  return nullptr;
+}
+
+BOOST_AUTO_TEST_CASE(test_tiff_leak)
+{
   std::string orig_tiff_file =
     g_src_testdir + "../../samples/testfiles/BlueSquare.tif";
   BOOST_CHECK(copy_file(orig_tiff_file, "test.tif"));
@@ -64,7 +68,7 @@ int test_main(int argc, char *argv[])
 
   BOOST_CHECK(f != NULL);
   if (f == NULL) {
-    return 1;
+    exit(128);
   }
 
   XmpPtr xmp;
@@ -82,5 +86,4 @@ int test_main(int argc, char *argv[])
   BOOST_CHECK(unlink("test.tif") == 0);
   BOOST_CHECK(!g_lt->check_leaks());
   BOOST_CHECK(!g_lt->check_errors());
-  return 0;
 }

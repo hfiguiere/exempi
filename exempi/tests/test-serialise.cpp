@@ -1,7 +1,7 @@
 /*
  * exempi - test-serialise.cpp
  *
- * Copyright (C) 2007-2008 Hubert Figuiere
+ * Copyright (C) 2007-2022 Hubert Figuière
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,19 +40,21 @@
 
 #include <string>
 
-#include <boost/test/minimal.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 #include "utils.h"
 #include "xmpconsts.h"
 #include "xmp.h"
 
-using boost::unit_test::test_suite;
-
-// void test_serialize()
-int test_main(int argc, char *argv[])
+boost::unit_test::test_suite* init_unit_test_suite(int argc, char * argv[])
 {
   prepare_test(argc, argv, "test1.xmp");
 
+  return nullptr;
+}
+
+BOOST_AUTO_TEST_CASE(test_serialise)
+{
   size_t len;
   char *buffer;
   FILE *f = fopen(g_testfile.c_str(), "rb");
@@ -98,5 +100,4 @@ int test_main(int argc, char *argv[])
 
   BOOST_CHECK(!g_lt->check_leaks());
   BOOST_CHECK(!g_lt->check_errors());
-  return 0;
 }

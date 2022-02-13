@@ -1,7 +1,7 @@
 /*
  * exempi - test-webp.cpp
  *
- * Copyright (C) 2007-2016 Hubert Figuiere
+ * Copyright (C) 2007-2022 Hubert Figuière
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,19 +41,20 @@
 
 #include <string>
 
-#include <boost/test/minimal.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 #include "utils.h"
 #include "xmp.h"
 #include "xmpconsts.h"
 
-using boost::unit_test::test_suite;
-
-
-int test_main(int argc, char *argv[])
+boost::unit_test::test_suite* init_unit_test_suite(int argc, char * argv[])
 {
   prepare_test(argc, argv, "../../samples/testfiles/BlueSquare.webp");
+  return nullptr;
+}
 
+BOOST_AUTO_TEST_CASE(test_webp)
+{
   BOOST_CHECK(xmp_init());
 
   BOOST_CHECK(xmp_files_check_file_format(g_testfile.c_str()) == XMP_FT_WEBP);
@@ -61,7 +62,7 @@ int test_main(int argc, char *argv[])
 
   BOOST_CHECK(f != NULL);
   if (f == NULL) {
-    return 1;
+    exit(128);
   }
 
   XmpPtr xmp = xmp_files_get_new_xmp(f);
@@ -78,7 +79,7 @@ int test_main(int argc, char *argv[])
 
   BOOST_CHECK(f != NULL);
   if (f == NULL) {
-    return 2;
+    exit(128);
   }
 
   BOOST_CHECK(xmp_set_property(xmp, NS_PHOTOSHOP, "ICCProfile", "foo", 0));
@@ -94,7 +95,7 @@ int test_main(int argc, char *argv[])
 
   BOOST_CHECK(f != NULL);
   if (f == NULL) {
-    return 3;
+    exit(128);
   }
   xmp = xmp_files_get_new_xmp(f);
   BOOST_CHECK(xmp != NULL);
@@ -114,6 +115,4 @@ int test_main(int argc, char *argv[])
 
   BOOST_CHECK(!g_lt->check_leaks());
   BOOST_CHECK(!g_lt->check_errors());
-
-  return 0;
 }

@@ -180,7 +180,7 @@ AC_ARG_ENABLE(unittest,
               ENABLE_UNITTEST=$enableval,
               ENABLE_UNITTEST=yes)
 if test x$ENABLE_UNITTEST = xyes ; then
-   BOOST_REQUIRE([1.48.0])
+   BOOST_REQUIRE([1.60.0])
    BOOST_TEST([mt-s])
 else
    ENABLE_UNITTEST=no

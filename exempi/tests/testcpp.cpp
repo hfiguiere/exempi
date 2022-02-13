@@ -1,7 +1,7 @@
 /*
  * exempi - testcpp.cpp
  *
- * Copyright (C) 2011 Hubert Figuiere
+ * Copyright (C) 2011-2022 Hubert Figuière
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,16 +34,19 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <boost/test/minimal.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 #include "utils.h"
 #include "xmp.h"
 #include "xmpconsts.h"
 #include "xmp++.hpp"
 
-using boost::unit_test::test_suite;
+boost::unit_test::test_suite* init_unit_test_suite(int, char **)
+{
+  return nullptr;
+}
 
-int test_main(int /*argc*/, char* /*argv*/ [])
+BOOST_AUTO_TEST_CASE(test_cpp)
 {
   // this test is totally useless without leak checking.
   // but for compiling.
@@ -65,5 +68,4 @@ int test_main(int /*argc*/, char* /*argv*/ [])
 
   BOOST_CHECK(!g_lt->check_leaks());
   BOOST_CHECK(!g_lt->check_errors());
-  return 0;
 }

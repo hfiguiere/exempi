@@ -1,7 +1,7 @@
 /*
  * exempi - test-bgo.cpp
  *
- * Copyright (C) 2007-2008 Hubert Figuiere
+ * Copyright (C) 2007-2022 Hubert Figuière
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,28 +40,33 @@
 
 #include <string>
 
-#include <boost/test/minimal.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 #include "utils.h"
 #include "xmpconsts.h"
 #include "xmp.h"
 
-int test_main(int argc, char* argv[])
+boost::unit_test::test_suite* init_unit_test_suite(int argc, char * argv[])
 {
   prepare_test(argc, argv, "fdo18635.jpg");
 
+  return nullptr;
+}
+
+BOOST_AUTO_TEST_CASE(test_bgo)
+{
   BOOST_CHECK(xmp_init());
 
   XmpFilePtr xf = xmp_files_open_new(g_testfile.c_str(), XMP_OPEN_READ);
 
-  BOOST_CHECK(xf != NULL);
-  if (xf == NULL) {
-    return 1;
+  BOOST_CHECK(xf != nullptr);
+  if (xf == nullptr) {
+    return;
   }
 
   XmpPtr xmp = xmp_files_get_new_xmp(xf);
 
-  BOOST_CHECK(xmp != NULL);
+  BOOST_CHECK(xmp != nullptr);
 
   BOOST_CHECK(xmp_free(xmp));
   BOOST_CHECK(xmp_files_free(xf));
@@ -70,5 +75,4 @@ int test_main(int argc, char* argv[])
 
   BOOST_CHECK(!g_lt->check_leaks());
   BOOST_CHECK(!g_lt->check_errors());
-  return 0;
 }
