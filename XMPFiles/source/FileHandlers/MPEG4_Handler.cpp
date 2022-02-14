@@ -350,7 +350,9 @@ MPEG4_MetaHandler::~MPEG4_MetaHandler()
 
 static void SecondsToXMPDate ( XMP_Uns64 isoSeconds, XMP_DateTime * xmpDate )
 {
-	memset ( xmpDate, 0, sizeof(XMP_DateTime) );	// AUDIT: Using sizeof(XMP_DateTime) is safe.
+	// (Exempi) UNSAFE. You don't memset a C++ object.
+	*xmpDate = XMP_DateTime();
+	// memset ( xmpDate, 0, sizeof(XMP_DateTime) );	// AUDIT: Using sizeof(XMP_DateTime) is safe.
 
 	XMP_Int32 days = (XMP_Int32) (isoSeconds / 86400);
 	isoSeconds -= ((XMP_Uns64)days * 86400);
@@ -1886,8 +1888,10 @@ static void CheckFinalBox ( XMP_IO* fileRef, XMP_AbortProc abortProc, void * abo
 	ISOMedia::BoxInfo prevBox, lastBox;
 	XMP_Uns8 buffer [16];	// Enough to create an extended header.
 
-	memset ( &prevBox, 0, sizeof(prevBox) );	// AUDIT: Using sizeof(prevBox) is safe.
-	memset ( &lastBox, 0, sizeof(lastBox) );	// AUDIT: Using sizeof(lastBox) is safe.
+	// (Exempi) UNSAFE. You don't memset a C++ object.
+	// (Exempi) Here the constructor is already called.
+	//memset ( &prevBox, 0, sizeof(prevBox) );	// AUDIT: Using sizeof(prevBox) is safe.
+	//memset ( &lastBox, 0, sizeof(lastBox) );	// AUDIT: Using sizeof(lastBox) is safe.
 	prevPos = lastPos = nextPos = 0;
 	while ( nextPos != fileSize ) {
 		if ( checkAbort && abortProc(abortArg) ) {

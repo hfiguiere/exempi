@@ -114,7 +114,11 @@ ISOBaseMedia_Manager::BoxRef Meta_Manager::GetBox(const char * boxPath, BoxInfo 
 {
 	size_t pathLen = strlen(boxPath);
 	XMP_Assert((pathLen >= 4) && XMP_LitNMatch(boxPath, "meta", 4));
-	if (info != 0) memset(info, 0, sizeof(BoxInfo));
+	if (info != 0) {
+		// (Exempi) Unsafe to memset
+		*info = BoxInfo();
+		//memset(info, 0, sizeof(BoxInfo));
+	}
 
 	const char * pathPtr = boxPath + 5;	// Skip the "meta/" portion.
 	const char * pathEnd = boxPath + pathLen;

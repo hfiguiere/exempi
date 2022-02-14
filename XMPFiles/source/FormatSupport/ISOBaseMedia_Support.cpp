@@ -251,7 +251,11 @@ ISOBaseMedia_Manager::BoxRef ISOBaseMedia_Manager::GetNthChild(BoxRef parentRef,
 {
 	XMP_Assert(parentRef != 0);
 	const BoxNode & parent = *((BoxNode*)parentRef);
-	if (info != 0) memset(info, 0, sizeof(BoxInfo));
+	if (info != 0) {
+		// (Exempi) Unsafe to memset()
+		*info = BoxInfo();
+		//memset(info, 0, sizeof(BoxInfo));
+	}
 
 	if (childIndex >= parent.children.size()) return 0;
 
@@ -269,7 +273,11 @@ ISOBaseMedia_Manager::BoxRef ISOBaseMedia_Manager::GetTypeChild(BoxRef parentRef
 {
 	XMP_Assert(parentRef != 0);
 	const BoxNode & parent = *((BoxNode*)parentRef);
-	if (info != 0) memset(info, 0, sizeof(BoxInfo));
+	if (info != 0) {
+		// (Exempi) Unsafe to memset()
+		*info = BoxInfo();
+		//memset(info, 0, sizeof(BoxInfo));
+	}
 	if (parent.children.empty()) return 0;
 
 	size_t i = 0, limit = parent.children.size();

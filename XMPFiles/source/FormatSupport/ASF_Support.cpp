@@ -1396,7 +1396,8 @@ void ASF_LegacyManager::ConvertMSDateToISODate ( std::string& source, std::strin
 	// A little more simple code converts this to an XMP date string:
 
 	XMP_DateTime date;
-	memset ( &date, 0, sizeof ( date ) );
+	// (Exempi) Unsafe to memset, constructor called
+	// memset ( &date, 0, sizeof ( date ) );
 
 	date.year = 1601;       // The MS date origin.
 	date.month = 1;

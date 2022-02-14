@@ -197,7 +197,8 @@ void PhotoDataUtils::ImportIPTC_Date ( XMP_Uns8 dateID, const IPTC_Manager & ipt
 
 	size_t chPos, digits;
 	XMP_DateTime xmpDate;
-	memset ( &xmpDate, 0, sizeof(xmpDate) );
+	// (Exempi) unsafe. Constructor is already called
+	//memset ( &xmpDate, 0, sizeof(xmpDate) );
 
 	chPos = 0;
 	for ( digits = 0; digits < 4; ++digits, ++chPos ) {

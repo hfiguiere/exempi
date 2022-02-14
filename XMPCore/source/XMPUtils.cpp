@@ -2479,7 +2479,9 @@ XMPUtils::ConvertToDate ( XMP_StringPtr	 strValue,
 	XMP_Int32 temp;
 
 	XMP_Assert ( sizeof(*binValue) == sizeof(XMP_DateTime) );
-	(void) memset ( binValue, 0, sizeof(*binValue) );	// AUDIT: Safe, using sizeof destination.
+	// (Exempi) UNSAFE. You don't memset a C++ object.
+	*binValue = XMP_DateTime();
+	//(void) memset ( binValue, 0, sizeof(*binValue) );	// AUDIT: Safe, using sizeof destination.
 
 	size_t strSize = strlen ( strValue );
 	bool timeOnly = ( (strValue[0] == 'T') ||

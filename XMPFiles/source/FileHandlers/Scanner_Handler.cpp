@@ -164,7 +164,8 @@ PickMainPacket ( std::vector<CandidateInfo>& candidates, bool beLenient )
 			if ( ! beLenient ) return -1;
 			if ( main == -1 ) {
 				main = pkt;
-				memset ( &latestTime, 0, sizeof(latestTime) );
+				// (Exempi) Unsafe, constructor is already called
+				//memset ( &latestTime, 0, sizeof(latestTime) );
 			}
 
 		} else if ( main == -1 ) {

@@ -530,7 +530,12 @@ struct ASF_GUID {
 	XMP_Uns16 part4;	// Written big endian.
 	XMP_Uns8  part5[6];	// Written in order.
 
-	ASF_GUID() {};
+	// (Exempi) needs a proper constructor
+	ASF_GUID()
+	  : part1(0), part2(0), part3(0), part4(0),
+	    part5({ 0, 0, 0, 0, 0, 0 })
+	{
+	}
 	ASF_GUID(XMP_Uns32 p1, XMP_Uns16 p2, XMP_Uns16 p3, XMP_Uns16 p4, const void* p5)
 	{
 		part1 = GetUns32LE(&p1);
@@ -538,7 +543,7 @@ struct ASF_GUID {
 		part3 = GetUns16LE(&p3);
 		part4 = GetUns16BE(&p4);
 		memcpy(&part5, p5, 6);
-	};
+	}
 
 };
 
@@ -3133,7 +3138,8 @@ static size_t GetASFObjectInfo(LFA_FileRef file, XMP_Uns32 objOffset, ASF_ObjHea
 		tree->addComment("%s   <<unknown object>>, offset %u (0x%X), size %u",
 			indent.c_str(), objOffset, objOffset, size32);
 		ASF_GUID guid;
-		memset(&guid, 0, sizeof(ASF_GUID));
+		// (Exempi) memset is unsafe, constructor is called)
+		// memset(&guid, 0, sizeof(ASF_GUID));
 		guid.part1 = GetUns32LE(&objHeader->guid.part1);
 		guid.part2 = GetUns16LE(&objHeader->guid.part2);
 		guid.part3 = GetUns16LE(&objHeader->guid.part3);
@@ -3194,7 +3200,8 @@ static void DumpASFFileProperties(LFA_FileRef file, XMP_Uns32 objOffset, XMP_Uns
 	totalSecs -= ((XMP_Int64)minute * 60);
 	XMP_Int32 second = (XMP_Int32)totalSecs;
 	XMP_DateTime binDate;
-	memset(&binDate, 0, sizeof(binDate));
+	// (Exempi) memset is unsafe. Constructor has been called.
+	// memset(&binDate, 0, sizeof(binDate));
 
 	binDate.year = 1601;
 	binDate.month = 1;
