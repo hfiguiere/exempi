@@ -154,9 +154,9 @@ XMP_Uns32 Meta_Manager::NewSubtreeSize(const BoxNode & node, const std::string &
 	else
 		subtreeSize = 8;
 
-	if (node.boxType == ISOMedia::k_uuid)
+	if (node.boxType == ISOMedia::k_uuid) {
 		subtreeSize += 16;				// id of uuid is 16 bytes long
-	
+	}
 
 		for (size_t i = 0, limit = node.children.size(); i < limit; ++i) {
 

@@ -244,7 +244,7 @@ AX_APPEND_COMPILE_FLAGS([ \
 dnl   -Wformat-nonliteral \
    -Wformat-security \
    -Wlogical-not-parentheses \
-   -Wmisleading-indentation \
+   -Werror=misleading-indentation \
    -Wmissing-noreturn \
    -Woverloaded-virtual \
    -Wpointer-arith \
