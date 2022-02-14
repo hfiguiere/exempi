@@ -599,13 +599,16 @@ bool WAVEBehavior::parseDS64Chunk( const Chunk& ds64Chunk, WAVEBehavior::DS64& d
 		const XMP_Uns8* data;
 		XMP_Uns64 size = ds64Chunk.getData(&data);
 
-		memset( &ds64, 0, kMinimumDS64ChunkSize);
+		// (Exempi) Unsafe for memset
+		ds64 = WAVEBehavior::DS64();
+		// memset( &ds64, 0, kMinimumDS64ChunkSize);
 
 		//
 		// copy fix input data into RF64 block (except chunk size table)
 		// Safe as fixed size matches size of struct that is #pragma packed(1)
 		//
-		memcpy( &ds64, data, kMinimumDS64ChunkSize );
+		ds64.From(data, kMinimumDS64ChunkSize);
+		// memcpy( &ds64, data, kMinimumDS64ChunkSize );
 
 		// If there is more data but the table length is <= 0 then this is not a valid ds64 chunk
 		if (size > kMinimumDS64ChunkSize && ds64.tableLength > 0 && ((size - kMinimumDS64ChunkSize) >= (ds64.tableLength * sizeof(ChunkSize64))))

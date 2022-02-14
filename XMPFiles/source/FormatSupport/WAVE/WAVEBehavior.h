@@ -44,6 +44,17 @@ public:
 		XMP_Uns32 id;
 		// Ctor
 		ChunkSize64(): size(0), id(0) {}
+		// (Exempi) we need a from buffer
+		constexpr static size_t dataSize() {
+			return sizeof(size) + sizeof(id);
+		}
+		// (Exempi) This code is not endian neutreal
+		size_t From(const XMP_Uns8* data) {
+			size = *(const XMP_Uns64*)data;
+			data += sizeof(size);
+			id = *(const XMP_Uns32*)data;
+			return dataSize();
+		}
 	};
 
 	struct DS64
@@ -58,6 +69,47 @@ public:
 
 		// ctor
 		DS64(): riffSize(0), dataSize(0), sampleCount(0), tableLength(0), trailingBytes(0) {}
+		// (Exempi) we need a from buffer
+		constexpr static size_t preludeSize() {
+			return sizeof(riffSize) + sizeof(dataSize) + sizeof(sampleCount)
+				+ sizeof(tableLength);
+		}
+		// (Exempi) This code is not endian neutreal
+		size_t From(const XMP_Uns8* data, size_t s) {
+			size_t copied = 0;
+			if (s < preludeSize()) {
+				return copied;
+			}
+			riffSize = *(const XMP_Uns64*)data;
+			data += sizeof(riffSize);
+			dataSize = *(const XMP_Uns64*)data;
+			data += sizeof(dataSize);
+			sampleCount = *(const XMP_Uns64*)data;
+			data += sizeof(sampleCount);
+			tableLength = *(const XMP_Uns32*)data;
+			data += sizeof(tableLength);
+			copied += preludeSize();
+
+			if (s - copied >= sizeof(trailingBytes)) {
+				 trailingBytes = *(const XMP_Uns32*)data;
+				 data += sizeof(trailingBytes);
+				 copied += sizeof(trailingBytes);
+
+				 size_t idx = 0;
+				 table.resize((s - copied) / ChunkSize64::dataSize());
+				 while (s - copied) {
+					 if (s - copied >= ChunkSize64::dataSize()) {
+						 size_t b = table[idx].From(data);
+						 data += b;
+						 copied += b;
+					 }
+					 else {
+						 break;
+					 }
+				 }
+			}
+			return copied;
+		}
 	};
 #if SUNOS_SPARC || SUNOS_X86
 #pragma pack (  )
