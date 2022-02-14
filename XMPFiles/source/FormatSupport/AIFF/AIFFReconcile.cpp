@@ -27,7 +27,7 @@ static const MetadataPropertyInfo kAIFFProperties[] =
 	{ kXMP_NS_DC,	"creator",			AIFFMetadata::kAuthor,		kNativeType_StrUTF8,	kXMPType_Array,		true,	false,		kExport_Always },	// dc:creator <-> FORM:AIFF/AUTH
 	{ kXMP_NS_DC,	"rights",			AIFFMetadata::kCopyright,	kNativeType_StrUTF8,	kXMPType_Localized,	true,	false,		kExport_Always },	// dc:rights <-> FORM:AIFF/(c)
 	{ kXMP_NS_DM,	"logComment",		AIFFMetadata::kAnnotation,	kNativeType_StrUTF8,	kXMPType_Simple,	true,	false,		kExport_Always },	// xmpDM:logComment <-> FORM:AIFF/ANNO
-	{ NULL }
+	{ NULL, nullptr, 0, kNativeType_Str, kXMPType_Simple, false, false, kExport_Never }
 };
 
 XMP_Bool AIFFReconcile::importToXMP( SXMPMeta& outXMP, const MetadataSet& inMetaData )

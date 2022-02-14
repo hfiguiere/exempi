@@ -246,6 +246,7 @@ dnl   -Wformat-nonliteral \
    -Wlogical-not-parentheses \
    -Werror=misleading-indentation \
    -Wmissing-noreturn \
+   -Werror=missing-field-initializers \
    -Woverloaded-virtual \
    -Wpointer-arith \
 dnl   -Wredundant-decls \

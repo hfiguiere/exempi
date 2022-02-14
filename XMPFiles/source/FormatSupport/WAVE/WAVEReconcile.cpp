@@ -57,7 +57,7 @@ static const MetadataPropertyInfo kBextProperties[] =
 	{ kXMP_NS_BWF,	kBWF_version,				BEXTMetadata::kVersion,				kNativeType_Uns16,			kXMPType_Simple,	false,	false,		kExport_Never },	// bext:version <-> BEXT:version
 	// special case: bext:umid <-> BEXT:UMID
 	{ kXMP_NS_BWF,	kBWF_codingHistory,			BEXTMetadata::kCodingHistory,		kNativeType_StrLocal,		kXMPType_Simple,	false,	false,		kExport_Always },	// bext:codingHistory <-> BEXT:codingHistory
-	{ NULL }
+	{ NULL, nullptr, 0, kNativeType_Str, kXMPType_Simple,	false,	false, kExport_Never }
 };
 
 static const char * kDM_shotNumber = "shotNumber";
@@ -102,7 +102,7 @@ static const MetadataPropertyInfo kiXMLProperties[] =
 	// special case for startTimeCode // xmpDM:startTimecode <-> iXML:TIMECODE_RATE, iXML:TIMECODE_FLAG and bext:timeReference.
 	{ kXMP_NS_BWF,	kBWF_timeStampSampleRate,	iXMLMetadata::kTimeStampSampleRate,		kNativeType_Uns64,			kXMPType_Simple,	false,	false,		kExport_NoDelete },	// bext::timeStampSampleRate <-> iXML
 	// special case for TRACK_LIST // ixml:Track_List <-> ixml:trackList
-	{ NULL }
+	{ NULL, nullptr, 0, kNativeType_Str, kXMPType_Simple, false, false, kExport_Never }
 };
 
 static const MetadataPropertyInfo kINFOProperties[] =
@@ -129,7 +129,7 @@ static const MetadataPropertyInfo kINFOProperties[] =
 	{ kXMP_NS_RIFFINFO,	"source",			INFOMetadata::kSource,			kNativeType_StrUTF8,		kXMPType_Simple,	true,	false,		kExport_Always },		// riffinfo:source  <-> ISRC
 	{ kXMP_NS_RIFFINFO,	"technician",		INFOMetadata::kTechnican,		kNativeType_StrUTF8,		kXMPType_Simple,	true,	false,		kExport_Always },		// riffinfo:technician <-> ITCH
 
-	{ NULL }
+	{ NULL, nullptr, 0, kNativeType_Str, kXMPType_Simple, false, false, kExport_Never }
 };
 
 static const MetadataPropertyInfo kDISPProperties[] =
@@ -137,7 +137,7 @@ static const MetadataPropertyInfo kDISPProperties[] =
 //	  XMP NS		XMP Property Name		Native Metadata Identifier		Datatype					Datatype			Delete	Priority	ExportPolicy
 	{ kXMP_NS_DC,	"title",				DISPMetadata::kTitle,			kNativeType_StrUTF8,		kXMPType_Localized,	false,	true,		kExport_Always },		// dc:title <-> DISP
 	// Special case: DISP will overwrite LIST/INFO:INAM in dc:title if existing
-	{ NULL }
+	{ NULL, nullptr, 0, kNativeType_Str, kXMPType_Simple, false, false, kExport_Never }
 };
 
 static const MetadataPropertyInfo kCartProperties[] =
@@ -162,7 +162,7 @@ static const MetadataPropertyInfo kCartProperties[] =
 	{ kXMP_NS_AEScart,	"TagText",				CartMetadata::kTagText,				kNativeType_StrLocal,		kXMPType_Simple,	true,	false,		kExport_Always },
 	{ kXMP_NS_AEScart,	"LevelReference",		CartMetadata::kLevelReference,		kNativeType_Int32,			kXMPType_Simple,	true,	false,		kExport_Always },
 	// Special case Post Timer
-	{ NULL }
+	{ NULL, nullptr, 0, kNativeType_Str, kXMPType_Simple, false, false, kExport_Never }
 };
 
 // cr8r is not yet required for WAVE

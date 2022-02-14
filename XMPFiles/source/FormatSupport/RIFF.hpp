@@ -160,7 +160,7 @@ namespace RIFF {
 		//{ kPropChunkISRC, to be decided,	"" ,		prop_SIMPLE },
 		//{ kPropChunkITCH, to be decided,	"" ,		prop_SIMPLE },
 
-		{ 0, 0, 0 }	// sentinel
+		{ 0, 0, 0, prop_SIMPLE }	// sentinel
 	};
 
 	static Mapping listTdatProps[] = {
@@ -169,7 +169,7 @@ namespace RIFF {
 		{ kPropChunk_tc_A, kXMP_NS_DM,	"altTimecode"	, prop_TIMEVALUE },   // special: must end up in dm:timeValue child
 		{ kPropChunk_rn_O, kXMP_NS_DM,	"tapeName"		, prop_SIMPLE  },
 		{ kPropChunk_rn_A, kXMP_NS_DM,	"altTapeName"	, prop_SIMPLE  },
-		{ 0, 0, 0 }	// sentinel
+		{ 0, 0, 0, prop_SIMPLE }	// sentinel
 	};
 
 	// =================================================================================================

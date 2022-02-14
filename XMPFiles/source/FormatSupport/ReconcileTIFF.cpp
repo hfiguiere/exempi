@@ -98,7 +98,7 @@ static const TIFF_MappingToXMP sPrimaryIFDMappings[] = {	// A blank name indicat
 	{ /*   305 */ kTIFF_Software,                  kTIFF_ASCIIType,       kAnyCount, kExport_Always,     kXMP_NS_TIFF,  "Software" },	// Has alias to xmp:CreatorTool.
 	{ /*   315 */ kTIFF_Artist,                    kTIFF_ASCIIType,       kAnyCount, kExport_Always,     "", "" },	// ! Has a special mapping.
 	{ /* 33432 */ kTIFF_Copyright,                 kTIFF_ASCIIType,       kAnyCount, kExport_Always,     "", "" },	// ! Has a special mapping.
-	{ 0xFFFF, 0, 0, 0 }	// ! Must end with sentinel.
+	{ 0xFFFF, 0, 0, 0, nullptr, nullptr }	// ! Must end with sentinel.
 };
 
 static const TIFF_MappingToXMP sExifIFDMappings[] = {
@@ -175,7 +175,7 @@ static const TIFF_MappingToXMP sExifIFDMappings[] = {
 	{ /* 41995 */ kTIFF_DeviceSettingDescription,  kTIFF_UndefinedType,   kAnyCount, kExport_InjectOnly, "", "" },	// ! Has a special mapping.
 	{ /* 41996 */ kTIFF_SubjectDistanceRange,      kTIFF_ShortType,       1,         kExport_InjectOnly, kXMP_NS_EXIF,  "SubjectDistanceRange" },
 
-	{ 0xFFFF, 0, 0, 0 }	// ! Must end with sentinel.
+	{ 0xFFFF, 0, 0, 0, 0, nullptr }	// ! Must end with sentinel.
 };
 
 static const TIFF_MappingToXMP sGPSInfoIFDMappings[] = {
@@ -206,7 +206,7 @@ static const TIFF_MappingToXMP sGPSInfoIFDMappings[] = {
 	{ /*    28 */ kTIFF_GPSAreaInformation,        kTIFF_UndefinedType,   kAnyCount, kExport_InjectOnly, "", "" },	// ! Has a special mapping.
 	{ /*    30 */ kTIFF_GPSDifferential,           kTIFF_ShortType,       1,         kExport_InjectOnly, kXMP_NS_EXIF,  "GPSDifferential" },
 	{ /*    31 */ kTIFF_GPSHPositioningError,      kTIFF_RationalType,    1,         kExport_InjectOnly, kXMP_NS_ExifEX, "GPSHPositioningError" },
-	{ 0xFFFF, 0, 0, 0 }	// ! Must end with sentinel.
+	{ 0xFFFF, 0, 0, 0, 0, nullptr }	// ! Must end with sentinel.
 };
 
 // =================================================================================================
