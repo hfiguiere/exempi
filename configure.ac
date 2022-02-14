@@ -240,6 +240,7 @@ AX_APPEND_COMPILE_FLAGS([ \
    -Wexceptions \
    -Wheader-guard \
    -Wformat \
+   -Werror=class-memaccess \
 dnl   -Wformat-nonliteral \
    -Wformat-security \
    -Wlogical-not-parentheses \
