@@ -533,7 +533,7 @@ struct ASF_GUID {
 	// (Exempi) needs a proper constructor
 	ASF_GUID()
 	  : part1(0), part2(0), part3(0), part4(0),
-	    part5({ 0, 0, 0, 0, 0, 0 })
+	    part5{ 0, 0, 0, 0, 0, 0 }
 	{
 	}
 	ASF_GUID(XMP_Uns32 p1, XMP_Uns16 p2, XMP_Uns16 p3, XMP_Uns16 p4, const void* p5)

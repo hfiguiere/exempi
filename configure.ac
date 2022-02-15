@@ -249,6 +249,7 @@ dnl   -Wformat-nonliteral \
    -Werror=missing-field-initializers \
    -Woverloaded-virtual \
    -Wpointer-arith \
+   -Wgnu-array-member-paren-init \
 dnl   -Wredundant-decls \
    -Wpointer-bool-conversion \
    -Wshadow \
