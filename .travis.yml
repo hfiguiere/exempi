@@ -46,4 +46,5 @@ addons:
       - libboost-test-dev
 script:
   - ./autogen.sh
-  - make distcheck
+  - make check
+  - cat exempi/test-suite.log
