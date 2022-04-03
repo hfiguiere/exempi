@@ -158,21 +158,6 @@ if test "$ac_cv_tls" != "none"; then
 fi
 dnl end TLS
 
-dnl check LD Flags
-dnl we need a valid symfile. Make one.
-cat >> _ac_foo.sym << _ACEOF
-foo
-_ACEOF
-AX_LD_CHECK_FLAG([-Wl,--retain-symbols-file=_ac_foo.sym],[],[],[
-dnl success
-cv_support_symfile=yes
-],[
-dnl fail
-cv_support_symfile=no
-])
-rm -f _ac_foo.sym
-AM_CONDITIONAL(HAVE_SYMBOLS_FILE, test x$cv_support_symfile = "xyes")
-
 
 AC_ARG_ENABLE(unittest,
               AC_HELP_STRING([--enable-unittest=yes|no],

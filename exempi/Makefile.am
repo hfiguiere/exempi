@@ -69,13 +69,7 @@ endif
 
 libexempi_la_LDFLAGS = -version-info @EXEMPI_VERSION_INFO@
 
-if HAVE_SYMBOLS_FILE
-libexempi_la_LDFLAGS += -Wl,--retain-symbols-file=$(srcdir)/libexempi.sym
-endif
-
 dist_man1_MANS = exempi.1
-
-EXTRA_DIST = libexempi.sym
 
 ### tests
 
