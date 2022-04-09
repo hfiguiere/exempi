@@ -1,6 +1,18 @@
 2.6.2 -
 
--
+- Update XMPCore to Adobe XMP SDK v2022.02
+  - Build system fixes that don't matter.
+- Fix a typo in an ID3 genre string
+  https://gitlab.freedesktop.org/libopenraw/exempi/-/merge_requests/4
+- Build XMP_SDK with some fatal warnings:
+  - -Werror=missing-field-initializers
+  - -Werror=misleading-indentation
+  - -Werror=class-memaccess
+- Remove (deprecated) boost_test_minimal
+  https://gitlab.freedesktop.org/libopenraw/exempi/-/issues/24
+- CI: require "bionic" on Travis CI.
+- Remove old .sym file (Daniel Kolesa)
+  https://gitlab.freedesktop.org/libopenraw/exempi/-/issues/17
 
 2.6.1 - 2022/02/13
 
