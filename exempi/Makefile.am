@@ -99,7 +99,7 @@ check_DATA = tests/test1.xmp tests/fdo18635.jpg tests/fdo83313.jpg
 
 noinst_HEADERS = tests/utils.h
 
-EXTRA_DIST += $(check_DATA) $(check_SCRIPTS)
+EXTRA_DIST = $(check_DATA) $(check_SCRIPTS)
 CLEANFILES = test.jpg test.webp
 
 AM_CXXFLAGS = @BOOST_CPPFLAGS@
