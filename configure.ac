@@ -225,6 +225,7 @@ AX_APPEND_COMPILE_FLAGS([ \
    -Wexceptions \
    -Wheader-guard \
    -Wformat \
+   -Werror=bitwise-instead-of-logical \
    -Werror=class-memaccess \
 dnl   -Wformat-nonliteral \
    -Wformat-security \

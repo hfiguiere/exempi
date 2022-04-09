@@ -386,7 +386,7 @@ IsNumberedArrayItemName ( const std::string & name )
 	if ( name.size() <= 5 ) return false;
 	if ( strncmp ( name.c_str(), "rdf:_", 5 ) != 0 ) return false;
 	for ( size_t i = 5; i < name.size(); ++i ) {
-		if ( (name[i] < '0') | (name[i] > '9') ) return false;
+		if ( (name[i] < '0') || (name[i] > '9') ) return false;
 	}
 	return true;
 }

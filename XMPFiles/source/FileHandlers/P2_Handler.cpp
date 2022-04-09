@@ -158,7 +158,7 @@ bool P2_CheckFormat ( XMP_FileFormat /*format*/,
 		if ( gpName != "CONTENTS" ) return false;
 		if ( ! CheckContentFolderName ( parentName ) ) return false;
 
-		if ( (parentName == "AUDIO") | (parentName == "VOICE") ) {
+		if ( (parentName == "AUDIO") || (parentName == "VOICE") ) {
 			if ( clipName.size() < 3 ) return false;
 			clipName.erase ( clipName.size() - 2 );
 		}
@@ -232,7 +232,7 @@ static void* CreatePseudoClipPath ( const std::string & clientPath ) {
 		XIO::SplitLeafName ( &pseudoPath, &parentName );	// Remove the 2 intermediate folder levels.
 		XIO::SplitLeafName ( &pseudoPath, &ignored );
 
-		if ( (parentName == "AUDIO") | (parentName == "VOICE") ) {
+		if ( (parentName == "AUDIO") || (parentName == "VOICE") ) {
 			if ( clipName.size() >= 3 ) clipName.erase ( clipName.size() - 2 );
 		}
 		
