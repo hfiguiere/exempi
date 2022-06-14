@@ -159,6 +159,14 @@ fi
 dnl end TLS
 
 
+AC_ARG_ENABLE(samples,
+              AC_HELP_STRING([--enable-samples=yes|no],
+                            [enable the samples. (default is yes)]),
+              enable_samples=$enableval,
+              enable_samples=yes)
+AM_CONDITIONAL([ENABLE_SAMPLES], [test x"$enable_samples" = xyes])
+
+
 AC_ARG_ENABLE(unittest,
               AC_HELP_STRING([--enable-unittest=yes|no],
                             [enable the unittest. requires boost (default is yes)]),
