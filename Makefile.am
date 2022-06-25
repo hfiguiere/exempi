@@ -37,11 +37,10 @@
 ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = third-party source XMPCore XMPFiles exempi
-DIST_SUBDIRS = build third-party source XMPCore XMPFiles XMPFilesPlugins exempi public
+DIST_SUBDIRS = build third-party source XMPCore XMPFiles XMPFilesPlugins samples exempi public
 
 if ENABLE_SAMPLES
 SUBDIRS += samples
-DIST_SUBDIRS += samples
 endif
 
 EXTRA_DIST = autogen.sh ORIGINSTORY.md CODE_OF_CONDUCT.md CONTRIBUTING.md \
