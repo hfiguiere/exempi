@@ -61,11 +61,7 @@ libexempi_la_LIBADD = $(top_builddir)/source/libxmpcommon.la \
 	$(top_builddir)/XMPCore/source/libXMPCore.la \
 	$(top_builddir)/XMPFiles/source/libXMPFiles.la \
 	$(top_builddir)/third-party/zuid/interfaces/libmd5.la \
-	-lexpat -lz -ldl
-
-if UNIX_ENV
-libexempi_la_LIBADD += -lrt
-endif
+	-lexpat -lz
 
 libexempi_la_LDFLAGS = -version-info @EXEMPI_VERSION_INFO@
 

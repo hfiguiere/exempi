@@ -50,12 +50,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/public/include -I$(top_srcdir) \
 XMPLIBS = $(top_builddir)/XMPCore/source/libXMPCore.la \
 	$(top_builddir)/XMPFiles/source/libXMPFiles.la \
 	$(top_builddir)/source/libxmpcommon.la -lexpat -lz \
-	$(top_builddir)/third-party/zuid/interfaces/libmd5.la \
-	-ldl
-
-if UNIX_ENV
-XMPLIBS += -lrt
-endif
+	$(top_builddir)/third-party/zuid/interfaces/libmd5.la
 
 noinst_LTLIBRARIES = libsamplescommon.la
 libsamplescommon_la_SOURCES = common/DumpFile.cpp common/DumpFile.h \

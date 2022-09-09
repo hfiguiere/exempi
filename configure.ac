@@ -181,11 +181,12 @@ fi
 case $build_vendor in
 	apple)
 		EXEMPI_PLATFORM_DEF=MAC_ENV
-		LDFLAGS="$LDFLAGS -framework CoreServices -stdlib=libc++"
+		LDFLAGS="$LDFLAGS -framework CoreServices -stdlib=libc++ -ldl"
 		CPPFLAGS="$CPPFLAGS -std=c++11 -stdlib=libc++"
 		;;
 	*)
 		EXEMPI_PLATFORM_DEF=UNIX_ENV
+		LDFLAGS="$LDFLAGS -lrt -ldl"
 		;;
 esac
 
