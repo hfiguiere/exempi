@@ -1,3 +1,13 @@
+2.6.3 - 2022/12/10
+
+- Issue #29: Update the config.guess and config.sub files in the tarball.
+  https://gitlab.freedesktop.org/libopenraw/exempi/-/issues/29
+- Make dist an xz tarball.
+- Issue #30: Fix null to int assignement error. (Francisco Ramos)
+  https://gitlab.freedesktop.org/libopenraw/exempi/-/issues/30
+- Issue #28: Fix build error on armhf. (Fabrice Fontaine)
+  https://gitlab.freedesktop.org/libopenraw/exempi/-/issues/28
+
 2.6.2 - 2022/06/25
 
 - Update XMPCore to Adobe XMP SDK v2022.06
