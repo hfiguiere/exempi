@@ -179,15 +179,21 @@ else
 fi
 
 
+AC_SEARCH_LIBS([dlopen], [dl dld], [], [
+	AC_MSG_ERROR([unable to find the dlopen() function])
+])
+AC_SEARCH_LIBS([clock_gettime], [rt], [], [
+	AC_MSG_ERROR([unable to find the clock_gettime() function])
+])
+
 case $build_vendor in
 	apple)
 		EXEMPI_PLATFORM_DEF=MAC_ENV
-		LDFLAGS="$LDFLAGS -framework CoreServices -stdlib=libc++ -ldl"
+		LDFLAGS="$LDFLAGS -framework CoreServices -stdlib=libc++"
 		CPPFLAGS="$CPPFLAGS -std=c++11 -stdlib=libc++"
 		;;
 	*)
 		EXEMPI_PLATFORM_DEF=UNIX_ENV
-		LDFLAGS="$LDFLAGS -lrt -ldl"
 		;;
 esac
 
