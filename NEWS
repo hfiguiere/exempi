@@ -1,3 +1,9 @@
+2.6.4 -
+
+- Fix some portability build issues with dlopen on BSD:
+  https://gitlab.freedesktop.org/libopenraw/exempi/-/merge_requests/7
+  (Alyssa Ross)
+
 2.6.3 - 2022/12/10
 
 - Issue #29: Update the config.guess and config.sub files in the tarball.
