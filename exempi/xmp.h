@@ -1,7 +1,7 @@
 /*
  * exempi - xmp.h
  *
- * Copyright (C) 2007-2016 Hubert Figuiere
+ * Copyright (C) 2007-2023 Hubert Figuière
  * Copyright 2002-2007 Adobe Systems Incorporated
  * All rights reserved.
  *
@@ -121,12 +121,25 @@ typedef enum {
     XMP_FT_MPEG = 0x4D504547UL,  /* 'MPEG' */
     XMP_FT_MPEG2 = 0x4D503220UL, /* 'MP2 ' */
     XMP_FT_MPEG4 = 0x4D503420UL, /* 'MP4 ', ISO 14494-12 and -14 */
+    XMP_FT_MXF = 0x4D584620UL,   /* 'MXF ' */
     XMP_FT_WMAV = 0x574D4156UL,  /* 'WMAV', Windows Media Audio and Video */
     XMP_FT_AIFF = 0x41494646UL,  /* 'AIFF' */
+    XMP_FT_RED = 0x52454420UL,   /* 'RED ', RED file format */
+    XMP_FT_ARRI = 0x41525249UL,  /* 'ARRI', ARRI file format */
+    XMP_FT_HEIF = 0x48454946UL,  /* 'HEIF', HEIF file format */
+    XMP_FT_P2 = 0x50322020UL,    /* 'P2  ' */
+    XMP_FT_XDCAM_FAM = 0x58444346UL, /* 'XDCF' */
+    XMP_FT_XDCAM_SAM = 0x58444353UL, /* 'XDCS' */
+    XMP_FT_XDCAM_EX = 0x58444358UL,  /* 'XDCX' */
+    XMP_FT_AVCHD = 0x41564844UL,     /* 'AVHD' */
+    XMP_FT_SONY_HDV = 0x53484456UL,  /* 'SHDV' */
+    XMP_FT_CANON_XF = 0x434E5846UL,  /* 'CNXF' */
+    XMP_FT_AVC_ULTRA = 0x41564355UL, /* 'AVCU' */
 
     XMP_FT_HTML = 0x48544D4CUL, /* 'HTML' */
     XMP_FT_XML = 0x584D4C20UL,  /* 'XML ' */
     XMP_FT_TEXT = 0x74657874UL, /* 'text' */
+    XMP_FT_SVG = 0x53564720UL,  /* 'SVG ' */
 
     /* Adobe application file formats. */
     XMP_FT_PHOTOSHOP = 0x50534420UL,   /* 'PSD ' */
@@ -139,6 +152,7 @@ typedef enum {
     XMP_FT_ENCOREPROJECT = 0x4E434F52UL,   /* 'NCOR' */
     XMP_FT_PREMIEREPROJECT = 0x5052504AUL, /* 'PRPJ' */
     XMP_FT_PREMIERETITLE = 0x5052544CUL,   /* 'PRTL' */
+    XMP_FT_UCF = 0x55434620UL,             /* 'UCF ', Universal Container Format */
 
     /* Catch all. */
     XMP_FT_UNKNOWN = 0x20202020UL /* '    ' */
@@ -369,7 +383,7 @@ void xmp_terminate(void);
 
 /** get the error code that last occurred.
  * @todo make this thread-safe. Getting the error code
- * from another thread than the on it occurred in is undefined.
+ * from another thread than the one it occurred on is undefined.
  */
 int xmp_get_error(void);
 
