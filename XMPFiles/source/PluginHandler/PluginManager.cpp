@@ -687,8 +687,8 @@ void PluginManager::scanRecursive( const std::string & tempPath, std::vector<std
 			}
 
 			StringVec::const_iterator iterFound =
-				std::find_if ( mExtensions.begin(), mExtensions.end(),
-					       [&fileExt](const std::string& file_ext){ return file_ext == fileExt; });
+				std::find_if ( mExtensions.begin(), mExtensions.end(), 
+							   std::bind(std::equal_to<std::string>(), std::placeholders::_1, fileExt));
 
 			if ( iterFound != mExtensions.end() ) {
 
@@ -698,7 +698,7 @@ void PluginManager::scanRecursive( const std::string & tempPath, std::vector<std
 				
 				StringVec::const_iterator pluginNeeded =
 					std::find_if ( mPluginsNeeded.begin(), mPluginsNeeded.end(),
-						       [&childName](const std::string& child_name){ return child_name == childName; });
+								   std::bind(std::equal_to<std::string>(), std::placeholders::_1, childName));
 
 				if ( (pluginNeeded != mPluginsNeeded.end()) || mPluginsNeeded.empty() ) {
 					ioFoundLibs.push_back ( childPath );

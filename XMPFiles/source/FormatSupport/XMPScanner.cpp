@@ -989,7 +989,7 @@ XMPScanner::InternalSnip::InternalSnip ( XMP_Int64 offset, XMP_Int64 length )
 
 XMPScanner::InternalSnip::InternalSnip ( const InternalSnip & rhs ) :
 	fInfo ( rhs.fInfo ),
-	fMachine ()
+	fMachine ( nullptr )
 {
 
 	assert ( rhs.fMachine.get() == NULL );	// Don't copy a snip with a machine.
@@ -1262,7 +1262,7 @@ XMPScanner::Scan ( const void * bufferOrigin, XMP_Int64 bufferOffset, XMP_Int64 
 			{
 				// Some versions of gcc complain about the assignment operator above.  This avoids the gcc bug.
 				PacketMachine *	pm	= new PacketMachine ( bufferOffset, bufferOrigin, bufferLength );
-				unique_ptr<PacketMachine>	ap ( pm );
+				std::unique_ptr<PacketMachine> ap ( pm );
 				snipPos->fMachine = std::move(ap);
 			}
 		#endif
@@ -1286,7 +1286,7 @@ XMPScanner::Scan ( const void * bufferOrigin, XMP_Int64 bufferOffset, XMP_Int64 
 			#else
 				{
 					// Some versions of gcc complain about the assignment operator above.  This avoids the gcc bug.
-					unique_ptr<PacketMachine>	ap;
+					std::unique_ptr<PacketMachine> ap;
 					snipPos->fMachine = std::move(ap);
 				}
 			#endif
@@ -1379,7 +1379,7 @@ XMPScanner::Scan ( const void * bufferOrigin, XMP_Int64 bufferOffset, XMP_Int64 
 					#else
 						{
 							// Some versions of gcc complain about the assignment operator above.  This avoids the gcc bug.
-							unique_ptr<PacketMachine>	ap;
+							std::unique_ptr<PacketMachine> ap;
 							snipPos->fMachine = std::move(ap);
 						}
 					#endif
@@ -1392,7 +1392,7 @@ XMPScanner::Scan ( const void * bufferOrigin, XMP_Int64 bufferOffset, XMP_Int64 
 
 					InternalSnipIterator	tailPos	= NextSnip ( snipPos );
 
-					tailPos->fMachine = std::move(snipPos->fMachine);	// unique_ptr assignment - taking ownership
+					tailPos->fMachine = std::move(snipPos->fMachine);	// auto_ptr assignment - taking ownership
 					thisMachine->ResetMachine ();
 
 					snipPos = tailPos;

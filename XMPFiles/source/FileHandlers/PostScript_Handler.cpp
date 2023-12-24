@@ -885,6 +885,7 @@ void PostScript_MetaHandler::ParsePSFile()
 					if (CheckBytes ( ioBuf.ptr, Uns8Ptr("iler"), 4 ))
 					{
 						ioBuf.ptr+=4;
+						if ( !CheckFileSpace( fileRef, &ioBuf, 1 ) ) return;
 						// See bug https://bugs.freedesktop.org/show_bug.cgi?id=105206
 						// Ensure we don't get past the limit if
 						// the data is bogus.
